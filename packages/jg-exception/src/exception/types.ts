@@ -1,9 +1,21 @@
-// the native options the Exception constructor accepts, such as `cause`
-export type IErrorOptions = ErrorOptions;
+import type { IJsonValue } from '../shared/types.js';
 
-// an Exception as a plain object, such as for logging or serialization
-export type IExceptionRecord = {
-  message: string;
+// the options an Exception is created with
+export type IExceptionOptions = {
+  // the stable code callers handle the error by, such as `USER_NOT_FOUND`
   code: string;
-  data: unknown;
+
+  // context that helps whoever handles or debugs the error, such as the id that wasn't found
+  data?: IJsonValue | undefined;
+
+  // the error underneath, kept as the native `cause`
+  cause?: unknown;
+};
+
+// an Exception as `toJSON` returns it, ready to log or send
+export type IExceptionJson = {
+  name: string;
+  code: string;
+  message: string;
+  data: IJsonValue;
 };

@@ -1,0 +1,211 @@
+---
+// the image social cards show for the page
+interface IOpenGraphImage {
+  alt: string;
+  height: number;
+  // a MIME type, such as image/png
+  type: string;
+  url: string;
+  width: number;
+}
+
+interface Props {
+  author?: string | undefined;
+  // the page's own URL. A noindex page has none, which would contradict noindex
+  canonicalUrl?: string | undefined;
+  description: string;
+  // the favicon's URL and MIME type
+  favicon?: { href: string; type: string } | undefined;
+  // the language of the page's Open Graph locale, such as en_US
+  locale?: string | undefined;
+  // the llms.txt that describes the site for agents
+  llmsTextUrl?: string | undefined;
+  // the page's Markdown version, offered to agents as an alternate
+  markdownUrl?: string | undefined;
+  noIndex?: boolean | undefined;
+  openGraphImage?: IOpenGraphImage | undefined;
+  siteName: string;
+  // JSON-LD for the page, serialized with < escaped so it can't close the script element
+  structuredData?: unknown;
+  // the browser chrome colour of each theme
+  themeColors?: { light: string; dark: string } | undefined;
+  title: string;
+  // the author's handle on X, such as @jesusgraterol
+  twitterCreator?: string | undefined;
+}
+
+const {
+  author,
+  canonicalUrl,
+  description,
+  favicon,
+  locale = 'en_US',
+  llmsTextUrl,
+  markdownUrl,
+  noIndex = false,
+  openGraphImage,
+  siteName,
+  structuredData,
+  themeColors,
+  title,
+  twitterCreator,
+} = Astro.props;
+const serializedStructuredData =
+  structuredData === undefined
+    ? undefined
+    : JSON.stringify(structuredData).replaceAll('<', '\\u003c');
+---
+
+<meta charset="UTF-8" />
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1"
+/>
+<meta
+  name="generator"
+  content={Astro.generator}
+/>
+<title>{title}</title>
+<meta
+  name="description"
+  content={description}
+/>
+{author !== undefined && (
+  <meta
+    name="author"
+    content={author}
+  />
+)}
+<meta
+  name="robots"
+  content={noIndex ? 'noindex, follow' : 'index, follow, max-image-preview:large'}
+/>
+{themeColors !== undefined && (
+  <>
+    <meta
+      name="theme-color"
+      content={themeColors.light}
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content={themeColors.dark}
+      media="(prefers-color-scheme: dark)"
+    />
+  </>
+)}
+{canonicalUrl !== undefined && !noIndex && (
+  <link
+    rel="canonical"
+    href={canonicalUrl}
+  />
+)}
+{llmsTextUrl !== undefined && (
+  <link
+    rel="describedby"
+    href={llmsTextUrl}
+  />
+)}
+{markdownUrl !== undefined && (
+  <link
+    rel="alternate"
+    type="text/markdown"
+    href={markdownUrl}
+  />
+)}
+{favicon !== undefined && (
+  <link
+    rel="icon"
+    type={favicon.type}
+    href={favicon.href}
+  />
+)}
+
+<meta
+  property="og:site_name"
+  content={siteName}
+/>
+<meta
+  property="og:locale"
+  content={locale}
+/>
+<meta
+  property="og:type"
+  content="website"
+/>
+<meta
+  property="og:title"
+  content={title}
+/>
+<meta
+  property="og:description"
+  content={description}
+/>
+{canonicalUrl !== undefined && !noIndex && (
+  <meta
+    property="og:url"
+    content={canonicalUrl}
+  />
+)}
+{openGraphImage !== undefined && (
+  <>
+    <meta
+      property="og:image"
+      content={openGraphImage.url}
+    />
+    <meta
+      property="og:image:type"
+      content={openGraphImage.type}
+    />
+    <meta
+      property="og:image:width"
+      content={String(openGraphImage.width)}
+    />
+    <meta
+      property="og:image:height"
+      content={String(openGraphImage.height)}
+    />
+    <meta
+      property="og:image:alt"
+      content={openGraphImage.alt}
+    />
+  </>
+)}
+<meta
+  name="twitter:card"
+  content={openGraphImage === undefined ? 'summary' : 'summary_large_image'}
+/>
+{twitterCreator !== undefined && (
+  <meta
+    name="twitter:creator"
+    content={twitterCreator}
+  />
+)}
+<meta
+  name="twitter:title"
+  content={title}
+/>
+<meta
+  name="twitter:description"
+  content={description}
+/>
+{openGraphImage !== undefined && (
+  <>
+    <meta
+      name="twitter:image"
+      content={openGraphImage.url}
+    />
+    <meta
+      name="twitter:image:alt"
+      content={openGraphImage.alt}
+    />
+  </>
+)}
+{serializedStructuredData !== undefined && (
+  <script
+    is:inline
+    type="application/ld+json"
+    set:html={serializedStructuredData}
+  />
+)}
+<slot />

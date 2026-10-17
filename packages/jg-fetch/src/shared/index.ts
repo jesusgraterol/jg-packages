@@ -24,6 +24,6 @@ export type {
   IRequestOptions,
   IRequestResult,
   IResponseMeta,
-  IResponseSchema,
+  ISchema,
   IRetryContext,
 } from './types.js';

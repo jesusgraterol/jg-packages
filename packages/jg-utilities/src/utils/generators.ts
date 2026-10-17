@@ -1,6 +1,6 @@
 import { v4 as uuidv4, v7 as uuidv7 } from 'uuid';
 
-import type { IUUIDVersion } from '../shared/types.js';
+import type { IUuidVersion } from '../shared/types.js';
 import type { IDateValue } from '../transformers/index.js';
 import { toDate } from '../transformers/index.js';
 
@@ -11,10 +11,12 @@ import { createUint32Source, drawFloat, drawUniformIndex, drawUniformInteger } f
  * @param version The version of the UUID to be generated.
  * @returns A UUID string of the specified version.
  * @example
- * generateUUID(4); // such as '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
- * generateUUID(7); // time-ordered, so later IDs sort after earlier ones
+ * import { generateUuid } from 'jg-utilities';
+ *
+ * generateUuid(4); // such as '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
+ * generateUuid(7); // time-ordered, so later IDs sort after earlier ones
  */
-export const generateUUID = (version: IUUIDVersion): string => {
+export const generateUuid = (version: IUuidVersion): string => {
   if (version === 7) {
     return uuidv7();
   }
@@ -29,8 +31,10 @@ export const generateUUID = (version: IUUIDVersion): string => {
  * @param characters The characters to pick from. Defaults to ASCII letters and digits.
  * @returns The random string, or an empty string when the length or the set is empty.
  * @example
- * generateRandomString(12); // 'aZ3kPq9TbW0x'
- * generateRandomString(6, '0123456789'); // '402913'
+ * import { generateRandomString } from 'jg-utilities';
+ *
+ * generateRandomString(12); // such as 'aZ3kPq9TbW0x'
+ * generateRandomString(6, '0123456789'); // such as '402913'
  */
 export const generateRandomString = (
   length: number,
@@ -53,6 +57,8 @@ export const generateRandomString = (
  * @param max The highest value, excluded.
  * @returns A random number greater than or equal to `min` and less than `max`.
  * @example
+ * import { generateRandomFloat } from 'jg-utilities';
+ *
  * generateRandomFloat(0, 1); // 0.7312...
  */
 export const generateRandomFloat = (min: number, max: number): number =>
@@ -65,7 +71,9 @@ export const generateRandomFloat = (min: number, max: number): number =>
  * @param max The highest value, included.
  * @returns A random integer from `min` to `max`.
  * @example
- * generateRandomInteger(1, 6); // 4
+ * import { generateRandomInteger } from 'jg-utilities';
+ *
+ * generateRandomInteger(1, 6); // such as 4
  */
 export const generateRandomInteger = (min: number, max: number): number =>
   drawUniformInteger(max - min + 1, createUint32Source(2)) + min;
@@ -77,8 +85,10 @@ export const generateRandomInteger = (min: number, max: number): number =>
  * @param step? The step value to increment by. Defaults to 1.
  * @returns An array of numbers representing the sequence.
  * @example
- * generateSequence(1, 5); // [1, 2, 3, 4, 5]
- * generateSequence(0, 10, 5); // [0, 5, 10]
+ * import { generateSequence } from 'jg-utilities';
+ *
+ * generateSequence(1, 5); // => [1, 2, 3, 4, 5]
+ * generateSequence(0, 10, 5); // => [0, 5, 10]
  */
 export const generateSequence = (start: number, stop: number, step: number = 1): number[] =>
   Array.from({ length: (stop - start) / step + 1 }, (_, index) => start + index * step);
@@ -88,7 +98,9 @@ export const generateSequence = (start: number, stop: number, step: number = 1):
  * @param value The date value to generate the ID from. Defaults to the current date if not provided.
  * @returns The generated date ID string.
  * @example
- * generateDateId(new Date(2026, 9, 17)); // '2026_10_17'
+ * import { generateDateId } from 'jg-utilities';
+ *
+ * generateDateId(new Date(2026, 9, 17)); // => '2026_10_17'
  * generateDateId(); // today's ID
  */
 export const generateDateId = (value?: IDateValue): string => {

@@ -1,0 +1,63 @@
+---
+import { THEME_APPLIED_EVENT, THEME_CHANGE_EVENT } from '../../theme-preference/index.ts';
+
+interface Props {
+  // the key the site stores the visitor's theme preference under
+  storageKey: string;
+  // the browser chrome colour of each theme, kept in the theme-color meta tags
+  themeColors?: { light: string; dark: string } | undefined;
+}
+
+const { storageKey, themeColors } = Astro.props;
+---
+
+{/*
+ * Inline and render-blocking on purpose: it sets .light or .dark on <html> before the first
+ * paint, so a stored preference never flashes the other theme. It follows the system theme until
+ * the visitor picks one, and applies the theme controls' changes.
+ */}
+<script
+  is:inline
+  define:vars={{
+    appliedEvent: THEME_APPLIED_EVENT,
+    changeEvent: THEME_CHANGE_EVENT,
+    darkColor: themeColors?.dark ?? null,
+    lightColor: themeColors?.light ?? null,
+    storageKey,
+  }}
+>
+  (() => {
+    const preferences = ['system', 'light', 'dark'];
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const getPreference = () => {
+      try {
+        const stored = localStorage.getItem(storageKey);
+        return preferences.includes(stored) ? stored : 'system';
+      } catch {
+        return 'system';
+      }
+    };
+    const apply = (preference = getPreference()) => {
+      const root = document.documentElement;
+      const theme = preference === 'system' ? (media.matches ? 'dark' : 'light') : preference;
+      root.classList.toggle('dark', theme === 'dark');
+      root.classList.toggle('light', theme === 'light');
+      root.dataset.resolvedTheme = theme;
+      root.dataset.themePreference = preference;
+      if (lightColor && darkColor) {
+        document
+          .querySelectorAll('meta[name="theme-color"]')
+          .forEach((meta) =>
+            meta.setAttribute('content', theme === 'dark' ? darkColor : lightColor),
+          );
+      }
+      window.dispatchEvent(new Event(appliedEvent));
+    };
+
+    apply();
+    media.addEventListener('change', () => {
+      if (getPreference() === 'system') apply();
+    });
+    window.addEventListener(changeEvent, (event) => apply(event.detail.preference));
+  })();
+</script>

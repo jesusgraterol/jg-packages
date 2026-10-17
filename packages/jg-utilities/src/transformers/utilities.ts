@@ -64,9 +64,9 @@ export const parseTimeString = (str: ITimeString): { value: number; unit: string
  * @param val The value to sort. It can be an object, an array, or any other type.
  * @returns The value with sorted keys if it's an object, or the original value otherwise.
  */
-export const sortJSONObjectKeys = (val: unknown): unknown => {
+export const sortJsonObjectKeys = (val: unknown): unknown => {
   if (isArrayValid(val)) {
-    return val.map(sortJSONObjectKeys);
+    return val.map(sortJsonObjectKeys);
   }
   if (isObjectValid(val)) {
     return Object.keys(val)
@@ -74,7 +74,7 @@ export const sortJSONObjectKeys = (val: unknown): unknown => {
       .reduce(
         (sorted: Record<string, unknown>, key: string) => ({
           ...sorted,
-          [key]: sortJSONObjectKeys(val[key]),
+          [key]: sortJsonObjectKeys(val[key]),
         }),
         {},
       );

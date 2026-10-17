@@ -1,0 +1,63 @@
+---
+import CopyButton from '../copy-button/copy-button.astro';
+import Tabs from '../tabs/tabs.astro';
+
+interface Props {
+  class?: string | undefined;
+  // installs as a development dependency
+  dev?: boolean | undefined;
+  // a prefix for the ids, unique on the page
+  id: string;
+  // the packages to install, such as 'jg-fetch'
+  packages: string;
+  // remembers the visitor's package manager under this key, across the site's install commands
+  storageKey: string;
+}
+
+// shell prompt shown before each command but never copied
+const SHELL_PROMPT = '$';
+
+const { class: className, dev = false, id, packages, storageKey } = Astro.props;
+const commands = [
+  { id: 'npm', label: 'npm', command: `npm install${dev ? ' --save-dev' : ''} ${packages}` },
+  { id: 'pnpm', label: 'pnpm', command: `pnpm add${dev ? ' --save-dev' : ''} ${packages}` },
+];
+---
+
+<div
+  class:list={[
+    'min-w-0 rounded-xl border border-border-strong bg-terminal text-terminal-foreground shadow-raised',
+    className,
+  ]}
+  data-package-manager-tabs
+>
+  <Tabs
+    id={id}
+    label="Package manager"
+    storageKey={storageKey}
+    tabs={commands}
+    variant="terminal"
+  >
+    {commands.map(({ command, id: commandId }) => (
+      <div
+        slot={commandId}
+        class="flex items-start justify-between gap-3 py-3 pr-2 pl-4 font-mono text-sm leading-6 sm:pl-5"
+      >
+        <p class="flex min-w-0 gap-3">
+          <span
+            class="text-terminal-accent select-none"
+            aria-hidden="true"
+          >
+            {SHELL_PROMPT}
+          </span>
+          <code class="min-w-0 wrap-anywhere">{command}</code>
+        </p>
+        <CopyButton
+          text={command}
+          context={`${commandId} install command`}
+          tone="terminal"
+        />
+      </div>
+    ))}
+  </Tabs>
+</div>

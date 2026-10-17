@@ -1,15 +1,15 @@
-import { Exception, extractMessage, getErrorCode } from 'jg-exception';
+import { Exception, getErrorCode } from 'jg-exception';
 
 import { ERRORS } from '../shared/errors.js';
-import type { IJSONValue } from '../shared/types.js';
+import type { IJsonValue } from '../shared/types.js';
 import { isObjectValid } from '../validations/index.js';
 
-import { sortJSONObjectKeys } from './utilities.js';
+import { sortJsonObjectKeys } from './utilities.js';
 import {
-  canJSONBeDeserialized,
-  canJSONBeSerialized,
-  validateJSONDeserializationResult,
-  validateJSONSerializationResult,
+  canJsonBeDeserialized,
+  canJsonBeSerialized,
+  validateJsonDeserializationResult,
+  validateJsonSerializationResult,
 } from './validations.js';
 
 /**
@@ -17,24 +17,26 @@ import {
  * @param value The value to be serialized. It should be an object or an array.
  * @returns A string representing the serialized JSON object.
  * @example
- * stringifyJSON({ id: 1, tags: ['a'] }); // '{"id":1,"tags":["a"]}'
+ * import { stringifyJson } from 'jg-utilities';
+ *
+ * stringifyJson({ id: 1, tags: ['a'] }); // => '{"id":1,"tags":["a"]}'
  * @throws
  * - UNSUPPORTED_DATA_TYPE: if the provided value is not an object or an array
  * - UNABLE_TO_SERIALIZE_JSON: if the result of JSON.stringify is not a valid string
  * - UNABLE_TO_SERIALIZE_JSON: if an error is thrown during stringification
  */
-export const stringifyJSON = <T>(value: T): string => {
-  canJSONBeSerialized(value);
+export const stringifyJson = <T>(value: T): string => {
+  canJsonBeSerialized(value);
   try {
     const result = JSON.stringify(value);
-    validateJSONSerializationResult(value, result);
+    validateJsonSerializationResult(value, result);
     return result;
   } catch (error) {
     if (getErrorCode(error) !== ERRORS.UNABLE_TO_SERIALIZE_JSON) {
-      throw new Exception(
-        `Failed to stringify the JSON value '${String(value)}': ${extractMessage(error)}`,
-        ERRORS.UNABLE_TO_SERIALIZE_JSON,
-      );
+      throw new Exception(`Failed to stringify the JSON value '${String(value)}'.`, {
+        code: ERRORS.UNABLE_TO_SERIALIZE_JSON,
+        cause: error,
+      });
     }
     throw error;
   }
@@ -46,21 +48,23 @@ export const stringifyJSON = <T>(value: T): string => {
  * @param value The value to be serialized. It should be an object or an array.
  * @returns A string representing the serialized JSON object with sorted keys.
  * @example
- * stringifyJSONDeterministically({ b: 1, a: { d: 2, c: 3 } }); // '{"a":{"c":3,"d":2},"b":1}'
+ * import { stringifyJsonDeterministically } from 'jg-utilities';
+ *
+ * stringifyJsonDeterministically({ b: 1, a: { d: 2, c: 3 } }); // => '{"a":{"c":3,"d":2},"b":1}'
  * @throws
  * - UNSUPPORTED_DATA_TYPE: if the provided value is not an object or an array
  * - UNABLE_TO_SERIALIZE_JSON: if the result of JSON.stringify is not a valid string
  * - UNABLE_TO_SERIALIZE_JSON: if an error is thrown during stringification
  */
-export const stringifyJSONDeterministically = <T>(value: T): string => {
-  canJSONBeSerialized(value);
+export const stringifyJsonDeterministically = <T>(value: T): string => {
+  canJsonBeSerialized(value);
   try {
-    return stringifyJSON(sortJSONObjectKeys(value) as object);
+    return stringifyJson(sortJsonObjectKeys(value) as object);
   } catch (error) {
     if (getErrorCode(error) !== ERRORS.UNABLE_TO_SERIALIZE_JSON) {
       throw new Exception(
-        `Failed to stringify the JSON value deterministically '${String(value)}': ${extractMessage(error)}`,
-        ERRORS.UNABLE_TO_SERIALIZE_JSON,
+        `Failed to stringify the JSON value deterministically '${String(value)}'.`,
+        { code: ERRORS.UNABLE_TO_SERIALIZE_JSON, cause: error },
       );
     }
     throw error;
@@ -72,24 +76,26 @@ export const stringifyJSONDeterministically = <T>(value: T): string => {
  * @param value The JSON string to be deserialized.
  * @returns The deserialized object or array.
  * @example
- * const user = parseJSON<{ id: number }>('{"id":1}'); // { id: 1 }
+ * import { parseJson } from 'jg-utilities';
+ *
+ * const user = parseJson<{ id: number }>('{"id":1}'); // { id: 1 }
  * @throws
  * - UNSUPPORTED_DATA_TYPE: if the provided value is not a non-empty string
  * - UNABLE_TO_DESERIALIZE_JSON: if the result of JSON.parse is not a valid object or array
  * - UNABLE_TO_DESERIALIZE_JSON: if an error is thrown during parsing
  */
-export const parseJSON = <T>(value: string): T => {
-  canJSONBeDeserialized(value);
+export const parseJson = <T>(value: string): T => {
+  canJsonBeDeserialized(value);
   try {
     const result: unknown = JSON.parse(value);
-    validateJSONDeserializationResult(value, result);
+    validateJsonDeserializationResult(value, result);
     return result as T;
   } catch (error) {
     if (getErrorCode(error) !== ERRORS.UNABLE_TO_DESERIALIZE_JSON) {
-      throw new Exception(
-        `Failed to parse the JSON value '${value}': ${extractMessage(error)}`,
-        ERRORS.UNABLE_TO_DESERIALIZE_JSON,
-      );
+      throw new Exception(`Failed to parse the JSON value '${value}'.`, {
+        code: ERRORS.UNABLE_TO_DESERIALIZE_JSON,
+        cause: error,
+      });
     }
     throw error;
   }
@@ -100,16 +106,18 @@ export const parseJSON = <T>(value: string): T => {
  * @param value The value to be pruned. It should be an object, array, or primitive value.
  * @returns The pruned value, or null if the value is empty or invalid.
  * @example
- * pruneJSON({ a: 1, b: null, c: {}, d: [], e: { f: [] } }); // { a: 1 }
+ * import { pruneJson } from 'jg-utilities';
+ *
+ * pruneJson({ a: 1, b: null, c: {}, d: [], e: { f: [] } }); // => { a: 1 }
  */
-export const pruneJSON = <T extends IJSONValue>(value: T): T | null => {
+export const pruneJson = <T extends IJsonValue>(value: T): T | null => {
   if (value === null || value === undefined) {
     return null;
   }
 
   if (Array.isArray(value)) {
     const cleanedArray = value
-      .map((item) => pruneJSON(item))
+      .map((item) => pruneJson(item))
       .filter((item) => {
         if (item === null || item === undefined) return false;
         if (Array.isArray(item)) return item.length > 0;
@@ -122,14 +130,14 @@ export const pruneJSON = <T extends IJSONValue>(value: T): T | null => {
   }
 
   if (isObjectValid(value, true)) {
-    const cleanedObject: Record<string, IJSONValue> = {};
+    const cleanedObject: Record<string, IJsonValue> = {};
 
     Object.entries(value).forEach(([key, item]) => {
-      const cleanedItem = pruneJSON(item);
+      if (item === undefined) return;
+      const cleanedItem = pruneJson(item);
 
+      // pruneJson returns null for anything empty, so what's left has content
       if (cleanedItem === null || cleanedItem === undefined) return;
-      if (Array.isArray(cleanedItem) && cleanedItem.length === 0) return;
-      if (isObjectValid(cleanedItem, true) && !isObjectValid(cleanedItem)) return;
 
       cleanedObject[key] = cleanedItem;
     });

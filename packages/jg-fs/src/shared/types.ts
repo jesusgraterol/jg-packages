@@ -65,3 +65,14 @@ export type IReadBufferFileOptions = {
 
 // the options readFile accepts
 export type IReadFileOptions = IReadBufferFileOptions | IReadStringFileOptions;
+
+// validates parsed data and returns it typed, which a Zod schema does
+export type ISchema<T> = {
+  parse(value: unknown): T;
+};
+
+// what readJsonFile accepts
+export type IReadJsonFileOptions<T> = {
+  // validates the parsed content, such as a Zod schema. Its errors propagate unchanged
+  schema?: ISchema<T>;
+};

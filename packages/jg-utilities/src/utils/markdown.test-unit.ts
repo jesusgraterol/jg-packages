@@ -7,6 +7,12 @@ import {
 } from './markdown.js';
 
 describe('extractFirstMarkdownHeadingName', () => {
+  test('reads a heading after a fence indented by four spaces, which is code, not a fence', () => {
+    expect(extractFirstMarkdownHeadingName(['    ```', '# Title', '    ```'].join('\n'))).toBe(
+      'Title',
+    );
+  });
+
   test.each(['', '  ', '\n', '\t', 'Hello world :)'])(
     'returns null when section is invalid: %j',
     (section) => {

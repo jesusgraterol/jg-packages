@@ -1,0 +1,55 @@
+---
+// a column of footer links
+interface IFooterColumn {
+  links: readonly { href: string; label: string; external?: boolean | undefined }[];
+  title: string;
+}
+
+interface Props {
+  columns: readonly IFooterColumn[];
+  // short lines under the columns, such as the domain and the license
+  notes?: readonly string[] | undefined;
+}
+
+// spoken after an external link's text, so screen reader users know it opens a new tab
+const NEW_TAB_NOTICE = ' (opens in a new tab)';
+
+const { columns, notes = [] } = Astro.props;
+---
+
+<footer class="border-t border-border py-12 sm:py-16">
+  <div class="jg-container grid gap-10 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto] lg:gap-16">
+    <div class="max-w-md">
+      <slot name="brand" />
+      <div class="mt-4 text-sm leading-6 text-muted">
+        <slot name="about" />
+      </div>
+    </div>
+    {columns.map(({ links, title }) => (
+      <nav
+        class="grid min-w-40 content-start gap-2 text-sm"
+        aria-label={title}
+      >
+        <p class="mb-2 font-mono text-xs font-bold text-muted uppercase">{title}</p>
+        {links.map(({ external = false, href, label }) => (
+          <a
+            href={href}
+            class="w-fit underline-offset-4 hover:underline"
+            target={external ? '_blank' : undefined}
+            rel={external ? 'noreferrer' : undefined}
+          >
+            {label}
+            {external && <span class="sr-only">{NEW_TAB_NOTICE}</span>}
+          </a>
+        ))}
+      </nav>
+    ))}
+  </div>
+  {notes.length > 0 && (
+    <div class="jg-container mt-12 flex flex-wrap gap-x-6 gap-y-1 border-t border-border pt-6 font-mono text-xs text-muted">
+      {notes.map((note) => (
+        <span>{note}</span>
+      ))}
+    </div>
+  )}
+</footer>

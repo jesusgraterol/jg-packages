@@ -1,12 +1,5 @@
-import { DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
-import type { IDecodedError, IErrorCode } from '../shared/types.js';
-import { unwrapCode, wrapCode } from '../utils/index.js';
-import {
-  extractZodErrorMessage,
-  getDecodedErrorCode,
-  isZodErrorLike,
-  redactSensitiveValues,
-} from './utilities.js';
+import { DEFAULT_MESSAGE } from '../shared/constants.js';
+import { extractZodErrorMessage, isZodErrorLike, redactSensitiveValues } from './utilities.js';
 
 /*
  * General errors
@@ -81,9 +74,11 @@ const extractMessageFrom = (error: unknown, visitedErrors: WeakSet<object>): str
  * @param error The error to extract the message from.
  * @returns The extracted message, or `DEFAULT_MESSAGE`.
  * @example
- * extractMessage(new Error('Not found')); // 'Not found'
- * extractMessage({ reason: 'Timed out' }); // 'Timed out'
- * extractMessage(undefined); // DEFAULT_MESSAGE
+ * import { DEFAULT_MESSAGE, extractMessage } from 'jg-exception';
+ *
+ * extractMessage(new Error('Not found')); // => 'Not found'
+ * extractMessage({ reason: 'Timed out' }); // => 'Timed out'
+ * extractMessage(undefined) === DEFAULT_MESSAGE; // => true
  */
 export const extractMessage = (error: unknown): string => extractMessageFrom(error, new WeakSet());
 
@@ -94,72 +89,34 @@ export const extractMessage = (error: unknown): string => extractMessageFrom(err
  * @param sensitiveValues The exact values to redact, such as tokens or passwords.
  * @returns The extracted message with the sensitive values redacted.
  * @example
- * extractRedactedMessage(new Error('Bad token abc123'), ['abc123']); // 'Bad token [redacted]'
+ * import { extractRedactedMessage } from 'jg-exception';
+ *
+ * extractRedactedMessage(new Error('Bad token abc123'), ['abc123']); // => 'Bad token [redacted]'
  */
 export const extractRedactedMessage = (error: unknown, sensitiveValues: string[]): string =>
   redactSensitiveValues(extractMessage(error), sensitiveValues);
-
-/*
- * Encoding and decoding
- */
-
-/**
- * Extracts an error's message and appends the code to it, wrapped so it can be decoded later.
- * @param error The error to encode, of any shape.
- * @param code The error code to append.
- * @returns The encoded message, such as `The user was not found.{(USER_NOT_FOUND)}`.
- * @example
- * encodeError('The user was not found.', 'USER_NOT_FOUND');
- * // 'The user was not found.{(USER_NOT_FOUND)}'
- */
-export const encodeError = (error: unknown, code: IErrorCode): string =>
-  `${extractMessage(error)}${wrapCode(code)}`;
-
-/**
- * Decodes an error of any shape into its message, its code, and its `data`. The code comes from an
- * encoded message, or else from the error's own `code` property, and is always a string.
- * @param error The error to decode, of any shape.
- * @returns The message without the encoded code, the code or `DEFAULT_CODE`, and the error's
- * `data` or `null`.
- * @example
- * decodeError(new Error('The user was not found.{(USER_NOT_FOUND)}'));
- * // { message: 'The user was not found.', code: 'USER_NOT_FOUND', data: null }
- */
-export const decodeError = (error: unknown): IDecodedError => {
-  const encodedErrorMessage = extractMessage(error);
-  const { code, startsAt } = unwrapCode(encodedErrorMessage);
-  return {
-    message: startsAt > 0 ? encodedErrorMessage.slice(0, startsAt) : encodedErrorMessage,
-    code: getDecodedErrorCode(error, code),
-    data: error !== null && typeof error === 'object' && 'data' in error ? error.data : null,
-  };
-};
 
 /*
  * Code helpers
  */
 
 /**
- * Checks whether an error carries a code, either encoded in its message or in a `code` property.
- * @param error The error to check, of any shape.
- * @returns Whether the error has a code other than the default.
- * @example
- * isEncodedError(new Error('Not found{(NOT_FOUND)}')); // true
- * isEncodedError(new Error('Not found')); // false
- */
-export const isEncodedError = (error: unknown): boolean => decodeError(error).code !== DEFAULT_CODE;
-
-/**
- * Reads an error's code, as a string.
+ * Reads an error's code: the non-empty string in its `code` property, as on an Exception, a
+ * Node.js system error, or a provider's error object.
  * @param error The error to read, of any shape.
  * @returns The code, or `null` when the error has none.
  * @example
- * getErrorCode(new Exception('Not found', 404)); // '404'
- * getErrorCode(new Error('Not found')); // null
+ * import { Exception, getErrorCode } from 'jg-exception';
+ *
+ * getErrorCode(new Exception('Not found', { code: 'NOT_FOUND' })); // => 'NOT_FOUND'
+ * getErrorCode(new Error('Not found')); // => null
  */
 export const getErrorCode = (error: unknown): string | null => {
-  const { code } = decodeError(error);
-  return code !== DEFAULT_CODE ? code : null;
+  if (typeof error !== 'object' || error === null) {
+    return null;
+  }
+  const { code } = error as { code?: unknown };
+  return typeof code === 'string' && code.length > 0 ? code : null;
 };
 
 /**
@@ -168,7 +125,9 @@ export const getErrorCode = (error: unknown): string | null => {
  * @param prefix The non-empty prefix to look for.
  * @returns Whether the code starts with the prefix; always `false` for an empty prefix.
  * @example
- * hasErrorCodePrefix(new Exception('Denied', 'AUTH_EXPIRED'), 'AUTH_'); // true
+ * import { Exception, hasErrorCodePrefix } from 'jg-exception';
+ *
+ * hasErrorCodePrefix(new Exception('Denied', { code: 'AUTH_EXPIRED' }), 'AUTH_'); // => true
  */
 export const hasErrorCodePrefix = (error: unknown, prefix: string): boolean => {
   if (prefix.length === 0) {
@@ -181,25 +140,18 @@ export const hasErrorCodePrefix = (error: unknown, prefix: string): boolean => {
 };
 
 /**
- * Checks whether an error has a code, comparing codes as strings, so `404` and `'404'` match. The
- * error may also be the code itself.
+ * Checks whether an error has a code. The error may also be the code itself.
  * @param error The error to check, of any shape.
  * @param code The code to look for.
  * @returns Whether the error has the code.
  * @example
- * hasErrorCode(new Exception('Not found', 404), '404'); // true
- * hasErrorCode('NOT_FOUND', 'NOT_FOUND'); // true
+ * import { Exception, hasErrorCode } from 'jg-exception';
+ *
+ * hasErrorCode(new Exception('Not found', { code: 'NOT_FOUND' }), 'NOT_FOUND'); // => true
+ * hasErrorCode('NOT_FOUND', 'NOT_FOUND'); // => true
  */
-export const hasErrorCode = (error: unknown, code: IErrorCode): boolean => {
-  if (error === null) {
-    return false;
-  }
-  const expectedCode = String(code);
-  if ((typeof error === 'string' || typeof error === 'number') && String(error) === expectedCode) {
-    return true;
-  }
-  return decodeError(error).code === expectedCode;
-};
+export const hasErrorCode = (error: unknown, code: string): boolean =>
+  code.length > 0 && (typeof error === 'string' ? error : getErrorCode(error)) === code;
 
 /**
  * Checks whether a value is, or contains, the default message the package falls back to.
@@ -207,7 +159,9 @@ export const hasErrorCode = (error: unknown, code: IErrorCode): boolean => {
  * @param fullMatch Whether the whole value must be the default message.
  * @returns Whether the value matches the default message.
  * @example
- * isDefaultErrorMessage(extractMessage(undefined), true); // true
+ * import { extractMessage, isDefaultErrorMessage } from 'jg-exception';
+ *
+ * isDefaultErrorMessage(extractMessage(undefined), true); // => true
  */
 export const isDefaultErrorMessage = (
   value: string,

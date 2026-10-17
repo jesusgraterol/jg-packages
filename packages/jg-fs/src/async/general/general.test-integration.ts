@@ -14,7 +14,7 @@ describe('General Actions', () => {
     typeof path === 'string' ? join(root, 'fs-test-dir', path) : join(root, 'fs-test-dir');
 
   beforeAll(async () => {
-    root = await mkdtemp(join(tmpdir(), 'fs-utils-async-'));
+    root = await mkdtemp(join(tmpdir(), 'jg-fs-'));
   });
 
   beforeEach(async () => {

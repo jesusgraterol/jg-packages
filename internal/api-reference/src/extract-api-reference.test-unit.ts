@@ -19,7 +19,7 @@ const getSymbol = (name: string): IApiSymbol => {
 
 beforeAll(async () => {
   reference = await extractApiReference(join(FIXTURES_DIRECTORY, 'sample-package'));
-}, 30_000);
+});
 
 describe('extractApiReference', () => {
   test('documents every TypeScript entry point and skips the others', () => {

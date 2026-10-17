@@ -1,6 +1,12 @@
+import { execFile } from 'node:child_process';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { promisify } from 'node:util';
+
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 
 import { FetchException } from '../fetch-exception/index.js';
+import { ERROR_MESSAGES } from '../shared/index.js';
 import { request } from './request.js';
 import { sendJson, startTestServer, type ITestServer } from './server.test-utils.js';
 
@@ -154,22 +160,30 @@ describe('envelopes', () => {
     expect(second).toMatchObject({ data: 2, error: null });
   });
 
-  test('reports a failed envelope as API_ERROR with the decoded code and the data', async () => {
+  test("reports a failed envelope as API_ERROR with the envelope error's code, message, and data", async () => {
     const path = uniquePath('api-error');
     server.route(path, (_request, response, attempt) => {
       if (attempt === 1) {
         sendJson(response, 404, {
           success: false,
-          data: { id: 7 },
-          error: 'The user was not found.{(USER_NOT_FOUND)}',
+          data: { partial: true },
+          error: { code: 'USER_NOT_FOUND', message: 'The user was not found.', data: { id: 7 } },
         });
         return;
       }
-      sendJson(response, 200, { success: false, error: 'No code here.' });
+      if (attempt === 2) {
+        sendJson(response, 200, {
+          success: false,
+          error: { code: 'RATE_LIMITED', message: 'Slow down.' },
+        });
+        return;
+      }
+      sendJson(response, 200, { success: false, error: null });
     });
 
     const notFound = await request(`${server.origin}${path}`, { parseAs: 'envelope' });
-    const uncoded = await request(`${server.origin}${path}`, { parseAs: 'envelope' });
+    const withoutData = await request(`${server.origin}${path}`, { parseAs: 'envelope' });
+    const withoutError = await request(`${server.origin}${path}`, { parseAs: 'envelope' });
 
     expect(notFound.error).toBeInstanceOf(FetchException);
     expect(notFound.error).toMatchObject({
@@ -177,15 +191,39 @@ describe('envelopes', () => {
       code: 'USER_NOT_FOUND',
       message: 'The user was not found.',
       data: { id: 7 },
+      body: {
+        success: false,
+        data: { partial: true },
+        error: { code: 'USER_NOT_FOUND', message: 'The user was not found.', data: { id: 7 } },
+      },
       status: 404,
       attempts: 1,
     });
-    expect(uncoded.error).toMatchObject({
+    expect(withoutData.error).toMatchObject({
       kind: 'API_ERROR',
-      code: 'API_ERROR',
-      message: 'No code here.',
+      code: 'RATE_LIMITED',
+      message: 'Slow down.',
+      data: null,
       status: 200,
     });
+    expect(withoutError.error).toMatchObject({
+      kind: 'API_ERROR',
+      code: 'API_ERROR',
+      message: ERROR_MESSAGES.API_ERROR,
+      data: null,
+      status: 200,
+    });
+  });
+
+  test('reports an envelope whose error is a string as ENVELOPE_INVALID', async () => {
+    const path = uniquePath('string-error');
+    server.route(path, (_request, response) => {
+      sendJson(response, 200, { success: false, error: 'Not found' });
+    });
+
+    const { error } = await request(`${server.origin}${path}`, { parseAs: 'envelope' });
+
+    expect(error).toMatchObject({ kind: 'ENVELOPE_INVALID', code: 'ENVELOPE_INVALID' });
   });
 
   test('reports an HTML 502 as HTTP_ERROR with its body', async () => {
@@ -328,7 +366,10 @@ describe('retries', () => {
       response.writeHead(404).end();
     });
     server.route(quota, (_request, response) => {
-      sendJson(response, 503, { success: false, error: 'Quota exceeded.{(QUOTA)}' });
+      sendJson(response, 503, {
+        success: false,
+        error: { code: 'QUOTA', message: 'Quota exceeded.', data: null },
+      });
     });
 
     const first = await request(`${server.origin}${notFound}`, {
@@ -496,6 +537,134 @@ describe('timeouts and aborts', () => {
   });
 });
 
+describe('headers callbacks that never settle', () => {
+  // a headers callback whose promise never settles, such as a token refresh that hangs
+  const neverSettles = (): Promise<Record<string, string>> => new Promise(() => undefined);
+
+  test('the whole call ends at timeoutSeconds with TIMEOUT, without sending anything', async () => {
+    const path = uniquePath('headers-hang');
+    server.route(path, (_request, response) => {
+      sendJson(response, 200, { ok: true });
+    });
+
+    const { data, error, meta } = await request(`${server.origin}${path}`, {
+      timeoutSeconds: 0.05,
+      headers: neverSettles,
+    });
+
+    expect(data).toBeNull();
+    expect(error).toMatchObject({ kind: 'TIMEOUT', attempts: 1 });
+    expect(meta.durationMs).toBeLessThan(1_000);
+    expect(server.requests(path)).toHaveLength(0);
+  });
+
+  test('the attempt ends at attemptTimeoutSeconds, and the next attempt goes ahead', async () => {
+    const path = uniquePath('headers-hang-once');
+    server.route(path, (request, response) => {
+      sendJson(response, 200, { token: request.headers['authorization'] });
+    });
+
+    const { data, error, meta } = await request(`${server.origin}${path}`, {
+      attemptTimeoutSeconds: 0.05,
+      retryDelaysSeconds: [0],
+      headers: ({ attempt }) =>
+        attempt === 1 ? neverSettles() : { authorization: `Bearer token-${attempt}` },
+    });
+
+    expect(error).toBeNull();
+    expect(data).toStrictEqual({ token: 'Bearer token-2' });
+    expect(meta.attempts).toBe(2);
+    expect(server.requests(path)).toHaveLength(1);
+  });
+
+  test('a Node.js process with nothing else to do stays alive until the timeout', async () => {
+    // the built package, which `test:integration` builds first
+    const entry = pathToFileURL(join(import.meta.dirname, '..', '..', 'dist', 'index.js')).href;
+    const script = [
+      `import { request } from ${JSON.stringify(entry)};`,
+      "const { error } = await request('http://127.0.0.1:9/', {",
+      '  timeoutSeconds: 0.05,',
+      '  headers: () => new Promise(() => undefined),',
+      '});',
+      'process.stdout.write(error.kind);',
+    ].join('\n');
+
+    const { stdout } = await promisify(execFile)(
+      process.execPath,
+      ['--input-type=module', '--eval', script],
+      { timeout: 10_000 },
+    );
+
+    expect(stdout).toBe('TIMEOUT');
+  });
+
+  test("the caller's abort ends the call as ABORTED", async () => {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 50);
+
+    const { error, meta } = await request(`${server.origin}${uniquePath('headers-abort')}`, {
+      signal: controller.signal,
+      headers: neverSettles,
+    });
+
+    expect(error).toMatchObject({ kind: 'ABORTED', attempts: 1 });
+    expect(meta.durationMs).toBeLessThan(1_000);
+  });
+
+  test('a callback that rejects after the abort changes nothing', async () => {
+    const { error } = await request(`${server.origin}${uniquePath('headers-late')}`, {
+      timeoutSeconds: 0.05,
+      headers: () =>
+        new Promise((_resolve, reject) => {
+          setTimeout(() => reject(new Error('too late')), 150);
+        }),
+    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    expect(error).toMatchObject({ kind: 'TIMEOUT' });
+  });
+
+  test('a callback that rejects while the signal is already aborted leaves nothing unhandled', async () => {
+    // an unhandled rejection fails the run, and crashes a Node.js process by default
+    const { error } = await request(`${server.origin}${uniquePath('headers-aborted')}`, {
+      signal: AbortSignal.abort(new Error('stopped')),
+      headers: () => Promise.reject(new Error('no token')),
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(error).toMatchObject({ kind: 'ABORTED' });
+  });
+
+  test('a callback that rejects in time is still INVALID_HEADERS', async () => {
+    const cause = new Error('no token');
+
+    const { error } = await request(`${server.origin}${uniquePath('headers-reject')}`, {
+      headers: () => Promise.reject(cause),
+    });
+
+    expect(error).toMatchObject({ kind: 'INVALID_HEADERS', cause });
+  });
+});
+
+describe('fractional timeouts', () => {
+  test.each([
+    ['timeoutSeconds', { timeoutSeconds: 0.0015 }],
+    ['attemptTimeoutSeconds', { attemptTimeoutSeconds: 0.0015, retryDelaysSeconds: [] }],
+    ['both', { timeoutSeconds: 0.0015, attemptTimeoutSeconds: 0.0015 }],
+  ])('%s of 0.0015 resolves with a result instead of rejecting', async (_, options) => {
+    const path = uniquePath('fractional');
+    server.route(path, async (_request, response) => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      sendJson(response, 200, { ok: true });
+    });
+
+    const result = await request(`${server.origin}${path}`, options);
+
+    expect(result.error).toMatchObject({ kind: 'TIMEOUT' });
+    expect(result.data).toBeNull();
+  });
+});
+
 describe('response size', () => {
   test('stops reading past maxResponseBytes, with and without a Content-Length', async () => {
     const declared = uniquePath('large-declared');
@@ -544,7 +713,7 @@ describe('error messages', () => {
     expect(error?.url).toBe(`${server.origin}${path}`);
     expect(meta.url).toBe(`${server.origin}${path}`);
     expect(error?.body).toBe('internal detail');
-    for (const serialized of [String(error), JSON.stringify(error?.toRecord())]) {
+    for (const serialized of [String(error), JSON.stringify(error)]) {
       expect(serialized).not.toContain('secret-token');
       expect(serialized).not.toContain('hunter2');
     }

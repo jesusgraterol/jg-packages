@@ -1,6 +1,6 @@
 {
   "name": "jg-bignumber",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Exact decimal math with bignumber.js: rounding, formatting, and sum, mean, percentage, and exchange calculations.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -15,7 +15,8 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "API.md"
   ],
   "sideEffects": false,
   "engines": {
@@ -42,10 +43,11 @@
     "percentage"
   ],
   "scripts": {
-    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json",
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
     "test": "pnpm test:unit",
     "test:bench": "vitest bench --run",
+    "test:coverage": "vitest run --coverage --project unit",
     "test:unit": "vitest run --project unit",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json"
   },
@@ -58,7 +60,9 @@
     "@jg-packages/tsconfig": "workspace:*",
     "@jg-packages/vitest-config": "workspace:*",
     "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
+    "fast-check": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

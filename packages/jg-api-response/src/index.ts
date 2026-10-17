@@ -1,5 +1,5 @@
 // types
-export type { IAPIResponse, IParsedAPIResponse } from './types.js';
+export type { IApiError, IApiResponse, IParsedApiError, IParsedApiResponse } from './types.js';
 
 // envelope
 export { buildResponse, isResponse } from './response.js';

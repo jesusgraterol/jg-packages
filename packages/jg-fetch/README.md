@@ -40,8 +40,10 @@ const { data, error } = await request('/users/me', {
   headers: async () => ({ authorization: `Bearer ${await getIdToken()}` }),
 });
 if (error?.kind === 'API_ERROR') {
-  error.code; // the API's own code, such as 'USER_NOT_FOUND'
-  error.data; // the envelope's data
+  error.code; // the envelope error's code, such as 'USER_NOT_FOUND'
+  error.message; // the envelope error's message
+  error.data; // the envelope error's data, or null without any
+  error.body; // the whole envelope
 }
 ```
 
@@ -80,15 +82,15 @@ Pass `signal` to cancel: its abort reports `ABORTED`, or `TIMEOUT` when its reas
 
 The error is a `FetchException`, an `Exception` from `jg-exception`:
 
-| Field                                     | Holds                                                                    |
-| ----------------------------------------- | ------------------------------------------------------------------------ |
-| `kind`                                    | What failed, one of `ERRORS`                                             |
-| `code`                                    | The API's own code for an `API_ERROR`, otherwise the kind                |
-| `status`, `headers`, `body`               | The response's status, headers, and body, parsed as JSON when it is JSON |
-| `data`                                    | The envelope's data, for an `API_ERROR`                                  |
-| `retryAfterMs`                            | The wait `Retry-After` asked for                                         |
-| `method`, `url`, `attempts`, `durationMs` | The request, without its query string or fragment                        |
-| `cause`                                   | The original error                                                       |
+| Field                                     | Holds                                                                                        |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `kind`                                    | What failed, one of `ERRORS`                                                                 |
+| `code`, `message`                         | The envelope error's code and message for an `API_ERROR`, otherwise the kind and its message |
+| `status`, `headers`, `body`               | The response's status, headers, and body, parsed as JSON when it is JSON                     |
+| `data`                                    | The envelope error's data for an `API_ERROR`, `null` when it has none; otherwise undefined   |
+| `retryAfterMs`                            | The wait `Retry-After` asked for                                                             |
+| `method`, `url`, `attempts`, `durationMs` | The request, without its query string or fragment                                            |
+| `cause`                                   | The original error                                                                           |
 
 Messages never include the URL or the body, and `url` and `meta.url` drop the query string and fragment, where tokens such as `?key=` sit.
 
@@ -96,30 +98,9 @@ Messages never include the URL or the body, and `url` and `meta.url` drop the qu
 
 A browser lets the page read only a few response headers from another origin. To read `Retry-After`, a `cf-ray`, or any custom header, the API must list them in `Access-Control-Expose-Headers`. Otherwise `headers.get()` returns `null`, and a `429` never retries, because its `Retry-After` can't be read.
 
-## Coming from `fetch-request-browser` and `fetch-request-node`
-
-| `fetch-request-browser` and `fetch-request-node`            | `jg-fetch`                                           |
-| ----------------------------------------------------------- | ---------------------------------------------------- |
-| `send(input, options)`                                      | `request(url, options)`                              |
-| `sendGET`, `sendPOST`, `sendPUT`, `sendPATCH`, `sendDELETE` | `request(url, { method })`                           |
-| `retryDelaySchedule` (browser)                              | `retryDelaysSeconds`                                 |
-| `skipStatusCodeValidation`                                  | read `error.status`, `error.body` and `meta` instead |
-| `IRequestMethod`                                            | `IHttpMethod`                                        |
-| `IResponseDataType`                                         | `IParseAs`                                           |
-| `IRequestResponse`                                          | `IRequestResult<T>`                                  |
-| thrown encoded errors                                       | the returned `error`, a `FetchException`             |
-
-`IRequestInput`, `IRequestOptions`, and `IOptions` are replaced by `string | URL` and the new `IRequestOptions<T>`.
-
-- One package works in browsers and Node.js.
-- `request` never throws: every failure is returned, with its `kind`.
-- Retry decisions match exact statuses, not substrings of the message, and only the methods in `retryMethods` retry, which leaves out `POST` by default.
-- Every call has a timeout, 15 seconds by default, and buffered bodies are capped at 10 MiB.
-- A redirect no longer logs a warning.
-
 ## Documentation
 
-The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-fetch/.
+The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-fetch/.
 
 ## License
 

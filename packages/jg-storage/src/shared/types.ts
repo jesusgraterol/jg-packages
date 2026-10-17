@@ -1,9 +1,14 @@
 // the mechanism a store keeps its records in
 export type IStoreMechanism = 'tempMemory' | 'localStorage' | 'sessionStorage' | 'indexedDB';
 
-// identifies a record in a store. undefined addresses the store's root record, and a string or a
-// number addresses the record stored under `${storeId}_${recordId}`
+// identifies a record in a store. undefined addresses the store's root record. A number becomes a
+// string, so 1 and '1' address the same record in every mechanism
 export type IRecordId = undefined | string | number;
+
+// validates data and returns it typed, which a Zod schema does
+export type ISchema<T> = {
+  parse(value: unknown): T;
+};
 
 // the options every store factory accepts
 export type IStoreOptions<T> = {
@@ -11,9 +16,8 @@ export type IStoreOptions<T> = {
   // get returns undefined and set and del throw STORE_UNAVAILABLE
   fallback?: 'memory';
 
-  // validates or converts every stored value get reads, such as a schema's parse. Its errors
-  // propagate
-  parse?: (value: unknown) => T;
+  // validates every stored value get reads, such as a Zod schema. Its errors propagate unchanged
+  schema?: ISchema<T>;
 };
 
 // a store whose methods return their results directly: localStorage, sessionStorage, and memory

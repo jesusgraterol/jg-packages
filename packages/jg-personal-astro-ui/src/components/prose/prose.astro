@@ -1,0 +1,12 @@
+---
+interface Props {
+  class?: string | undefined;
+}
+
+const { class: className } = Astro.props;
+---
+
+{/* styled by prose.css, which the site imports with its stylesheet */}
+<div class:list={['jg-prose', className]}>
+  <slot />
+</div>

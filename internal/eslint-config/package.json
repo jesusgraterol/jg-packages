@@ -14,12 +14,14 @@
   "scripts": {
     "lint": "eslint .",
     "test": "pnpm test:integration",
+    "test:coverage": "vitest run --coverage --project integration",
     "test:integration": "vitest run --project integration",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@eslint/js": "catalog:",
     "eslint-config-prettier": "catalog:",
+    "eslint-plugin-astro": "3.2.1",
     "globals": "catalog:",
     "typescript-eslint": "catalog:"
   },
@@ -29,6 +31,7 @@
   "devDependencies": {
     "@jg-packages/tsconfig": "workspace:*",
     "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

@@ -1,5 +1,3 @@
-import { extractMessage } from 'jg-exception';
-
 import {
   DEFAULT_MAX_RESPONSE_BYTES,
   DEFAULT_MAX_RETRY_AFTER_SECONDS,
@@ -87,7 +85,8 @@ const invalidOption = (detail: string): RequestFailure =>
  * @param name The option's name.
  * @param value The option's value.
  * @param allowZero Whether 0 is valid.
- * @returns The value in milliseconds.
+ * @returns The value in whole milliseconds, rounded up, because timers such as AbortSignal.timeout
+ * reject fractions. A value above 0 gives at least 1.
  */
 const toMs = (name: string, value: unknown, allowZero: boolean): number => {
   if (
@@ -101,7 +100,8 @@ const toMs = (name: string, value: unknown, allowZero: boolean): number => {
       `${name} must be a number of seconds ${allowZero ? 'from 0' : 'above 0'} up to ${MAX_TIMEOUT_SECONDS}.`,
     );
   }
-  return value * 1000;
+  const ms = Math.ceil(value * 1000);
+  return allowZero ? ms : Math.max(1, ms);
 };
 
 /**
@@ -336,10 +336,7 @@ export const serializeBody = (body: IRequestOptions<unknown>['body']): ISerializ
     try {
       return { value: JSON.stringify(body), isJson: true, isStream: false };
     } catch (error) {
-      throw new RequestFailure('INVALID_BODY', {
-        message: `${ERROR_MESSAGES.INVALID_BODY} ${extractMessage(error)}`,
-        cause: error,
-      });
+      throw new RequestFailure('INVALID_BODY', { cause: error });
     }
   }
   return {

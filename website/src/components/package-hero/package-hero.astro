@@ -1,0 +1,100 @@
+---
+import { BookOpen, GitBranch, Package } from '@lucide/astro';
+import Badge from 'jg-personal-astro-ui/badge';
+import Breadcrumb from 'jg-personal-astro-ui/breadcrumb';
+import Button from 'jg-personal-astro-ui/button';
+import GridLines from 'jg-personal-astro-ui/grid-lines';
+import PackageManagerTabs from 'jg-personal-astro-ui/package-manager-tabs';
+
+import { SITE_CONFIG } from '../../site.config.ts';
+import { RUNTIMES, type IListedPackage } from '../../utilities/package-catalog/index.ts';
+import PackageIcon from '../package-icon/package-icon.astro';
+
+interface Props {
+  package: IListedPackage;
+}
+
+const { package: listedPackage } = Astro.props;
+const sourceUrl = `${SITE_CONFIG.repositoryUrl}/tree/main/packages/${listedPackage.name}`;
+---
+
+<header class="relative isolate overflow-hidden border-b border-border">
+  <GridLines class="opacity-70" />
+  <div class="jg-container pt-8 pb-12 sm:pt-10 sm:pb-16">
+    <Breadcrumb
+      items={[
+        { name: SITE_CONFIG.name, href: '/' },
+        { name: listedPackage.name, href: `/packages/${listedPackage.name}/` },
+      ]}
+    />
+    <div class="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-end lg:gap-14">
+      <div>
+        <div class="flex items-center gap-4 sm:gap-5">
+          <PackageIcon
+            icon={listedPackage.icon}
+            size="header"
+          />
+          <div class="min-w-0">
+            <p class="eyebrow">{listedPackage.title}</p>
+            <h1 class="mt-2 font-mono text-[clamp(2rem,6vw,3.5rem)] leading-none font-bold tracking-tight wrap-anywhere">
+              {listedPackage.name}
+            </h1>
+          </div>
+        </div>
+        <p class="lede mt-5">{listedPackage.description}</p>
+        <div class="mt-6 flex flex-wrap items-center gap-2">
+          <Badge variant="default">v{listedPackage.version}</Badge>
+          {listedPackage.runtimes.map((runtime) => (
+            <Badge variant="secondary">{RUNTIMES[runtime].label}</Badge>
+          ))}
+          <Badge variant="outline">ESM</Badge>
+          <Badge variant="outline">MIT</Badge>
+        </div>
+      </div>
+      <div class="grid gap-4">
+        <PackageManagerTabs
+          id="install"
+          packages={listedPackage.name}
+          storageKey={SITE_CONFIG.storageKeys.packageManager}
+        />
+        <div class="flex flex-wrap gap-2">
+          <Button
+            href={`${SITE_CONFIG.npmUrl}${listedPackage.name}`}
+            external
+            size="sm"
+            variant="outline"
+          >
+            <Package
+              class="size-4"
+              aria-hidden="true"
+            />
+            npm
+          </Button>
+          <Button
+            href={sourceUrl}
+            external
+            size="sm"
+            variant="outline"
+          >
+            <GitBranch
+              class="size-4"
+              aria-hidden="true"
+            />
+            Source
+          </Button>
+          <Button
+            href="#api-reference"
+            size="sm"
+            variant="ghost"
+          >
+            <BookOpen
+              class="size-4"
+              aria-hidden="true"
+            />
+            API reference
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

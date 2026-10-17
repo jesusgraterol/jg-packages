@@ -1,0 +1,36 @@
+---
+import { ArrowUpRight } from '@lucide/astro';
+
+interface Props {
+  class?: string | undefined;
+  // opens the link in a new tab, with an arrow icon, the new-tab notice, and no referrer
+  external?: boolean | undefined;
+  href: string;
+}
+
+// spoken after the link text, so screen reader users know the link opens a new tab
+const NEW_TAB_NOTICE = ' (opens in a new tab)';
+
+const { class: className, external = false, href } = Astro.props;
+---
+
+<a
+  href={href}
+  class:list={[
+    'font-medium underline decoration-current/40 decoration-[0.08em] underline-offset-[0.18em] transition-colors hover:decoration-current',
+    className,
+  ]}
+  target={external ? '_blank' : undefined}
+  rel={external ? 'noreferrer' : undefined}
+>
+  <slot />
+  {external && (
+    <>
+      <ArrowUpRight
+        class="ml-0.5 inline-block size-3.5 shrink-0 align-[-0.1em]"
+        aria-hidden="true"
+      />
+      <span class="sr-only">{NEW_TAB_NOTICE}</span>
+    </>
+  )}
+</a>

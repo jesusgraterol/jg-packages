@@ -53,6 +53,8 @@ const FirebaseFcmConfigSchema = z.strictObject({
  * object passed to `buildServiceWorker`. `template` selects the worker: `base` caches the app,
  * and `firebase-fcm` also shows Firebase Cloud Messaging notifications.
  * @example
+ * import { ServiceWorkerConfigSchema } from 'jg-sw/build';
+ *
  * const config = ServiceWorkerConfigSchema.parse({
  *   outDir: 'dist',
  *   cacheNamePrefix: 'my-app',

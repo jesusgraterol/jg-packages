@@ -1,14 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import { z, ZodError, type ZodType } from 'zod';
 
-import { DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
-import { Exception } from '../exception/index.js';
-import {
-  extractZodErrorMessage,
-  getDecodedErrorCode,
-  isZodErrorLike,
-  redactSensitiveValues,
-} from './utilities.js';
+import { DEFAULT_MESSAGE } from '../shared/constants.js';
+import { extractZodErrorMessage, isZodErrorLike, redactSensitiveValues } from './utilities.js';
 
 /* ************************************************************************************************
  *                                             HELPERS                                            *
@@ -119,37 +113,6 @@ describe('extractZodErrorMessage', () => {
     expect(
       extractZodErrorMessage(new ZodError([{ code: 'custom', message: '', path: ['name'] }])),
     ).toBe(DEFAULT_MESSAGE);
-  });
-});
-
-describe('getDecodedErrorCode', () => {
-  test('returns the object code when the unwrapped code is the default code', () => {
-    expect(getDecodedErrorCode({ code: 'INVALID_INPUT' }, DEFAULT_CODE)).toBe('INVALID_INPUT');
-    expect(getDecodedErrorCode({ code: '0' }, DEFAULT_CODE)).toBe('0');
-    expect(getDecodedErrorCode({ code: 0 }, DEFAULT_CODE)).toBe('0');
-    expect(getDecodedErrorCode({ code: 100 }, DEFAULT_CODE)).toBe('100');
-    expect(getDecodedErrorCode(new Exception('There was an error.', 'INVALID_INPUT'), '-1')).toBe(
-      'INVALID_INPUT',
-    );
-  });
-
-  test('returns the default code when the unwrapped code is default and the error is not a carrier', () => {
-    expect(getDecodedErrorCode(null, DEFAULT_CODE)).toBe(DEFAULT_CODE);
-    expect(getDecodedErrorCode(undefined, DEFAULT_CODE)).toBe(DEFAULT_CODE);
-    expect(getDecodedErrorCode('INVALID_INPUT', DEFAULT_CODE)).toBe(DEFAULT_CODE);
-    expect(getDecodedErrorCode({ message: 'There was an error.' }, DEFAULT_CODE)).toBe(
-      DEFAULT_CODE,
-    );
-    expect(getDecodedErrorCode({ code: null }, DEFAULT_CODE)).toBe(DEFAULT_CODE);
-    expect(getDecodedErrorCode({ code: true }, DEFAULT_CODE)).toBe(DEFAULT_CODE);
-    expect(getDecodedErrorCode({ code: ['INVALID_INPUT'] }, DEFAULT_CODE)).toBe(DEFAULT_CODE);
-  });
-
-  test('returns the unwrapped code when it is not the default code', () => {
-    expect(getDecodedErrorCode({ code: 'OUTER_CODE' }, 'INNER_CODE')).toBe('INNER_CODE');
-    expect(getDecodedErrorCode({ code: 100 }, '200')).toBe('200');
-    expect(getDecodedErrorCode('There was an error.', 'INNER_CODE')).toBe('INNER_CODE');
-    expect(getDecodedErrorCode({ code: null }, 'INNER_CODE')).toBe('INNER_CODE');
   });
 });
 

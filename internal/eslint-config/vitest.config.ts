@@ -14,8 +14,24 @@ export default defineConfig({
           unstubEnvs: true,
           unstubGlobals: true,
           include: ['src/**/*.test-integration.ts'],
+          // the same timeouts as @jg-packages/vitest-config: type-aware linting builds a TypeScript
+          // program, which took 14 seconds in CI
+          testTimeout: 30_000,
+          hookTimeout: 30_000,
         },
       },
     ],
+    // the same coverage settings as @jg-packages/vitest-config
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      exclude: [
+        'src/**/*.test-*.ts',
+        'src/**/test-utils/**',
+        'src/**/fixtures/**',
+        'src/**/*.d.ts',
+      ],
+      reporter: ['text-summary'],
+    },
   },
 });

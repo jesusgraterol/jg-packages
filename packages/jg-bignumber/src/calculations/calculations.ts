@@ -14,8 +14,10 @@ import { validatePositiveValue, validateValuesArray } from '../validations/valid
  * @param config How the result is processed.
  * @returns The sum.
  * @example
- * calculateSum([0.1, '0.2', 0.3]); // 0.6
- * calculateSum([0.1, 0.2], { type: 'string' }); // '0.3'
+ * import { calculateSum } from 'jg-bignumber';
+ *
+ * calculateSum([0.1, '0.2', 0.3]); // => 0.6
+ * calculateSum([0.1, 0.2], { type: 'string' }); // => '0.3'
  * @throws
  * - INVALID_VALUE: if any of the given values isn't a finite number or BigNumber throws an error
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason
@@ -37,7 +39,9 @@ export const calculateSum = <T extends Partial<IConfig>>(
  * @param config How the result is processed.
  * @returns The smallest value.
  * @example
- * calculateMin([3, '1.5', 2]); // 1.5
+ * import { calculateMin } from 'jg-bignumber';
+ *
+ * calculateMin([3, '1.5', 2]); // => 1.5
  * @throws
  * - INVALID_VALUE: if any of the given values isn't a finite number or BigNumber throws an error
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason
@@ -59,7 +63,9 @@ export const calculateMin = <T extends Partial<IConfig>>(
  * @param config How the result is processed.
  * @returns The largest value.
  * @example
- * calculateMax([3, '1.5', 2]); // 3
+ * import { calculateMax } from 'jg-bignumber';
+ *
+ * calculateMax([3, '1.5', 2]); // => 3
  * @throws
  * - INVALID_VALUE: if any of the given values isn't a finite number or BigNumber throws an error
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason
@@ -81,7 +87,9 @@ export const calculateMax = <T extends Partial<IConfig>>(
  * @param config How the result is processed.
  * @returns The mean.
  * @example
- * calculateMean([1, 2, 4]); // 2.33
+ * import { calculateMean } from 'jg-bignumber';
+ *
+ * calculateMean([1, 2, 4]); // => 2.33
  * @throws
  * - INVALID_VALUE: if any of the given values isn't a finite number or BigNumber throws an error
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason
@@ -107,8 +115,10 @@ export const calculateMean = <T extends Partial<IConfig>>(
  * @param config How the result is processed.
  * @returns The median.
  * @example
- * calculateMedian([5, 1, 3]); // 3
- * calculateMedian([4, 1, 3, 2]); // 2.5
+ * import { calculateMedian } from 'jg-bignumber';
+ *
+ * calculateMedian([5, 1, 3]); // => 3
+ * calculateMedian([4, 1, 3, 2]); // => 2.5
  * @throws
  * - INVALID_VALUE: if any of the given values isn't a finite number or BigNumber throws an error
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason
@@ -145,9 +155,11 @@ export const calculateMedian = <T extends Partial<IConfig>>(
  * @param config How the result is processed.
  * @returns The percentage change.
  * @example
- * calculatePercentageChange(100, 125); // 25
- * calculatePercentageChange(100, 80); // -20
- * calculatePercentageChange(100, 0); // -100
+ * import { calculatePercentageChange } from 'jg-bignumber';
+ *
+ * calculatePercentageChange(100, 125); // => 25
+ * calculatePercentageChange(100, 80); // => -20
+ * calculatePercentageChange(100, 0); // => -100
  * @throws
  * - INVALID_VALUE: if any of the given values isn't a finite number or BigNumber throws an error
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason
@@ -185,8 +197,10 @@ export const calculatePercentageChange = <T extends Partial<IConfig>>(
  * @param config How the result is processed.
  * @returns The changed value.
  * @example
- * adjustByPercentage(100, 25); // 125
- * adjustByPercentage(100, -10); // 90
+ * import { adjustByPercentage } from 'jg-bignumber';
+ *
+ * adjustByPercentage(100, 25); // => 125
+ * adjustByPercentage(100, -10); // => 90
  * @throws
  * - INVALID_VALUE: if any of the given values isn't a finite number or BigNumber throws an error
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason
@@ -223,7 +237,9 @@ export const adjustByPercentage = <T extends Partial<IConfig>>(
  * @param config How the result is processed.
  * @returns The percentage.
  * @example
- * calculatePercentageRepresentation(25, 200); // 12.5
+ * import { calculatePercentageRepresentation } from 'jg-bignumber';
+ *
+ * calculatePercentageRepresentation(25, 200); // => 12.5
  * @throws
  * - INVALID_VALUE: if any of the given values isn't a finite number or BigNumber throws an error
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason
@@ -255,7 +271,9 @@ export const calculatePercentageRepresentation = <T extends Partial<IConfig>>(
  * @param config How the result is processed.
  * @returns The amount received.
  * @example
- * calculateExchange(100, 65000, { decimalPlaces: 8 }); // 0.00153846
+ * import { calculateExchange } from 'jg-bignumber';
+ *
+ * calculateExchange(100, 65000, { decimalPlaces: 8 }); // => 0.00153846
  * @throws
  * - INVALID_VALUE: if any of the given values isn't a finite number or BigNumber throws an error
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason
@@ -282,7 +300,9 @@ export const calculateExchange = <T extends Partial<IConfig>>(
  * @param config How the result is processed.
  * @returns The fee.
  * @example
- * calculateExchangeFee(1000, 0.1); // 1
+ * import { calculateExchangeFee } from 'jg-bignumber';
+ *
+ * calculateExchangeFee(1000, 0.1); // => 1
  * @throws
  * - INVALID_VALUE: if any of the given values isn't a finite number or BigNumber throws an error
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason
@@ -309,8 +329,10 @@ export const calculateExchangeFee = <T extends Partial<IConfig>>(
  * @param config How the result is processed.
  * @returns The weighted average price.
  * @example
- * calculateWeightedEntry([[100, 2], [130, 1]]); // 110
- * calculateWeightedEntry([]); // 0
+ * import { calculateWeightedEntry } from 'jg-bignumber';
+ *
+ * calculateWeightedEntry([[100, 2], [130, 1]]); // => 110
+ * calculateWeightedEntry([]); // => 0
  * @throws
  * - INVALID_VALUE: if any of the given values isn't a finite number or BigNumber throws an error
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason

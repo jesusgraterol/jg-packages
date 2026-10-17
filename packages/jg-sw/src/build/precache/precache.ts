@@ -57,17 +57,15 @@ export const buildPrecacheAssetPaths = async (
     }
     const path = join(outDir, includedPath);
     if (!isPathWithin(outDir, path)) {
-      throw new Exception(
-        `The asset '${includedPath}' is outside the outDir '${outDir}'.`,
-        ERRORS.NOT_A_PATH_ELEMENT,
-      );
+      throw new Exception(`The asset '${includedPath}' is outside the outDir '${outDir}'.`, {
+        code: ERRORS.NOT_A_PATH_ELEMENT,
+      });
     }
     const element = await getPathElement(path);
     if (element === null || (!element.isFile && !element.isDirectory)) {
-      throw new Exception(
-        `The asset '${path}' is not a file or a directory.`,
-        ERRORS.NOT_A_PATH_ELEMENT,
-      );
+      throw new Exception(`The asset '${path}' is not a file or a directory.`, {
+        code: ERRORS.NOT_A_PATH_ELEMENT,
+      });
     }
     const files = element.isFile ? [path] : await listFiles(path);
     for (const file of files) {

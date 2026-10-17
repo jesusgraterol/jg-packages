@@ -62,8 +62,10 @@ const race = <T>(
  * @param options? The signal that cancels the delay.
  * @returns A promise that resolves after the specified number of seconds has passed.
  * @example
- * await delay(1.5); // resumes after 1.5 seconds
- * await delay(10, { signal: AbortSignal.timeout(2000) }); // rejects after 2 seconds
+ * import { delay } from 'jg-utilities';
+ *
+ * await delay(0.5); // resumes after half a second
+ * await delay(10, { signal: AbortSignal.timeout(100) }).catch(() => 'stopped'); // => 'stopped'
  * @throws
  * - The signal's reason when the signal is already aborted or aborts during the wait.
  */
@@ -100,7 +102,20 @@ export const delay = (seconds: number, options?: IDelayOptions): Promise<void> =
  * @param options? The signal that stops the retries and a predicate that decides whether an error is retried.
  * @returns A promise that resolves with the result of the asynchronous function or rejects with the last encountered error.
  * @example
- * const data = await retryAsyncFunction(() => fetchData(), [3, 5]); // up to 3 attempts, 3 and 5 seconds apart
+ * import { retryAsyncFunction } from 'jg-utilities';
+ *
+ * let attempts = 0;
+ * const readRate = async (): Promise<number> => {
+ *   attempts += 1;
+ *   if (attempts < 2) {
+ *     throw new Error('The service is busy.');
+ *   }
+ *   return 1.08;
+ * };
+ *
+ * // up to 3 attempts, 0.1 and 0.5 seconds apart
+ * await retryAsyncFunction(readRate, [0.1, 0.5]); // => 1.08
+ * attempts; // => 2
  * @throws
  * - The last error thrown by the function, or the first one shouldRetry declines to retry.
  * - The signal's reason when the signal aborts.
@@ -151,7 +166,16 @@ const runProbe = async <T>(probe: () => T | Promise<T>): Promise<T> => probe();
  * @param options The timeout, the interval between probes and the signal that stops the wait.
  * @returns A promise that resolves with the first ready value.
  * @example
- * const ready = await waitUntil(() => readStatus() === 'ready' || undefined, { timeoutSeconds: 30, intervalSeconds: 2 });
+ * import { waitUntil } from 'jg-utilities';
+ *
+ * const startedAt = Date.now();
+ * const readStatus = (): string => (Date.now() - startedAt > 200 ? 'ready' : 'starting');
+ *
+ * // the probe runs every 0.1 seconds until it returns something other than undefined
+ * await waitUntil(() => (readStatus() === 'ready' ? readStatus() : undefined), {
+ *   timeoutSeconds: 5,
+ *   intervalSeconds: 0.1,
+ * }); // => 'ready'
  * @throws
  * - WAIT_UNTIL_TIMED_OUT: if the condition isn't met before the timeout.
  * - The probe's error when a probe throws or rejects.
@@ -164,10 +188,9 @@ export const waitUntil = async <T>(
   const { timeoutSeconds, intervalSeconds = 1, signal } = options;
   const deadline = Date.now() + timeoutSeconds * 1000;
   const timedOut = (): Error =>
-    new Exception(
-      `The condition wasn't met within ${timeoutSeconds} seconds.`,
-      ERRORS.WAIT_UNTIL_TIMED_OUT,
-    );
+    new Exception(`The condition wasn't met within ${timeoutSeconds} seconds.`, {
+      code: ERRORS.WAIT_UNTIL_TIMED_OUT,
+    });
   for (;;) {
     // probes run one after another by design
     const result = await race(runProbe(probe), signal, {

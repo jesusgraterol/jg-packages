@@ -1,0 +1,61 @@
+---
+import {
+  Braces,
+  Calculator,
+  Clipboard,
+  CloudOff,
+  Cpu,
+  Database,
+  FolderOpen,
+  Globe,
+  OctagonAlert,
+  Wrench,
+} from '@lucide/astro';
+
+import type { IPackageIcon } from '../../utilities/package-catalog/index.ts';
+
+interface Props {
+  icon: IPackageIcon;
+  // `card` leads a package card's top row; `header` opens a package page
+  size: 'card' | 'header';
+}
+
+// the Lucide component behind each icon key
+const LUCIDE_ICONS = {
+  braces: Braces,
+  calculator: Calculator,
+  clipboard: Clipboard,
+  'cloud-off': CloudOff,
+  cpu: Cpu,
+  database: Database,
+  'folder-open': FolderOpen,
+  globe: Globe,
+  'octagon-alert': OctagonAlert,
+  wrench: Wrench,
+} as const satisfies Record<IPackageIcon, typeof Braces>;
+
+// the tile's classes and the glyph's size inside it
+const SIZES = {
+  card: { glyph: 'size-5', pixels: 20, tile: 'size-10 rounded-lg' },
+  header: { glyph: 'size-7', pixels: 28, tile: 'size-14 rounded-xl' },
+} as const;
+
+const { icon, size } = Astro.props;
+const sizing = SIZES[size];
+const Glyph = LUCIDE_ICONS[icon];
+---
+
+{/* decorative: the package's name is always shown with the tile */}
+<span
+  class:list={[
+    'inline-flex shrink-0 items-center justify-center bg-primary text-primary-foreground',
+    sizing.tile,
+  ]}
+  aria-hidden="true"
+  data-package-icon={icon}
+>
+  <Glyph
+    class={sizing.glyph}
+    size={sizing.pixels}
+  />
+</span>

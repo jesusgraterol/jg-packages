@@ -1,4 +1,4 @@
-import { hasErrorCode } from 'jg-exception';
+import { hasErrorCode, isException } from 'jg-exception';
 import { describe, expect, test, vi } from 'vitest';
 
 import {
@@ -71,7 +71,12 @@ describe('registerServiceWorker', () => {
     const snapshot = await registerServiceWorker();
 
     expect(snapshot.registration).toBeUndefined();
-    expect(snapshot.registrationError).toBe('The script has an unsupported MIME type.');
+    expect(isException(snapshot.registrationError)).toBe(true);
+    expect(snapshot.registrationError).toMatchObject({
+      code: 'SW_REGISTRATION_FAILED',
+      message: "The Service Worker couldn't be registered.",
+      cause: new Error('The script has an unsupported MIME type.'),
+    });
   });
 
   test('reports EMPTY_SW_REGISTRATION for a registration without workers', async () => {
@@ -151,5 +156,19 @@ describe('registerServiceWorker', () => {
     await (await loadRuntime()).registerServiceWorker({ debugMode: true });
     expect(consoleLog).toHaveBeenCalledWith('[jg-sw] Registered the service worker', registration);
     consoleLog.mockRestore();
+  });
+
+  test('reports no worker once the registration has none left', async () => {
+    const registration = new FakeRegistration();
+    registration.active = new FakeServiceWorker('activated');
+    const { container } = stubBrowser(registration);
+    const { registerServiceWorker, getServiceWorkerSnapshot } = await loadRuntime();
+    await registerServiceWorker();
+
+    registration.active = null;
+    container.changeController(null);
+
+    expect(getServiceWorkerSnapshot().worker).toBeUndefined();
+    expect(getServiceWorkerSnapshot().registration).toBe(registration);
   });
 });

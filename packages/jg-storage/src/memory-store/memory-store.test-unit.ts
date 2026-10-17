@@ -47,13 +47,15 @@ describe('createMemoryStore', () => {
     expect(createMemoryStore<string>('constructor').get()).toBeUndefined();
   });
 
-  test('runs parse on every stored value get reads, and lets its errors propagate', () => {
+  test('runs the schema on every stored value get reads, and lets its errors propagate', () => {
     const store = createMemoryStore('parsed', {
-      parse: (value: unknown) => {
-        if (typeof value !== 'number') {
-          throw new Error('not a number');
-        }
-        return value * 2;
+      schema: {
+        parse: (value: unknown) => {
+          if (typeof value !== 'number') {
+            throw new Error('not a number');
+          }
+          return value * 2;
+        },
       },
     });
     expect(store.get()).toBeUndefined();

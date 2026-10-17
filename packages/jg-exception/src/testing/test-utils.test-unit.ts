@@ -1,23 +1,31 @@
 // @vitest-environment node
 import { describe, expect, test } from 'vitest';
 
+import { Exception } from '../exception/index.js';
 import { expectToRejectCode, expectToThrowCode } from './test-utils.js';
 
 describe('expectToThrowCode', () => {
-  test.each(['EXPECTED_ERROR', 2_000_001] as const)(
-    'accepts a thrown error with code %s',
-    (expectedCode) => {
-      const expectedError = Object.assign(new Error('Expected coded error.'), {
-        code: expectedCode,
-      });
+  test.each([
+    ['an Exception', new Exception('Expected coded error.', { code: 'EXPECTED_ERROR' })],
+    [
+      'an object with a code',
+      Object.assign(new Error('Expected coded error.'), { code: 'EXPECTED_ERROR' }),
+    ],
+  ])('accepts %s', (_, expectedError) => {
+    expect(() =>
+      expectToThrowCode(() => {
+        throw expectedError;
+      }, 'EXPECTED_ERROR'),
+    ).not.toThrow();
+  });
 
-      expect(() =>
-        expectToThrowCode(() => {
-          throw expectedError;
-        }, expectedCode),
-      ).not.toThrow();
-    },
-  );
+  test('fails when the thrown code is a number', () => {
+    expect(() =>
+      expectToThrowCode(() => {
+        throw Object.assign(new Error('Numeric code.'), { code: 404 });
+      }, '404'),
+    ).toThrow('Expected error code "404", but the error did not include a code.');
+  });
 
   test('fails when the thrown error has a different code', () => {
     const unexpectedError = Object.assign(new Error('Unexpected coded error.'), {
@@ -96,18 +104,17 @@ describe('expectToThrowCode', () => {
 });
 
 describe('expectToRejectCode', () => {
-  test.each(['EXPECTED_ERROR', 2_000_001] as const)(
-    'accepts a rejected error with code %s',
-    async (expectedCode) => {
-      const expectedError = Object.assign(new Error('Expected coded error.'), {
-        code: expectedCode,
-      });
-
-      await expect(expectToRejectCode(Promise.reject(expectedError), expectedCode)).resolves.toBe(
-        undefined,
-      );
-    },
-  );
+  test.each([
+    ['an Exception', new Exception('Expected coded error.', { code: 'EXPECTED_ERROR' })],
+    [
+      'an object with a code',
+      Object.assign(new Error('Expected coded error.'), { code: 'EXPECTED_ERROR' }),
+    ],
+  ])('accepts %s', async (_, expectedError) => {
+    await expect(
+      expectToRejectCode(Promise.reject(expectedError), 'EXPECTED_ERROR'),
+    ).resolves.toBeUndefined();
+  });
 
   test('fails when the rejected error has a different code', async () => {
     const unexpectedError = Object.assign(new Error('Unexpected coded error.'), {

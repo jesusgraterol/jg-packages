@@ -1,4 +1,4 @@
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
 import { ERRORS } from '../shared/errors.js';
 import type { IDateValue } from '../transformers/index.js';
@@ -63,8 +63,10 @@ const __sortBigIntValues = (
  * @param direction The direction to sort the values.
  * @returns A number indicating the sort order based on the primitive type.
  * @example
- * [3, 1, 2].sort(sortPrimitives('asc')); // [1, 2, 3]
- * ['b', 'c', 'a'].sort(sortPrimitives('desc')); // ['c', 'b', 'a']
+ * import { sortPrimitives } from 'jg-utilities';
+ *
+ * [3, 1, 2].sort(sortPrimitives('asc')); // => [1, 2, 3]
+ * ['b', 'c', 'a'].sort(sortPrimitives('desc')); // => ['c', 'b', 'a']
  * @throws
  * - MIXED_OR_UNSUPPORTED_DATA_TYPES: if the values are mixed or are different to string | number | bigint
  */
@@ -82,7 +84,7 @@ export const sortPrimitives =
     }
     throw new Exception(
       `Unable to sort list of primitive values as they can only be string | number | bigint and must not be mixed. Received: ${typeof firstValue}, ${typeof secondValue}`,
-      ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+      { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
     );
   };
 
@@ -92,7 +94,9 @@ export const sortPrimitives =
  * @param direction The direction to sort the values.
  * @returns A number indicating the sort order based on the primitive type.
  * @example
- * [{ age: 40 }, { age: 25 }].sort(sortRecords('age', 'asc')); // [{ age: 25 }, { age: 40 }]
+ * import { sortRecords } from 'jg-utilities';
+ *
+ * [{ age: 40 }, { age: 25 }].sort(sortRecords('age', 'asc')); // => [{ age: 25 }, { age: 40 }]
  * @throws
  * - MIXED_OR_UNSUPPORTED_DATA_TYPES: if the values are mixed or are different to string | number | bigint
  */
@@ -112,7 +116,7 @@ export const sortRecords =
     }
     throw new Exception(
       `Unable to sort list of record values as they can only be string | number | bigint and must not be mixed. Received: ${typeof firstValue}, ${typeof secondValue}`,
-      ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+      { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
     );
   };
 
@@ -123,7 +127,9 @@ export const sortRecords =
  * @param direction The direction to sort the values.
  * @returns A number indicating the sort order based on the primitive type.
  * @example
- * [{ amount: '900000000000000000001' }, { amount: '5' }].sort(sortRecordsWithBigIntString('amount', 'asc')); // [{ amount: '5' }, { amount: '900000000000000000001' }]
+ * import { sortRecordsWithBigIntString } from 'jg-utilities';
+ *
+ * [{ amount: '900000000000000000001' }, { amount: '5' }].sort(sortRecordsWithBigIntString('amount', 'asc')); // => [{ amount: '5' }, { amount: '900000000000000000001' }]
  * @throws
  * - MIXED_OR_UNSUPPORTED_DATA_TYPES: if the values are mixed or are different to string | number | bigint
  */
@@ -142,15 +148,15 @@ export const sortRecordsWithBigIntString =
 
       throw new Exception(
         `Unable to sort list of record values as they can only be stringified bigints. Received: ${typeof firstValue}, ${typeof secondValue}`,
-        ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+        { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
       );
     } catch (error) {
       if (error instanceof Exception && error.code === ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES) {
         throw error;
       }
       throw new Exception(
-        `Failed to sort list of record values as they can only be stringified bigints: ${extractMessage(error)}`,
-        ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+        'Failed to sort list of record values as they can only be stringified bigints.',
+        { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES, cause: error },
       );
     }
   };
@@ -162,7 +168,9 @@ export const sortRecordsWithBigIntString =
  * @param direction The direction to sort the values.
  * @returns A number indicating the sort order based on the date values.
  * @example
- * [{ at: '2026-10-17' }, { at: '2025-01-01' }].sort(sortRecordsWithDateValue('at', 'asc')); // [{ at: '2025-01-01' }, { at: '2026-10-17' }]
+ * import { sortRecordsWithDateValue } from 'jg-utilities';
+ *
+ * [{ at: '2026-10-17' }, { at: '2025-01-01' }].sort(sortRecordsWithDateValue('at', 'asc')); // => [{ at: '2025-01-01' }, { at: '2026-10-17' }]
  * @throws
  * - MIXED_OR_UNSUPPORTED_DATA_TYPES: if either record has a missing, null, or invalid date value
  */
@@ -181,7 +189,7 @@ export const sortRecordsWithDateValue =
       ) {
         throw new Exception(
           'Unable to sort list of record values as they can only be valid date values.',
-          ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+          { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
         );
       }
 
@@ -190,7 +198,7 @@ export const sortRecordsWithDateValue =
       if (Number.isNaN(firstDate.getTime()) || Number.isNaN(secondDate.getTime())) {
         throw new Exception(
           'Unable to sort list of record values as they can only be valid date values.',
-          ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+          { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
         );
       }
 
@@ -200,8 +208,8 @@ export const sortRecordsWithDateValue =
         throw error;
       }
       throw new Exception(
-        `Failed to sort list of record values as they can only be valid date values: ${extractMessage(error)}`,
-        ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+        'Failed to sort list of record values as they can only be valid date values.',
+        { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES, cause: error },
       );
     }
   };

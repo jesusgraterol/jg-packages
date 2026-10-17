@@ -161,3 +161,9 @@ coding-agent-planning/
 # release tarballs and generated website data
 .release/
 website/src/generated/
+
+# Vitest browser mode failure screenshots
+.vitest/
+
+# the API reference every package build generates, which ships in its tarball
+packages/*/API.md

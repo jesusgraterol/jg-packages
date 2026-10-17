@@ -1,0 +1,226 @@
+---
+import {
+  formatSignature,
+  parseExample,
+  splitThrowsItem,
+  type IApiSignature,
+  type IApiSymbol,
+} from '@jg-packages/api-reference';
+import Badge from 'jg-personal-astro-ui/badge';
+import CodeBlock from 'jg-personal-astro-ui/code-block';
+
+import { renderDocText } from '../../utilities/api-reference/index.ts';
+
+interface Props {
+  // the symbol's anchor, unique on the page
+  anchor: string;
+  headingLevel: 3 | 4 | 5;
+  symbol: IApiSymbol;
+}
+
+// how each kind is named on its badge
+const KIND_LABELS: Record<IApiSymbol['kind'], string> = {
+  class: 'class',
+  constant: 'const',
+  enum: 'enum',
+  function: 'function',
+  interface: 'interface',
+  type: 'type',
+  variable: 'variable',
+};
+
+// the styles TSDoc text gets: long words that wrap, inline code, and paragraph spacing
+const DOC_TEXT_CLASSES =
+  'wrap-break-word [&_code]:rounded-sm [&_code]:border [&_code]:border-border [&_code]:bg-code [&_code]:px-1 [&_code]:py-px [&_code]:font-mono [&_code]:text-[0.875em] [&_code]:wrap-anywhere [&_p+p]:mt-3';
+
+const { anchor, headingLevel, symbol } = Astro.props;
+const Heading = `h${headingLevel}` as const;
+// the symbol's own examples, or its signatures' when it has none, without repeats
+const examples = [
+  ...new Set(
+    symbol.examples.length > 0
+      ? symbol.examples
+      : symbol.signatures.flatMap((signature) => signature.examples),
+  ),
+].map(parseExample);
+// a signature's summary repeats the symbol's unless an overload says something of its own
+const signatureSummary = (signature: IApiSignature): string | undefined =>
+  signature.summary.trim() === '' || signature.summary === symbol.summary
+    ? undefined
+    : signature.summary;
+// a constant or variable reads as its declaration
+const declaration =
+  symbol.type === undefined
+    ? undefined
+    : symbol.kind === 'constant' || symbol.kind === 'variable'
+      ? `const ${symbol.name}: ${symbol.type}`
+      : symbol.type;
+---
+
+<article
+  id={anchor}
+  class="scroll-mt-24 border-t border-border pt-8 pb-4"
+  data-api-symbol
+>
+  <header class="flex flex-wrap items-center gap-x-3 gap-y-2">
+    <Heading class="font-mono text-lg font-bold tracking-tight wrap-anywhere">
+      <a
+        href={`#${anchor}`}
+        class="no-underline underline-offset-4 hover:underline"
+      >
+        {symbol.name}
+      </a>
+    </Heading>
+    <Badge variant="outline">{KIND_LABELS[symbol.kind]}</Badge>
+    {symbol.deprecated !== undefined && <Badge variant="warning">deprecated</Badge>}
+  </header>
+
+  {symbol.summary.trim() !== '' && (
+    <div
+      class:list={['mt-3 max-w-[46rem] leading-7', DOC_TEXT_CLASSES]}
+      set:html={renderDocText(symbol.summary)}
+    />
+  )}
+  {symbol.deprecated !== undefined && (
+    <div
+      class:list={[
+        'mt-4 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm leading-6',
+        DOC_TEXT_CLASSES,
+      ]}
+      set:html={renderDocText(`Deprecated. ${symbol.deprecated}`)}
+    />
+  )}
+
+  {symbol.signatures.map((signature) => {
+    const summary = signatureSummary(signature);
+    return (
+      <div class="mt-5 grid gap-4">
+        {summary !== undefined && (
+          <div
+            class:list={['leading-7', DOC_TEXT_CLASSES]}
+            set:html={renderDocText(summary)}
+          />
+        )}
+        <CodeBlock
+          code={formatSignature(signature.text)}
+          lang="ts"
+          title="Signature"
+          copy={false}
+        />
+        {signature.parameters.length > 0 && (
+          <div>
+            <p class="eyebrow">Parameters</p>
+            <dl class="mt-2 divide-y divide-border border-y border-border text-sm">
+              {signature.parameters.map((parameter) => (
+                <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] sm:gap-6">
+                  <dt class="min-w-0">
+                    <code class="font-mono font-semibold">
+                      {parameter.isRest ? '...' : ''}
+                      {parameter.name}
+                      {parameter.isOptional ? '?' : ''}
+                    </code>
+                    <code class="mt-0.5 block font-mono text-xs text-muted wrap-anywhere">
+                      {parameter.type}
+                    </code>
+                  </dt>
+                  <dd class:list={['min-w-0 leading-6 text-muted', DOC_TEXT_CLASSES]}>
+                    <Fragment
+                      set:html={renderDocText(parameter.description || 'No description.')}
+                    />
+                    {parameter.defaultValue !== undefined && (
+                      <p class="mt-1 text-xs">
+                        Defaults to <code>{parameter.defaultValue}</code>.
+                      </p>
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
+        {signature.returnType !== 'void' && signature.returnType !== '' && (
+          <div>
+            <p class="eyebrow">Returns</p>
+            <div class="mt-2 grid gap-1 border-y border-border py-3 text-sm sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] sm:gap-6">
+              <code class="font-mono text-xs text-muted wrap-anywhere">{signature.returnType}</code>
+              <div
+                class:list={['leading-6 text-muted', DOC_TEXT_CLASSES]}
+                set:html={renderDocText(signature.returns || 'No description.')}
+              />
+            </div>
+          </div>
+        )}
+        {signature.throws.length > 0 && (
+          <div>
+            <p class="eyebrow">Throws</p>
+            <ul class="mt-2 divide-y divide-border border-y border-border text-sm">
+              {signature.throws.map((item) => {
+                const { code, message } = splitThrowsItem(item);
+                return (
+                  <li class="grid gap-1 py-3 sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] sm:gap-6">
+                    <code class="font-mono text-xs font-semibold wrap-anywhere">
+                      {code ?? 'Error'}
+                    </code>
+                    <span class="leading-6 text-muted">{message}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
+  })}
+
+  {declaration !== undefined && (
+    <CodeBlock
+      class="mt-5"
+      code={declaration}
+      lang="ts"
+      title="Declaration"
+      copy={false}
+    />
+  )}
+
+  {symbol.members.length > 0 && (
+    <div class="mt-5">
+      <p class="eyebrow">Members</p>
+      <ul class="mt-2 divide-y divide-border border-y border-border text-sm">
+        {symbol.members.map((member) => (
+          <li class="py-3">
+            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <code class="font-mono font-semibold">{member.name}</code>
+              <span class="font-mono text-xs text-muted">{member.kind}</span>
+            </div>
+            {member.signatures.length > 0 ? (
+              member.signatures.map((signature) => (
+                <code class="mt-1 block font-mono text-xs text-muted wrap-anywhere">
+                  {signature.text}
+                </code>
+              ))
+            ) : member.type !== undefined ? (
+              <code class="mt-1 block font-mono text-xs text-muted wrap-anywhere">
+                {member.type}
+              </code>
+            ) : null}
+            {member.summary.trim() !== '' && (
+              <div
+                class:list={['mt-1.5 leading-6 text-muted', DOC_TEXT_CLASSES]}
+                set:html={renderDocText(member.summary)}
+              />
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+
+  {examples.map(({ code, lang }, index) => (
+    <CodeBlock
+      class="mt-5"
+      code={code}
+      lang={lang}
+      title={examples.length > 1 ? `Example ${index + 1}` : 'Example'}
+    />
+  ))}
+</article>

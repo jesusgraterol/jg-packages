@@ -37,6 +37,7 @@ const writeFixturePackage = async (files: Record<string, string>): Promise<void>
 const lintRuleIds = async (
   patterns: string[],
   serviceWorkerFiles?: string[],
+  isAstro?: boolean,
 ): Promise<Record<string, string[]>> => {
   const eslint = new ESLint({
     cwd: packageDirectory,
@@ -44,6 +45,7 @@ const lintRuleIds = async (
     overrideConfig: createEslintConfig({
       rootDirectory: packageDirectory,
       ...(serviceWorkerFiles === undefined ? {} : { serviceWorkerFiles }),
+      ...(isAstro === undefined ? {} : { isAstro }),
     }),
   });
   const results = await eslint.lintFiles(patterns);
@@ -116,6 +118,36 @@ describe('createEslintConfig', () => {
       'eslint.config.js': [],
       // self twice, importScripts, and caches
       'src/worker.sw.js': ['no-undef', 'no-undef', 'no-undef', 'no-undef'],
+    });
+  });
+
+  test('lints Astro components and their scripts, and keeps type-aware rules for TypeScript', async () => {
+    await writeFixturePackage({
+      'src/types.ts': 'export type IName = string;\n',
+      'src/card.astro': [
+        '---',
+        "import { IName } from './types.ts';",
+        '',
+        'const name: IName = "Ada";',
+        '---',
+        '',
+        '<p>{name}</p>',
+        '',
+        '<script>',
+        '  const unused = 1;',
+        '</script>',
+        '',
+      ].join('\n'),
+      'src/load.ts': 'const load = async (): Promise<string> => Promise.resolve("a");\n\nload();\n',
+    });
+
+    expect(await lintRuleIds(['src'], undefined, true)).toStrictEqual({
+      'src/card.astro': [
+        '@typescript-eslint/consistent-type-imports',
+        '@typescript-eslint/no-unused-vars',
+      ],
+      'src/load.ts': ['@typescript-eslint/no-floating-promises'],
+      'src/types.ts': [],
     });
   });
 });

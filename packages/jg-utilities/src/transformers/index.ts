@@ -28,7 +28,7 @@ export {
 } from './constants.js';
 
 // JSON transformers
-export { parseJSON, pruneJSON, stringifyJSON, stringifyJSONDeterministically } from './json.js';
+export { parseJson, pruneJson, stringifyJson, stringifyJsonDeterministically } from './json.js';
 
 // number transformers
 export {

@@ -6,9 +6,10 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/internal/tsconfig/**",
-        "$TURBO_ROOT$/internal/build-tools/src/**"
+        "$TURBO_ROOT$/internal/build-tools/src/**",
+        "$TURBO_ROOT$/internal/api-reference/src/**"
       ],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", "API.md"]
     },
     "typecheck": {
       "dependsOn": ["^build"],
@@ -27,6 +28,16 @@
     },
     "test:integration": {
       "dependsOn": ["^build", "build"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/internal/vitest-config/src/**"],
+      "outputs": []
+    },
+    "test:coverage": {
+      "dependsOn": ["^build", "build"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/internal/vitest-config/src/**"],
+      "outputs": []
+    },
+    "test:browser": {
+      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/internal/vitest-config/src/**"],
       "outputs": []
     },

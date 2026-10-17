@@ -1,5 +1,4 @@
-import { DEFAULT_CODE, DEFAULT_MESSAGE } from '../shared/constants.js';
-import type { IErrorCodeCarrier } from '../shared/types.js';
+import { DEFAULT_MESSAGE } from '../shared/constants.js';
 
 /*
  * message redaction helpers
@@ -145,38 +144,4 @@ export const extractZodErrorMessage = (error: IZodErrorLike): string => {
     return DEFAULT_MESSAGE;
   }
   return `${message} (${path.length > 0 ? path.map(String).join('.') : 'Unknown path'})`;
-};
-
-/*
- * Error code helpers
- */
-
-/**
- * Determines whether an unknown value has an inspectable error code property.
- * @param error The unknown value to inspect.
- * @returns True when the value can carry an Exception-style code.
- */
-const isErrorCodeCarrier = (error: unknown): error is IErrorCodeCarrier =>
-  typeof error === 'object' &&
-  error !== null &&
-  'code' in error &&
-  (typeof error.code === 'string' || typeof error.code === 'number');
-
-/**
- * Resolves the decoded error code from the unwrapped message code or an Exception-style object,
- * always as a string.
- * @param error The unknown error object to inspect.
- * @param unwrappedCode The code unwrapped from the extracted error message.
- * @returns The decoded error code or the default code.
- */
-export const getDecodedErrorCode = (error: unknown, unwrappedCode: string): string => {
-  if (unwrappedCode !== DEFAULT_CODE) {
-    return unwrappedCode;
-  }
-
-  if (isErrorCodeCarrier(error)) {
-    return String(error.code);
-  }
-
-  return DEFAULT_CODE;
 };

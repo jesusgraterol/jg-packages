@@ -27,8 +27,8 @@ import {
   createFileSymLink,
   deleteFile,
   readTextFile,
-  writeJSONFile,
-  readJSONFile,
+  writeJsonFile,
+  readJsonFile,
   copyFile,
   copyDirectory,
   readDirectory,
@@ -208,7 +208,7 @@ describe('Filesystem', () => {
         writeTextFile(p('dir-a/file-a.txt'), 'This is file a!');
         writeTextFile(p('dir-a/file-b.txt'), 'This is file b!');
         writeTextFile(p('dir-a/b/file-ab.txt'), 'This is file ab!');
-        writeJSONFile(p('dir-a/b/c/file-abc.json'), {
+        writeJsonFile(p('dir-a/b/c/file-abc.json'), {
           name: 'file-abc.json',
           description: 'This is file abc!',
         });
@@ -220,7 +220,7 @@ describe('Filesystem', () => {
         expect(isDirectory(p('dir-b/b'))).toBeTruthy();
         expect(readTextFile(p('dir-b/b/file-ab.txt'))).toBe('This is file ab!');
         expect(isDirectory(p('dir-b/b/c'))).toBeTruthy();
-        expect(readJSONFile(p('dir-b/b/c/file-abc.json'))).toStrictEqual({
+        expect(readJsonFile(p('dir-b/b/c/file-abc.json'))).toStrictEqual({
           name: 'file-abc.json',
           description: 'This is file abc!',
         });
@@ -274,10 +274,10 @@ describe('Filesystem', () => {
       test('can read all the contents of a directory', () => {
         writeTextFile(p('file-01.txt'), 'Hello There!! 01');
         writeTextFile(p('file-02.txt'), 'Hello There!! 02');
-        writeJSONFile(p('file-03.json'), { hello: 'World' });
+        writeJsonFile(p('file-03.json'), { hello: 'World' });
         writeTextFile(p('inner/file-01.txt'), 'Hello There!! inner/01');
         writeTextFile(p('inner/inner-01.txt'), 'Hello There!! inner/01');
-        writeJSONFile(p('inner/inner-02.json'), { foo: 'bar' });
+        writeJsonFile(p('inner/inner-02.json'), { foo: 'bar' });
         createDirectory(p('inner/inner2'));
         expect(readDirectory(p(), true)).toEqual([
           p('file-01.txt'),
@@ -311,7 +311,7 @@ describe('Filesystem', () => {
         createDirectory(p('another-dir'));
         createDirectorySymLink(p('some-dir'), p('some-dir-sl'));
         writeTextFile(p('afile.txt'), 'Hello there!');
-        writeJSONFile(p('aafile.json'), { foo: 'bar' });
+        writeJsonFile(p('aafile.json'), { foo: 'bar' });
         createFileSymLink(p('aafile.json'), p('aafile-sl.json'));
         expect(getDirectoryElements(p())).toStrictEqual({
           directories: [getPathElement(p('another-dir')), getPathElement(p('some-dir'))],
@@ -322,8 +322,8 @@ describe('Filesystem', () => {
 
       test('can filter files by any number of extensions', () => {
         writeTextFile(p('afile.txt'), 'Hello there!');
-        writeJSONFile(p('abfile.json'), { baz: 'foo' });
-        writeJSONFile(p('aafile.json'), { foo: 'bar' });
+        writeJsonFile(p('abfile.json'), { baz: 'foo' });
+        writeJsonFile(p('aafile.json'), { foo: 'bar' });
         writeTextFile(p('ajsfile.js'), "console.log('Hello JS World!')");
         writeTextFile(p('atsfile.ts'), "console.log('Hello TS World!')");
         expect(getDirectoryElements(p(), { includeExts: ['.json', '.ts'] })).toStrictEqual({
@@ -383,33 +383,33 @@ describe('Filesystem', () => {
       });
     });
 
-    describe('writeJSONFile & readJSONFile', () => {
+    describe('writeJsonFile & readJsonFile', () => {
       test('attempting to write an empty or invalid file throws an error', () => {
         expectToThrowCode(
-          () => writeJSONFile(p('file.json'), ''),
+          () => writeJsonFile(p('file.json'), ''),
           ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
         );
       });
 
       test('can write and read a JSON file by providing a string', () => {
-        writeJSONFile(p('file.json'), JSON.stringify({ foo: 'bar', baz: true, tan: 123 }));
-        expect(readJSONFile(p('file.json'))).toStrictEqual({ foo: 'bar', baz: true, tan: 123 });
+        writeJsonFile(p('file.json'), JSON.stringify({ foo: 'bar', baz: true, tan: 123 }));
+        expect(readJsonFile(p('file.json'))).toStrictEqual({ foo: 'bar', baz: true, tan: 123 });
       });
 
       test('can write and read a JSON file by providing an object', () => {
-        writeJSONFile(p('file.json'), { foo: 'bar', baz: true, tan: 123 });
-        expect(readJSONFile(p('file.json'))).toStrictEqual({ foo: 'bar', baz: true, tan: 123 });
+        writeJsonFile(p('file.json'), { foo: 'bar', baz: true, tan: 123 });
+        expect(readJsonFile(p('file.json'))).toStrictEqual({ foo: 'bar', baz: true, tan: 123 });
       });
 
       test('attempting to read a JSON file that doesnt exist throws an error', () => {
-        expectToThrowCode(() => readJSONFile(p('file.json')), ERRORS.NOT_A_FILE);
+        expectToThrowCode(() => readJsonFile(p('file.json')), ERRORS.NOT_A_FILE);
       });
 
       test('attempting to read an empty/invalid json file throws an error', () => {
         createDirectory(p());
         writeFileSync(p('file.json'), '', { encoding: 'utf-8' });
         expectToThrowCode(
-          () => readJSONFile(p('file.json')),
+          () => readJsonFile(p('file.json')),
           ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
         );
       });
@@ -455,9 +455,9 @@ describe('Filesystem', () => {
       });
 
       test('can copy a JSON file from a to b', () => {
-        writeJSONFile(p('file-a.json'), { id: 1, name: 'jess' });
+        writeJsonFile(p('file-a.json'), { id: 1, name: 'jess' });
         copyFile(p('file-a.json'), p('file-b.json'));
-        expect(readJSONFile(p('file-b.json'))).toStrictEqual({ id: 1, name: 'jess' });
+        expect(readJsonFile(p('file-b.json'))).toStrictEqual({ id: 1, name: 'jess' });
       });
 
       test('can override the destination path if it already exists', () => {

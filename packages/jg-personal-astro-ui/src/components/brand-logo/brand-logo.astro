@@ -1,0 +1,17 @@
+---
+interface Props {
+  class?: string | undefined;
+  // the site's name, shown beside the mark
+  name: string;
+}
+
+const { class: className, name } = Astro.props;
+---
+
+{/* the site supplies its own mark, such as an SVG monogram, in the mark slot */}
+<span
+  class:list={['inline-flex min-w-0 items-center gap-2.5 font-semibold tracking-tight', className]}
+>
+  <slot name="mark" />
+  <span class="truncate text-base">{name}</span>
+</span>

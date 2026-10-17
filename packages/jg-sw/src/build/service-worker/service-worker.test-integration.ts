@@ -139,6 +139,14 @@ describe('buildServiceWorker', () => {
     expect(readConstant(source, 'PRECACHE_ASSETS')).toStrictEqual([]);
   });
 
+  test('resolves outDir from the current directory without a cwd', async () => {
+    const source = await buildServiceWorker(baseConfig({ outDir: 'missing' }), {
+      caching: false,
+    });
+
+    expect(readConstant(source, 'CACHING')).toBe(false);
+  });
+
   test('validates the config and the options it receives', async () => {
     await writeBuild();
 

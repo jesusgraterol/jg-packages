@@ -81,6 +81,8 @@ export const updateSnapshot = (
  * it can be passed to React's useSyncExternalStore, during server rendering too.
  * @returns The snapshot.
  * @example
+ * import { getServiceWorkerSnapshot, subscribeToServiceWorker } from 'jg-sw';
+ *
  * const { hasWaitingWorker, installation } = useSyncExternalStore(
  *   subscribeToServiceWorker,
  *   getServiceWorkerSnapshot,
@@ -96,6 +98,8 @@ export const getServiceWorkerSnapshot = (): IServiceWorkerSnapshot => snapshot;
  * getServiceWorkerSnapshot.
  * @returns A function that stops the calls.
  * @example
+ * import { getServiceWorkerSnapshot, subscribeToServiceWorker } from 'jg-sw';
+ *
  * const unsubscribe = subscribeToServiceWorker(() => {
  *   if (getServiceWorkerSnapshot().hasWaitingWorker) {
  *     showUpdateBanner();

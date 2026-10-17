@@ -1,7 +1,7 @@
 {
   "name": "jg-exception",
-  "version": "1.0.1",
-  "description": "Extract, encode, and decode error messages and codes from errors of any shape, with a coded Exception class.",
+  "version": "1.1.0",
+  "description": "Coded errors for every jg package: an Exception with a stable code and JSON data, message extraction, code checks, and test assertions.",
   "author": "Jesus Graterol",
   "license": "MIT",
   "type": "module",
@@ -19,7 +19,8 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "API.md"
   ],
   "sideEffects": false,
   "engines": {
@@ -45,9 +46,10 @@
     "error-handling"
   ],
   "scripts": {
-    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json",
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
     "test": "pnpm test:unit",
+    "test:coverage": "vitest run --coverage --project unit",
     "test:unit": "vitest run --project unit",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json"
   },
@@ -56,7 +58,9 @@
     "@jg-packages/tsconfig": "workspace:*",
     "@jg-packages/vitest-config": "workspace:*",
     "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
+    "fast-check": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "zod": "4.6.7"

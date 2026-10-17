@@ -1,9 +1,8 @@
-import type { IErrorCode } from '../shared/types.js';
 import { assertError } from './utilities.js';
 
 /**
  * Asserts that a synchronous operation throws an error with the expected code and optional message
- * text. Codes are compared as strings, and message checks use substring matching. It works with any
+ * text. Message checks use substring matching. It works with any
  * test runner, because it throws a plain `Error` that the runner reports.
  * @param operation The synchronous operation expected to throw.
  * @param expectedCode The expected error code.
@@ -14,6 +13,8 @@ import { assertError } from './utilities.js';
  * - Expected error code "{expectedCode}", but received error code "{actualCode}".
  * - Expected error message to include "{expectedMessage}", but received error message "{actualMessage}".
  * @example
+ * import { expectToThrowCode } from 'jg-exception/testing';
+ *
  * expectToThrowCode(
  *   () => {
  *     throw Object.assign(new Error('Access denied'), { code: 'ACCESS_DENIED' });
@@ -24,7 +25,7 @@ import { assertError } from './utilities.js';
  */
 export const expectToThrowCode = (
   operation: () => unknown,
-  expectedCode: IErrorCode,
+  expectedCode: string,
   expectedMessage?: string,
 ): void => {
   try {
@@ -35,13 +36,13 @@ export const expectToThrowCode = (
   }
 
   throw new Error(
-    `Expected the operation to throw error code "${String(expectedCode)}", but it did not throw.`,
+    `Expected the operation to throw error code "${expectedCode}", but it did not throw.`,
   );
 };
 
 /**
  * Asserts that a promise rejects with an error containing the expected code and optional message
- * text. Codes are compared as strings, and message checks use substring matching. It works with any
+ * text. Message checks use substring matching. It works with any
  * test runner, because it throws a plain `Error` that the runner reports.
  * @param promise The promise expected to reject.
  * @param expectedCode The expected error code.
@@ -53,6 +54,8 @@ export const expectToThrowCode = (
  * - Expected error code "{expectedCode}", but received error code "{actualCode}".
  * - Expected error message to include "{expectedMessage}", but received error message "{actualMessage}".
  * @example
+ * import { expectToRejectCode } from 'jg-exception/testing';
+ *
  * await expectToRejectCode(
  *   Promise.reject(Object.assign(new Error('Access denied'), { code: 'ACCESS_DENIED' })),
  *   'ACCESS_DENIED',
@@ -61,7 +64,7 @@ export const expectToThrowCode = (
  */
 export const expectToRejectCode = async (
   promise: PromiseLike<unknown>,
-  expectedCode: IErrorCode,
+  expectedCode: string,
   expectedMessage?: string,
 ): Promise<void> => {
   try {
@@ -72,6 +75,6 @@ export const expectToRejectCode = async (
   }
 
   throw new Error(
-    `Expected the promise to reject with error code "${String(expectedCode)}", but it resolved.`,
+    `Expected the promise to reject with error code "${expectedCode}", but it resolved.`,
   );
 };

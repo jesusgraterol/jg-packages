@@ -1,75 +1,94 @@
-import { decodeError, encodeError } from '../error-handler/index.js';
-import type { IErrorCode } from '../shared/types.js';
+import { UNKNOWN_ERROR_CODE } from '../shared/constants.js';
+import type { IJsonValue } from '../shared/types.js';
 import { EXCEPTION_BRAND } from './constants.js';
-import type { IErrorOptions, IExceptionRecord } from './types.js';
+import type { IExceptionJson, IExceptionOptions } from './types.js';
 
 /**
- * An `Error` with a string code and optional data, created from an error of any shape. A message
- * with an encoded code, such as `Not found{(NOT_FOUND)}`, is decoded into its message and code.
+ * Makes data safe to serialize by passing it through JSON. A type can't rule out an object that
+ * refers back to itself, or a value cast from `any`, so whatever JSON can't hold becomes `null`.
+ * @param data The exception's data.
+ * @returns The data as JSON would carry it, or `null` when there's none or it can't be serialized.
+ */
+const toSerializableData = (data: IJsonValue | undefined): IJsonValue => {
+  try {
+    const serialized = JSON.stringify(data);
+    return serialized === undefined ? null : (JSON.parse(serialized) as IJsonValue);
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * An `Error` with a stable string code and optional JSON data, the error every jg package throws.
  * @example
- * throw new Exception('The user was not found.', 'USER_NOT_FOUND');
+ * import { Exception } from 'jg-exception';
+ *
+ * const exception = new Exception('The user was not found.', {
+ *   code: 'USER_NOT_FOUND',
+ *   data: { id: 1 },
+ * });
+ * exception.code; // => 'USER_NOT_FOUND'
+ * exception.data; // => { id: 1 }
  * @example
- * try {
- *   await loadUser();
- * } catch (error) {
- *   throw new Exception(`Couldn't load the user: ${extractMessage(error)}`, 'USER_LOAD_FAILED', undefined, { cause: error });
- * }
+ * import { Exception } from 'jg-exception';
+ *
+ * // the message says what failed at this step, and the cause keeps the error underneath
+ * const readSettings = (text: string): unknown => {
+ *   try {
+ *     return JSON.parse(text);
+ *   } catch (error) {
+ *     throw new Exception("Couldn't read the settings.", { code: 'SETTINGS_INVALID', cause: error });
+ *   }
+ * };
+ * readSettings('{"theme":"dark"}'); // => { theme: 'dark' }
  */
 export class Exception extends Error {
-  // the stable code callers use to handle the error, always a string
+  // the stable code callers handle the error by
   public readonly code: string;
 
-  // optional context attached to the exception
-  public readonly data: unknown;
+  // context that helps whoever handles or debugs the error
+  public readonly data: IJsonValue | undefined;
 
   /**
-   * Creates an exception from an error or message of any shape.
-   * @param error The message, or the error to normalize.
-   * @param code The code, which overrides any code decoded from the error.
-   * @param data The data, which overrides any `data` decoded from the error.
-   * @param options The native error options, such as `cause`.
+   * Creates an exception.
+   * @param message What failed, for people reading logs.
+   * @param options The code, and optionally the data and the error underneath as `cause`.
    */
-  constructor(error: unknown, code?: IErrorCode, data?: unknown, options?: IErrorOptions) {
-    const decodedError = decodeError(error);
-
-    super(decodedError.message, options);
+  constructor(message: string, options: IExceptionOptions) {
+    // callers that skip type checking may leave the options out, and creating an error mustn't throw
+    const { code, data, cause } = (options as IExceptionOptions | undefined) ?? { code: '' };
+    super(message, cause === undefined ? undefined : { cause });
 
     this.name = 'Exception';
-    this.code = code === undefined || code === null ? decodedError.code : String(code);
-    this.data = data === undefined ? decodedError.data : data;
+    this.code = typeof code === 'string' && code.length > 0 ? code : UNKNOWN_ERROR_CODE;
+    this.data = data;
     Object.defineProperty(this, EXCEPTION_BRAND, { value: true });
   }
 
   /**
-   * Encodes the exception as its message followed by its wrapped code.
-   * @returns The encoded message, such as `Not found{(NOT_FOUND)}`.
+   * Converts the exception to a plain object, which `JSON.stringify` calls.
+   * @returns The name, code, message, and data, with `null` for data that is missing or can't be
+   * serialized.
+   * @example
+   * import { Exception } from 'jg-exception';
+   *
+   * const json = new Exception('Not found', { code: 'NOT_FOUND', data: { id: 1 } }).toJSON();
+   * json; // => { name: 'Exception', code: 'NOT_FOUND', message: 'Not found', data: { id: 1 } }
+   */
+  public toJSON(): IExceptionJson {
+    return {
+      name: this.name,
+      code: this.code,
+      message: this.message,
+      data: toSerializableData(this.data),
+    };
+  }
+
+  /**
+   * Describes the exception in one line, with its code.
+   * @returns The name, code, and message, such as `Exception [NOT_FOUND]: Not found`.
    */
   public override toString(): string {
-    return encodeError(this.message, this.code);
-  }
-
-  /**
-   * Converts the exception to its encoded message in string contexts, such as template literals.
-   * @param hint The type hint for the conversion.
-   * @returns The encoded message for string and default hints, otherwise `null`.
-   */
-  public [Symbol.toPrimitive](hint: string): string | null {
-    if (hint === 'string' || hint === 'default') {
-      return this.toString();
-    }
-
-    return null;
-  }
-
-  /**
-   * Converts the exception to a plain record.
-   * @returns The message, code, and data, with `null` for missing data.
-   */
-  public toRecord(): IExceptionRecord {
-    return {
-      message: this.message,
-      code: this.code,
-      data: this.data ?? null,
-    };
+    return `${this.name} [${this.code}]: ${this.message}`;
   }
 }

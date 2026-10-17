@@ -24,7 +24,7 @@ export const validateTimeStringType = (str: ITimeString): void => {
   if (!isStringValid(str, 5, 100)) {
     throw new Exception(
       `The provided time string is invalid, it must be a string with length between 5 and 100. Received: ${String(str)}`,
-      ERRORS.INVALID_TIME_STRING,
+      { code: ERRORS.INVALID_TIME_STRING },
     );
   }
 };
@@ -39,7 +39,7 @@ export const validateTimeStringChunks = (chunks: string[]): void => {
   if (chunks.length !== 2) {
     throw new Exception(
       `The format of the provided time string is invalid, it must match the expected format {value} {unit}. For example: '2 days'. Received: ${JSON.stringify(chunks)}`,
-      ERRORS.INVALID_TIME_STRING,
+      { code: ERRORS.INVALID_TIME_STRING },
     );
   }
 };
@@ -54,7 +54,7 @@ export const validateTimeStringValue = (value: number): void => {
   if (!isIntegerValid(value, 1)) {
     throw new Exception(
       `The value of the provided time string is invalid, it must be a positive integer. Received: ${String(value)}`,
-      ERRORS.INVALID_TIME_STRING,
+      { code: ERRORS.INVALID_TIME_STRING },
     );
   }
 };
@@ -69,11 +69,11 @@ export const validateTimeStringValue = (value: number): void => {
  * @throws
  * - UNSUPPORTED_DATA_TYPE: if the provided value is not an object or an array
  */
-export const canJSONBeSerialized = (value: unknown): void => {
+export const canJsonBeSerialized = (value: unknown): void => {
   if (!isObjectValid(value, true) && !isArrayValid(value, true)) {
     throw new Exception(
       `The JSON value must be an object or an array in order to be stringified. Received: ${String(value)}`,
-      ERRORS.UNSUPPORTED_DATA_TYPE,
+      { code: ERRORS.UNSUPPORTED_DATA_TYPE },
     );
   }
 };
@@ -85,11 +85,11 @@ export const canJSONBeSerialized = (value: unknown): void => {
  * @throws
  * - UNABLE_TO_SERIALIZE_JSON: if the result of JSON.stringify is not a valid string
  */
-export const validateJSONSerializationResult = (value: unknown, result: unknown): void => {
+export const validateJsonSerializationResult = (value: unknown, result: unknown): void => {
   if (typeof result !== 'string' || !result.length) {
     throw new Exception(
       `Stringifying the JSON value '${String(value)}' produced an invalid result: ${String(result)}.`,
-      ERRORS.UNABLE_TO_SERIALIZE_JSON,
+      { code: ERRORS.UNABLE_TO_SERIALIZE_JSON },
     );
   }
 };
@@ -100,11 +100,11 @@ export const validateJSONSerializationResult = (value: unknown, result: unknown)
  * @throws
  * - UNSUPPORTED_DATA_TYPE: if the provided value is not a non-empty string
  */
-export const canJSONBeDeserialized = (value: string): void => {
+export const canJsonBeDeserialized = (value: string): void => {
   if (typeof value !== 'string' || !value.length) {
     throw new Exception(
       `The JSON value must be a non-empty string in order to be parsed. Received: ${value}`,
-      ERRORS.UNSUPPORTED_DATA_TYPE,
+      { code: ERRORS.UNSUPPORTED_DATA_TYPE },
     );
   }
 };
@@ -116,11 +116,11 @@ export const canJSONBeDeserialized = (value: string): void => {
  * @throws
  * - UNABLE_TO_DESERIALIZE_JSON: if the result of JSON.parse is not a valid object or array
  */
-export const validateJSONDeserializationResult = (value: string, result: unknown): void => {
+export const validateJsonDeserializationResult = (value: string, result: unknown): void => {
   if (!isObjectValid(result, true) && !isArrayValid(result, true)) {
     throw new Exception(
       `Parsing the JSON value '${value}' produced an invalid result: ${String(result)}.`,
-      ERRORS.UNABLE_TO_DESERIALIZE_JSON,
+      { code: ERRORS.UNABLE_TO_DESERIALIZE_JSON },
     );
   }
 };

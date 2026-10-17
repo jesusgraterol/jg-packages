@@ -5,7 +5,9 @@ import { validateAuthorizationHeader, validateEmailAddress } from './validations
  * @param header The authorization header to validate and extract the token from.
  * @returns The extracted token from the authorization header.
  * @example
- * extractTokenFromAuthorizationHeader('Bearer eyJhbGciOi.payload.signature'); // 'eyJhbGciOi.payload.signature'
+ * import { extractTokenFromAuthorizationHeader } from 'jg-utilities';
+ *
+ * extractTokenFromAuthorizationHeader('Bearer eyJhbGciOi.payload.signature'); // => 'eyJhbGciOi.payload.signature'
  * @throws
  * - INVALID_AUTHORIZATION_HEADER: If the header does not comply with the expected format.
  */
@@ -19,7 +21,9 @@ export const extractTokenFromAuthorizationHeader = (header: string): string => {
  * @param email The email address to validate and extract the username from.
  * @returns The extracted username from the email address.
  * @example
- * extractEmailUsername('Ada.Lovelace@example.com'); // 'ada.lovelace'
+ * import { extractEmailUsername } from 'jg-utilities';
+ *
+ * extractEmailUsername('Ada.Lovelace@example.com'); // => 'ada.lovelace'
  * @throws
  * - INVALID_EMAIL_ADDRESS: If the email address is not valid or has a forbidden extension.
  */
@@ -34,8 +38,10 @@ export const extractEmailUsername = (email: string): string => {
  * @param initialsCount? The maximum number of initials to extract. Defaults to 1.
  * @returns A string with up to the requested number of letter-only initials, or "A" if none exist.
  * @example
- * getInitials('Ada Lovelace'); // 'A'
- * getInitials('Ada Lovelace', 2); // 'AL'
+ * import { getInitials } from 'jg-utilities';
+ *
+ * getInitials('Ada Lovelace'); // => 'A'
+ * getInitials('Ada Lovelace', 2); // => 'AL'
  */
 export const getInitials = (value: string, initialsCount: number = 1): string => {
   const segmentLetters = (value.match(/[\p{L}\p{N}]+/gu) ?? [])

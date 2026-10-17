@@ -101,7 +101,7 @@ describe('jg-sw', () => {
     expect(exitCode).toBe(1);
     expect(stdout).toBe('');
     expect(stderr).toBe(
-      `Unable to read the service worker config '${join(directory, 'jg-sw.config.json')}': The path '${join(directory, 'jg-sw.config.json')}' is not a file.\n`,
+      `Unable to read the service worker config '${join(directory, 'jg-sw.config.json')}'.; [CAUSE]: The path '${join(directory, 'jg-sw.config.json')}' is not a file.\n`,
     );
   });
 

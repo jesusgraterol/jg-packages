@@ -1,24 +1,21 @@
 // shared
-export type { IDecodedError, IErrorCode, IErrorCodeCarrier } from './shared/types.js';
-export { DEFAULT_CODE, DEFAULT_MESSAGE } from './shared/constants.js';
+export type { IJsonValue } from './shared/types.js';
+export { DEFAULT_MESSAGE, UNKNOWN_ERROR_CODE } from './shared/constants.js';
 
 // error handler
 export {
-  decodeError,
-  encodeError,
   extractMessage,
   extractRedactedMessage,
   getErrorCode,
   hasErrorCode,
   hasErrorCodePrefix,
   isDefaultErrorMessage,
-  isEncodedError,
 } from './error-handler/index.js';
 
 // exception
 export {
-  type IErrorOptions,
-  type IExceptionRecord,
+  type IExceptionJson,
+  type IExceptionOptions,
   Exception,
   isException,
 } from './exception/index.js';

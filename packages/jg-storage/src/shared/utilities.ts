@@ -1,25 +1,55 @@
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
+import { KEY_NAMESPACE, STORE_ID_PATTERN } from './constants.js';
 import { ERRORS } from './errors.js';
 import type { IRecordId, IStoreMechanism, IStoreOptions } from './types.js';
 
 /**
- * Builds the key a record is stored under, the same one browser-keyval-stores used.
+ * Checks that a store id holds only letters, digits, underscores, and hyphens.
+ * @param storeId The store's identifier.
+ * @throws
+ * - INVALID_STORE_ID: The store id must hold only letters, digits, underscores, and hyphens.
+ */
+export const assertStoreId = (storeId: string): void => {
+  if (typeof storeId !== 'string' || !STORE_ID_PATTERN.test(storeId)) {
+    throw new Exception(
+      `The store id '${String(storeId)}' must hold only letters, digits, underscores, and hyphens.`,
+      { code: ERRORS.INVALID_STORE_ID },
+    );
+  }
+};
+
+/**
+ * Builds the web storage key a record is stored under: `jg-storage:<storeId>` for the root record,
+ * and `jg-storage:<storeId>:<recordId>` for the others. Record ids become strings, so `1` and `'1'`
+ * share a record.
  * @param storeId The store's identifier.
  * @param recordId The record's identifier, or undefined for the store's root record.
  * @returns The key.
  */
 export const buildDataKey = (storeId: string, recordId: IRecordId): string =>
-  recordId === undefined ? storeId : `${storeId}_${recordId}`;
+  recordId === undefined
+    ? `${KEY_NAMESPACE}:${storeId}`
+    : `${KEY_NAMESPACE}:${storeId}:${String(recordId)}`;
 
 /**
- * Runs the store's parse option on a stored value, or returns the value as it is without one.
+ * Builds the IndexedDB key a record is stored under: `[storeId]` for the root record, and
+ * `[storeId, recordId]` for the others, with the record id as a string, as in web storage.
+ * @param storeId The store's identifier.
+ * @param recordId The record's identifier, or undefined for the store's root record.
+ * @returns The key.
+ */
+export const buildIndexedDbKey = (storeId: string, recordId: IRecordId): string[] =>
+  recordId === undefined ? [storeId] : [storeId, String(recordId)];
+
+/**
+ * Validates a stored value with the store's schema, or returns it as it is without one.
  * @param value The stored value.
  * @param options The store's options.
  * @returns The value.
  */
 export const parseValue = <T>(value: unknown, options: IStoreOptions<T>): T =>
-  options.parse === undefined ? (value as T) : options.parse(value);
+  options.schema === undefined ? (value as T) : options.schema.parse(value);
 
 /**
  * Parses a value read from web storage.
@@ -28,16 +58,14 @@ export const parseValue = <T>(value: unknown, options: IStoreOptions<T>): T =>
  * @throws
  * - FAILED_TO_PARSE_JSON: Unable to parse the JSON data.
  */
-export const parseJSON = (data: string): unknown => {
+export const parseJson = (data: string): unknown => {
   try {
     return JSON.parse(data);
   } catch (error) {
-    throw new Exception(
-      `Unable to parse the JSON data: ${extractMessage(error)}`,
-      ERRORS.FAILED_TO_PARSE_JSON,
-      undefined,
-      { cause: error },
-    );
+    throw new Exception('Unable to parse the JSON data.', {
+      code: ERRORS.FAILED_TO_PARSE_JSON,
+      cause: error,
+    });
   }
 };
 
@@ -48,24 +76,22 @@ export const parseJSON = (data: string): unknown => {
  * @throws
  * - FAILED_TO_STRINGIFY_JSON: Unable to stringify the JSON data.
  */
-export const stringifyJSON = (value: unknown): string => {
+export const stringifyJson = (value: unknown): string => {
   let data: string | undefined;
   try {
     data = JSON.stringify(value);
   } catch (error) {
-    throw new Exception(
-      `Unable to stringify the JSON data: ${extractMessage(error)}`,
-      ERRORS.FAILED_TO_STRINGIFY_JSON,
-      undefined,
-      { cause: error },
-    );
+    throw new Exception('Unable to stringify the JSON data.', {
+      code: ERRORS.FAILED_TO_STRINGIFY_JSON,
+      cause: error,
+    });
   }
 
   // JSON.stringify returns undefined for undefined, functions, and symbols
   if (data === undefined) {
     throw new Exception(
       `Unable to stringify the JSON data: JSON can't represent a value of type '${typeof value}'.`,
-      ERRORS.FAILED_TO_STRINGIFY_JSON,
+      { code: ERRORS.FAILED_TO_STRINGIFY_JSON },
     );
   }
   return data;
@@ -80,5 +106,5 @@ export const stringifyJSON = (value: unknown): string => {
 export const buildUnavailableException = (storeId: string, mechanism: IStoreMechanism): Exception =>
   new Exception(
     `The store '${storeId}' can't write because ${mechanism} is unavailable. Pass { fallback: 'memory' } to keep its records in memory instead.`,
-    ERRORS.STORE_UNAVAILABLE,
+    { code: ERRORS.STORE_UNAVAILABLE },
   );

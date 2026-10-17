@@ -1,0 +1,40 @@
+---
+interface Props {
+  // draws a hairline under the section, as between the home page's sections
+  border?: boolean | undefined;
+  class?: string | undefined;
+  // the small mono label above the title
+  eyebrow?: string | undefined;
+  // the section's id, which links and its heading's id build on
+  id: string;
+  // the paragraph under the title
+  lede?: string | undefined;
+  title?: string | undefined;
+  width?: 'page' | 'prose' | undefined;
+}
+
+const { border = true, class: className, eyebrow, id, lede, title, width = 'page' } = Astro.props;
+const titleId = `${id}-title`;
+---
+
+<section
+  id={id}
+  class:list={['jg-section-space scroll-mt-16', border && 'border-b border-border', className]}
+  aria-labelledby={title === undefined ? undefined : titleId}
+>
+  <div class={width === 'prose' ? 'jg-container-prose' : 'jg-container'}>
+    {title !== undefined && (
+      <header class="max-w-3xl">
+        {eyebrow !== undefined && <p class="eyebrow">{eyebrow}</p>}
+        <h2
+          id={titleId}
+          class="section-title mt-4"
+        >
+          {title}
+        </h2>
+        {lede !== undefined && <p class="lede mt-5">{lede}</p>}
+      </header>
+    )}
+    <slot />
+  </div>
+</section>

@@ -8,7 +8,7 @@ export {
   isEmailValid,
   isFileNameValid,
   isIntegerValid,
-  isJWTValid,
+  isJwtValid,
   isNumberValid,
   isNumeric,
   isObjectValid,
@@ -19,6 +19,6 @@ export {
   isSlugValid,
   isStringValid,
   isTimestampValid,
-  isURLValid,
-  isUUIDValid,
+  isUrlValid,
+  isUuidValid,
 } from './validations.js';

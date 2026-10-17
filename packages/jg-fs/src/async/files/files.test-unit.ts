@@ -31,7 +31,7 @@ describe('writeFileAtomic failures', () => {
 
   beforeAll(async () => {
     actualFs = await vi.importActual<typeof fs>('node:fs/promises');
-    directory = await fs.mkdtemp(join(tmpdir(), 'fs-utils-async-'));
+    directory = await fs.mkdtemp(join(tmpdir(), 'jg-fs-'));
   });
 
   afterEach(() => {

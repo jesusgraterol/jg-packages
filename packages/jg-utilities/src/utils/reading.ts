@@ -7,8 +7,11 @@ const MILLISECONDS_PER_MINUTE = 60_000;
  * @param text The text whose reading time will be estimated.
  * @returns The estimated reading time in milliseconds, or 0 for non-string or empty input.
  * @example
- * estimateReadingTime(article); // milliseconds, such as 180000 for about 600 words
- * prettifyTime(estimateReadingTime(article)); // '3m'
+ * import { estimateReadingTime, prettifyTime } from 'jg-utilities';
+ *
+ * const article = 'word '.repeat(600);
+ * estimateReadingTime(article); // milliseconds, about 3 minutes for 600 words
+ * prettifyTime(estimateReadingTime(article)); // => '3m'
  */
 export const estimateReadingTime = (text: unknown): number => {
   if (typeof text !== 'string') {

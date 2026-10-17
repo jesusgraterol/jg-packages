@@ -1,6 +1,6 @@
 {
   "name": "jg-fs",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Filesystem helpers for Node.js, async at the root and sync at jg-fs/sync: paths, directories, text, JSON, atomic and bounded files.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -19,7 +19,8 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "API.md"
   ],
   "sideEffects": false,
   "engines": {
@@ -47,9 +48,10 @@
     "node"
   ],
   "scripts": {
-    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json",
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
     "test": "pnpm test:unit && pnpm test:integration",
+    "test:coverage": "vitest run --coverage --project unit --project integration",
     "test:integration": "vitest run --project integration",
     "test:unit": "vitest run --project unit",
     "typecheck": "tsc -p tsconfig.json"
@@ -63,8 +65,10 @@
     "@jg-packages/tsconfig": "workspace:*",
     "@jg-packages/vitest-config": "workspace:*",
     "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "zod": "4.6.7"
   }
 }

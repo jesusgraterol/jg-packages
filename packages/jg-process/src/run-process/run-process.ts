@@ -1,5 +1,5 @@
 import { spawn, type ChildProcess } from 'node:child_process';
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
 import { stopProcessTree } from '../process-tree/index.js';
 import {
@@ -20,12 +20,10 @@ import { IGNORED_STDIN_ERROR_CODES } from './constants.js';
  * @returns The error.
  */
 const startFailed = (command: string, cause: unknown): Exception =>
-  new Exception(
-    `Unable to start '${command}': ${extractMessage(cause)}`,
-    ERRORS.PROCESS_START_FAILED,
-    undefined,
-    { cause },
-  );
+  new Exception(`Unable to start '${command}'.`, {
+    code: ERRORS.PROCESS_START_FAILED,
+    cause,
+  });
 
 /**
  * Builds the error thrown when a process writes more output than allowed.
@@ -34,10 +32,9 @@ const startFailed = (command: string, cause: unknown): Exception =>
  * @returns The error.
  */
 const outputTooLarge = (command: string, maxOutputBytes: number): Exception =>
-  new Exception(
-    `The process '${command}' wrote more than ${maxOutputBytes} bytes of output.`,
-    ERRORS.PROCESS_OUTPUT_TOO_LARGE,
-  );
+  new Exception(`The process '${command}' wrote more than ${maxOutputBytes} bytes of output.`, {
+    code: ERRORS.PROCESS_OUTPUT_TOO_LARGE,
+  });
 
 /**
  * Destroys the child's stdio streams, so pipes held by an unreachable process can't keep the
@@ -114,6 +111,8 @@ const stopTree = async (child: ChildProcess): Promise<void> => {
  * @param options The command, its arguments, and the limits of the run.
  * @returns A promise that resolves with the exit code, the signal and the output.
  * @example
+ * import { runProcess } from 'jg-process';
+ *
  * const { exitCode, stdout } = await runProcess({ command: 'git', args: ['status', '--porcelain'], timeoutSeconds: 30 });
  * if (exitCode !== 0) {
  *   // handle the failure
@@ -189,7 +188,7 @@ export const runProcess = async (options: IRunProcessOptions): Promise<IProcessR
             kind: 'failed',
             error: new Exception(
               `The process '${command}' didn't finish within ${timeoutSeconds} seconds.`,
-              ERRORS.PROCESS_TIMED_OUT,
+              { code: ERRORS.PROCESS_TIMED_OUT },
             ),
           }),
         timeoutSeconds * 1000,
@@ -210,10 +209,9 @@ export const runProcess = async (options: IRunProcessOptions): Promise<IProcessR
   await stopTree(child);
   if (!(await waitForClose(child, () => isClosed, DEFAULT_GRACE_PERIOD_SECONDS * 1000))) {
     destroyStdio(child);
-    throw new Exception(
-      `A process started by '${command}' kept its output open after it exited.`,
-      ERRORS.PROCESS_TREE_SURVIVED,
-    );
+    throw new Exception(`A process started by '${command}' kept its output open after it exited.`, {
+      code: ERRORS.PROCESS_TREE_SURVIVED,
+    });
   }
   if (outputBytes > maxOutputBytes) {
     throw outputTooLarge(command, maxOutputBytes);

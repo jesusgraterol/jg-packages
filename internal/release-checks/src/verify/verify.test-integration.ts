@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
+import { writeApiMarkdown } from '@jg-packages/api-reference';
+
 import { RELEASE_MANIFEST_FILE } from '../shared/constants.ts';
 import { sha256 } from '../shared/release-files.ts';
 import { runCommand } from '../shared/run-command.ts';
@@ -30,13 +32,16 @@ const dependencies: IVerifyDependencies = {
   log: () => undefined,
 };
 
-// builds the fixture package the way a package's build script does
-const buildFixture = async (): Promise<void> => {
+// builds the fixture package the way a package's build script does, API.md included unless asked
+const buildFixture = async ({ writesApiMarkdown = true } = {}): Promise<void> => {
   const tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc');
   const result = await runCommand(process.execPath, [tsc, '-p', 'tsconfig.json'], {
     cwd: packageDirectory,
   });
   expect(result).toMatchObject({ exitCode: 0 });
+  if (writesApiMarkdown) {
+    await writeApiMarkdown(packageDirectory);
+  }
 };
 
 // replaces text in one of the fixture copy's files
@@ -60,6 +65,10 @@ beforeEach(async () => {
   outputDirectory = join(workDirectory, 'release');
   await mkdir(outputDirectory, { recursive: true });
   await cp(FIXTURE_DIRECTORY, packageDirectory, { recursive: true });
+  await writeFile(
+    join(rootDirectory, 'pnpm-workspace.yaml'),
+    'packages:\n  - internal/*\n  - packages/*\n',
+  );
   await buildFixture();
 }, 60_000);
 
@@ -83,7 +92,11 @@ describe('packAndCheck', () => {
   }, 120_000);
 
   test('fails an export without its @example, a changelog without the version, and a README without a section', async () => {
-    await editFile('src/index.ts', " * @example\n * greet('Ada'); // 'Hello, Ada!'\n", '');
+    await editFile(
+      'src/index.ts',
+      " * @example\n * import { greet } from 'jg-release-checks-sample';\n *\n * greet('Ada'); // => 'Hello, Ada!'\n",
+      '',
+    );
     await editFile('CHANGELOG.md', '## 1.0.0', '## 0.9.0');
     await editFile('README.md', '## Usage', '## Examples');
     await buildFixture();
@@ -92,6 +105,15 @@ describe('packAndCheck', () => {
       'CHANGELOG.md has no `## 1.0.0` section',
       'README.md needs the sections `## Install`, `## Usage`, `## Documentation`, `## License` once each, in that order',
       '. exports the function greet without an @example',
+    ]);
+  }, 120_000);
+
+  test('fails an API.md that the TSDoc has moved past', async () => {
+    await editFile('src/index.ts', ' * Builds a greeting.', ' * Builds a friendly greeting.');
+    await buildFixture({ writesApiMarkdown: false });
+
+    expect(await checkProblems()).toStrictEqual([
+      'API.md differs from a fresh render of the TSDoc; build the package again',
     ]);
   }, 120_000);
 
@@ -118,6 +140,25 @@ describe('packAndCheck', () => {
 
     expect(await checkProblems()).toStrictEqual(['`sample --help` exits with 3: no help here']);
   }, 120_000);
+
+  test('fails a workspace whose tests pnpm check would skip, even a private one', async () => {
+    await mkdir(join(rootDirectory, 'internal', 'tool'), { recursive: true });
+    await writeFile(
+      join(rootDirectory, 'internal', 'tool', 'package.json'),
+      JSON.stringify({
+        name: '@sample/tool',
+        private: true,
+        scripts: { 'test:unit': 'vitest run' },
+      }),
+    );
+
+    const { workspaceProblems } = await packAndCheck(rootDirectory, outputDirectory, dependencies);
+
+    expect(workspaceProblems).toStrictEqual([
+      '@sample/tool has test:unit but no test:coverage, so pnpm check never runs its tests',
+    ]);
+    expect(await runPack(rootDirectory, join(workDirectory, 'blocked'), dependencies)).toBe(1);
+  });
 
   test('fails when no package is publishable', async () => {
     await editFile('package.json', '"license": "MIT",', '"license": "MIT",\n  "private": true,');

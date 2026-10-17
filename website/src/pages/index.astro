@@ -1,0 +1,217 @@
+---
+import { ArrowDown, BookOpenText, FileCode, Hash, PackageCheck, Power, Timer } from '@lucide/astro';
+import CodeBlock from 'jg-personal-astro-ui/code-block';
+import GridLines from 'jg-personal-astro-ui/grid-lines';
+import PackageManagerTabs from 'jg-personal-astro-ui/package-manager-tabs';
+import Section from 'jg-personal-astro-ui/section';
+import TextLink from 'jg-personal-astro-ui/text-link';
+
+import PackageCard from '../components/package-card/package-card.astro';
+import BaseLayout from '../layouts/base-layout.astro';
+import { PACKAGE_CATALOG, PACKAGES_DIRECTORY, SITE_CONFIG } from '../site.config.ts';
+import { loadListedPackages, RUNTIMES, type IRuntime } from '../utilities/package-catalog/index.ts';
+
+// the example the hero shows, from jg-fetch's README
+const HERO_EXAMPLE = `import { request } from 'jg-fetch';
+
+// resolves to the data or the error, and never throws
+const { data, error, meta } = await request<IUser>('https://api.example.com/users/1');
+if (error) {
+  error.kind; // 'TIMEOUT', 'NETWORK_ERROR', 'HTTP_ERROR', ...
+  error.status; // 404, or null when no response arrived
+} else {
+  data; // IUser
+}
+meta.attempts; // 1`;
+
+// the conventions every package follows, from docs/package-guidelines.md
+const PRINCIPLES = [
+  {
+    Icon: FileCode,
+    title: 'ESM with types',
+    text: 'Every package is ESM only, with its types and an exports map, so bundlers keep only what you import.',
+  },
+  {
+    Icon: Power,
+    title: 'Nothing runs at import',
+    text: 'No listeners, globals, or I/O when a module loads, so every package is safe to import during server rendering.',
+  },
+  {
+    Icon: Hash,
+    title: 'Errors you can compare',
+    text: 'Failures are Exceptions from jg-exception, and each package exports its codes as ERRORS, so you check codes, not messages.',
+  },
+  {
+    Icon: Timer,
+    title: 'Units in the name',
+    text: 'Timing options are in seconds and say so, such as timeoutSeconds. Measured values name their unit, such as durationMs.',
+  },
+  {
+    Icon: PackageCheck,
+    title: 'Tested as installed',
+    text: 'Before every release, CI packs each package, installs the tarball into a new project, and imports every entry point.',
+  },
+  {
+    Icon: BookOpenText,
+    title: 'Documented exports',
+    text: 'Every export has TSDoc with an example, and each API reference on this site is generated from it.',
+  },
+] as const;
+
+// what agents can read, published with the site
+const AGENT_RESOURCES = [
+  {
+    path: '/llms.txt',
+    text: 'An index of the packages in the llmstxt.org format, with a link to each package’s Markdown.',
+  },
+  {
+    path: '/llms-full.txt',
+    text: 'Every package’s README and API reference in one file, for loading into a context window.',
+  },
+  {
+    path: '/packages/<name>/index.md',
+    text: 'The Markdown version of each package page: its README and its full API reference.',
+  },
+  {
+    path: 'Accept: text/markdown',
+    text: 'Request any page with this header to get its Markdown instead of HTML.',
+  },
+] as const;
+
+const packages = await loadListedPackages(PACKAGE_CATALOG, PACKAGES_DIRECTORY);
+const groups = (Object.keys(RUNTIMES) as IRuntime[])
+  .map((runtime) => ({
+    ...RUNTIMES[runtime],
+    runtime,
+    packages: packages.filter(({ runtimes }) => runtimes[0] === runtime),
+  }))
+  .filter((group) => group.packages.length > 0);
+---
+
+<BaseLayout
+  canonicalPath="/"
+  description={SITE_CONFIG.defaultDescription}
+  title={`${SITE_CONFIG.name} | TypeScript packages for browsers and Node.js`}
+>
+  <section class="relative isolate overflow-hidden border-b border-border">
+    <GridLines />
+    <div class="jg-container grid items-center gap-12 pt-14 pb-16 sm:pt-20 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14">
+      <div>
+        <p class="eyebrow">TypeScript packages for browsers and Node.js</p>
+        <h1 class="display-title mt-6">
+          Small, consistent packages
+          <span class="block text-accent">for TypeScript apps.</span>
+        </h1>
+        <p class="lede mt-7">
+          Errors with codes, requests that never throw, typed storage, service workers, files, and
+          processes. Every package follows the same conventions and is tested as the tarball you
+          install.
+        </p>
+        <PackageManagerTabs
+          class="mt-8 max-w-xl"
+          id="hero-install"
+          packages="jg-fetch"
+          storageKey={SITE_CONFIG.storageKeys.packageManager}
+        />
+        <a
+          class="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline"
+          href="#packages"
+        >
+          Browse the packages
+          <ArrowDown
+            class="size-4"
+            aria-hidden="true"
+          />
+        </a>
+      </div>
+      <CodeBlock
+        class="shadow-raised"
+        code={HERO_EXAMPLE}
+        lang="ts"
+        title="user.ts"
+      />
+    </div>
+  </section>
+
+  <Section
+    id="packages"
+    eyebrow="The packages"
+    title="One job each, one set of conventions."
+    lede="Each one does one job, with the same error handling, naming, and docs as the others. Pick the ones you need; siblings depend on each other only where it saves you code."
+  >
+    <div class="mt-12 grid gap-12">
+      {groups.map(({ heading, packages: groupPackages, runtime, summary }) => (
+        <section aria-labelledby={`runtime-${runtime}`}>
+          <div class="flex flex-col gap-1 border-b border-border pb-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
+            <h3
+              id={`runtime-${runtime}`}
+              class="text-xl font-semibold tracking-tight"
+            >
+              {heading}
+            </h3>
+            <p class="text-sm text-muted">{summary}</p>
+          </div>
+          <ul class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {groupPackages.map((listedPackage) => (
+              <li>
+                <PackageCard
+                  headingLevel={4}
+                  package={listedPackage}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  </Section>
+
+  <Section
+    id="principles"
+    eyebrow="How they're built"
+    title="The same rules in every package."
+    lede="The conventions are written down once and checked on every release, so moving between packages never means learning a new style."
+  >
+    <ul class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {PRINCIPLES.map(({ Icon, text, title }) => (
+        <li class="rounded-xl border border-border bg-surface p-5 shadow-surface">
+          <span
+            class="inline-flex size-9 items-center justify-center rounded-lg border border-border bg-background text-accent"
+            aria-hidden="true"
+          >
+            <Icon class="size-[1.125rem]" />
+          </span>
+          <h3 class="mt-4 text-base font-semibold tracking-tight">{title}</h3>
+          <p class="mt-2 text-sm leading-6 text-muted">{text}</p>
+        </li>
+      ))}
+    </ul>
+  </Section>
+
+  <Section
+    id="agents"
+    eyebrow="For agents"
+    title="Docs your coding agent can read."
+    lede="Every page is also published as Markdown, so an agent gets the same README and API reference you read here, without the HTML."
+    border={false}
+  >
+    <ul class="mt-12 grid gap-4 sm:grid-cols-2">
+      {AGENT_RESOURCES.map(({ path, text }) => (
+        <li class="rounded-xl border border-border bg-surface p-5 shadow-surface">
+          <code class="font-mono text-sm font-bold wrap-anywhere">{path}</code>
+          <p class="mt-2 text-sm leading-6 text-muted">{text}</p>
+        </li>
+      ))}
+    </ul>
+    <p class="mt-8 text-sm text-muted">
+      The source and the release process are on{' '}
+      <TextLink
+        href={SITE_CONFIG.repositoryUrl}
+        external
+      >
+        GitHub
+      </TextLink>
+      .
+    </p>
+  </Section>
+</BaseLayout>

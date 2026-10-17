@@ -30,12 +30,12 @@ import {
   readBoundedFile,
   readBufferFile,
   readFile,
-  readJSONFile,
+  readJsonFile,
   readTextFile,
   writeBufferFile,
   writeFile,
   writeFileAtomic,
-  writeJSONFile,
+  writeJsonFile,
   writeTextFile,
 } from './files.js';
 
@@ -57,7 +57,7 @@ describe('File Actions', () => {
     (await readdir(path)).filter((name) => name.endsWith('.tmp'));
 
   beforeAll(async () => {
-    root = await mkdtemp(join(tmpdir(), 'fs-utils-async-'));
+    root = await mkdtemp(join(tmpdir(), 'jg-fs-'));
   });
 
   beforeEach(async () => {
@@ -120,36 +120,36 @@ describe('File Actions', () => {
     });
   });
 
-  describe('writeJSONFile & readJSONFile', () => {
+  describe('writeJsonFile & readJsonFile', () => {
     test('attempting to write an empty or invalid file rejects', async () => {
       await expectToRejectCode(
-        writeJSONFile(p('file.json'), ''),
+        writeJsonFile(p('file.json'), ''),
         ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
       );
       await expectToRejectCode(
-        writeJSONFile(p('file.json'), { value: 1n }),
+        writeJsonFile(p('file.json'), { value: 1n }),
         ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
       );
     });
 
     test('can write and read a JSON file by providing a string', async () => {
-      await writeJSONFile(p('file.json'), JSON.stringify({ foo: 'bar', baz: true, tan: 123 }));
-      expect(await readJSONFile(p('file.json'))).toStrictEqual({ foo: 'bar', baz: true, tan: 123 });
+      await writeJsonFile(p('file.json'), JSON.stringify({ foo: 'bar', baz: true, tan: 123 }));
+      expect(await readJsonFile(p('file.json'))).toStrictEqual({ foo: 'bar', baz: true, tan: 123 });
     });
 
     test('can write and read a JSON file by providing an object', async () => {
-      await writeJSONFile(p('file.json'), { foo: 'bar', baz: true, tan: 123 });
-      expect(await readJSONFile(p('file.json'))).toStrictEqual({ foo: 'bar', baz: true, tan: 123 });
+      await writeJsonFile(p('file.json'), { foo: 'bar', baz: true, tan: 123 });
+      expect(await readJsonFile(p('file.json'))).toStrictEqual({ foo: 'bar', baz: true, tan: 123 });
     });
 
     test('attempting to read a JSON file that doesnt exist rejects', async () => {
-      await expectToRejectCode(readJSONFile(p('file.json')), ERRORS.NOT_A_FILE);
+      await expectToRejectCode(readJsonFile(p('file.json')), ERRORS.NOT_A_FILE);
     });
 
     test('attempting to read an invalid JSON file rejects', async () => {
       await writeTextFile(p('file.json'), '{ invalid');
       await expectToRejectCode(
-        readJSONFile(p('file.json')),
+        readJsonFile(p('file.json')),
         ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
       );
     });

@@ -15,7 +15,7 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "check": "turbo run lint typecheck test:unit build test:integration test:e2e && pnpm format:check && pnpm release:verify",
+    "check": "turbo run lint typecheck build test:coverage test:browser test:e2e && pnpm format:check && pnpm release:verify",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "turbo run lint",
@@ -26,6 +26,8 @@
   },
   "devDependencies": {
     "prettier": "3.9.10",
+    "prettier-plugin-astro": "1.1.1",
+    "prettier-plugin-tailwindcss": "0.8.1",
     "turbo": "2.11.8"
   }
 }

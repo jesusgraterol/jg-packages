@@ -1,3 +1,5 @@
+import type { Exception } from 'jg-exception';
+
 // the options registerServiceWorker accepts
 export type IRegisterServiceWorkerOptions = {
   // the worker's script. Defaults to DEFAULT_SERVICE_WORKER_PATH, '/sw.js'
@@ -64,8 +66,8 @@ export type IServiceWorkerSnapshot = {
   // the newest worker: the installing one, else the waiting one, else the active one
   worker: ServiceWorker | undefined;
 
-  // why the registration failed, as an encoded error message with its code
-  registrationError: string | undefined;
+  // why the registration failed, with one of the ERRORS codes
+  registrationError: Exception | undefined;
 
   // whether a new version is installed and waits to activate, which updateApp does
   hasWaitingWorker: boolean;

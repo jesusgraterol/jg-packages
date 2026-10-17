@@ -1,0 +1,118 @@
+---
+import {
+  groupSymbols,
+  toEntryPointAnchor,
+  toImportSpecifier,
+  toSymbolAnchor,
+  type IApiReference,
+} from '@jg-packages/api-reference';
+
+import ApiSymbol from '../api-symbol/api-symbol.astro';
+
+interface Props {
+  reference: IApiReference;
+}
+
+const { reference } = Astro.props;
+const hasSeveralEntryPoints = reference.entryPoints.length > 1;
+const entryPoints = reference.entryPoints.map((entryPoint) => ({
+  ...entryPoint,
+  groups: groupSymbols(entryPoint),
+  specifier: toImportSpecifier(reference.packageName, entryPoint.subpath),
+}));
+const symbolCount = reference.entryPoints.reduce((count, { symbols }) => count + symbols.length, 0);
+---
+
+<section
+  id="api-reference"
+  class="mt-16 scroll-mt-24"
+  aria-labelledby="api-reference-title"
+>
+  <div class="border-t border-border pt-7">
+    <p class="eyebrow">Generated from TSDoc</p>
+    <h2
+      id="api-reference-title"
+      class="mt-3 text-[clamp(1.625rem,3.5vw,2.125rem)] leading-tight font-semibold tracking-tight"
+    >
+      API reference
+    </h2>
+    <p class="mt-3 max-w-[46rem] leading-7 text-muted">
+      Every export of{' '}
+      <code class="font-mono text-foreground">{`${reference.packageName}@${reference.version}`}</code>
+      {`, ${symbolCount} in all, with its signature, its errors, and an example.`}
+    </p>
+  </div>
+
+  {entryPoints.map(({ groups, specifier, subpath }) => (
+    <div class="mt-10">
+      {hasSeveralEntryPoints && (
+        <h3
+          id={toEntryPointAnchor(subpath)}
+          class="scroll-mt-24 font-mono text-lg font-bold"
+        >
+          {specifier}
+        </h3>
+      )}
+      <nav
+        class:list={[
+          'rounded-xl border border-border bg-surface p-4 sm:p-5',
+          hasSeveralEntryPoints && 'mt-4',
+        ]}
+        aria-label={`Exports of ${specifier}`}
+      >
+        <div class="grid gap-4">
+          {groups.map(({ heading, id, symbols }) => (
+            <div>
+              <p class="font-mono text-xs font-bold text-muted uppercase">
+                <a
+                  href={`#${id}`}
+                  class="no-underline hover:text-foreground"
+                >
+                  {heading}
+                </a>{' '}
+                <span class="font-normal">({symbols.length})</span>
+              </p>
+              <ul class="mt-2 flex flex-wrap gap-1.5">
+                {symbols.map(({ name }) => (
+                  <li>
+                    <a
+                      href={`#${toSymbolAnchor(subpath, name)}`}
+                      class="inline-flex rounded-md border border-border px-2 py-0.5 font-mono text-xs no-underline transition-colors hover:border-border-strong hover:bg-secondary"
+                    >
+                      {name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </nav>
+      {groups.map(({ heading, id, symbols }) => {
+        const GroupHeading = hasSeveralEntryPoints ? 'h4' : 'h3';
+        return (
+          <div class="mt-12">
+            <GroupHeading
+              id={id}
+              class="scroll-mt-24 text-xl font-semibold tracking-tight"
+            >
+              {heading}
+              {hasSeveralEntryPoints && (
+                <span class="ml-2 font-mono text-sm font-normal text-muted">{specifier}</span>
+              )}
+            </GroupHeading>
+            <div class="mt-4">
+              {symbols.map((symbol) => (
+                <ApiSymbol
+                  anchor={toSymbolAnchor(subpath, symbol.name)}
+                  headingLevel={hasSeveralEntryPoints ? 5 : 4}
+                  symbol={symbol}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  ))}
+</section>

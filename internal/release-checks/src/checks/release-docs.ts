@@ -1,10 +1,16 @@
+import {
+  API_MARKDOWN_FILE,
+  renderApiMarkdown,
+  type IApiReference,
+} from '@jg-packages/api-reference';
+
 import type { IPackageManifest } from '../shared/types.ts';
 
 // the README's second-level sections, in the order the package guidelines require
 const REQUIRED_SECTIONS = ['Install', 'Usage', 'Documentation', 'License'];
 
-// the optional section between Usage and Documentation, such as `## Coming from error-message-utils`
-const COMING_FROM_SECTION = /^Coming from\b/;
+// a section about a predecessor package, which no README has: every package starts clean
+const PREDECESSOR_SECTION = /^Coming from\b/;
 
 /**
  * Escapes text for use inside a regular expression.
@@ -33,34 +39,34 @@ const checkReadme = (name: string, readme: string): string[] => {
   if (summary === '') {
     problems.push('README.md has no summary between the title and the first section');
   }
-  const sections = lines
+  const headings = lines
     .filter((line) => line.startsWith('## '))
-    .map((line) => line.slice(3).trim())
-    .filter((section) => REQUIRED_SECTIONS.includes(section) || COMING_FROM_SECTION.test(section));
-  const comingFrom = sections.filter((section) => COMING_FROM_SECTION.test(section));
-  const expected = [
-    ...REQUIRED_SECTIONS.slice(0, 2),
-    ...comingFrom.slice(0, 1),
-    ...REQUIRED_SECTIONS.slice(2),
-  ];
-  if (sections.join('\n') !== expected.join('\n')) {
+    .map((line) => line.slice(3).trim());
+  const sections = headings.filter((section) => REQUIRED_SECTIONS.includes(section));
+  if (sections.join('\n') !== REQUIRED_SECTIONS.join('\n')) {
     problems.push(
-      `README.md needs the sections ${expected.map((section) => `\`## ${section}\``).join(', ')} once each, in that order`,
+      `README.md needs the sections ${REQUIRED_SECTIONS.map((section) => `\`## ${section}\``).join(', ')} once each, in that order`,
     );
+  }
+  for (const section of headings.filter((heading) => PREDECESSOR_SECTION.test(heading))) {
+    problems.push(`README.md has a \`## ${section}\` section, but no package has a predecessor`);
   }
   return problems;
 };
 
 /**
  * Check 5: the docs a release depends on ship with it. The changelog has a section for the
- * version, and the README has the guidelines' title, summary, and sections.
+ * version, the README has the guidelines' title, summary, and sections, and API.md is the
+ * package's API reference as a fresh render of its TSDoc gives it.
  * @param manifest The packed manifest.
  * @param files The tarball's files.
+ * @param reference The package's API reference, which check 6 also reads.
  * @returns One problem per missing document or section.
  */
 export const checkReleaseDocs = (
   manifest: IPackageManifest,
   files: Map<string, Buffer>,
+  reference: IApiReference,
 ): string[] => {
   const problems: string[] = [];
   const changelog = files.get('CHANGELOG.md')?.toString('utf8');
@@ -74,6 +80,14 @@ export const checkReleaseDocs = (
     problems.push("doesn't ship a README.md");
   } else {
     problems.push(...checkReadme(manifest.name, readme));
+  }
+  const apiMarkdown = files.get(API_MARKDOWN_FILE)?.toString('utf8');
+  if (apiMarkdown === undefined) {
+    problems.push(`doesn't ship an ${API_MARKDOWN_FILE}`);
+  } else if (apiMarkdown !== renderApiMarkdown(reference)) {
+    problems.push(
+      `${API_MARKDOWN_FILE} differs from a fresh render of the TSDoc; build the package again`,
+    );
   }
   return problems;
 };

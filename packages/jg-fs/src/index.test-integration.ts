@@ -1,9 +1,12 @@
 import { Buffer } from 'node:buffer';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expectToRejectCode } from 'jg-exception/testing';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+
+// permission tests need a user the permission bits apply to, which root isn't
+const CAN_TEST_PERMISSIONS = process.platform !== 'win32' && process.getuid?.() !== 0;
 
 import * as asyncApi from './index.js';
 import * as syncApi from './sync/index.js';
@@ -45,13 +48,13 @@ describe.each([
   test('writes and reads text, JSON, and binary files, including empty ones', async () => {
     await fs.writeTextFile(p('nested', 'a.txt'), 'hello');
     await fs.writeTextFile(p('empty.txt'), '');
-    await fs.writeJSONFile(p('data.json'), { id: 1, tags: ['a'] });
+    await fs.writeJsonFile(p('data.json'), { id: 1, tags: ['a'] });
     await fs.writeBufferFile(p('data.bin'), Buffer.from([0, 1, 2]));
     await fs.writeBufferFile(p('empty.bin'), Buffer.alloc(0));
 
     expect(await fs.readTextFile(p('nested', 'a.txt'))).toBe('hello');
     expect(await fs.readTextFile(p('empty.txt'))).toBe('');
-    expect(await fs.readJSONFile(p('data.json'))).toStrictEqual({ id: 1, tags: ['a'] });
+    expect(await fs.readJsonFile(p('data.json'))).toStrictEqual({ id: 1, tags: ['a'] });
     expect(await fs.readBufferFile(p('data.bin'))).toStrictEqual(Buffer.from([0, 1, 2]));
     expect(await fs.readBufferFile(p('empty.bin'))).toStrictEqual(Buffer.alloc(0));
   });
@@ -61,19 +64,19 @@ describe.each([
     await fs.writeTextFile(p('broken.json'), '{ nope');
 
     await expectToRejectCode(
-      fs.writeJSONFile(p('x.json'), ''),
+      fs.writeJsonFile(p('x.json'), ''),
       fs.ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
     );
     await expectToRejectCode(
-      fs.writeJSONFile(p('x.json'), undefined),
+      fs.writeJsonFile(p('x.json'), undefined),
       fs.ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
     );
     await expectToRejectCode(
-      fs.readJSONFile(p('empty.json')),
+      fs.readJsonFile(p('empty.json')),
       fs.ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
     );
     await expectToRejectCode(
-      fs.readJSONFile(p('broken.json')),
+      fs.readJsonFile(p('broken.json')),
       fs.ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
     );
     await expectToRejectCode(
@@ -158,4 +161,35 @@ describe.each([
     expect(await fs.readTextFile(p('dir', 'state.json'))).toBe('{"v":2}');
     expect(await fs.readDirectory(p('dir'))).toStrictEqual([p('dir', 'state.json')]);
   });
+
+  test.runIf(process.platform === 'linux')(
+    'rejects a file that holds more than its size said, as FILE_TOO_LARGE, without reading it all',
+    async () => {
+      // /proc files report a size of 0, so only reading finds their content
+      await expectToRejectCode(
+        fs.readBoundedFile('/proc/self/status', 10),
+        asyncApi.ERRORS.FILE_TOO_LARGE,
+      );
+    },
+  );
+
+  test.runIf(CAN_TEST_PERMISSIONS)(
+    'lets a permission error through unchanged, from a read or an atomic write',
+    async () => {
+      await writeFile(p('locked.txt'), 'secret');
+      await chmod(p('locked.txt'), 0o000);
+      await mkdir(p('unsearchable'));
+      await chmod(p('unsearchable'), 0o600);
+      try {
+        await expect(fs.readBoundedFile(p('locked.txt'), 100)).rejects.toMatchObject({
+          code: 'EACCES',
+        });
+        await expect(
+          fs.writeFileAtomic(p('unsearchable', 'state.json'), '{}'),
+        ).rejects.toMatchObject({ code: 'EACCES' });
+      } finally {
+        await chmod(p('unsearchable'), 0o700);
+      }
+    },
+  );
 });

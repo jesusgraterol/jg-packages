@@ -1,4 +1,4 @@
-import { encodeError, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
 import { DEFAULT_SERVICE_WORKER_PATH, DEFAULT_SERVICE_WORKER_SCOPE } from '../../shared/index.js';
 import { listenForInstallation } from '../installation/index.js';
@@ -69,10 +69,9 @@ const register = async ({
 
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
     updateSnapshot({
-      registrationError: encodeError(
-        'The browser does not support Service Workers.',
-        ERRORS.SW_NO_BROWSER_SUPPORT,
-      ),
+      registrationError: new Exception('The browser does not support Service Workers.', {
+        code: ERRORS.SW_NO_BROWSER_SUPPORT,
+      }),
     });
     return getServiceWorkerSnapshot();
   }
@@ -82,10 +81,9 @@ const register = async ({
     log('Registered the service worker', registration);
     if (!registration.installing && !registration.waiting && !registration.active) {
       updateSnapshot({
-        registrationError: encodeError(
-          "The Service Worker's registration is empty.",
-          ERRORS.EMPTY_SW_REGISTRATION,
-        ),
+        registrationError: new Exception("The Service Worker's registration is empty.", {
+          code: ERRORS.EMPTY_SW_REGISTRATION,
+        }),
       });
       return getServiceWorkerSnapshot();
     }
@@ -104,7 +102,12 @@ const register = async ({
     syncRegistration(registration);
   } catch (error) {
     log('The registration failed', error);
-    updateSnapshot({ registrationError: extractMessage(error) });
+    updateSnapshot({
+      registrationError: new Exception("The Service Worker couldn't be registered.", {
+        code: ERRORS.SW_REGISTRATION_FAILED,
+        cause: error,
+      }),
+    });
   }
   return getServiceWorkerSnapshot();
 };
@@ -112,11 +115,14 @@ const register = async ({
 /**
  * Registers the service worker and starts following its updates and whether the app can be
  * installed. Later calls return the first call's promise. It never rejects: a failure lands in the
- * snapshot's registrationError, with SW_NO_BROWSER_SUPPORT or EMPTY_SW_REGISTRATION as its code
- * when it has one.
+ * snapshot's registrationError, an Exception with SW_NO_BROWSER_SUPPORT, EMPTY_SW_REGISTRATION, or
+ * SW_REGISTRATION_FAILED as its code, and the browser's error as its cause.
  * @param options The worker's path and registration options, and whether to log.
  * @returns A promise that resolves to the snapshot once the registration settles.
  * @example
+ * import { hasErrorCode } from 'jg-exception';
+ * import { ERRORS, registerServiceWorker } from 'jg-sw';
+ *
  * const { registration, registrationError } = await registerServiceWorker();
  * if (hasErrorCode(registrationError, ERRORS.SW_NO_BROWSER_SUPPORT)) {
  *   // the browser has no service workers

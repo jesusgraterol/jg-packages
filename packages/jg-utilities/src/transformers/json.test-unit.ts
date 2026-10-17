@@ -4,13 +4,13 @@ import { describe, expect, test } from 'vitest';
 import { ERRORS } from '../shared/errors.js';
 import { expectToThrowCode } from 'jg-exception/testing';
 
-import { parseJSON, pruneJSON, stringifyJSON, stringifyJSONDeterministically } from './json.js';
+import { parseJson, pruneJson, stringifyJson, stringifyJsonDeterministically } from './json.js';
 
-describe('stringifyJSON', () => {
+describe('stringifyJson', () => {
   test.each([[undefined], [null], [''], ['hello world'], [true], [123], [NaN]])(
-    'stringifyJSON(%o) -> throws UNSUPPORTED_DATA_TYPE',
+    'stringifyJson(%o) -> throws UNSUPPORTED_DATA_TYPE',
     (value) => {
-      expectToThrowCode(() => stringifyJSON(value), ERRORS.UNSUPPORTED_DATA_TYPE);
+      expectToThrowCode(() => stringifyJson(value), ERRORS.UNSUPPORTED_DATA_TYPE);
     },
   );
 
@@ -22,16 +22,53 @@ describe('stringifyJSON', () => {
     [[4, '', 6], '[4,"",6]'],
     [{ c: 8, b: [{ z: 6, y: 5, x: 4 }, 7], a: 3 }, '{"c":8,"b":[{"z":6,"y":5,"x":4},7],"a":3}'],
     [{ b: { x: 1 }, a: { x: 1 } }, '{"b":{"x":1},"a":{"x":1}}'],
-  ])('stringifyJSON(%j) -> %s', (value, expected) => {
-    expect(stringifyJSON(value)).toBe(expected);
+  ])('stringifyJson(%j) -> %s', (value, expected) => {
+    expect(stringifyJson(value)).toBe(expected);
   });
 });
 
-describe('stringifyJSONDeterministically', () => {
+// values JSON.stringify can't serialize, or turns into nothing
+const circular: Record<string, unknown> = {};
+circular['self'] = circular;
+const UNSERIALIZABLE: [string, unknown][] = [
+  ['an object that refers back to itself', circular],
+  ['a BigInt', { id: 1n }],
+  ['an object whose toJSON returns undefined', { toJSON: () => undefined }],
+];
+
+describe('stringifyJson and stringifyJsonDeterministically on values JSON cannot hold', () => {
+  test.each(UNSERIALIZABLE)('stringifyJson throws UNABLE_TO_SERIALIZE_JSON for %s', (_, value) => {
+    expectToThrowCode(() => stringifyJson(value), ERRORS.UNABLE_TO_SERIALIZE_JSON);
+  });
+
+  test.each(UNSERIALIZABLE)(
+    'stringifyJsonDeterministically throws UNABLE_TO_SERIALIZE_JSON for %s',
+    (_, value) => {
+      expectToThrowCode(
+        () => stringifyJsonDeterministically(value),
+        ERRORS.UNABLE_TO_SERIALIZE_JSON,
+      );
+    },
+  );
+
+  test("keeps JSON's error as the cause", () => {
+    let thrown: unknown;
+    try {
+      stringifyJson({ id: 1n });
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toMatchObject({ code: ERRORS.UNABLE_TO_SERIALIZE_JSON });
+    expect((thrown as { cause?: unknown }).cause).toBeInstanceOf(TypeError);
+  });
+});
+
+describe('stringifyJsonDeterministically', () => {
   test.each([[undefined], [null], [''], ['hello world'], [true], [123], [NaN]])(
-    'stringifyJSONDeterministically(%o) -> throws UNSUPPORTED_DATA_TYPE',
+    'stringifyJsonDeterministically(%o) -> throws UNSUPPORTED_DATA_TYPE',
     (value) => {
-      expectToThrowCode(() => stringifyJSONDeterministically(value), ERRORS.UNSUPPORTED_DATA_TYPE);
+      expectToThrowCode(() => stringifyJsonDeterministically(value), ERRORS.UNSUPPORTED_DATA_TYPE);
     },
   );
 
@@ -44,20 +81,20 @@ describe('stringifyJSONDeterministically', () => {
     [{ c: 8, b: [{ z: 6, y: 5, x: 4 }, 7], a: 3 }, '{"a":3,"b":[{"x":4,"y":5,"z":6},7],"c":8}'],
     [{ b: { x: 1 }, a: { x: 1 } }, '{"a":{"x":1},"b":{"x":1}}'],
     [{ b: { a: 1 }, c: { a: 1 } }, '{"b":{"a":1},"c":{"a":1}}'],
-  ])('stringifyJSONDeterministically(%j) -> %s', (value, expected) => {
-    expect(stringifyJSONDeterministically(value)).toBe(expected);
+  ])('stringifyJsonDeterministically(%j) -> %s', (value, expected) => {
+    expect(stringifyJsonDeterministically(value)).toBe(expected);
   });
 });
 
-describe('parseJSON', () => {
+describe('parseJson', () => {
   test.each([[undefined], [null], [''], [true], [123], [NaN]])(
-    'parseJSON(%s) -> throws UNSUPPORTED_DATA_TYPE',
+    'parseJson(%s) -> throws UNSUPPORTED_DATA_TYPE',
     (value) => {
-      expectToThrowCode(() => parseJSON(value as string), ERRORS.UNSUPPORTED_DATA_TYPE);
+      expectToThrowCode(() => parseJson(value as string), ERRORS.UNSUPPORTED_DATA_TYPE);
     },
   );
-  test.each([['hello world']])('parseJSON(%s) -> throws UNABLE_TO_DESERIALIZE_JSON', (value) => {
-    expectToThrowCode(() => parseJSON(value), ERRORS.UNABLE_TO_DESERIALIZE_JSON);
+  test.each([['hello world']])('parseJson(%s) -> throws UNABLE_TO_DESERIALIZE_JSON', (value) => {
+    expectToThrowCode(() => parseJson(value), ERRORS.UNABLE_TO_DESERIALIZE_JSON);
   });
 
   test.each([
@@ -68,12 +105,12 @@ describe('parseJSON', () => {
     ['[4,"",6]', [4, '', 6]],
     ['{"c":8,"b":[{"z":6,"y":5,"x":4},7],"a":3}', { c: 8, b: [{ z: 6, y: 5, x: 4 }, 7], a: 3 }],
     ['{"b":{"x":1},"a":{"x":1}}', { b: { x: 1 }, a: { x: 1 } }],
-  ])('parseJSON(%s) -> %o', (value, expected) => {
-    expect(parseJSON(value)).toStrictEqual(expected);
+  ])('parseJson(%s) -> %o', (value, expected) => {
+    expect(parseJson(value)).toStrictEqual(expected);
   });
 });
 
-describe('pruneJSON', () => {
+describe('pruneJson', () => {
   test.each([
     [null, null],
     [undefined, null],
@@ -105,7 +142,7 @@ describe('pruneJSON', () => {
       },
       { a: { b: { c: { d: { p: { a: 1 } } } } } },
     ],
-  ])('pruneJSON(%o) -> %o', (input, expected) => {
-    expect(pruneJSON(input as never)).toStrictEqual(expected);
+  ])('pruneJson(%o) -> %o', (input, expected) => {
+    expect(pruneJson(input as never)).toStrictEqual(expected);
   });
 });

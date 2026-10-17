@@ -29,6 +29,8 @@ const IS_WINDOWS = process.platform === 'win32';
  * @param options The working directory, the environment and the stdio configuration ('inherit' by default).
  * @returns The started child process.
  * @example
+ * import { startProcess, stopProcessTree } from 'jg-process';
+ *
  * const server = startProcess('node', ['server.js'], { stdio: 'inherit' });
  * process.once('SIGINT', () => void stopProcessTree(server));
  */
@@ -43,6 +45,8 @@ export function startProcess(
  * @param command The executable, its arguments, and the working directory, environment, and stdio.
  * @returns The started child process.
  * @example
+ * import { startProcess } from 'jg-process';
+ *
  * const server = startProcess({ command: 'node', args: ['server.js'], cwd: 'apps/api' });
  */
 export function startProcess(command: IStartProcessCommand): ChildProcess;
@@ -147,10 +151,9 @@ const waitFor = async (condition: () => boolean, milliseconds: number): Promise<
  * @returns The error.
  */
 const treeSurvived = (pid: number): Exception =>
-  new Exception(
-    `The process tree of pid ${pid} is still running after it was force-stopped.`,
-    ERRORS.PROCESS_TREE_SURVIVED,
-  );
+  new Exception(`The process tree of pid ${pid} is still running after it was force-stopped.`, {
+    code: ERRORS.PROCESS_TREE_SURVIVED,
+  });
 
 /**
  * Stops a process tree on POSIX: SIGTERM to the group, then SIGKILL after the grace period.
@@ -225,6 +228,8 @@ const stopWindowsTree = async (child: ChildProcess, pid: number): Promise<void> 
  * @param gracePeriodSeconds? The seconds to wait after SIGTERM. Defaults to DEFAULT_GRACE_PERIOD_SECONDS.
  * @returns A promise that resolves once the process tree is gone.
  * @example
+ * import { startProcess, stopProcessTree } from 'jg-process';
+ *
  * const server = startProcess('node', ['server.js']);
  * await stopProcessTree(server, 10); // SIGTERM, then SIGKILL after 10 seconds
  * @throws

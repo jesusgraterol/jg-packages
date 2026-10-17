@@ -58,8 +58,48 @@ const toFailure = (
   return new RequestFailure('NETWORK_ERROR', { cause: error });
 };
 
+// the longest delay a timer accepts, in milliseconds
+const MAX_TIMER_DELAY_MS = 2_147_483_647;
+
 /**
- * Builds an attempt's headers, running the headers function when there is one.
+ * Waits for a value, or rejects as soon as the signal aborts, so a promise that never settles can't
+ * hold an attempt past its timeout or the caller's abort. A promise that settles after the abort is
+ * still handled, and ignored.
+ * @param value The value or promise to wait for.
+ * @param signal The attempt's signal.
+ * @returns A promise that settles like the value, or rejects when the signal aborts first.
+ */
+const raceSignal = async <V>(value: V | PromiseLike<V>, signal: AbortSignal): Promise<V> => {
+  const pending = Promise.resolve(value);
+  // once the signal aborted, the value is ignored, but its rejection must never go unhandled
+  pending.catch(() => undefined);
+  signal.throwIfAborted();
+  // aborting this controller removes the abort listener once the race settles
+  const settled = new AbortController();
+  const aborted = new Promise<never>((_resolve, reject) => {
+    signal.addEventListener(
+      'abort',
+      () => {
+        reject(new Error('The signal aborted.', { cause: signal.reason }));
+      },
+      { once: true, signal: settled.signal },
+    );
+  });
+  // AbortSignal.timeout's timer doesn't keep Node.js running, and a promise waiting on nothing holds
+  // no handle either, so without this the process could exit before the timeout fires
+  const keepAlive = setInterval(() => undefined, MAX_TIMER_DELAY_MS);
+  try {
+    return await Promise.race([pending, aborted]);
+  } finally {
+    clearInterval(keepAlive);
+    settled.abort();
+  }
+};
+
+/**
+ * Builds an attempt's headers, running the headers function when there is one. The function's
+ * result is raced against the attempt's signal, so one that never settles ends as TIMEOUT or
+ * ABORTED like any other abort.
  * @param options The resolved options.
  * @param body The serialized body.
  * @param attempt The attempt's number.
@@ -78,10 +118,14 @@ const buildHeaders = async <T>(
   try {
     const init =
       typeof options.headers === 'function'
-        ? await options.headers({ attempt, signal })
+        ? await raceSignal(options.headers({ attempt, signal }), signal)
         : options.headers;
     headers = new Headers(init);
   } catch (error) {
+    // an abort while the headers were built is the attempt's timeout or the caller's abort
+    if (signal.aborted) {
+      throw error;
+    }
     throw new RequestFailure('INVALID_HEADERS', { cause: error });
   }
   if (body.isJson && !headers.has('content-type')) {
@@ -141,6 +185,8 @@ const runAttempt = async <T>(
  * @returns A promise that resolves to `{ data, error: null, meta }` or `{ data: null, error,
  * meta }`, where error is a FetchException.
  * @example
+ * import { request } from 'jg-fetch';
+ *
  * const { data, error } = await request<IUser>('/users/1', {
  *   baseUrl: 'https://api.example.com',
  *   parseAs: 'envelope',
@@ -150,6 +196,8 @@ const runAttempt = async <T>(
  *   error.kind; // such as 'API_ERROR' or 'TIMEOUT'
  * }
  * @example
+ * import { request } from 'jg-fetch';
+ *
  * const { data: html } = await request('https://example.com', { parseAs: 'text' }); // string | null
  */
 export function request(
@@ -193,19 +241,21 @@ export async function request<T>(
     attempts,
     durationMs: getDurationMs(),
   });
+  const toException = (
+    kind: IFetchErrorKind,
+    details: IFailureDetails,
+    meta: IResponseMeta,
+  ): FetchException =>
+    new FetchException(kind, {
+      ...details,
+      method,
+      url: meta.url,
+      attempts,
+      durationMs: meta.durationMs,
+    });
   const toResult = (kind: IFetchErrorKind, details: IFailureDetails): IRequestResult<T> => {
     const meta = getMeta();
-    return {
-      data: null,
-      error: new FetchException(kind, {
-        ...details,
-        method,
-        url: meta.url,
-        attempts,
-        durationMs: meta.durationMs,
-      }),
-      meta,
-    };
+    return { data: null, error: toException(kind, details, meta), meta };
   };
 
   let resolved: IResolvedOptions<T>;
@@ -267,10 +317,11 @@ export async function request<T>(
       return toResult(failure.kind, failure.details);
     }
     try {
-      const { error } = toResult(failure.kind, failure.details);
-      if (error !== null) {
-        resolved.onRetry?.({ attempt: attempts, error, delayMs: decision.delayMs });
-      }
+      resolved.onRetry?.({
+        attempt: attempts,
+        error: toException(failure.kind, failure.details, getMeta()),
+        delayMs: decision.delayMs,
+      });
     } catch {
       // onRetry is a notification; its failures never stop the call
     }

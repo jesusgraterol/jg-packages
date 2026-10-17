@@ -1,0 +1,17 @@
+---
+import type { HTMLTag } from 'astro/types';
+
+interface Props {
+  // the element to render. Defaults to a div
+  as?: HTMLTag | undefined;
+  class?: string | undefined;
+  // 'page' for the page width, 'prose' for a readable text column
+  width?: 'page' | 'prose' | undefined;
+}
+
+const { as: Element = 'div', class: className, width = 'page' } = Astro.props;
+---
+
+<Element class:list={[width === 'prose' ? 'jg-container-prose' : 'jg-container', className]}>
+  <slot />
+</Element>

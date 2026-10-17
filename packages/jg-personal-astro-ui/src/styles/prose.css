@@ -1,0 +1,140 @@
+/*
+ * Rendered Markdown: headings, paragraphs, lists, links, inline code, code blocks, tables, and
+ * blockquotes, styled with the contract's tokens only. The prose component applies .jg-prose.
+ */
+@layer components {
+  /* long identifiers and slash-joined terms must still wrap at 320 px */
+  .jg-prose {
+    color: var(--jg-foreground);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    overflow-wrap: break-word;
+  }
+
+  .jg-prose > :first-child {
+    margin-top: 0;
+  }
+
+  .jg-prose :is(h2, h3, h4) {
+    scroll-margin-top: 6rem;
+    font-weight: 650;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  .jg-prose h2 {
+    margin-top: 3.5rem;
+    border-top: 1px solid var(--jg-border);
+    padding-top: 1.75rem;
+    font-size: clamp(1.625rem, 3.5vw, 2.125rem);
+  }
+
+  .jg-prose h3 {
+    margin-top: 2.25rem;
+    font-size: 1.3125rem;
+  }
+
+  .jg-prose h4 {
+    margin-top: 1.75rem;
+    font-size: 1.0625rem;
+  }
+
+  .jg-prose :is(p, ul, ol, blockquote, pre, table) {
+    margin-top: 1.25rem;
+  }
+
+  .jg-prose :is(ul, ol) {
+    padding-left: 1.5rem;
+  }
+
+  .jg-prose ul {
+    list-style: disc;
+  }
+
+  .jg-prose ol {
+    list-style: decimal;
+  }
+
+  .jg-prose li + li {
+    margin-top: 0.5rem;
+  }
+
+  .jg-prose li::marker {
+    color: var(--jg-muted);
+  }
+
+  .jg-prose a {
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, currentColor 40%, transparent);
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.18em;
+    transition: text-decoration-color 160ms ease;
+  }
+
+  .jg-prose a:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .jg-prose strong {
+    font-weight: 650;
+  }
+
+  .jg-prose :not(pre) > code {
+    border: 1px solid var(--jg-border);
+    border-radius: calc(var(--jg-radius) * 0.5);
+    background: var(--jg-code);
+    padding: 0.1em 0.35em;
+    font-size: 0.875em;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .jg-prose pre {
+    overflow-x: auto;
+    border: 1px solid var(--jg-border);
+    border-radius: calc(var(--jg-radius) * 1.25);
+    background: var(--jg-code) !important;
+    padding: 1rem 1.125rem;
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+
+  .jg-prose pre code {
+    background: transparent;
+  }
+
+  /* fixed layout lets cells wrap within the column, so wide tables never scroll the page */
+  .jg-prose table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+
+  .jg-prose :is(th, td) {
+    border: 1px solid var(--jg-border);
+    padding: 0.5rem 0.625rem;
+    overflow-wrap: anywhere;
+    vertical-align: top;
+    text-align: left;
+  }
+
+  .jg-prose th {
+    background: var(--jg-secondary);
+    font-weight: 650;
+  }
+
+  .jg-prose blockquote {
+    border-left: 3px solid var(--jg-accent);
+    padding-left: 1.25rem;
+    color: var(--jg-muted);
+  }
+
+  .jg-prose hr {
+    margin-block: 2.5rem;
+    border: 0;
+    border-top: 1px solid var(--jg-border);
+  }
+}

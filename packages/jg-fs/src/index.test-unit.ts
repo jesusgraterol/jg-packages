@@ -27,12 +27,12 @@ describe('public API', () => {
       'readBufferFile',
       'readDirectory',
       'readFile',
-      'readJSONFile',
+      'readJsonFile',
       'readTextFile',
       'writeBufferFile',
       'writeFile',
       'writeFileAtomic',
-      'writeJSONFile',
+      'writeJsonFile',
       'writeTextFile',
     ]);
   });

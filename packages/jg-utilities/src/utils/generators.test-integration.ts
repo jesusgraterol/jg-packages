@@ -1,19 +1,19 @@
 // @vitest-environment node
 import { describe, expect, test } from 'vitest';
 
-import type { IUUIDVersion } from '../shared/types.js';
-import { isIntegerValid, isUUIDValid } from '../validations/index.js';
+import type { IUuidVersion } from '../shared/types.js';
+import { isIntegerValid, isUuidValid } from '../validations/index.js';
 
 import {
   generateRandomFloat,
   generateRandomInteger,
   generateRandomString,
-  generateUUID,
+  generateUuid,
 } from './generators.js';
 
 describe('Generators', () => {
-  describe('generateUUID', () => {
-    test.each(<Array<[IUUIDVersion]>>[
+  describe('generateUuid', () => {
+    test.each(<Array<[IUuidVersion]>>[
       [4],
       [4],
       [4],
@@ -34,11 +34,11 @@ describe('Generators', () => {
       [7],
       [7],
       [7],
-    ])('generateUUID(%i) -> valid UUID', (version) => {
-      const uuid = generateUUID(version);
+    ])('generateUuid(%i) -> valid UUID', (version) => {
+      const uuid = generateUuid(version);
       expect(typeof uuid).toBe('string');
       expect(uuid.length).toBe(36);
-      expect(isUUIDValid(uuid, version)).toBe(true);
+      expect(isUuidValid(uuid, version)).toBe(true);
       expect(
         /^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$/.test(uuid),
       ).toBe(true);

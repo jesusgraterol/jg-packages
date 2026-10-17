@@ -28,7 +28,7 @@ const ROUNDING_MODES: Record<IBigNumberRoundingModeName, IBigNumberRoundingMode>
   ROUND_HALF_FLOOR: 8,
 };
 
-// the switch bignumber-utils used before
+// the same lookup written as a switch statement, to compare against the map
 const getRoundingModeWithSwitch = (name: IBigNumberRoundingModeName): IBigNumberRoundingMode => {
   switch (name) {
     case 'ROUND_UP':

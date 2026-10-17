@@ -50,7 +50,7 @@ describe.skipIf(IS_WINDOWS)('startProcess & stopProcessTree', () => {
   };
 
   beforeAll(async () => {
-    directory = await mkdtemp(join(tmpdir(), 'node-process-utils-'));
+    directory = await mkdtemp(join(tmpdir(), 'jg-process-'));
   });
 
   afterEach(() => {
@@ -66,6 +66,14 @@ describe.skipIf(IS_WINDOWS)('startProcess & stopProcessTree', () => {
 
   afterAll(async () => {
     await rm(directory, { recursive: true, force: true });
+  });
+
+  test("inherits the parent's stdio by default", async () => {
+    const child = startProcess(process.execPath, ['-e', '']);
+    await new Promise((resolve) => child.once('exit', resolve));
+
+    expect(child.stdout).toBeNull();
+    expect(child.exitCode).toBe(0);
   });
 
   test('starts a child that leads its own process group', async () => {

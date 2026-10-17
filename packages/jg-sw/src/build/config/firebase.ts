@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 import { pathExists } from 'jg-fs';
 
 import {
@@ -29,10 +29,10 @@ const loadEnvironmentFile = async (
   try {
     process.loadEnvFile(path);
   } catch (error) {
-    throw new Exception(
-      `Unable to load the environment file '${path}': ${extractMessage(error)}`,
-      ERRORS.FAILED_TO_BUILD_CONFIG,
-    );
+    throw new Exception(`Unable to load the environment file '${path}'.`, {
+      code: ERRORS.FAILED_TO_BUILD_CONFIG,
+      cause: error,
+    });
   }
 };
 
@@ -59,7 +59,7 @@ export const readFirebaseOptions = async (
   if (environment === undefined) {
     throw new Exception(
       'The firebase-fcm template needs an environment, which selects the environment file that holds its Firebase config. Pass --environment, or the environment option.',
-      ERRORS.INVALID_ENVIRONMENT,
+      { code: ERRORS.INVALID_ENVIRONMENT },
     );
   }
   await loadEnvironmentFile(cwd, environment);
@@ -68,15 +68,15 @@ export const readFirebaseOptions = async (
   if (value === undefined || value.trim() === '') {
     throw new Exception(
       `The environment variable '${envKey}' that holds the Firebase config is missing or empty.`,
-      ERRORS.INVALID_FIREBASE_CONFIG,
+      { code: ERRORS.INVALID_FIREBASE_CONFIG },
     );
   }
   try {
     return FirebaseConfigSchema.parse(JSON.parse(value)).options;
   } catch (error) {
     throw new Exception(
-      `Unable to read the Firebase config from the environment variable '${envKey}': ${extractMessage(error)}`,
-      ERRORS.FAILED_TO_READ_FIREBASE_CONFIG,
+      `Unable to read the Firebase config from the environment variable '${envKey}'.`,
+      { code: ERRORS.FAILED_TO_READ_FIREBASE_CONFIG, cause: error },
     );
   }
 };

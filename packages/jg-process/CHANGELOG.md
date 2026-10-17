@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0
+
+A fresh start: breaking changes in a minor version, once, because nothing depended on 1.0.x.
+
+### Added
+
+- `API.md`, the full API reference, generated from the TSDoc of the version it ships with, so it can be read from `node_modules` without a browser.
+
+### Changed
+
+- Errors are `Exception`s from `jg-exception` 1.1.0: the code, the data, and the cause each have their own field, nothing is encoded into the message, and `toJSON()` and `toString()` follow `jg-exception`.
+- Error messages say what failed at that step and keep the error underneath as `cause`, instead of repeating its message, so `extractMessage` prints each layer of the chain once.
+
 ## 1.0.1
 
 ### Changed
@@ -8,13 +21,10 @@
 
 ## 1.0.0
 
-The first release of `jg-process`, which replaces `node-process-utils` 1.0.1.
+The first release.
 
 ### Added
 
+- `runProcess`, which runs a command without a shell, with timeouts, output limits, and abort signals.
+- `startProcess(command)`, which takes the command, its arguments, and its options in one `IStartProcessCommand` object, and `stopProcessTree`.
 - `ERRORS`, the codes of every error the package throws.
-- `startProcess(command)`, which takes the command, its arguments, and its options in one `IStartProcessCommand` object.
-
-### Changed
-
-- Errors are `Exception`s from `jg-exception`.

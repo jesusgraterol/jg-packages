@@ -1,0 +1,66 @@
+{
+  "name": "jg-clipboard",
+  "version": "0.1.0",
+  "description": "Copy and read text, HTML, and images on the browser clipboard, with support detection and coded errors that say why the browser refused.",
+  "author": "Jesus Graterol",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "API.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesusgraterol/jg-packages.git",
+    "directory": "packages/jg-clipboard"
+  },
+  "homepage": "https://jg-packages.jesusgraterol.dev/packages/jg-clipboard/",
+  "bugs": {
+    "url": "https://github.com/jesusgraterol/jg-packages/issues"
+  },
+  "keywords": [
+    "browser",
+    "clipboard",
+    "copy",
+    "paste",
+    "clipboard-api"
+  ],
+  "scripts": {
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/api-reference/src/write-api-markdown.ts",
+    "lint": "eslint .",
+    "test": "pnpm test:unit && pnpm test:browser",
+    "test:browser": "vitest run --project browser",
+    "test:coverage": "vitest run --coverage --project unit",
+    "test:unit": "vitest run --project unit",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json"
+  },
+  "dependencies": {
+    "jg-exception": "workspace:^"
+  },
+  "devDependencies": {
+    "@jg-packages/eslint-config": "workspace:*",
+    "@jg-packages/tsconfig": "workspace:*",
+    "@jg-packages/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

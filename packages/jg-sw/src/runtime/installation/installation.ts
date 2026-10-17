@@ -1,4 +1,4 @@
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
 import {
   ERRORS,
@@ -58,6 +58,8 @@ export const listenForInstallation = (): void => {
  * the page doesn't already run as the installed app. Only Chromium-based browsers offer it.
  * @returns Whether the app can be installed.
  * @example
+ * import { canInstallApp } from 'jg-sw';
+ *
  * installButton.hidden = !canInstallApp();
  */
 export const canInstallApp = (): boolean =>
@@ -69,6 +71,8 @@ export const canInstallApp = (): boolean =>
  * is false afterwards until it offers another.
  * @returns A promise that resolves to 'accepted' or 'dismissed'.
  * @example
+ * import { installApp } from 'jg-sw';
+ *
  * installButton.addEventListener('click', async () => {
  *   const outcome = await installApp(); // 'accepted' or 'dismissed'
  * });
@@ -81,7 +85,7 @@ export const installApp = async (): Promise<IInstallationPromptOutcome> => {
   if (!canPrompt(prompt)) {
     throw new Exception(
       "The app can't be installed because the browser didn't offer the installation prompt.",
-      ERRORS.NO_APP_INSTALLER,
+      { code: ERRORS.NO_APP_INSTALLER },
     );
   }
   try {
@@ -92,9 +96,9 @@ export const installApp = async (): Promise<IInstallationPromptOutcome> => {
     updateSnapshot({}, { canInstall: false, promptOutcome: choice.outcome });
     return choice.outcome;
   } catch (error) {
-    throw new Exception(
-      `The installation prompt failed: ${extractMessage(error)}`,
-      ERRORS.UNKNOWN_INSTALLATION_PROMPT_ERROR,
-    );
+    throw new Exception('The installation prompt failed.', {
+      code: ERRORS.UNKNOWN_INSTALLATION_PROMPT_ERROR,
+      cause: error,
+    });
   }
 };

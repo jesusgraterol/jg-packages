@@ -1,7 +1,7 @@
 import { Exception } from 'jg-exception';
 
 import { ERRORS } from '../shared/errors.js';
-import { stringifyJSONDeterministically } from '../transformers/index.js';
+import { stringifyJsonDeterministically } from '../transformers/index.js';
 import { isIntegerValid } from '../validations/index.js';
 
 import { createUint32Source, drawUniformIndex } from './random.js';
@@ -13,6 +13,8 @@ import { canArrayBeShuffled, validateObjectAndKeys } from './validations.js';
  * @param input The array to be shuffled.
  * @returns A new array with the values of the input array in a random order.
  * @example
+ * import { shuffleArray } from 'jg-utilities';
+ *
  * shuffleArray([1, 2, 3, 4]); // a new array, such as [3, 1, 4, 2]
  * @throws
  * - INVALID_OR_EMPTY_ARRAY: if the input is not array or it is empty
@@ -36,7 +38,9 @@ export const shuffleArray = <T>(input: Array<T>): Array<T> => {
  * @param batchSize The size of each batch.
  * @returns An array of arrays, where each inner array is a batch of the specified size.
  * @example
- * splitArrayIntoBatches([1, 2, 3, 4, 5], 2); // [[1, 2], [3, 4], [5]]
+ * import { splitArrayIntoBatches } from 'jg-utilities';
+ *
+ * splitArrayIntoBatches([1, 2, 3, 4, 5], 2); // => [[1, 2], [3, 4], [5]]
  * @throws
  * - INVALID_BATCH_SIZE: if the batch size is not a valid integer greater than 0
  */
@@ -50,7 +54,7 @@ export const splitArrayIntoBatches = <T>(items: T[], batchSize: number): Array<T
   if (!isIntegerValid(batchSize, 1)) {
     throw new Exception(
       `In order to split an array into batches, the batch size must be an integer greater than 0. Received: ${String(batchSize)}`,
-      ERRORS.INVALID_BATCH_SIZE,
+      { code: ERRORS.INVALID_BATCH_SIZE },
     );
   }
 
@@ -69,7 +73,9 @@ export const splitArrayIntoBatches = <T>(items: T[], batchSize: number): Array<T
  * @param propKeys The keys of the properties to pick.
  * @returns A new object containing only the picked properties.
  * @example
- * pickProps({ id: 1, name: 'Ada', email: 'ada@example.com' }, ['id', 'name']); // { id: 1, name: 'Ada' }
+ * import { pickProps } from 'jg-utilities';
+ *
+ * pickProps({ id: 1, name: 'Ada', email: 'ada@example.com' }, ['id', 'name']); // => { id: 1, name: 'Ada' }
  * @throws
  * - INVALID_OR_EMPTY_OBJECT: if the input is not a valid object or it is empty
  * - INVALID_OR_EMPTY_ARRAY: if the keys to be picked are not a valid array or it is empty
@@ -89,7 +95,9 @@ export const pickProps = <T extends object, K extends keyof T>(
  * @param propKeys The keys of the properties to omit.
  * @returns A new object containing only the properties that were not omitted.
  * @example
- * omitProps({ id: 1, name: 'Ada', email: 'ada@example.com' }, ['email']); // { id: 1, name: 'Ada' }
+ * import { omitProps } from 'jg-utilities';
+ *
+ * omitProps({ id: 1, name: 'Ada', email: 'ada@example.com' }, ['email']); // => { id: 1, name: 'Ada' }
  * @throws
  * - INVALID_OR_EMPTY_OBJECT: if the input is not a valid object or it is empty
  * - INVALID_OR_EMPTY_ARRAY: if the keys to be omitted are not a valid array or it is empty
@@ -112,9 +120,11 @@ export const omitProps = <T extends object, K extends keyof T>(
  * @param secondValue The second value.
  * @returns Whether the values are equal.
  * @example
- * isEqual({ a: 1, b: [2] }, { b: [2], a: 1 }); // true
- * isEqual('a', 'a'); // true
- * isEqual({}, null); // false
+ * import { isEqual } from 'jg-utilities';
+ *
+ * isEqual({ a: 1, b: [2] }, { b: [2], a: 1 }); // => true
+ * isEqual('a', 'a'); // => true
+ * isEqual({}, null); // => false
  * @throws
  * - UNABLE_TO_SERIALIZE_JSON: if either object contains data that cannot be serialized
  */
@@ -124,7 +134,7 @@ export const isEqual = (firstValue: unknown, secondValue: unknown): boolean => {
   if (!isFirstObject || !isSecondObject) {
     return Object.is(firstValue, secondValue);
   }
-  return stringifyJSONDeterministically(firstValue) === stringifyJSONDeterministically(secondValue);
+  return stringifyJsonDeterministically(firstValue) === stringifyJsonDeterministically(secondValue);
 };
 
 /**
@@ -133,7 +143,9 @@ export const isEqual = (firstValue: unknown, secondValue: unknown): boolean => {
  * @param overrides The values that should replace matching defaults when they are not nullish.
  * @returns A new object containing the default keys and resolved values.
  * @example
- * applyDefaults({ retries: 3, timeout: 15 }, { retries: 5, timeout: null }); // { retries: 5, timeout: 15 }
+ * import { applyDefaults } from 'jg-utilities';
+ *
+ * applyDefaults({ retries: 3, timeout: 15 }, { retries: 5, timeout: null }); // => { retries: 5, timeout: 15 }
  */
 export const applyDefaults = <T extends Record<string, unknown>>(
   defaults: T,

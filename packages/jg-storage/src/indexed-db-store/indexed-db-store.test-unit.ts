@@ -1,16 +1,20 @@
-import { del, get, set } from 'idb-keyval';
+import { createStore, del, get, set, type UseStore } from 'idb-keyval';
 import { expectToRejectCode } from 'jg-exception/testing';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { ERRORS, STORAGE_TEST_DATA, buildDataKey } from '../shared/index.js';
+import { ERRORS, STORAGE_TEST_DATA, buildIndexedDbKey } from '../shared/index.js';
 import { createIndexedDbStore } from './indexed-db-store.js';
 
 // mocks the entire idb-keyval module
 vi.mock('idb-keyval', () => ({
+  createStore: vi.fn(),
   get: vi.fn(),
   set: vi.fn(),
   del: vi.fn(),
 }));
+
+// stands in for the jg-storage database's records store, which idb-keyval's createStore opens
+const RECORDS_STORE = (() => undefined) as unknown as UseStore;
 
 // makes every write fail, so the compatibility probe fails
 const mockSet = (): void => {
@@ -21,6 +25,7 @@ describe('createIndexedDbStore', () => {
   beforeEach(() => {
     vi.unstubAllGlobals();
     vi.resetAllMocks();
+    vi.mocked(createStore).mockReturnValue(RECORDS_STORE);
   });
 
   test('it can interact with the Browser IndexedDB API when compatible', async () => {
@@ -34,14 +39,19 @@ describe('createIndexedDbStore', () => {
     expect(store.id).toBe(storeId);
     expect(store.mechanism).toBe('indexedDB');
     await expect(store.get(recordId)).resolves.toBeUndefined();
-    expect(get).toHaveBeenNthCalledWith(1, buildDataKey(storeId, recordId));
+    expect(get).toHaveBeenNthCalledWith(1, buildIndexedDbKey(storeId, recordId), RECORDS_STORE);
 
     // the first set and del calls probe the compatibility
-    expect(set).toHaveBeenNthCalledWith(1, STORAGE_TEST_DATA.key, STORAGE_TEST_DATA.value);
+    expect(set).toHaveBeenNthCalledWith(
+      1,
+      STORAGE_TEST_DATA.key,
+      STORAGE_TEST_DATA.value,
+      RECORDS_STORE,
+    );
     await store.set(recordId, updateData);
-    expect(set).toHaveBeenNthCalledWith(2, buildDataKey(storeId, recordId), updateData);
+    expect(set).toHaveBeenNthCalledWith(2, ['unit-test'], updateData, RECORDS_STORE);
     await store.del();
-    expect(del).toHaveBeenNthCalledWith(2, buildDataKey(storeId, recordId));
+    expect(del).toHaveBeenNthCalledWith(2, ['unit-test'], RECORDS_STORE);
   });
 
   test('it uses IndexedDB in a service worker without a window', async () => {
@@ -52,9 +62,11 @@ describe('createIndexedDbStore', () => {
     await expect(store.isCompatible()).resolves.toBe(true);
     await store.set('device', { token: 'test-token' });
 
-    expect(set).toHaveBeenCalledWith(buildDataKey('worker-test', 'device'), {
-      token: 'test-token',
-    });
+    expect(set).toHaveBeenCalledWith(
+      ['worker-test', 'device'],
+      { token: 'test-token' },
+      RECORDS_STORE,
+    );
   });
 
   test('probes once, even when several calls start before the probe settles', async () => {
@@ -66,7 +78,7 @@ describe('createIndexedDbStore', () => {
     );
   });
 
-  test('runs parse on every stored value get reads, and lets its errors propagate', async () => {
+  test('runs the schema on every stored value get reads, and lets its errors propagate', async () => {
     vi.stubGlobal('indexedDB', {});
     const parse = vi.fn((value: unknown) => {
       if (typeof value !== 'number') {
@@ -74,7 +86,7 @@ describe('createIndexedDbStore', () => {
       }
       return value;
     });
-    const store = createIndexedDbStore('unit-test', { parse });
+    const store = createIndexedDbStore('unit-test', { schema: { parse } });
     await expect(store.get()).resolves.toBeUndefined();
     expect(parse).not.toHaveBeenCalled();
     vi.mocked(get).mockResolvedValue(7);
@@ -128,7 +140,12 @@ describe('createIndexedDbStore', () => {
     expect(get).not.toHaveBeenCalled();
 
     // the compatibility probe called set
-    expect(set).toHaveBeenNthCalledWith(1, STORAGE_TEST_DATA.key, STORAGE_TEST_DATA.value);
+    expect(set).toHaveBeenNthCalledWith(
+      1,
+      STORAGE_TEST_DATA.key,
+      STORAGE_TEST_DATA.value,
+      RECORDS_STORE,
+    );
 
     // it isn't called again, because the store falls back to memory
     await store.set(recordId, updateData);

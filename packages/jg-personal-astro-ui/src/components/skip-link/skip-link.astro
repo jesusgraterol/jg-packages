@@ -1,0 +1,17 @@
+---
+interface Props {
+  // the id of the main content, with its #
+  href?: string | undefined;
+  label?: string | undefined;
+}
+
+const { href = '#main-content', label = 'Skip to main content' } = Astro.props;
+---
+
+{/* hidden above the viewport until it receives focus, so keyboard users reach it first */}
+<a
+  class="fixed top-2 left-2 z-[100] -translate-y-20 rounded-md bg-primary px-4 py-2 font-semibold text-primary-foreground no-underline focus:translate-y-0"
+  href={href}
+>
+  {label}
+</a>

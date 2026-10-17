@@ -1,5 +1,5 @@
 import { expectToRejectCode } from 'jg-exception/testing';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import { createInstallPromptEvent, loadRuntime, stubBrowser } from '../fakes.test-utils.js';
 
@@ -87,5 +87,17 @@ describe('installApp', () => {
       canInstall: false,
       isAppInstalled: true,
     });
+  });
+});
+
+describe('installation outside a browser', () => {
+  test('tracks nothing without a window, such as in a worker', async () => {
+    stubBrowser();
+    vi.stubGlobal('window', undefined);
+    const { registerServiceWorker, canInstallApp } = await loadRuntime();
+
+    await registerServiceWorker();
+
+    expect(canInstallApp()).toBe(false);
   });
 });

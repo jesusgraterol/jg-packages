@@ -8,8 +8,10 @@ import { buildNumberFormatConfig, formatLargeFileSize } from './utilities.js';
  * @param configuration? An optional configuration object.
  * @returns A string representing the formatted number.
  * @example
- * prettifyNumber(1234567.891); // '1,234,567.89'
- * prettifyNumber(19.5, { minimumFractionDigits: 2, prefix: '$' }); // '$19.50'
+ * import { prettifyNumber } from 'jg-utilities';
+ *
+ * prettifyNumber(1234567.891); // => '1,234,567.89'
+ * prettifyNumber(19.5, { minimumFractionDigits: 2, prefix: '$' }); // => '$19.50'
  */
 export const prettifyNumber = (
   value: number,
@@ -29,8 +31,10 @@ export const prettifyNumber = (
  * @param configuration? An optional configuration object.
  * @returns A string representing the formatted percentage.
  * @example
- * prettifyPercentage(12.345); // '12.35%'
- * prettifyPercentage(-3); // '-3%'
+ * import { prettifyPercentage } from 'jg-utilities';
+ *
+ * prettifyPercentage(12.345); // => '12.35%'
+ * prettifyPercentage(-3); // => '-3%'
  */
 export const prettifyPercentage = (
   value: number,
@@ -51,8 +55,10 @@ export const prettifyPercentage = (
  * @param decimalPlaces The number of decimal places to include. Defaults to 2.
  * @returns A string representing the formatted file size.
  * @example
- * prettifyFileSize(1536); // '1.50 kB'
- * prettifyFileSize(3_250_000_000, 1); // '3.0 GB'
+ * import { prettifyFileSize } from 'jg-utilities';
+ *
+ * prettifyFileSize(1536); // => '1.50 kB'
+ * prettifyFileSize(3_250_000_000, 1); // => '3.0 GB'
  */
 export const prettifyFileSize = (value: number | bigint, decimalPlaces: number = 2): string => {
   if (typeof value === 'bigint') {
@@ -94,9 +100,11 @@ export const prettifyFileSize = (value: number | bigint, decimalPlaces: number =
  * @param maxValue The maximum value to display before showing a "+" sign. Defaults to 9.
  * @returns A string representing the formatted badge count or undefined if the count is 0.
  * @example
- * prettifyBadgeCount(3); // '3'
- * prettifyBadgeCount(42); // '9+'
- * prettifyBadgeCount(0); // undefined
+ * import { prettifyBadgeCount } from 'jg-utilities';
+ *
+ * prettifyBadgeCount(3); // => '3'
+ * prettifyBadgeCount(42); // => '9+'
+ * prettifyBadgeCount(0); // => undefined
  */
 export const prettifyBadgeCount = (value: number, maxValue: number = 9): string | undefined => {
   if (value === 0) {

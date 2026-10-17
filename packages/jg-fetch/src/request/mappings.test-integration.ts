@@ -59,7 +59,10 @@ describe('moldea packages/app/api-request', () => {
   test('App Check codes reach the app, which refreshes and maps them', async () => {
     const moldeaAppCheckPath = uniquePath('moldea-app-check');
     server.route(moldeaAppCheckPath, (_request, response) => {
-      sendJson(response, 401, { success: false, error: 'The App Check token is invalid.{(80)}' });
+      sendJson(response, 401, {
+        success: false,
+        error: { code: '80', message: 'The App Check token is invalid.', data: null },
+      });
     });
 
     const { error } = await request(moldeaAppCheckPath, {

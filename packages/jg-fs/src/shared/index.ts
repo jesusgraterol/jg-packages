@@ -9,7 +9,9 @@ export type {
   IPathElement,
   IReadBufferFileOptions,
   IReadFileOptions,
+  IReadJsonFileOptions,
   IReadStringFileOptions,
+  ISchema,
 } from './types.js';
 
 // constants
@@ -35,6 +37,6 @@ export {
   notADirectory,
   notAFile,
   notARegularFile,
-  parseJSONContent,
-  serializeJSONData,
+  parseJsonContent,
+  serializeJsonData,
 } from './validations.js';

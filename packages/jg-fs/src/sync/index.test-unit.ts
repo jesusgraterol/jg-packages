@@ -27,7 +27,7 @@ describe('writeFileAtomic failures', () => {
 
   beforeAll(async () => {
     actualFs = await vi.importActual<typeof fs>('node:fs');
-    directory = fs.mkdtempSync(join(tmpdir(), 'fs-utils-sync-'));
+    directory = fs.mkdtempSync(join(tmpdir(), 'jg-fs-sync-'));
   });
 
   afterEach(() => {

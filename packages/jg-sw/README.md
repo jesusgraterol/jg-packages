@@ -18,7 +18,7 @@ import { registerServiceWorker } from 'jg-sw';
 const { registration, registrationError } = await registerServiceWorker(); // registers /sw.js
 ```
 
-It never rejects: a failure lands in `registrationError`. Later calls return the first call's promise, and nothing runs until the first call, so it's safe to import during server-side rendering.
+It never rejects: a failure lands in `registrationError`, an `Exception` whose code is one of `ERRORS`. Later calls return the first call's promise, and nothing runs until the first call, so it's safe to import during server-side rendering.
 
 ### Offer updates and installation
 
@@ -157,41 +157,9 @@ Generate the worker with an environment, such as `jg-sw --environment production
 
 The worker loads Firebase's compat SDK from `gstatic`. When no app window is visible, it shows a notification for each data-only message, using its `title`, `body`, `icon`, `badge`, and `url` fields, and Firebase shows the messages that carry a notification. Clicking a notification focuses or opens its URL, limited to the app's origin. To decide yourself, append code to the generated worker that assigns `self.jgSwFcmBackgroundMessageHandler = async (payload) => { … }`. The worker waits for it, and shows nothing else.
 
-## Coming from `sw-service` and `sw-builder`
-
-| `sw-service` and `sw-builder`                                                  | `jg-sw`                                                                                              |
-| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `SWService.register(options)`                                                  | `registerServiceWorker(options)`, now awaitable                                                      |
-| `SWService.updateApp()`                                                        | `updateApp()`, which now activates the waiting worker                                                |
-| `SWService.registration`, `.worker`, `.registrationError`                      | `getServiceWorkerSnapshot().registration`, `.worker`, `.registrationError`                           |
-| polling `SWService` for changes                                                | `subscribeToServiceWorker(listener)`                                                                 |
-| `SWService.registrationDurationSeconds`                                        | `REGISTRATION_DURATION_SECONDS`                                                                      |
-| `SWService.installer.canAppBeInstalled()`                                      | `canInstallApp()`                                                                                    |
-| `SWService.installer.installApp()`                                             | `installApp()`, which now resolves to the outcome                                                    |
-| `installer.installationPromptOutcome`, `.appInstalled`, `.runningInstalledApp` | `getServiceWorkerSnapshot().installation.promptOutcome`, `.isAppInstalled`, `.isRunningInstalledApp` |
-| `ISWService`, `IAppInstallerService`                                           | `IServiceWorkerSnapshot`, `IAppInstallationState`                                                    |
-| `ISWRegistrationOptions`                                                       | `IRegisterServiceWorkerOptions`                                                                      |
-| the codes, not exported                                                        | `ERRORS` from `jg-sw`, and from `jg-sw/build`                                                        |
-| the `sw-builder` CLI and `sw-builder.config.json`                              | the `jg-sw` CLI and `jg-sw.config.json`, or `writeServiceWorker()` and `serviceWorkerPlugin()`       |
-| `self.swBuilderFcmBackgroundMessageHandler`                                    | `self.jgSwFcmBackgroundMessageHandler`                                                               |
-
-`IInstallationPromptOutcome`, `IUserChoice`, `IBeforeInstallPromptEvent`, the config fields, and the error codes keep their names.
-
-- `updateApp()` used to reload without activating the waiting worker, which then kept waiting. It now activates it and reloads once the new worker controls the page, waiting for a worker that's still installing.
-- The install prompt is tracked from the first `registerServiceWorker()` call, before the registration settles and even when it fails.
-- Nothing logs unless `debugMode` is set, and nothing touches `window` or `navigator` when the module loads.
-- The worker activates when the page posts the skip-waiting message, never caches `Cache-Control: no-store` or `private` responses, and can be generated without caching for development.
-- The Vite plugin serves the worker in development, so you no longer need an empty `public/sw.js`.
-- `firebaseSdkVersion` must be a version such as `12.4.0`, or generation fails with `INVALID_FIREBASE_SDK_VERSION`. A template other than `base` or `firebase-fcm` fails with `INVALID_TEMPLATE_NAME`, and an unsupported `--environment` with `INVALID_ENVIRONMENT`, whatever the template.
-- Environment files load with Node.js's `process.loadEnvFile`, without `dotenv`.
-- Precached paths are URL paths from `outDir`: `app.js` becomes `/app.js`, `#`, `?`, and `%` are percent-encoded, each directory's files are sorted, and a path outside `outDir` fails with `NOT_A_PATH_ELEMENT`.
-- Values written into the worker are serialized as JSON, so paths with quotes stay intact.
-- Importing the package no longer runs the CLI.
-- Errors are `Exception`s from `jg-exception`.
-
 ## Documentation
 
-The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-sw/.
+The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-sw/.
 
 ## License
 

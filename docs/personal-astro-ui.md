@@ -1,0 +1,100 @@
+# jg-personal-astro-ui
+
+The Astro components, Tailwind CSS token contract, and theme that Jesus Graterol's sites share, published as `jg-personal-astro-ui`. This repository's [website](website.md) is built from it. It stays unlisted on the site, and its API can change in any `0.x` release.
+
+## Setting up a site
+
+Install it with its peers:
+
+```bash
+npm install jg-personal-astro-ui astro tailwindcss @tailwindcss/vite
+```
+
+Add the Tailwind CSS Vite plugin, and the package's syntax theme for Markdown code, in `astro.config.ts`:
+
+```ts
+import tailwindcss from '@tailwindcss/vite';
+import { defineConfig } from 'astro/config';
+import { SYNTAX_THEME } from 'jg-personal-astro-ui/syntax-theme';
+
+export default defineConfig({
+  markdown: { shikiConfig: { theme: SYNTAX_THEME } },
+  vite: { plugins: [tailwindcss()] },
+});
+```
+
+Import the stylesheets in the site's global stylesheet, in this order:
+
+```css
+@import 'tailwindcss';
+@import 'jg-personal-astro-ui/styles/contract.css';
+@import 'jg-personal-astro-ui/styles/theme.css';
+@import 'jg-personal-astro-ui/styles/prose.css';
+```
+
+Then render `DocumentHead` and `ThemeInitScript` in every page's `<head>`, so the theme applies before the first paint. `website/src/layouts/base-layout.astro` is a complete layout.
+
+## The token contract
+
+`contract.css` maps `--jg-*` custom properties to Tailwind CSS theme values, so components use utilities such as `bg-surface` and `text-muted`. It also defines the `dark` variant, which follows the `.dark` class the theme script sets on `<html>`, and the shared classes `eyebrow`, `display-title`, `section-title`, `lede`, `jg-container`, `jg-container-prose`, `jg-section-space`, `jg-grid-lines`, and `jg-code`.
+
+`theme.css` gives every property its value, in a light palette on `:root` and a dark one on `.dark`, with the system preference deciding until the theme script runs. Components use only the contract, so a site can replace `theme.css` with its own, as long as it defines every property.
+
+| Properties                                                          | Tailwind CSS utilities                                  | What they're for                                                      |
+| ------------------------------------------------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------- |
+| `--jg-background`, `--jg-foreground`                                | `bg-background`, `text-foreground`                      | The page and its text                                                 |
+| `--jg-surface`, `--jg-secondary`                                    | `bg-surface`, `bg-secondary`                            | Cards and panels, and hover and muted fills                           |
+| `--jg-muted`                                                        | `text-muted`                                            | Secondary text                                                        |
+| `--jg-border`, `--jg-border-strong`                                 | `border-border`, `border-border-strong`                 | Hairlines, and borders that need contrast                             |
+| `--jg-primary`, `--jg-primary-foreground`                           | `bg-primary`, `text-primary-foreground`                 | Primary buttons and icon tiles; near-black in light, inverted in dark |
+| `--jg-accent`, `--jg-accent-foreground`                             | `text-accent`, `bg-accent`                              | The teal accent                                                       |
+| `--jg-terminal`, `--jg-terminal-foreground`, `--jg-terminal-accent` | `bg-terminal`, …                                        | Terminal panels and the `JG/` tile, dark in both themes               |
+| `--jg-focus`                                                        | `outline-focus`                                         | Focus rings                                                           |
+| `--jg-code`                                                         | `bg-code`                                               | Code blocks and inline code                                           |
+| `--jg-success`, `--jg-warning`, `--jg-danger`                       | `bg-success`, `text-warning`, …                         | Statuses                                                              |
+| `--jg-diff-added`, `--jg-diff-removed`                              | `bg-diff-added`, `bg-diff-removed`                      | Diff lines                                                            |
+| `--jg-font-sans`, `--jg-font-mono`                                  | `font-sans`, `font-mono`                                | Ubuntu Sans and Ubuntu Sans Mono                                      |
+| `--jg-radius`                                                       | `rounded-sm` to `rounded-2xl`                           | The base radius the others scale from                                 |
+| `--jg-page-width`, `--jg-prose-width`, `--jg-page-gutter`           | `max-w-page`, `px-page`, and the `jg-container` classes | The page column, the reading column, and the side gutter              |
+| `--jg-section-space`                                                | `py-section`                                            | The space between home page sections                                  |
+| `--jg-shadow-surface`, `--jg-shadow-raised`                         | `shadow-surface`, `shadow-raised`                       | Resting cards, and floating panels                                    |
+| `--jg-syntax-*`                                                     | none                                                    | Code colours, read by the syntax theme                                |
+
+## Components
+
+Each component is its own subpath, such as `jg-personal-astro-ui/button`. Most take a `class` prop for layout classes on their root element; the page frame (`skip-link`, `site-header`, and `site-footer`) and the head components don't.
+
+| Component              | What it renders                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------- |
+| `document-head`        | The title, description, canonical URL, robots, Open Graph and X tags, JSON-LD, favicon, and agent links |
+| `theme-init-script`    | The inline script that applies the stored or system theme before the first paint                        |
+| `skip-link`            | A "Skip to main content" link that shows on focus                                                       |
+| `site-header`          | The sticky header: brand, navigation, actions, and a menu on narrow screens                             |
+| `site-footer`          | The footer: brand, about text, link columns, and notes                                                  |
+| `theme-control`        | The light and dark switch, which stores the choice                                                      |
+| `brand-logo`           | The site's name beside the mark the site supplies                                                       |
+| `container`, `section` | The page and reading columns, and a home page section with its eyebrow, title, and lede                 |
+| `grid-lines`           | The faint grid behind heroes                                                                            |
+| `breadcrumb`           | A trail of links, ending at the current page                                                            |
+| `button`, `text-link`  | Pill buttons and links, with variants and sizes, and the new-tab notice on external links               |
+| `badge`                | A small label, with status variants                                                                     |
+| `link-card`            | A card whose whole area is one link, with icon, meta, and footer slots                                  |
+| `prose`                | Rendered Markdown in the shared reading style                                                           |
+| `code-block`           | Highlighted code with a caption and a copy button                                                       |
+| `code-diff`            | Two versions of code as a diff: unified on narrow screens, side by side on wide ones                    |
+| `copy-button`          | A button that copies text, and shows how to copy by hand when the browser refuses                       |
+| `tabs`                 | ARIA tabs, with arrow keys, Home and End, and an optional remembered choice                             |
+| `package-manager-tabs` | An install command for npm and pnpm in a terminal panel, with the choice remembered across the site     |
+
+Only `theme-control`, `copy-button`, `tabs`, and the header's menu run JavaScript in the browser, besides the theme script.
+
+## Modules
+
+| Subpath                                 | What it exports                                                                                         |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `jg-personal-astro-ui/syntax-theme`     | `SYNTAX_THEME`, the Shiki theme that colours code with the `--jg-syntax-*` properties                   |
+| `jg-personal-astro-ui/theme-preference` | Reading, writing, and resolving the stored theme preference, and the events the theme script listens to |
+
+## Releasing it
+
+It's checked like every other package, plus an Astro build: `release:verify` installs its tarball with its peers into a temporary Astro site that imports every component, stylesheet, and module, and runs `astro build`. [`releasing.md`](releasing.md) covers the rest.

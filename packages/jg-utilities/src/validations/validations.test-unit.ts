@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, test } from 'vitest';
 
-import type { IUUIDVersion } from '../shared/types.js';
+import type { IUuidVersion } from '../shared/types.js';
 
 import { MAX_EMAIL_LENGTH } from './constants.js';
 import {
@@ -10,7 +10,7 @@ import {
   isEmailValid,
   isFileNameValid,
   isIntegerValid,
-  isJWTValid,
+  isJwtValid,
   isNumberValid,
   isNumeric,
   isObjectValid,
@@ -21,8 +21,8 @@ import {
   isSlugValid,
   isStringValid,
   isTimestampValid,
-  isURLValid,
-  isUUIDValid,
+  isUrlValid,
+  isUuidValid,
 } from './validations.js';
 
 describe('isStringValid', () => {
@@ -484,7 +484,7 @@ describe('isOTPTokenValid', () => {
   });
 });
 
-describe('isJWTValid', () => {
+describe('isJwtValid', () => {
   test.each([
     // valid
     [
@@ -553,8 +553,8 @@ describe('isJWTValid', () => {
       'a.a.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       false,
     ],
-  ])('isJWTValid(%s) -> %s', (a, expected) => {
-    expect(isJWTValid(a)).toBe(expected);
+  ])('isJwtValid(%s) -> %s', (a, expected) => {
+    expect(isJwtValid(a)).toBe(expected);
   });
 });
 
@@ -682,7 +682,7 @@ describe('isSemverValid', () => {
   });
 });
 
-describe('isURLValid', () => {
+describe('isUrlValid', () => {
   test.each([
     // valid
     ['https://jesusgraterol.dev', true],
@@ -724,13 +724,13 @@ describe('isURLValid', () => {
     ['www.jesusgraterol.dev', false],
     ['balancer.jesusgraterol.dev', false],
     ['www.balancer.jesusgraterol.dev', false],
-  ])('isURLValid(%s) -> %s', (a, expected) => {
-    expect(isURLValid(a)).toBe(expected);
+  ])('isUrlValid(%s) -> %s', (a, expected) => {
+    expect(isUrlValid(a)).toBe(expected);
   });
 });
 
-describe('isUUIDValid', () => {
-  test.each(<Array<[unknown, IUUIDVersion, boolean]>>[
+describe('isUuidValid', () => {
+  test.each(<Array<[unknown, IUuidVersion, boolean]>>[
     // valid
     ['fcd089f1-6a2c-48b8-b2d7-9faebd1fdfb6', 4, true],
     ['876cce51-a546-4256-a067-5bc7cdc673ca', 4, true],
@@ -767,8 +767,8 @@ describe('isUUIDValid', () => {
     ['9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d', 7, false],
     ['01695553-c90c-705a-b56d-778dfbbd4bed', 4, false],
     [true, 4, false],
-  ])('isUUIDValid(%s, %d) -> %s', (a, b, expected) => {
-    expect(isUUIDValid(a, b)).toBe(expected);
+  ])('isUuidValid(%s, %d) -> %s', (a, b, expected) => {
+    expect(isUuidValid(a, b)).toBe(expected);
   });
 });
 

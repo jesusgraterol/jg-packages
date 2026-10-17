@@ -1,5 +1,5 @@
-import { Exception, extractMessage } from 'jg-exception';
-import { readJSONFile } from 'jg-fs';
+import { Exception } from 'jg-exception';
+import { readJsonFile } from 'jg-fs';
 import type { z } from 'zod';
 
 import {
@@ -47,7 +47,7 @@ export const parseServiceWorkerConfig = (value: unknown, source?: string): IServ
     .join('; ');
   throw new Exception(
     `The service worker config${source === undefined ? '' : ` '${source}'`} is invalid: ${issues}`,
-    getConfigErrorCode(result.error.issues),
+    { code: getConfigErrorCode(result.error.issues) },
   );
 };
 
@@ -66,7 +66,7 @@ export const parseEnvironment = (
   }
   throw new Exception(
     `The environment '${environment}' isn't supported. Use development, staging, or production.`,
-    ERRORS.INVALID_ENVIRONMENT,
+    { code: ERRORS.INVALID_ENVIRONMENT },
   );
 };
 
@@ -75,6 +75,8 @@ export const parseEnvironment = (
  * @param path The config file's path.
  * @returns A promise that resolves to the config.
  * @example
+ * import { readServiceWorkerConfig } from 'jg-sw/build';
+ *
  * const config = await readServiceWorkerConfig('jg-sw.config.json');
  * config.template; // 'base'
  * @throws
@@ -85,12 +87,12 @@ export const parseEnvironment = (
 export const readServiceWorkerConfig = async (path: string): Promise<IServiceWorkerConfig> => {
   let value: unknown;
   try {
-    value = await readJSONFile<unknown>(path);
+    value = await readJsonFile<unknown>(path);
   } catch (error) {
-    throw new Exception(
-      `Unable to read the service worker config '${path}': ${extractMessage(error)}`,
-      ERRORS.FAILED_TO_READ_BASE_CONFIG,
-    );
+    throw new Exception(`Unable to read the service worker config '${path}'.`, {
+      code: ERRORS.FAILED_TO_READ_BASE_CONFIG,
+      cause: error,
+    });
   }
   return parseServiceWorkerConfig(value, path);
 };

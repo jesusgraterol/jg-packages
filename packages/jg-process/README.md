@@ -35,19 +35,9 @@ const server = startProcess({ command: 'node', args: ['server.js'], cwd: 'apps/a
 process.once('SIGINT', () => void stopProcessTree(server));
 ```
 
-## Coming from `node-process-utils`
-
-| `node-process-utils`                        | `jg-process`                                                                    |
-| ------------------------------------------- | ------------------------------------------------------------------------------- |
-| `import … from 'node-process-utils'`        | `import … from 'jg-process'`                                                    |
-| the codes, not exported                     | `ERRORS`                                                                        |
-| `startProcess(command, args, options)` only | also `startProcess({ command, args, ...options })`, the form `runProcess` takes |
-
-Errors are `Exception`s from `jg-exception`, with the same codes.
-
 ## Documentation
 
-The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-process/.
+The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-process/.
 
 ## License
 

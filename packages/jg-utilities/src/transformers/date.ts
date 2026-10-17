@@ -20,6 +20,8 @@ import { buildDateFormatOptions, parseTimeString } from './utilities.js';
  * @param value The value to create a Date instance from. It can be a Date object, a timestamp, or a date string.
  * @returns A Date instance.
  * @example
+ * import { toDate } from 'jg-utilities';
+ *
  * toDate('2026-10-17T08:30:00.000Z'); // a Date for that instant
  * toDate(1_792_217_505_000); // a Date from a millisecond epoch
  */
@@ -52,8 +54,10 @@ export const toDate = (value: IDateValue): Date => {
  * @param timeZone? The IANA time zone to format in, such as 'UTC'. Defaults to the runtime's time zone.
  * @returns A string representing the formatted date.
  * @example
- * prettifyDate('2026-10-17T08:30:00.000Z', 'date-medium', 'UTC'); // 'October 17, 2026'
- * prettifyDate('2026-10-17T08:30:00.000Z', 'datetime-short', 'UTC'); // '10/17/2026, 8:30 AM UTC'
+ * import { prettifyDate } from 'jg-utilities';
+ *
+ * prettifyDate('2026-10-17T08:30:00.000Z', 'date-medium', 'UTC'); // => 'October 17, 2026'
+ * prettifyDate('2026-10-17T08:30:00.000Z', 'datetime-short', 'UTC'); // => '10/17/2026, 8:30 AM UTC'
  * @throws
  * - A RangeError if the time zone is unknown.
  */
@@ -68,8 +72,10 @@ export const prettifyDate = (
  * @param milliseconds The duration in milliseconds.
  * @returns A string representing the formatted duration.
  * @example
- * prettifyTime(3_725_000); // '1h 2m'
- * prettifyTime(45_000); // '45s'
+ * import { prettifyTime } from 'jg-utilities';
+ *
+ * prettifyTime(3_725_000); // => '1h 2m'
+ * prettifyTime(45_000); // => '45s'
  */
 export const prettifyTime = (milliseconds: number): string => {
   const safeSeconds = Number.isFinite(milliseconds)
@@ -96,8 +102,10 @@ export const prettifyTime = (milliseconds: number): string => {
  * @param str The time string to convert into milliseconds.
  * @returns The equivalent time in milliseconds.
  * @example
- * toMS('2 days'); // 172800000
- * toMS('30 minutes'); // 1800000
+ * import { toMS } from 'jg-utilities';
+ *
+ * toMS('2 days'); // => 172800000
+ * toMS('30 minutes'); // => 1800000
  * @throws
  * - INVALID_TIME_STRING: if the provided time string is not a valid string.
  * - INVALID_TIME_STRING: if the chunks do not match the expected format.
@@ -134,7 +142,7 @@ export const toMS = (str: ITimeString): number => {
     default:
       throw new Exception(
         `The unit provided to the toMS function is invalid: "${unit}". Received: ${str}`,
-        ERRORS.INVALID_TIME_STRING,
+        { code: ERRORS.INVALID_TIME_STRING },
       );
   }
 };
@@ -145,8 +153,10 @@ export const toMS = (str: ITimeString): number => {
  * @param value The moment to format. Defaults to now.
  * @returns The timestamp, such as `2026-10-17T08:30:00.000Z`.
  * @example
+ * import { createTimestamp } from 'jg-utilities';
+ *
  * createTimestamp(); // the current time, such as '2026-10-17T08:30:00.000Z'
- * createTimestamp(0); // '1970-01-01T00:00:00.000Z'
+ * createTimestamp(0); // => '1970-01-01T00:00:00.000Z'
  * @throws
  * - Invalid time value
  */

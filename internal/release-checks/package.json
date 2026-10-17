@@ -11,6 +11,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "pnpm test:unit && pnpm test:integration",
+    "test:coverage": "vitest run --coverage --project unit --project integration",
     "test:integration": "vitest run --project integration",
     "test:unit": "vitest run --project unit",
     "typecheck": "tsc --noEmit"
@@ -19,7 +20,8 @@
     "@arethetypeswrong/cli": "0.18.5",
     "@jg-packages/api-reference": "workspace:*",
     "publint": "0.3.25",
-    "semver": "7.8.5"
+    "semver": "7.8.5",
+    "typescript": "catalog:"
   },
   "devDependencies": {
     "@jg-packages/eslint-config": "workspace:*",
@@ -27,8 +29,8 @@
     "@jg-packages/vitest-config": "workspace:*",
     "@types/node": "catalog:",
     "@types/semver": "7.8.0",
+    "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
-    "typescript": "catalog:",
     "vitest": "catalog:"
   }
 }
