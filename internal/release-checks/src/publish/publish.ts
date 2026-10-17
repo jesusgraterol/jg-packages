@@ -4,8 +4,8 @@ import { join } from 'node:path';
 import {
   DEPENDENCY_FIELDS,
   PRERELEASE_DIST_TAG,
-  REGISTRY_POLL_ATTEMPTS,
   REGISTRY_POLL_INTERVAL_SECONDS,
+  REGISTRY_WAIT_SECONDS,
 } from '../shared/constants.ts';
 import { readReleaseManifest, sha256, writePublishedEntries } from '../shared/release-files.ts';
 import { readTarballFiles } from '../shared/tarball.ts';
@@ -72,11 +72,22 @@ const verifyChecksums = async (
 };
 
 /**
- * Fails when a sibling range in a tarball's manifest has no matching version on npm, counting
- * versions published earlier in the same run, so a dependent never ships ahead of a sibling.
+ * Checks whether npm accepted a sibling's version earlier in this run that a range asks for. The
+ * packed range of a `workspace:^` sibling is `^` and the sibling's version, so the range names it.
+ * @param range The dependent's range, such as `^1.0.1`.
+ * @param acceptedVersion The version npm accepted in this run, if any.
+ * @returns Whether the range names that version.
+ */
+const isAcceptedInRun = (range: string, acceptedVersion: string | undefined): boolean =>
+  acceptedVersion !== undefined && range.replace(/^[\^~]/, '') === acceptedVersion;
+
+/**
+ * Fails when a sibling range in a tarball's manifest has no matching version on npm, or among the
+ * versions npm accepted earlier in this run, so a dependent never ships ahead of a sibling.
  * @param runNpm Runs npm.
  * @param manifest The tarball's manifest.
  * @param siblingNames The names of every package in the release.
+ * @param accepted The versions npm accepted in this run, by package name.
  * @returns A promise that resolves once every sibling range has a version.
  * @throws
  * - {name}@{version} depends on {dependency}@{range}, which has no version on npm. Release {dependency} first.
@@ -85,10 +96,15 @@ const assertSiblingVersions = async (
   runNpm: IPublishDependencies['runNpm'],
   manifest: IPackageManifest,
   siblingNames: Set<string>,
+  accepted: Map<string, string>,
 ): Promise<void> => {
   for (const field of DEPENDENCY_FIELDS) {
     for (const [dependency, range] of Object.entries(manifest[field] ?? {})) {
-      if (siblingNames.has(dependency) && !(await hasVersion(runNpm, `${dependency}@${range}`))) {
+      if (
+        siblingNames.has(dependency) &&
+        !isAcceptedInRun(range, accepted.get(dependency)) &&
+        !(await hasVersion(runNpm, `${dependency}@${range}`))
+      ) {
         throw new Error(
           `${manifest.name}@${manifest.version} depends on ${dependency}@${range}, which has no version on npm. Release ${dependency} first.`,
         );
@@ -98,19 +114,18 @@ const assertSiblingVersions = async (
 };
 
 /**
- * Publishes one tarball and waits until the registry serves the new version.
+ * Publishes one tarball. npm accepts it right away, and serves it a few minutes later.
  * @param releaseDirectory The release directory.
  * @param entry The manifest entry.
- * @param dependencies The npm runner, sleep, and logger.
- * @returns A promise that resolves once npm serves the version.
+ * @param runNpm Runs npm.
+ * @returns A promise that resolves once npm accepted the tarball.
  * @throws
  * - npm publish {file} failed: {stderr}
- * - {name}@{version} didn't appear on the registry after publishing.
  */
 const publishTarball = async (
   releaseDirectory: string,
-  { name, version, file }: IReleaseManifestEntry,
-  { runNpm, sleep, log }: IPublishDependencies,
+  { version, file }: IReleaseManifestEntry,
+  runNpm: IPublishDependencies['runNpm'],
 ): Promise<void> => {
   const args = ['publish', join(releaseDirectory, file), '--access', 'public'];
   if (isPrerelease(version)) {
@@ -120,32 +135,60 @@ const publishTarball = async (
   if (result.exitCode !== 0) {
     throw new Error(`npm publish ${file} failed: ${result.stderr.trim()}`);
   }
-  for (let attempt = 1; attempt <= REGISTRY_POLL_ATTEMPTS; attempt += 1) {
-    if (await hasVersion(runNpm, `${name}@${version}`)) {
-      log(`Published ${name}@${version}`);
-      return;
-    }
-    if (attempt < REGISTRY_POLL_ATTEMPTS) {
-      await sleep(REGISTRY_POLL_INTERVAL_SECONDS * 1000);
-    }
-  }
-  throw new Error(`${name}@${version} didn't appear on the registry after publishing.`);
 };
 
 /**
- * The `publish` command: publishes a packed release in its manifest's dependency order. Versions
- * already on npm are skipped, so a re-run is safe; packages that aren't on npm yet are skipped
- * with a warning, because their first publish is manual; prereleases go to the `next` dist-tag.
- * Writes `published.json` to the release directory.
+ * Waits until npm serves every version this run published, for at most REGISTRY_WAIT_SECONDS.
+ * @param pending The versions npm accepted in this run.
+ * @param dependencies The npm runner, sleep, and logger.
+ * @returns A promise that resolves once every version is on npm.
+ * @throws
+ * - npm accepted {versions} but didn't serve them within {minutes} minutes. Re-run the publish job once they're on npm; it skips and tags them.
+ */
+const waitForVersions = async (
+  pending: IPublishedEntry[],
+  { runNpm, sleep, log }: IPublishDependencies,
+): Promise<void> => {
+  let waiting = pending;
+  for (let waitedSeconds = 0; ; waitedSeconds += REGISTRY_POLL_INTERVAL_SECONDS) {
+    const stillWaiting: IPublishedEntry[] = [];
+    for (const entry of waiting) {
+      if (await hasVersion(runNpm, `${entry.name}@${entry.version}`)) {
+        log(`${entry.name}@${entry.version} is on npm`);
+      } else {
+        stillWaiting.push(entry);
+      }
+    }
+    waiting = stillWaiting;
+    if (waiting.length === 0) {
+      return;
+    }
+    if (waitedSeconds >= REGISTRY_WAIT_SECONDS) {
+      const versions = waiting.map(({ name, version }) => `${name}@${version}`).join(', ');
+      throw new Error(
+        `npm accepted ${versions} but didn't serve them within ${REGISTRY_WAIT_SECONDS / 60} minutes. Re-run the publish job once they're on npm; it skips and tags them.`,
+      );
+    }
+    await sleep(REGISTRY_POLL_INTERVAL_SECONDS * 1000);
+  }
+};
+
+/**
+ * The `publish` command: publishes a packed release in its manifest's dependency order, then waits
+ * until npm serves every version it published. Versions already on npm are skipped, so a re-run is
+ * safe; packages that aren't on npm yet are skipped with a warning, because their first publish is
+ * manual; prereleases go to the `next` dist-tag. Writes `published.json` to the release
+ * directory, listing every version of the release that's on npm, including those an earlier run
+ * published, so `tag` tags whatever is still untagged.
  * @param releaseDirectory The directory `pack` wrote.
  * @param dependencies The npm runner, sleep, and logger.
- * @returns A promise that resolves to the versions this run published.
+ * @returns A promise that resolves to the release's versions that are on npm.
  * @throws
  * - The release manifest is not a list of tarball entries: {path}
  * - The tarball doesn't match the release manifest checksum: {file}
  * - {name}@{version} depends on {dependency}@{range}, which has no version on npm. Release {dependency} first.
  * - npm publish {file} failed: {stderr}
- * - {name}@{version} didn't appear on the registry after publishing.
+ * - npm accepted {versions} but didn't serve them within {minutes} minutes. Re-run the publish job once they're on npm; it skips and tags them.
  * - npm view {spec} failed: {stderr}
  */
 export const publishRelease = async (
@@ -156,11 +199,13 @@ export const publishRelease = async (
   const entries = await readReleaseManifest(releaseDirectory);
   await verifyChecksums(releaseDirectory, entries);
   const siblingNames = new Set(entries.map(({ name }) => name));
-  const published: IPublishedEntry[] = [];
+  const released: IPublishedEntry[] = [];
+  const accepted = new Map<string, string>();
   for (const entry of entries) {
     const { name, version, file } = entry;
     if (await hasVersion(runNpm, `${name}@${version}`)) {
       log(`Skipped ${name}@${version}: already on npm`);
+      released.push({ name, version });
       continue;
     }
     if (!(await hasVersion(runNpm, name))) {
@@ -173,11 +218,19 @@ export const publishRelease = async (
     const manifest = JSON.parse(
       files.get('package.json')?.toString('utf8') ?? '{}',
     ) as IPackageManifest;
-    await assertSiblingVersions(runNpm, manifest, siblingNames);
-    await publishTarball(releaseDirectory, entry, dependencies);
-    published.push({ name, version });
+    await assertSiblingVersions(runNpm, manifest, siblingNames, accepted);
+    await publishTarball(releaseDirectory, entry, runNpm);
+    log(`Published ${name}@${version}`);
+    accepted.set(name, version);
+    released.push({ name, version });
   }
-  const publishedFile = await writePublishedEntries(releaseDirectory, published);
-  log(`Wrote ${published.length} published versions to ${publishedFile}`);
-  return published;
+  await waitForVersions(
+    [...accepted].map(([name, version]) => ({ name, version })),
+    dependencies,
+  );
+  const publishedFile = await writePublishedEntries(releaseDirectory, released);
+  log(
+    `Wrote ${released.length} versions on npm, ${accepted.size} of them new, to ${publishedFile}`,
+  );
+  return released;
 };

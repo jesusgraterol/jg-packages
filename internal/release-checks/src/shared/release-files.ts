@@ -71,9 +71,9 @@ export const writeReleaseManifest = async (
 };
 
 /**
- * Reads the versions a publish run put on npm.
+ * Reads the release's versions that a publish run found or put on npm.
  * @param path The `published.json` file.
- * @returns A promise that resolves to the published versions.
+ * @returns A promise that resolves to the versions.
  * @throws
  * - The published file is not a list of package versions: {path}
  */
@@ -86,9 +86,9 @@ export const readPublishedEntries = async (path: string): Promise<IPublishedEntr
 };
 
 /**
- * Writes the versions a publish run put on npm into the release directory.
+ * Writes the release's versions that are on npm into the release directory.
  * @param releaseDirectory The release directory.
- * @param entries The published versions.
+ * @param entries The versions.
  * @returns A promise that resolves to the file's path.
  */
 export const writePublishedEntries = async (

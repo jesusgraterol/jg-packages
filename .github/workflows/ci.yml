@@ -89,7 +89,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [check, floor]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # npm takes a few minutes to serve each new version, which the job waits for
+    timeout-minutes: 30
     # id-token lets npm verify this workflow as the packages' trusted publisher
     permissions:
       contents: read

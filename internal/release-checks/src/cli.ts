@@ -17,7 +17,7 @@ const USAGE = [
   '  verify                              pack and check every publishable package',
   '  pack --out <dir>                    pack and check, keeping the tarballs and manifest',
   '  publish --from <dir>                publish a packed release',
-  '  tag --from <dir> --published <file> tag the versions a publish run put on npm',
+  '  tag --from <dir> --published <file> tag the release versions on npm without a tag',
 ].join('\n');
 
 // the repository root, three levels above this file
