@@ -86,7 +86,7 @@ const resolveReference = (reflection: DeclarationReflection): DeclarationReflect
  * @param packageDirectory The package directory, holding its `package.json` and `tsconfig.json`.
  * @returns A promise that resolves to the package's API reference.
  * @example
- * const reference = await extractApiReference('/repo/packages/jg-toolkit');
+ * const reference = await extractApiReference('/repo/packages/jg-utilities');
  * reference.entryPoints[0].symbols.map(({ name }) => name);
  * @throws
  * - The package has no name, version, or exports map: {packageDirectory}

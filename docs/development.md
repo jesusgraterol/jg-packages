@@ -133,7 +133,7 @@ Never approve every build.
 ## Branches and commits
 
 - Work happens on `development`. Changes reach `main` through a pull request from `development`, and CI runs on every pull request and on every push to `main`.
-- Commits follow Conventional Commits, `<type>(<scope>): <summary>`, with the package's directory name as the scope, such as `feat(jg-toolkit): add encodeCursor`, or `repo` for changes to the workspace itself.
+- Commits follow Conventional Commits, `<type>(<scope>): <summary>`, with the package's directory name as the scope, such as `feat(jg-utilities): add encodeCursor`, or `repo` for changes to the workspace itself.
 - Every commit is signed off and signed: `git commit -s -S`.
 
 ## Troubleshooting

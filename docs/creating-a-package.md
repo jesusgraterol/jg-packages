@@ -4,7 +4,7 @@ Every step to add a new `jg-*` package, from choosing its name to its first rele
 
 ## 1. Choose the name
 
-Packages are named `jg-<name>`, with a short, lowercase `<name>`, such as `jg-toolkit`. Check that npm has neither the name nor the same name without punctuation, because npm rejects names that differ from an existing package only by `-`, `.`, or `_`:
+Packages are named `jg-<name>`, with a short, lowercase `<name>`, such as `jg-utilities`. Check that npm has neither the name nor the same name without punctuation, because npm rejects names that differ from an existing package only by `-`, `.`, or `_`:
 
 ```bash
 npm view jg-<name> name
@@ -13,11 +13,23 @@ npm view jg<name> name
 
 Both should fail with `npm error code E404`.
 
-npm also rejects a name too close to a popular package, and only says so when you publish: `jg-utils` was refused for its likeness to `xe-utils`, and became `jg-toolkit`. Look up the names a letter or two away, such as `js-<name>` or `ng-<name>`, and avoid a name near one with thousands of weekly downloads:
+npm also rejects a name too close to a popular package, and only says so when you publish. Any other prefix of one or two characters counts: `jg-utils` was refused for its likeness to `xe-utils` (about 53,000 weekly downloads), then `jg-toolkit` for `es-toolkit`, and the package became `jg-utilities`. List the most downloaded names that differ only in the prefix:
 
 ```bash
-curl -s https://api.npmjs.org/downloads/point/last-week/js-<name>
+node --input-type=module - <name> <<'EOF'
+const name = process.argv[2];
+const chars = [...'abcdefghijklmnopqrstuvwxyz0123456789'];
+const names = [...chars.flatMap((a) => chars.map((b) => `${a}${b}-${name}`)), ...chars.map((a) => `${a}-${name}`)];
+const downloads = {};
+for (let i = 0; i < names.length; i += 128) {
+  const response = await fetch(`https://api.npmjs.org/downloads/point/last-week/${names.slice(i, i + 128).join(',')}`);
+  for (const [pkg, value] of Object.entries(await response.json())) downloads[pkg] = value?.downloads ?? 0;
+}
+console.log(Object.entries(downloads).sort((a, b) => b[1] - a[1]).slice(0, 3));
+EOF
 ```
+
+Every accepted name's neighbors stayed under about 4,000 weekly downloads. Pick another name when one has tens of thousands.
 
 ## 2. Choose the runtime
 

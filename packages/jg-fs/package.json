@@ -56,7 +56,7 @@
   },
   "dependencies": {
     "jg-exception": "workspace:^",
-    "jg-toolkit": "workspace:^"
+    "jg-utilities": "workspace:^"
   },
   "devDependencies": {
     "@jg-packages/eslint-config": "workspace:*",

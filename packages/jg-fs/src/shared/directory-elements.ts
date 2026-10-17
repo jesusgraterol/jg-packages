@@ -1,4 +1,4 @@
-import { sortRecords } from 'jg-toolkit';
+import { sortRecords } from 'jg-utilities';
 
 import { DIRECTORY_ELEMENTS_DEFAULT_OPTIONS } from './constants.js';
 import type { IDirectoryElementsOptions, IDirectoryPathElements, IPathElement } from './types.js';
