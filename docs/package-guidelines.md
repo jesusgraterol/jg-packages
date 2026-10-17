@@ -64,7 +64,7 @@ if (hasErrorCode(error, ERRORS.INVALID_CURSOR)) {
 - **The constructor** is `new Exception(message, { code, data, cause })`. Nothing is encoded into the message: the code, the data, and the cause each have their own field.
 - **Codes are strings**, `UPPER_SNAKE_CASE`, and stable: callers branch on them, so changing one is a breaking change. `getErrorCode` and `hasErrorCode` read a string `code` property from any error, including Node.js system errors such as `ENOENT`.
 - **`UNKNOWN_ERROR_CODE`** (`'UNKNOWN_ERROR'`) is the code for an error that has none, such as when `jg-api-response` sends a plain `Error` to a client. Don't throw it yourself; give every error you throw its own code.
-- **`data` is an `IJSONValue`**, context that helps whoever handles or debugs the error, such as the id that wasn't found. A `BigInt`, a `Date`, or a class instance is a type error. Object values may be `undefined`, so `{ email }` works when `email` is optional. An interface has no index signature, so pass an interface-typed value as `{ ...value }`, or declare its type with `type`. Never put secrets in it: it reaches clients.
+- **`data` is an `IJsonValue`**, context that helps whoever handles or debugs the error, such as the id that wasn't found. A `BigInt`, a `Date`, or a class instance is a type error. Object values may be `undefined`, so `{ email }` works when `email` is optional. An interface has no index signature, so pass an interface-typed value as `{ ...value }`, or declare its type with `type`. Never put secrets in it: it reaches clients.
 - **The cause rule:** a message says what failed at this step, and `cause` holds the error underneath. Never write `extractMessage(cause)` into a message: `extractMessage` already joins the chain as `message; [CAUSE]: cause message`, so an embedded cause prints twice, and the layers can no longer be told apart.
 - **`toJSON()`** returns `{ name, code, message, data }`, which `JSON.stringify` and `jg-api-response` use. Data that can't be serialized at runtime, such as an object that refers back to itself, becomes `null` there, as do `NaN` and `Infinity`, as in any JSON.
 
@@ -111,7 +111,7 @@ Don't test what can't break on its own: re-exports, constants, types without gen
 ## Naming
 
 - Exported types are `IPascalCase`, constants are `UPPER_SNAKE_CASE`, and functions and variables are `camelCase`.
-- New names case acronyms as words: `createIndexedDbStore`, `IHttpMethod`, `parseRetryAfterMs`. Names released in 1.0.0 keep their spelling, such as `writeJSONFile` and `isURLValid`.
+- Names case acronyms as words: `createIndexedDbStore`, `IHttpMethod`, `readJsonFile`, `isUrlValid`. The one exception is `toJSON`, the method name `JSON.stringify` calls.
 - Timing options are in seconds, and every option or field with a unit names it: `timeoutSeconds`, `retryDelaysSeconds`. Measured output uses the unit it's measured in, such as `durationMs`.
 
 ## Runtimes
@@ -133,7 +133,7 @@ A package with entries for different runtimes typechecks each entry's directory 
 - **Examples are code a reader can paste.** `release:verify` typechecks every one against the published tarballs, so each example:
   - imports what it uses from the package, by its public name, such as `import { toSlug } from 'jg-utilities';`, and from Node.js or other packages the same way
   - defines its inputs, such as `const csv = 'id,name\n1,Ada\n';`. Where an input is the reader's own, such as a button or a token getter, it's declared in the package's `examples.d.ts`, which never ships: `declare const button: HTMLButtonElement;`
-- **Results are stated with `// =>`.** In `jg-exception`, `jg-api-response`, `jg-utilities`, and `jg-bignumber`, which do no I/O, every example also runs, in en-US and UTC, and each top-level `expression; // => result` line becomes an assertion, so the stated result is checked. These examples therefore can't throw, and can't use what `examples.d.ts` declares, because it doesn't exist at runtime: define the inputs instead. `// =>` marks only deterministic results; describe anything else in a plain comment, such as `generateUUID(4); // such as '9b1deb4d-…'`. The other packages' examples, which do I/O, are typechecked only, so they describe results with plain comments.
+- **Results are stated with `// =>`.** In `jg-exception`, `jg-api-response`, `jg-utilities`, and `jg-bignumber`, which do no I/O, every example also runs, in en-US and UTC, and each top-level `expression; // => result` line becomes an assertion, so the stated result is checked. These examples therefore can't throw, and can't use what `examples.d.ts` declares, because it doesn't exist at runtime: define the inputs instead. `// =>` marks only deterministic results; describe anything else in a plain comment, such as `generateUuid(4); // such as '9b1deb4d-…'`. The other packages' examples, which do I/O, are typechecked only, so they describe results with plain comments.
 - The README has these sections, in order:
   1. the package name as the title, then a one-sentence summary
   2. `## Install`

@@ -1,7 +1,7 @@
 import { Exception } from 'jg-exception';
 
 import { ERRORS } from '../shared/errors.js';
-import { stringifyJSONDeterministically } from '../transformers/index.js';
+import { stringifyJsonDeterministically } from '../transformers/index.js';
 import { isIntegerValid } from '../validations/index.js';
 
 import { createUint32Source, drawUniformIndex } from './random.js';
@@ -134,7 +134,7 @@ export const isEqual = (firstValue: unknown, secondValue: unknown): boolean => {
   if (!isFirstObject || !isSecondObject) {
     return Object.is(firstValue, secondValue);
   }
-  return stringifyJSONDeterministically(firstValue) === stringifyJSONDeterministically(secondValue);
+  return stringifyJsonDeterministically(firstValue) === stringifyJsonDeterministically(secondValue);
 };
 
 /**

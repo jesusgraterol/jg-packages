@@ -78,7 +78,7 @@ export const assertBufferData = (path: string, data: unknown): void => {
  * @throws
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the JSON content cannot be stringified or is empty
  */
-export const serializeJSONData = (path: string, data: unknown, space: number): string => {
+export const serializeJsonData = (path: string, data: unknown, space: number): string => {
   let text: unknown;
   try {
     text = typeof data === 'string' ? data : JSON.stringify(data, undefined, space);
@@ -105,7 +105,7 @@ export const serializeJSONData = (path: string, data: unknown, space: number): s
  * @throws
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the file's JSON content cannot be parsed
  */
-export const parseJSONContent = <T>(path: string, content: string, schema?: ISchema<T>): T => {
+export const parseJsonContent = <T>(path: string, content: string, schema?: ISchema<T>): T => {
   let value: unknown;
   try {
     value = JSON.parse(content);

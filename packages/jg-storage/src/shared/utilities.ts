@@ -58,7 +58,7 @@ export const parseValue = <T>(value: unknown, options: IStoreOptions<T>): T =>
  * @throws
  * - FAILED_TO_PARSE_JSON: Unable to parse the JSON data.
  */
-export const parseJSON = (data: string): unknown => {
+export const parseJson = (data: string): unknown => {
   try {
     return JSON.parse(data);
   } catch (error) {
@@ -76,7 +76,7 @@ export const parseJSON = (data: string): unknown => {
  * @throws
  * - FAILED_TO_STRINGIFY_JSON: Unable to stringify the JSON data.
  */
-export const stringifyJSON = (value: unknown): string => {
+export const stringifyJson = (value: unknown): string => {
   let data: string | undefined;
   try {
     data = JSON.stringify(value);

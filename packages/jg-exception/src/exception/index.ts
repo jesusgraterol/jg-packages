@@ -1,5 +1,5 @@
 // types
-export type { IExceptionJSON, IExceptionOptions } from './types.js';
+export type { IExceptionJson, IExceptionOptions } from './types.js';
 
 // classes
 export { Exception } from './exception.js';

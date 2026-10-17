@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 
 import { extractMessage } from './error-handler/index.js';
 import { Exception } from './exception/index.js';
-import type { IJSONValue } from './shared/types.js';
+import type { IJsonValue } from './shared/types.js';
 
 /*
  * Properties: the guarantees error handling rests on, over anything a catch block can receive.
@@ -54,7 +54,7 @@ describe('Exception#toJSON', () => {
         fc.string(),
         fc.oneof(fc.jsonValue(), thrown),
         (code, message, data) => {
-          const exception = new Exception(message, { code, data: data as IJSONValue });
+          const exception = new Exception(message, { code, data: data as IJsonValue });
 
           expect(JSON.parse(JSON.stringify(exception))).toStrictEqual(exception.toJSON());
         },

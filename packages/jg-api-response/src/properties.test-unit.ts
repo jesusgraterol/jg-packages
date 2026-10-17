@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { Exception, type IJSONValue } from 'jg-exception';
+import { Exception, type IJsonValue } from 'jg-exception';
 import { describe, expect, test } from 'vitest';
 
 import { buildResponse, isResponse } from './response.js';
@@ -12,7 +12,7 @@ import { buildResponse, isResponse } from './response.js';
 const error = fc.oneof(
   fc
     .tuple(fc.string({ minLength: 1 }), fc.string(), fc.anything({ withBigInt: true }))
-    .map(([code, message, data]) => new Exception(message, { code, data: data as IJSONValue })),
+    .map(([code, message, data]) => new Exception(message, { code, data: data as IJsonValue })),
   fc.anything({ withBigInt: true, withNullPrototype: true, withDate: true }),
 );
 

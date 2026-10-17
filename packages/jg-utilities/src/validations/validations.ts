@@ -1,6 +1,6 @@
 import { version as uuidVersion, validate as uuidValidate } from 'uuid';
 
-import type { IUUIDVersion } from '../shared/types.js';
+import type { IUuidVersion } from '../shared/types.js';
 import {
   FILE_NAME_FORBIDDEN_CHARACTERS,
   MAX_EMAIL_LENGTH,
@@ -239,12 +239,12 @@ export const isOTPTokenValid = (value: unknown): value is string =>
  * @param value The value to be validated.
  * @returns A boolean indicating whether the value is a valid JWT.
  * @example
- * import { isJWTValid } from 'jg-utilities';
+ * import { isJwtValid } from 'jg-utilities';
  *
- * isJWTValid('eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl'); // => true
- * isJWTValid('not-a-token'); // => false
+ * isJwtValid('eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl'); // => true
+ * isJwtValid('not-a-token'); // => false
  */
-export const isJWTValid = (value: unknown): value is string =>
+export const isJwtValid = (value: unknown): value is string =>
   typeof value === 'string' &&
   /^[A-Za-z0-9-_]{2,1000}\.[A-Za-z0-9-_]{2,1000}\.[A-Za-z0-9-_]{2,1000}$/.test(value);
 
@@ -283,12 +283,12 @@ export const isSemverValid = (value: unknown): value is string =>
  * @param value The value to be validated.
  * @returns A boolean indicating whether the value is a valid URL.
  * @example
- * import { isURLValid } from 'jg-utilities';
+ * import { isUrlValid } from 'jg-utilities';
  *
- * isURLValid('https://jg-packages.jesusgraterol.dev'); // => true
- * isURLValid('not a url'); // => false
+ * isUrlValid('https://jg-packages.jesusgraterol.dev'); // => true
+ * isUrlValid('not a url'); // => false
  */
-export const isURLValid = (value: unknown): value is string => {
+export const isUrlValid = (value: unknown): value is string => {
   if (typeof value !== 'string') {
     return false;
   }
@@ -301,12 +301,12 @@ export const isURLValid = (value: unknown): value is string => {
  * @param version The UUID version to be validated against.
  * @returns A boolean indicating whether the value is a valid UUID of the specified version.
  * @example
- * import { isUUIDValid } from 'jg-utilities';
+ * import { isUuidValid } from 'jg-utilities';
  *
- * isUUIDValid('0199f5e2-8f5a-7b3c-9d2e-4f1a6b8c0d7e', 7); // => true
- * isUUIDValid('0199f5e2-8f5a-7b3c-9d2e-4f1a6b8c0d7e', 4); // => false
+ * isUuidValid('0199f5e2-8f5a-7b3c-9d2e-4f1a6b8c0d7e', 7); // => true
+ * isUuidValid('0199f5e2-8f5a-7b3c-9d2e-4f1a6b8c0d7e', 4); // => false
  */
-export const isUUIDValid = (value: unknown, version: IUUIDVersion): value is string =>
+export const isUuidValid = (value: unknown, version: IUuidVersion): value is string =>
   typeof value === 'string' && uuidValidate(value) && uuidVersion(value) === version;
 
 /**

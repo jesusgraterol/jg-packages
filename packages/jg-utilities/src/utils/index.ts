@@ -45,7 +45,7 @@ export {
   generateRandomInteger,
   generateRandomString,
   generateSequence,
-  generateUUID,
+  generateUuid,
 } from './generators.js';
 
 // Markdown utilities

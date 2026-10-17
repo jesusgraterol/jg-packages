@@ -1,4 +1,4 @@
-import { Exception, type IJSONValue } from 'jg-exception';
+import { Exception, type IJsonValue } from 'jg-exception';
 
 import { ERROR_MESSAGES, type IFetchErrorKind, type IHttpMethod } from '../shared/index.js';
 
@@ -11,7 +11,7 @@ export type IFetchExceptionInit = {
   code?: string;
 
   // the envelope error's data, for an API error
-  data?: IJSONValue;
+  data?: IJsonValue;
 
   // the HTTP status, or null when no response arrived
   status?: number | null;

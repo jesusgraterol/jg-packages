@@ -27,11 +27,11 @@ import {
   ERRORS,
   fileTooLarge,
   notAFile,
-  parseJSONContent,
-  serializeJSONData,
+  parseJsonContent,
+  serializeJsonData,
   type IReadBufferFileOptions,
   type IReadFileOptions,
-  type IReadJSONFileOptions,
+  type IReadJsonFileOptions,
   type IReadStringFileOptions,
 } from '../../shared/index.js';
 import { getPathElement } from '../general/index.js';
@@ -91,18 +91,18 @@ export const writeTextFile = (path: string, data: string): void => {
  * @param data The value, or its JSON text.
  * @param space The indentation for stringified values.
  * @example
- * import { writeJSONFile } from 'jg-fs/sync';
+ * import { writeJsonFile } from 'jg-fs/sync';
  *
- * writeJSONFile('config.json', { port: 8080 });
+ * writeJsonFile('config.json', { port: 8080 });
  * @throws
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the JSON content cannot be stringified or is empty
  */
-export const writeJSONFile = <T = Record<string, unknown>>(
+export const writeJsonFile = <T = Record<string, unknown>>(
   path: string,
   data: T | string,
   space: number = 2,
 ): void => {
-  writeFile(path, serializeJSONData(path, data, space), { encoding: 'utf-8' });
+  writeFile(path, serializeJsonData(path, data, space), { encoding: 'utf-8' });
 };
 
 /**
@@ -165,19 +165,19 @@ export const readTextFile = (path: string): string => readFile(path, { encoding:
  * @param options The schema, such as a Zod schema, whose errors propagate unchanged.
  * @returns The parsed value.
  * @example
- * import { readJSONFile } from 'jg-fs/sync';
+ * import { readJsonFile } from 'jg-fs/sync';
  *
- * const config = readJSONFile('config.json', { schema: Config }); // Config's type
+ * const config = readJsonFile('config.json', { schema: Config }); // Config's type
  * @example
- * import { readJSONFile } from 'jg-fs/sync';
+ * import { readJsonFile } from 'jg-fs/sync';
  *
- * const value = readJSONFile('data.json'); // unknown
+ * const value = readJsonFile('data.json'); // unknown
  * @throws
  * - NOT_A_FILE: if the path doesn't exist or is not a file
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the file's JSON content cannot be parsed
  */
-export const readJSONFile = <T = unknown>(path: string, options: IReadJSONFileOptions<T> = {}): T =>
-  parseJSONContent(path, readTextFile(path), options.schema);
+export const readJsonFile = <T = unknown>(path: string, options: IReadJsonFileOptions<T> = {}): T =>
+  parseJsonContent(path, readTextFile(path), options.schema);
 
 /**
  * Reads a binary file. An empty file reads as an empty Buffer.

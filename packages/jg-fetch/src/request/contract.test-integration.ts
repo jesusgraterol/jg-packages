@@ -1,5 +1,5 @@
 import { buildResponse } from 'jg-api-response';
-import { Exception, type IJSONValue, UNKNOWN_ERROR_CODE } from 'jg-exception';
+import { Exception, type IJsonValue, UNKNOWN_ERROR_CODE } from 'jg-exception';
 import { afterAll, beforeAll, describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
 
@@ -116,7 +116,7 @@ describe('errors from jg-api-response envelopes', () => {
     data['self'] = data;
     const envelope = buildResponse(
       undefined,
-      new Exception('Failed.', { code: 'FAILED', data: data as unknown as IJSONValue }),
+      new Exception('Failed.', { code: 'FAILED', data: data as unknown as IJsonValue }),
     );
 
     const { error } = await request(serve(400, envelope), { parseAs: 'envelope' });

@@ -2,11 +2,11 @@ import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { DEFAULT_MESSAGE, Exception, type IJSONValue, UNKNOWN_ERROR_CODE } from 'jg-exception';
+import { DEFAULT_MESSAGE, Exception, type IJsonValue, UNKNOWN_ERROR_CODE } from 'jg-exception';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 
 import { buildResponse, isResponse } from './response.js';
-import type { IAPIError, IAPIResponse, IParsedAPIError, IParsedAPIResponse } from './types.js';
+import type { IApiError, IApiResponse, IParsedApiError, IParsedApiResponse } from './types.js';
 
 /* ************************************************************************************************
  *                                             TESTS                                              *
@@ -53,7 +53,7 @@ describe('buildResponse', () => {
     data['self'] = data;
     const response = buildResponse(
       undefined,
-      new Exception('Failed', { code: 'FAILED', data: data as unknown as IJSONValue }),
+      new Exception('Failed', { code: 'FAILED', data: data as unknown as IJsonValue }),
     );
 
     expect(response.error).toStrictEqual({ code: 'FAILED', message: 'Failed', data: null });
@@ -201,9 +201,9 @@ describe('types', () => {
     if (!isResponse<{ id: number }>(value)) {
       throw new Error('expected an envelope');
     }
-    expectTypeOf(value).toEqualTypeOf<IParsedAPIResponse<{ id: number }>>();
+    expectTypeOf(value).toEqualTypeOf<IParsedApiResponse<{ id: number }>>();
     expectTypeOf(value.data).toEqualTypeOf<{ id: number } | undefined>();
-    expectTypeOf(value.error).toEqualTypeOf<IParsedAPIError | null | undefined>();
+    expectTypeOf(value.error).toEqualTypeOf<IParsedApiError | null | undefined>();
     if (value.error) {
       expectTypeOf(value.error.code).toEqualTypeOf<string>();
       expectTypeOf(value.error.data).toEqualTypeOf<unknown>();
@@ -211,9 +211,9 @@ describe('types', () => {
   });
 
   test('buildResponse keeps the data type, and its error data is JSON', () => {
-    expectTypeOf(buildResponse({ id: 1 })).toEqualTypeOf<IAPIResponse<{ id: number }>>();
-    expectTypeOf(buildResponse()).toEqualTypeOf<IAPIResponse<undefined>>();
-    expectTypeOf(buildResponse().error).toEqualTypeOf<IAPIError | null>();
-    expectTypeOf<IAPIError['data']>().toEqualTypeOf<IJSONValue>();
+    expectTypeOf(buildResponse({ id: 1 })).toEqualTypeOf<IApiResponse<{ id: number }>>();
+    expectTypeOf(buildResponse()).toEqualTypeOf<IApiResponse<undefined>>();
+    expectTypeOf(buildResponse().error).toEqualTypeOf<IApiError | null>();
+    expectTypeOf<IApiError['data']>().toEqualTypeOf<IJsonValue>();
   });
 });

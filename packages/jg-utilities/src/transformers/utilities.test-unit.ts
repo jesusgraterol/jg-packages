@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'vitest';
 
 import type { INumberFormatConfig } from './types.js';
-import { buildNumberFormatConfig, sortJSONObjectKeys } from './utilities.js';
+import { buildNumberFormatConfig, sortJsonObjectKeys } from './utilities.js';
 
 /* ************************************************************************************************
  *                                            HELPERS                                             *
@@ -43,7 +43,7 @@ describe('buildNumberFormatConfig', () => {
   });
 });
 
-describe('sortJSONObjectKeys', () => {
+describe('sortJsonObjectKeys', () => {
   test.each(<Array<[unknown, unknown]>>[
     [123456, 123456],
     ['Hello there!', 'Hello there!'],
@@ -69,7 +69,7 @@ describe('sortJSONObjectKeys', () => {
         { a: 1, b: 2, c: [{ c: [1, 2, 3], d: 5 }] },
       ],
     ],
-  ])('sortJSONObjectKeys(%j) -> %j', (value, expected) => {
-    expect(JSON.stringify(sortJSONObjectKeys(value))).toBe(JSON.stringify(expected));
+  ])('sortJsonObjectKeys(%j) -> %j', (value, expected) => {
+    expect(JSON.stringify(sortJsonObjectKeys(value))).toBe(JSON.stringify(expected));
   });
 });

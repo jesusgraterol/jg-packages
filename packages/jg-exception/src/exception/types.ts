@@ -1,4 +1,4 @@
-import type { IJSONValue } from '../shared/types.js';
+import type { IJsonValue } from '../shared/types.js';
 
 // the options an Exception is created with
 export type IExceptionOptions = {
@@ -6,16 +6,16 @@ export type IExceptionOptions = {
   code: string;
 
   // context that helps whoever handles or debugs the error, such as the id that wasn't found
-  data?: IJSONValue | undefined;
+  data?: IJsonValue | undefined;
 
   // the error underneath, kept as the native `cause`
   cause?: unknown;
 };
 
 // an Exception as `toJSON` returns it, ready to log or send
-export type IExceptionJSON = {
+export type IExceptionJson = {
   name: string;
   code: string;
   message: string;
-  data: IJSONValue;
+  data: IJsonValue;
 };

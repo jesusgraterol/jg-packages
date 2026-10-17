@@ -7,7 +7,7 @@ export type {
   IDirectoryElementsOptions,
   IDirectoryPathElements,
   IPathElement,
-  IReadJSONFileOptions,
+  IReadJsonFileOptions,
   ISchema,
 } from './shared/index.js';
 
@@ -35,11 +35,11 @@ export {
   readBoundedFile,
   readBufferFile,
   readFile,
-  readJSONFile,
+  readJsonFile,
   readTextFile,
   writeBufferFile,
   writeFile,
   writeFileAtomic,
-  writeJSONFile,
+  writeJsonFile,
   writeTextFile,
 } from './async/files/index.js';

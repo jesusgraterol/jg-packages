@@ -1,7 +1,7 @@
 import { expectToThrowCode } from 'jg-exception/testing';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { ERRORS, STORAGE_TEST_DATA, buildDataKey, stringifyJSON } from '../shared/index.js';
+import { ERRORS, STORAGE_TEST_DATA, buildDataKey, stringifyJson } from '../shared/index.js';
 import { createFakeStorage } from '../shared/storage.test-utils.js';
 import { createLocalStore, createSessionStore } from './web-storage-store.js';
 
@@ -49,7 +49,7 @@ describe('createLocalStore', () => {
     expect(setItem).toHaveBeenNthCalledWith(
       2,
       buildDataKey(storeId, recordId),
-      stringifyJSON(updateData),
+      stringifyJson(updateData),
     );
     store.del();
     expect(removeItem).toHaveBeenNthCalledWith(2, buildDataKey(storeId, recordId));

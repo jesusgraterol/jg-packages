@@ -4,9 +4,9 @@ import {
   assertStoreId,
   buildDataKey,
   buildUnavailableException,
-  parseJSON,
+  parseJson,
   parseValue,
-  stringifyJSON,
+  stringifyJson,
   type IRecordId,
   type IStoreOptions,
   type ISyncStore,
@@ -84,12 +84,12 @@ const createWebStorageStore = <T>(
 
       // a missing record reads as null. An empty string isn't JSON, so it reads as missing too
       const data = webStorage.getItem(buildDataKey(id, recordId));
-      return data ? parseValue(parseJSON(data), options) : undefined;
+      return data ? parseValue(parseJson(data), options) : undefined;
     },
     set: (recordId: IRecordId, value: T) => {
       const webStorage = getStorage();
       if (webStorage !== undefined) {
-        webStorage.setItem(buildDataKey(id, recordId), stringifyJSON(value));
+        webStorage.setItem(buildDataKey(id, recordId), stringifyJson(value));
         return;
       }
       const fallback = getMemory();

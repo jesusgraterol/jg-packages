@@ -1,5 +1,5 @@
 import { isResponse } from 'jg-api-response';
-import type { IJSONValue } from 'jg-exception';
+import type { IJsonValue } from 'jg-exception';
 
 import { parseRetryAfterMs } from '../retry-after/index.js';
 import { ERROR_MESSAGES, type IHttpMethod } from '../shared/index.js';
@@ -155,7 +155,7 @@ const readEnvelope = <T>(
       code: error?.code || 'API_ERROR',
       // isResponse leaves the error's data unchecked, but it came from JSON.parse, which only
       // produces JSON values. Services may leave it out, so a missing one becomes null
-      data: (error?.data as IJSONValue | undefined) ?? null,
+      data: (error?.data as IJsonValue | undefined) ?? null,
       body: parsed,
     });
   }

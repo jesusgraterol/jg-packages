@@ -22,11 +22,11 @@ import {
   ERRORS,
   fileTooLarge,
   notAFile,
-  parseJSONContent,
-  serializeJSONData,
+  parseJsonContent,
+  serializeJsonData,
   type IReadBufferFileOptions,
   type IReadFileOptions,
-  type IReadJSONFileOptions,
+  type IReadJsonFileOptions,
   type IReadStringFileOptions,
 } from '../../shared/index.js';
 import { getPathElement } from '../general/index.js';
@@ -91,18 +91,18 @@ export const writeTextFile = async (path: string, data: string): Promise<void> =
  * @param space The indentation for stringified values.
  * @returns A promise that resolves once the file is written.
  * @example
- * import { writeJSONFile } from 'jg-fs';
+ * import { writeJsonFile } from 'jg-fs';
  *
- * await writeJSONFile('config.json', { port: 8080 });
+ * await writeJsonFile('config.json', { port: 8080 });
  * @throws
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the JSON content cannot be stringified or is empty
  */
-export const writeJSONFile = async <T = Record<string, unknown>>(
+export const writeJsonFile = async <T = Record<string, unknown>>(
   path: string,
   data: T | string,
   space: number = 2,
 ): Promise<void> => {
-  await writeFile(path, serializeJSONData(path, data, space), { encoding: 'utf-8' });
+  await writeFile(path, serializeJsonData(path, data, space), { encoding: 'utf-8' });
 };
 
 /**
@@ -170,21 +170,21 @@ export const readTextFile = (path: string): Promise<string> =>
  * @param options The schema, such as a Zod schema, whose errors propagate unchanged.
  * @returns A promise that resolves to the parsed value.
  * @example
- * import { readJSONFile } from 'jg-fs';
+ * import { readJsonFile } from 'jg-fs';
  *
- * const config = await readJSONFile('config.json', { schema: Config }); // Config's type
+ * const config = await readJsonFile('config.json', { schema: Config }); // Config's type
  * @example
- * import { readJSONFile } from 'jg-fs';
+ * import { readJsonFile } from 'jg-fs';
  *
- * const value = await readJSONFile('data.json'); // unknown
+ * const value = await readJsonFile('data.json'); // unknown
  * @throws
  * - NOT_A_FILE: if the path doesn't exist or is not a file
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the file's JSON content cannot be parsed
  */
-export const readJSONFile = async <T = unknown>(
+export const readJsonFile = async <T = unknown>(
   path: string,
-  options: IReadJSONFileOptions<T> = {},
-): Promise<T> => parseJSONContent(path, await readTextFile(path), options.schema);
+  options: IReadJsonFileOptions<T> = {},
+): Promise<T> => parseJsonContent(path, await readTextFile(path), options.schema);
 
 /**
  * Reads a binary file. An empty file reads as an empty Buffer.

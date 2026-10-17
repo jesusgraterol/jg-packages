@@ -1,5 +1,5 @@
 // shared types
-export type { IJSONValue, IUUIDVersion } from './shared/types.js';
+export type { IJsonValue, IUuidVersion } from './shared/types.js';
 
 // error codes
 export { ERRORS } from './shared/errors.js';
@@ -21,11 +21,11 @@ export {
   isPasswordValid,
   isOTPSecretValid,
   isOTPTokenValid,
-  isJWTValid,
+  isJwtValid,
   isAuthorizationHeaderValid,
   isSemverValid,
-  isURLValid,
-  isUUIDValid,
+  isUrlValid,
+  isUuidValid,
 } from './validations/index.js';
 
 // transformers
@@ -58,10 +58,10 @@ export {
   toMS,
   encodeBase64Url,
   decodeBase64Url,
-  stringifyJSON,
-  stringifyJSONDeterministically,
-  parseJSON,
-  pruneJSON,
+  stringifyJson,
+  stringifyJsonDeterministically,
+  parseJson,
+  pruneJson,
   encodeCursor,
   decodeCursor,
   ONE_SECOND_IN_MILLISECONDS,
@@ -84,7 +84,7 @@ export type {
 
 export {
   applyDefaults,
-  generateUUID,
+  generateUuid,
   generateRandomString,
   generateRandomFloat,
   generateRandomInteger,

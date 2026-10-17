@@ -1,5 +1,5 @@
 import { Exception } from 'jg-exception';
-import { readJSONFile } from 'jg-fs';
+import { readJsonFile } from 'jg-fs';
 import type { z } from 'zod';
 
 import {
@@ -87,7 +87,7 @@ export const parseEnvironment = (
 export const readServiceWorkerConfig = async (path: string): Promise<IServiceWorkerConfig> => {
   let value: unknown;
   try {
-    value = await readJSONFile<unknown>(path);
+    value = await readJsonFile<unknown>(path);
   } catch (error) {
     throw new Exception(`Unable to read the service worker config '${path}'.`, {
       code: ERRORS.FAILED_TO_READ_BASE_CONFIG,

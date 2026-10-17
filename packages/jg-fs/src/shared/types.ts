@@ -71,8 +71,8 @@ export type ISchema<T> = {
   parse(value: unknown): T;
 };
 
-// what readJSONFile accepts
-export type IReadJSONFileOptions<T> = {
+// what readJsonFile accepts
+export type IReadJsonFileOptions<T> = {
   // validates the parsed content, such as a Zod schema. Its errors propagate unchanged
   schema?: ISchema<T>;
 };

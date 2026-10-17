@@ -5,11 +5,11 @@ import { expectToRejectCode } from 'jg-exception/testing';
 import { afterEach, beforeEach, describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
 
-import { ERRORS, readJSONFile } from './index.js';
-import { readJSONFile as readJSONFileSync } from './sync/index.js';
+import { ERRORS, readJsonFile } from './index.js';
+import { readJsonFile as readJsonFileSync } from './sync/index.js';
 
 /*
- * Contract tests: readJSONFile validates with a real Zod schema, in both APIs, and lets the
+ * Contract tests: readJsonFile validates with a real Zod schema, in both APIs, and lets the
  * schema's error through unchanged.
  */
 
@@ -31,13 +31,13 @@ afterEach(async () => {
 });
 
 describe.each([
-  ['jg-fs', readJSONFile],
+  ['jg-fs', readJsonFile],
   [
     'jg-fs/sync',
-    (path: string, options?: Parameters<typeof readJSONFileSync<IConfig>>[1]) =>
-      Promise.resolve().then(() => readJSONFileSync(path, options)),
+    (path: string, options?: Parameters<typeof readJsonFileSync<IConfig>>[1]) =>
+      Promise.resolve().then(() => readJsonFileSync(path, options)),
   ],
-])('%s readJSONFile', (_entry, read) => {
+])('%s readJsonFile', (_entry, read) => {
   test('returns what the schema returns', async () => {
     const path = join(root, 'config.json');
     await writeFile(path, '{ "port": 8080 }');
@@ -76,14 +76,14 @@ describe.each([
 describe('types', () => {
   test('the result type comes from the schema, or is unknown without one', () => {
     // wrapped in functions, so nothing reads the files
-    expectTypeOf(() => readJSONFile('x', { schema: Config })).returns.toEqualTypeOf<
+    expectTypeOf(() => readJsonFile('x', { schema: Config })).returns.toEqualTypeOf<
       Promise<IConfig>
     >();
-    expectTypeOf(() => readJSONFile('x')).returns.toEqualTypeOf<Promise<unknown>>();
-    expectTypeOf(() => readJSONFile<{ port: number }>('x')).returns.toEqualTypeOf<
+    expectTypeOf(() => readJsonFile('x')).returns.toEqualTypeOf<Promise<unknown>>();
+    expectTypeOf(() => readJsonFile<{ port: number }>('x')).returns.toEqualTypeOf<
       Promise<{ port: number }>
     >();
-    expectTypeOf(() => readJSONFileSync('x', { schema: Config })).returns.toEqualTypeOf<IConfig>();
-    expectTypeOf(() => readJSONFileSync('x')).returns.toEqualTypeOf<unknown>();
+    expectTypeOf(() => readJsonFileSync('x', { schema: Config })).returns.toEqualTypeOf<IConfig>();
+    expectTypeOf(() => readJsonFileSync('x')).returns.toEqualTypeOf<unknown>();
   });
 });

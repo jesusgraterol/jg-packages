@@ -2,9 +2,9 @@ import { describe, expect, expectTypeOf, test } from 'vitest';
 
 import { extractMessage } from '../error-handler/index.js';
 import { UNKNOWN_ERROR_CODE } from '../shared/constants.js';
-import type { IJSONValue } from '../shared/types.js';
+import type { IJsonValue } from '../shared/types.js';
 import { Exception } from './exception.js';
-import type { IExceptionJSON } from './types.js';
+import type { IExceptionJson } from './types.js';
 
 describe('Exception', () => {
   test('is an Error with the message, the code, and the data', () => {
@@ -166,7 +166,7 @@ describe('Exception#toJSON', () => {
   ])('uses null for data that %s', (_, data) => {
     const exception = new Exception('Failed', {
       code: 'FAILED',
-      data: data as unknown as IJSONValue,
+      data: data as unknown as IJsonValue,
     });
 
     expect(exception.toJSON().data).toBeNull();
@@ -232,8 +232,8 @@ describe('Exception types', () => {
     const exception = new Exception('Not found', { code: 'NOT_FOUND' });
 
     expectTypeOf(exception.code).toEqualTypeOf<string>();
-    expectTypeOf(exception.data).toEqualTypeOf<IJSONValue | undefined>();
-    expectTypeOf(exception.toJSON()).toEqualTypeOf<IExceptionJSON>();
-    expectTypeOf(exception.toJSON().data).toEqualTypeOf<IJSONValue>();
+    expectTypeOf(exception.data).toEqualTypeOf<IJsonValue | undefined>();
+    expectTypeOf(exception.toJSON()).toEqualTypeOf<IExceptionJson>();
+    expectTypeOf(exception.toJSON().data).toEqualTypeOf<IJsonValue>();
   });
 });

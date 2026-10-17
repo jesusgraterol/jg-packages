@@ -1,13 +1,13 @@
 import { Exception } from 'jg-exception';
 
 import { ERRORS } from '../shared/errors.js';
-import type { IJSONValue } from '../shared/types.js';
+import type { IJsonValue } from '../shared/types.js';
 
 import { decodeBase64Url, encodeBase64Url } from './base64url.js';
-import { parseJSON, stringifyJSON } from './json.js';
+import { parseJson, stringifyJson } from './json.js';
 
 // the JSON a cursor can hold: an object or an array, as pagination continuations are
-export type ICursorValue = { [key: string]: IJSONValue } | IJSONValue[];
+export type ICursorValue = { [key: string]: IJsonValue } | IJsonValue[];
 
 // the characters a cursor can hold
 const CURSOR_PATTERN = /^[A-Za-z0-9_-]+$/;
@@ -25,7 +25,7 @@ const CURSOR_PATTERN = /^[A-Za-z0-9_-]+$/;
  * - UNSUPPORTED_DATA_TYPE: if the value isn't an object or an array
  * - UNABLE_TO_SERIALIZE_JSON: if the value contains data that cannot be serialized
  */
-export const encodeCursor = (value: ICursorValue): string => encodeBase64Url(stringifyJSON(value));
+export const encodeCursor = (value: ICursorValue): string => encodeBase64Url(stringifyJson(value));
 
 /**
  * Decodes a cursor made by `encodeCursor`. The cursor comes from a client, so it's validated
@@ -50,7 +50,7 @@ export const decodeCursor = (cursor: string, maxLength: number = 2048): ICursorV
     );
   }
   try {
-    return parseJSON<ICursorValue>(decodeBase64Url(cursor));
+    return parseJson<ICursorValue>(decodeBase64Url(cursor));
   } catch (error) {
     throw new Exception('The cursor is not a valid encoded value.', {
       code: ERRORS.INVALID_CURSOR,

@@ -1,6 +1,6 @@
 import { v4 as uuidv4, v7 as uuidv7 } from 'uuid';
 
-import type { IUUIDVersion } from '../shared/types.js';
+import type { IUuidVersion } from '../shared/types.js';
 import type { IDateValue } from '../transformers/index.js';
 import { toDate } from '../transformers/index.js';
 
@@ -11,12 +11,12 @@ import { createUint32Source, drawFloat, drawUniformIndex, drawUniformInteger } f
  * @param version The version of the UUID to be generated.
  * @returns A UUID string of the specified version.
  * @example
- * import { generateUUID } from 'jg-utilities';
+ * import { generateUuid } from 'jg-utilities';
  *
- * generateUUID(4); // such as '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
- * generateUUID(7); // time-ordered, so later IDs sort after earlier ones
+ * generateUuid(4); // such as '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
+ * generateUuid(7); // time-ordered, so later IDs sort after earlier ones
  */
-export const generateUUID = (version: IUUIDVersion): string => {
+export const generateUuid = (version: IUuidVersion): string => {
   if (version === 7) {
     return uuidv7();
   }

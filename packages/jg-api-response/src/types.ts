@@ -1,7 +1,7 @@
-import type { IJSONValue } from 'jg-exception';
+import type { IJsonValue } from 'jg-exception';
 
 // an error as an envelope carries it to the client
-export type IAPIError = {
+export type IApiError = {
   // the stable code the client handles the error by, or `UNKNOWN_ERROR` when the error had none
   code: string;
 
@@ -9,14 +9,14 @@ export type IAPIError = {
   message: string;
 
   // the context the error carried, or `null` when it carried none
-  data: IJSONValue;
+  data: IJsonValue;
 };
 
 /*
  * The envelope a service sends in an HTTP body. A response is successful when it has no error, and
  * it carries data either way.
  */
-export type IAPIResponse<T> = {
+export type IApiResponse<T> = {
   // whether the request succeeded, which is when `error` is null
   success: boolean;
 
@@ -24,14 +24,14 @@ export type IAPIResponse<T> = {
   data: T;
 
   // the error the request failed with, or null when it succeeded
-  error: IAPIError | null;
+  error: IApiError | null;
 };
 
 /*
  * An envelope error as it arrives from any service. `data` may be missing, and it's `unknown`,
  * because `isResponse` doesn't check it: whoever reads it checks it first.
  */
-export type IParsedAPIError = {
+export type IParsedApiError = {
   code: string;
   message: string;
   data?: unknown;
@@ -41,8 +41,8 @@ export type IParsedAPIError = {
  * An envelope as it arrives after `JSON.parse`: `undefined` fields are gone, and services may send
  * `error: null` on success or leave `error` out.
  */
-export type IParsedAPIResponse<T> = {
+export type IParsedApiResponse<T> = {
   success: boolean;
   data?: T;
-  error?: IParsedAPIError | null;
+  error?: IParsedApiError | null;
 };

@@ -69,7 +69,7 @@ export const validateTimeStringValue = (value: number): void => {
  * @throws
  * - UNSUPPORTED_DATA_TYPE: if the provided value is not an object or an array
  */
-export const canJSONBeSerialized = (value: unknown): void => {
+export const canJsonBeSerialized = (value: unknown): void => {
   if (!isObjectValid(value, true) && !isArrayValid(value, true)) {
     throw new Exception(
       `The JSON value must be an object or an array in order to be stringified. Received: ${String(value)}`,
@@ -85,7 +85,7 @@ export const canJSONBeSerialized = (value: unknown): void => {
  * @throws
  * - UNABLE_TO_SERIALIZE_JSON: if the result of JSON.stringify is not a valid string
  */
-export const validateJSONSerializationResult = (value: unknown, result: unknown): void => {
+export const validateJsonSerializationResult = (value: unknown, result: unknown): void => {
   if (typeof result !== 'string' || !result.length) {
     throw new Exception(
       `Stringifying the JSON value '${String(value)}' produced an invalid result: ${String(result)}.`,
@@ -100,7 +100,7 @@ export const validateJSONSerializationResult = (value: unknown, result: unknown)
  * @throws
  * - UNSUPPORTED_DATA_TYPE: if the provided value is not a non-empty string
  */
-export const canJSONBeDeserialized = (value: string): void => {
+export const canJsonBeDeserialized = (value: string): void => {
   if (typeof value !== 'string' || !value.length) {
     throw new Exception(
       `The JSON value must be a non-empty string in order to be parsed. Received: ${value}`,
@@ -116,7 +116,7 @@ export const canJSONBeDeserialized = (value: string): void => {
  * @throws
  * - UNABLE_TO_DESERIALIZE_JSON: if the result of JSON.parse is not a valid object or array
  */
-export const validateJSONDeserializationResult = (value: string, result: unknown): void => {
+export const validateJsonDeserializationResult = (value: string, result: unknown): void => {
   if (!isObjectValid(result, true) && !isArrayValid(result, true)) {
     throw new Exception(
       `Parsing the JSON value '${value}' produced an invalid result: ${String(result)}.`,

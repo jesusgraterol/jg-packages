@@ -1,7 +1,7 @@
 import { UNKNOWN_ERROR_CODE } from '../shared/constants.js';
-import type { IJSONValue } from '../shared/types.js';
+import type { IJsonValue } from '../shared/types.js';
 import { EXCEPTION_BRAND } from './constants.js';
-import type { IExceptionJSON, IExceptionOptions } from './types.js';
+import type { IExceptionJson, IExceptionOptions } from './types.js';
 
 /**
  * Makes data safe to serialize by passing it through JSON. A type can't rule out an object that
@@ -9,10 +9,10 @@ import type { IExceptionJSON, IExceptionOptions } from './types.js';
  * @param data The exception's data.
  * @returns The data as JSON would carry it, or `null` when there's none or it can't be serialized.
  */
-const toSerializableData = (data: IJSONValue | undefined): IJSONValue => {
+const toSerializableData = (data: IJsonValue | undefined): IJsonValue => {
   try {
     const serialized = JSON.stringify(data);
-    return serialized === undefined ? null : (JSON.parse(serialized) as IJSONValue);
+    return serialized === undefined ? null : (JSON.parse(serialized) as IJsonValue);
   } catch {
     return null;
   }
@@ -47,7 +47,7 @@ export class Exception extends Error {
   public readonly code: string;
 
   // context that helps whoever handles or debugs the error
-  public readonly data: IJSONValue | undefined;
+  public readonly data: IJsonValue | undefined;
 
   /**
    * Creates an exception.
@@ -75,7 +75,7 @@ export class Exception extends Error {
    * const json = new Exception('Not found', { code: 'NOT_FOUND', data: { id: 1 } }).toJSON();
    * json; // => { name: 'Exception', code: 'NOT_FOUND', message: 'Not found', data: { id: 1 } }
    */
-  public toJSON(): IExceptionJSON {
+  public toJSON(): IExceptionJson {
     return {
       name: this.name,
       code: this.code,

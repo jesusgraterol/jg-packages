@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 
 import { decodeBase64Url, encodeBase64Url } from './base64url.js';
 import { decodeCursor, encodeCursor } from './cursor.js';
-import { parseJSON, stringifyJSON, stringifyJSONDeterministically } from './json.js';
+import { parseJson, stringifyJson, stringifyJsonDeterministically } from './json.js';
 
 /*
  * Properties: the transformers' guarantees, over generated inputs, for what examples can't cover.
@@ -36,35 +36,35 @@ describe('cursors', () => {
         // decodeCursor refuses cursors longer than its limit
         fc.pre(cursor.length <= 2048);
 
-        expect(stringifyJSON(decodeCursor(cursor))).toBe(stringifyJSON(value));
+        expect(stringifyJson(decodeCursor(cursor))).toBe(stringifyJson(value));
       }),
     );
   });
 });
 
 describe('JSON helpers', () => {
-  test('parseJSON reads back what stringifyJSON writes, as JSON.parse would', () => {
+  test('parseJson reads back what stringifyJson writes, as JSON.parse would', () => {
     fc.assert(
       fc.property(jsonContainer, (value) => {
-        const text = stringifyJSON(value);
+        const text = stringifyJson(value);
 
-        expect(parseJSON(text)).toStrictEqual(JSON.parse(text));
-        expect(stringifyJSON(parseJSON<object>(text))).toBe(text);
+        expect(parseJson(text)).toStrictEqual(JSON.parse(text));
+        expect(stringifyJson(parseJson<object>(text))).toBe(text);
       }),
     );
   });
 
-  test('stringifyJSONDeterministically writes the same text whatever the key order', () => {
+  test('stringifyJsonDeterministically writes the same text whatever the key order', () => {
     fc.assert(
       fc.property(
         fc.dictionary(fc.string(), fc.jsonValue({ maxDepth: 3 }), { minKeys: 1 }),
         (value) => {
           const reversed = Object.fromEntries(Object.entries(value).reverse());
 
-          expect(stringifyJSONDeterministically(reversed)).toBe(
-            stringifyJSONDeterministically(value),
+          expect(stringifyJsonDeterministically(reversed)).toBe(
+            stringifyJsonDeterministically(value),
           );
-          expect(JSON.parse(stringifyJSONDeterministically(value))).toStrictEqual(
+          expect(JSON.parse(stringifyJsonDeterministically(value))).toStrictEqual(
             JSON.parse(JSON.stringify(value)),
           );
         },

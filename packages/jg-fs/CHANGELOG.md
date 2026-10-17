@@ -6,14 +6,15 @@ A fresh start: breaking changes in a minor version, once, because nothing depend
 
 ### Added
 
-- A `schema` option for `readJSONFile`, in the async and sync APIs, which validates the parsed content and types the result. Its errors propagate unchanged. `ISchema` and `IReadJSONFileOptions` are exported.
+- A `schema` option for `readJsonFile`, in the async and sync APIs, which validates the parsed content and types the result. Its errors propagate unchanged. `ISchema` and `IReadJsonFileOptions` are exported.
 - `API.md`, the full API reference, generated from the TSDoc of the version it ships with, so it can be read from `node_modules` without a browser.
 
 ### Changed
 
 - Errors are `Exception`s from `jg-exception` 1.1.0: the code, the data, and the cause each have their own field, nothing is encoded into the message, and `toJSON()` and `toString()` follow `jg-exception`.
 - Error messages say what failed at that step and keep the error underneath as `cause`, instead of repeating its message, so `extractMessage` prints each layer of the chain once.
-- `readJSONFile` returns `unknown` without a schema or a type argument, instead of `Record<string, unknown>`.
+- `readJsonFile` returns `unknown` without a schema or a type argument, instead of `Record<string, unknown>`.
+- `readJSONFile` and `writeJSONFile` are `readJsonFile` and `writeJsonFile`, in the async and sync APIs, so acronyms are cased as words, like every other name in the packages.
 
 ## 1.0.1
 

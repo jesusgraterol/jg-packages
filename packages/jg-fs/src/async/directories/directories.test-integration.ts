@@ -8,9 +8,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { getPathElement, pathExists } from '../general/index.js';
 import {
   createFileSymLink,
-  readJSONFile,
+  readJsonFile,
   readTextFile,
-  writeJSONFile,
+  writeJsonFile,
   writeTextFile,
 } from '../files/index.js';
 import { ERRORS } from '../../shared/index.js';
@@ -99,7 +99,7 @@ describe('Directory Actions', () => {
       await writeTextFile(p('dir-a/file-a.txt'), 'This is file a!');
       await writeTextFile(p('dir-a/file-b.txt'), 'This is file b!');
       await writeTextFile(p('dir-a/b/file-ab.txt'), 'This is file ab!');
-      await writeJSONFile(p('dir-a/b/c/file-abc.json'), {
+      await writeJsonFile(p('dir-a/b/c/file-abc.json'), {
         name: 'file-abc.json',
         description: 'This is file abc!',
       });
@@ -109,7 +109,7 @@ describe('Directory Actions', () => {
       expect(await readTextFile(p('dir-b/file-a.txt'))).toBe('This is file a!');
       expect(await readTextFile(p('dir-b/file-b.txt'))).toBe('This is file b!');
       expect(await readTextFile(p('dir-b/b/file-ab.txt'))).toBe('This is file ab!');
-      expect(await readJSONFile(p('dir-b/b/c/file-abc.json'))).toStrictEqual({
+      expect(await readJsonFile(p('dir-b/b/c/file-abc.json'))).toStrictEqual({
         name: 'file-abc.json',
         description: 'This is file abc!',
       });
@@ -164,10 +164,10 @@ describe('Directory Actions', () => {
     test('can read all the contents of a directory recursively', async () => {
       await writeTextFile(p('file-01.txt'), 'Hello There!! 01');
       await writeTextFile(p('file-02.txt'), 'Hello There!! 02');
-      await writeJSONFile(p('file-03.json'), { hello: 'World' });
+      await writeJsonFile(p('file-03.json'), { hello: 'World' });
       await writeTextFile(p('inner/file-01.txt'), 'Hello There!! inner/01');
       await writeTextFile(p('inner/inner-01.txt'), 'Hello There!! inner/01');
-      await writeJSONFile(p('inner/inner-02.json'), { foo: 'bar' });
+      await writeJsonFile(p('inner/inner-02.json'), { foo: 'bar' });
       await createDirectory(p('inner/inner2'));
       expect((await readDirectory(p(), true)).sort()).toStrictEqual([
         p('file-01.txt'),
@@ -201,7 +201,7 @@ describe('Directory Actions', () => {
       await createDirectory(p('another-dir'));
       await createDirectorySymLink(p('some-dir'), p('some-dir-sl'));
       await writeTextFile(p('afile.txt'), 'Hello there!');
-      await writeJSONFile(p('aafile.json'), { foo: 'bar' });
+      await writeJsonFile(p('aafile.json'), { foo: 'bar' });
       await createFileSymLink(p('aafile.json'), p('aafile-sl.json'));
       expect(await getDirectoryElements(p())).toStrictEqual({
         directories: [await getPathElement(p('another-dir')), await getPathElement(p('some-dir'))],
@@ -215,8 +215,8 @@ describe('Directory Actions', () => {
 
     test('can filter files by any number of extensions and sort them', async () => {
       await writeTextFile(p('afile.txt'), 'Hello there!');
-      await writeJSONFile(p('abfile.json'), { baz: 'foo' });
-      await writeJSONFile(p('aafile.json'), { foo: 'bar' });
+      await writeJsonFile(p('abfile.json'), { baz: 'foo' });
+      await writeJsonFile(p('aafile.json'), { foo: 'bar' });
       await writeTextFile(p('ajsfile.js'), "console.log('Hello JS World!')");
       await writeTextFile(p('atsfile.ts'), "console.log('Hello TS World!')");
       expect(

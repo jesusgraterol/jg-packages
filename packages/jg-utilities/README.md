@@ -34,10 +34,10 @@ toSlug('Héllo, World! 2026'); // 'hello-world-2026'
 Generate secure random values, IDs, and timestamps:
 
 ```ts
-import { createTimestamp, generateRandomString, generateUUID } from 'jg-utilities';
+import { createTimestamp, generateRandomString, generateUuid } from 'jg-utilities';
 
 generateRandomString(16); // drawn with crypto.getRandomValues, fit for secrets
-generateUUID(7); // a time-ordered UUID
+generateUuid(7); // a time-ordered UUID
 createTimestamp(); // '2026-10-17T08:30:00.000Z'
 ```
 

@@ -1,5 +1,5 @@
 // shared
-export type { IJSONValue } from './shared/types.js';
+export type { IJsonValue } from './shared/types.js';
 export { DEFAULT_MESSAGE, UNKNOWN_ERROR_CODE } from './shared/constants.js';
 
 // error handler
@@ -14,7 +14,7 @@ export {
 
 // exception
 export {
-  type IExceptionJSON,
+  type IExceptionJson,
   type IExceptionOptions,
   Exception,
   isException,

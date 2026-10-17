@@ -6,8 +6,8 @@ A fresh start: breaking changes in a minor version, once, because nothing depend
 
 ### Added
 
-- `IAPIError`, the error an envelope carries: `{ code, message, data }`.
-- `IParsedAPIError`, an envelope error as it arrives from any service, with optional, unchecked `data`.
+- `IApiError`, the error an envelope carries: `{ code, message, data }`.
+- `IParsedApiError`, an envelope error as it arrives from any service, with optional, unchecked `data`.
 - `API.md`, the full API reference, generated from the TSDoc of the version it ships with, so it can be read from `node_modules` without a browser.
 
 ### Changed
@@ -15,7 +15,8 @@ A fresh start: breaking changes in a minor version, once, because nothing depend
 - An envelope's `error` is `{ code, message, data }` instead of a message, and `null` instead of `undefined` on success.
 - `buildResponse` keeps an Exception's code, message, and data, with `null` for data that can't be serialized. Any other error keeps its string `code`, or gets `UNKNOWN_ERROR`, and its message, with `null` data.
 - `isResponse` accepts an `error` that is `null`, missing, or an object with a string `code` and `message`, and rejects a string `error`.
-- `IAPIResponse` is a type alias instead of an interface.
+- `IApiResponse` is a type alias instead of an interface.
+- `IAPIResponse` and `IParsedAPIResponse` are `IApiResponse` and `IParsedApiResponse`, so acronyms are cased as words, like every other name in the packages.
 
 ## 1.0.1
 

@@ -20,7 +20,7 @@ export {
   buildDataKey,
   buildIndexedDbKey,
   buildUnavailableException,
-  parseJSON,
+  parseJson,
   parseValue,
-  stringifyJSON,
+  stringifyJson,
 } from './utilities.js';

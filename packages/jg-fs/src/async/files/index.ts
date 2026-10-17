@@ -7,11 +7,11 @@ export {
   readBoundedFile,
   readBufferFile,
   readFile,
-  readJSONFile,
+  readJsonFile,
   readTextFile,
   writeBufferFile,
   writeFile,
   writeFileAtomic,
-  writeJSONFile,
+  writeJsonFile,
   writeTextFile,
 } from './files.js';

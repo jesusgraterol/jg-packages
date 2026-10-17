@@ -48,13 +48,13 @@ describe.each([
   test('writes and reads text, JSON, and binary files, including empty ones', async () => {
     await fs.writeTextFile(p('nested', 'a.txt'), 'hello');
     await fs.writeTextFile(p('empty.txt'), '');
-    await fs.writeJSONFile(p('data.json'), { id: 1, tags: ['a'] });
+    await fs.writeJsonFile(p('data.json'), { id: 1, tags: ['a'] });
     await fs.writeBufferFile(p('data.bin'), Buffer.from([0, 1, 2]));
     await fs.writeBufferFile(p('empty.bin'), Buffer.alloc(0));
 
     expect(await fs.readTextFile(p('nested', 'a.txt'))).toBe('hello');
     expect(await fs.readTextFile(p('empty.txt'))).toBe('');
-    expect(await fs.readJSONFile(p('data.json'))).toStrictEqual({ id: 1, tags: ['a'] });
+    expect(await fs.readJsonFile(p('data.json'))).toStrictEqual({ id: 1, tags: ['a'] });
     expect(await fs.readBufferFile(p('data.bin'))).toStrictEqual(Buffer.from([0, 1, 2]));
     expect(await fs.readBufferFile(p('empty.bin'))).toStrictEqual(Buffer.alloc(0));
   });
@@ -64,19 +64,19 @@ describe.each([
     await fs.writeTextFile(p('broken.json'), '{ nope');
 
     await expectToRejectCode(
-      fs.writeJSONFile(p('x.json'), ''),
+      fs.writeJsonFile(p('x.json'), ''),
       fs.ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
     );
     await expectToRejectCode(
-      fs.writeJSONFile(p('x.json'), undefined),
+      fs.writeJsonFile(p('x.json'), undefined),
       fs.ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
     );
     await expectToRejectCode(
-      fs.readJSONFile(p('empty.json')),
+      fs.readJsonFile(p('empty.json')),
       fs.ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
     );
     await expectToRejectCode(
-      fs.readJSONFile(p('broken.json')),
+      fs.readJsonFile(p('broken.json')),
       fs.ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
     );
     await expectToRejectCode(

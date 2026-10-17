@@ -4,5 +4,5 @@
  * fit, because they have no index signature: pass an interface-typed value as `{ ...value }`, or
  * declare its type with `type`.
  */
-export type IJSONValue =
-  string | number | boolean | null | IJSONValue[] | { [key: string]: IJSONValue | undefined };
+export type IJsonValue =
+  string | number | boolean | null | IJsonValue[] | { [key: string]: IJsonValue | undefined };

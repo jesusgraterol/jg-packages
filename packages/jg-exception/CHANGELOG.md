@@ -7,7 +7,7 @@ A fresh start: breaking changes in a minor version, once, because nothing depend
 ### Added
 
 - `toJSON()` on `Exception`, which `JSON.stringify` calls: `{ name, code, message, data }`, with `null` for data that is missing or can't be serialized.
-- `IExceptionOptions`, `IExceptionJSON`, and `IJSONValue`, the type of an Exception's `data`.
+- `IExceptionOptions`, `IExceptionJson`, and `IJsonValue`, the type of an Exception's `data`.
 - `UNKNOWN_ERROR_CODE`, `'UNKNOWN_ERROR'`, the code for an error that has none.
 - `API.md`, the full API reference, generated from the TSDoc of the version it ships with, so it can be read from `node_modules` without a browser.
 

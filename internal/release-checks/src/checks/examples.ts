@@ -38,7 +38,7 @@ const require = createRequire(import.meta.url);
 
 // one example, with the symbol it documents
 export type IPackageExample = {
-  // the symbol, such as `copyText`, `Exception#toJSON`, or `readJSONFile in ./sync`
+  // the symbol, such as `copyText`, `Exception#toJSON`, or `readJsonFile in ./sync`
   label: string;
   code: string;
 };

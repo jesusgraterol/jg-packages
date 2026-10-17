@@ -1,6 +1,6 @@
 import { extractMessage, getErrorCode, isException, UNKNOWN_ERROR_CODE } from 'jg-exception';
 
-import type { IAPIError, IAPIResponse, IParsedAPIError, IParsedAPIResponse } from './types.js';
+import type { IApiError, IApiResponse, IParsedApiError, IParsedApiResponse } from './types.js';
 
 /**
  * Turns an error of any shape into the error an envelope carries.
@@ -8,7 +8,7 @@ import type { IAPIError, IAPIResponse, IParsedAPIError, IParsedAPIResponse } fro
  * @returns An Exception's code, message, and data, or any other error's string `code` (or
  * `UNKNOWN_ERROR`) and message, with `null` data.
  */
-const toAPIError = (error: unknown): IAPIError => {
+const toApiError = (error: unknown): IApiError => {
   if (isException(error)) {
     const { code, message, data } = error.toJSON();
     return { code, message, data };
@@ -25,7 +25,7 @@ const toAPIError = (error: unknown): IAPIError => {
  * @param value The value to check.
  * @returns Whether the value is an envelope error.
  */
-const isParsedAPIError = (value: unknown): value is IParsedAPIError => {
+const isParsedApiError = (value: unknown): value is IParsedApiError => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false;
   }
@@ -49,10 +49,10 @@ const isParsedAPIError = (value: unknown): value is IParsedAPIError => {
  * buildResponse(undefined, new Exception('Not found', { code: 'NOT_FOUND', data: { id: 1 } }));
  * // { success: false, data: undefined, error: { code: 'NOT_FOUND', message: 'Not found', data: { id: 1 } } }
  */
-export const buildResponse = <T = undefined>(data?: T, error?: unknown): IAPIResponse<T> => ({
+export const buildResponse = <T = undefined>(data?: T, error?: unknown): IApiResponse<T> => ({
   success: error === undefined,
   data: data as T,
-  error: error === undefined ? null : toAPIError(error),
+  error: error === undefined ? null : toApiError(error),
 });
 
 /**
@@ -72,13 +72,13 @@ export const buildResponse = <T = undefined>(data?: T, error?: unknown): IAPIRes
  *   body.data; // IUser | undefined
  * }
  */
-export const isResponse = <T>(value: unknown): value is IParsedAPIResponse<T> => {
+export const isResponse = <T>(value: unknown): value is IParsedApiResponse<T> => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false;
   }
   const { success, error } = value as Record<string, unknown>;
   return (
     typeof success === 'boolean' &&
-    (error === undefined || error === null || isParsedAPIError(error))
+    (error === undefined || error === null || isParsedApiError(error))
   );
 };
