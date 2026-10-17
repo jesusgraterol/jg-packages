@@ -288,7 +288,7 @@ Expected result: `pnpm release:verify` prints `PASS jg-<name>@<version>`. It pac
 
 ## 8. Release it
 
-Publish its first version by hand, following [the first publish](releasing.md#the-first-publish-of-a-new-package) in `releasing.md`. While the repository's first packages are being built, skip this step: they're released together once they're all done.
+Publish its first version by hand, following [the first publish](releasing.md#the-first-publish-of-a-new-package) in `releasing.md`. CI publishes every later version.
 
 ## Checklist
 
