@@ -303,7 +303,8 @@ describe('File Actions', () => {
     test('reads content larger than one read chunk', async () => {
       const content = Buffer.alloc(200_000, 7);
       await writeFile(p('large.bin'), content);
-      expect(await readBoundedFile(p('large.bin'), 200_000)).toStrictEqual(content);
+      // Buffer.equals compares the bytes exactly, without a deep equality's per-index cost
+      expect((await readBoundedFile(p('large.bin'), 200_000)).equals(content)).toBe(true);
     });
 
     test('rejects when the content exceeds maxBytes', async () => {

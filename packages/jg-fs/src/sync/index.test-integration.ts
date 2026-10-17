@@ -585,7 +585,8 @@ describe('Filesystem', () => {
       test('reads content larger than one read chunk', () => {
         const content = Buffer.alloc(200_000, 7);
         writeFile(p('large.bin'), content);
-        expect(readBoundedFile(p('large.bin'), 200_000)).toStrictEqual(content);
+        // Buffer.equals compares the bytes exactly, without a deep equality's per-index cost
+        expect(readBoundedFile(p('large.bin'), 200_000).equals(content)).toBe(true);
       });
 
       test('throws when the content exceeds maxBytes', () => {
