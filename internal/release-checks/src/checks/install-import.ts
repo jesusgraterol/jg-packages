@@ -18,7 +18,7 @@ const WORKSPACE_RANGE = /^(?:workspace|catalog):/;
  * @param exportsMap The packed manifest's `exports`.
  * @returns The importable subpaths, such as `.` and `./sync`.
  */
-const getImportableSubpaths = (exportsMap: unknown): string[] => {
+export const getImportableSubpaths = (exportsMap: unknown): string[] => {
   if (typeof exportsMap !== 'object' || exportsMap === null) {
     return [];
   }
@@ -39,7 +39,7 @@ const getImportableSubpaths = (exportsMap: unknown): string[] => {
  * @param subpath The `exports` subpath.
  * @returns The specifier, such as `jg-fs/sync`.
  */
-const toSpecifier = (name: string, subpath: string): string =>
+export const toSpecifier = (name: string, subpath: string): string =>
   subpath === '.' ? name : `${name}/${subpath.replace(/^\.\//, '')}`;
 
 /**

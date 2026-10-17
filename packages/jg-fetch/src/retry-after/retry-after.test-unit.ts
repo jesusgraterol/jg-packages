@@ -1,3 +1,4 @@
+import fc from 'fast-check';
 import { describe, expect, test } from 'vitest';
 
 import { MAX_TIMEOUT_SECONDS } from '../shared/index.js';
@@ -60,5 +61,40 @@ describe('parseRetryAfterMs', () => {
     'Wed, 99 Foo 2015',
   ])('returns null for %j', (value) => {
     expect(parseRetryAfterMs(value, NOW_MS)).toBeNull();
+  });
+});
+
+describe('parseRetryAfterMs bounds', () => {
+  test('always returns null or a whole wait from 0 to the longest timeout, whatever the header', () => {
+    fc.assert(
+      fc.property(
+        fc.oneof(
+          fc.string(),
+          fc.nat().map(String),
+          fc.date({ noInvalidDate: true }).map((date) => date.toUTCString()),
+          fc.array(fc.string(), { maxLength: 2 }),
+        ),
+        fc.integer({ min: 0, max: 8_640_000_000_000_000 }),
+        (header, nowMs) => {
+          const waitMs = parseRetryAfterMs(header, nowMs);
+
+          if (waitMs !== null) {
+            expect(Number.isInteger(waitMs)).toBe(true);
+            expect(waitMs).toBeGreaterThanOrEqual(0);
+            expect(waitMs).toBeLessThanOrEqual(MAX_TIMEOUT_SECONDS * 1000);
+          }
+        },
+      ),
+    );
+  });
+
+  test('reads a delay in seconds as that many seconds, clamped to the longest timeout', () => {
+    fc.assert(
+      fc.property(fc.nat(), (seconds) => {
+        expect(parseRetryAfterMs(String(seconds))).toBe(
+          Math.min(seconds * 1000, MAX_TIMEOUT_SECONDS * 1000),
+        );
+      }),
+    );
   });
 });

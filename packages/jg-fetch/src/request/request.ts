@@ -70,6 +70,9 @@ const MAX_TIMER_DELAY_MS = 2_147_483_647;
  * @returns A promise that settles like the value, or rejects when the signal aborts first.
  */
 const raceSignal = async <V>(value: V | PromiseLike<V>, signal: AbortSignal): Promise<V> => {
+  const pending = Promise.resolve(value);
+  // once the signal aborted, the value is ignored, but its rejection must never go unhandled
+  pending.catch(() => undefined);
   signal.throwIfAborted();
   let onAbort = (): void => undefined;
   const aborted = new Promise<never>((_resolve, reject) => {
@@ -82,7 +85,7 @@ const raceSignal = async <V>(value: V | PromiseLike<V>, signal: AbortSignal): Pr
   // no handle either, so without this the process could exit before the timeout fires
   const keepAlive = setInterval(() => undefined, MAX_TIMER_DELAY_MS);
   try {
-    return await Promise.race([value, aborted]);
+    return await Promise.race([pending, aborted]);
   } finally {
     clearInterval(keepAlive);
     signal.removeEventListener('abort', onAbort);

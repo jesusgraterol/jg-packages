@@ -624,6 +624,17 @@ describe('headers callbacks that never settle', () => {
     expect(error).toMatchObject({ kind: 'TIMEOUT' });
   });
 
+  test('a callback that rejects while the signal is already aborted leaves nothing unhandled', async () => {
+    // an unhandled rejection fails the run, and crashes a Node.js process by default
+    const { error } = await request(`${server.origin}${uniquePath('headers-aborted')}`, {
+      signal: AbortSignal.abort(new Error('stopped')),
+      headers: () => Promise.reject(new Error('no token')),
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(error).toMatchObject({ kind: 'ABORTED' });
+  });
+
   test('a callback that rejects in time is still INVALID_HEADERS', async () => {
     const cause = new Error('no token');
 

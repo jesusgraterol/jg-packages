@@ -4,6 +4,7 @@ import { basename, join } from 'node:path';
 
 import { checkAstroFixture } from '../checks/astro-fixture.ts';
 import { installConsumerProject } from '../checks/consumer-project.ts';
+import { checkErrorCodes } from '../checks/error-codes.ts';
 import { checkExamples } from '../checks/examples.ts';
 import { checkFileList } from '../checks/file-list.ts';
 import { checkInstallAndImport } from '../checks/install-import.ts';
@@ -91,8 +92,8 @@ const addProblems = (problems: Map<string, string[]>, name: string, additions: s
 /**
  * Checks that every workspace's tests run in `pnpm check`, then packs every publishable package
  * into a directory and runs every release check on the tarballs: the file list, the release docs,
- * a consumer install and imports, the examples, an Astro fixture build for packages with Astro
- * components, publint and attw, TSDoc, and the registry comparison.
+ * a consumer install and imports, the examples, the error codes' tests, an Astro fixture build
+ * for packages with Astro components, publint and attw, TSDoc, and the registry comparison.
  * @param rootDirectory The repository root.
  * @param outputDirectory An existing, empty directory for the tarballs.
  * @param dependencies The registry, command runner, and logger.
@@ -138,6 +139,10 @@ export const packAndCheck = async (
     }
     log('Typechecking and running the examples');
     for (const [name, packageProblems] of await checkExamples(packages, runCommand, consumer)) {
+      addProblems(problems, name, packageProblems);
+    }
+    log('Finding the error codes no test asserts');
+    for (const [name, packageProblems] of await checkErrorCodes(packages, runCommand, consumer)) {
       addProblems(problems, name, packageProblems);
     }
   } finally {

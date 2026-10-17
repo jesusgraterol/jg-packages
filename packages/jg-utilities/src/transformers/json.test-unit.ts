@@ -27,6 +27,43 @@ describe('stringifyJSON', () => {
   });
 });
 
+// values JSON.stringify can't serialize, or turns into nothing
+const circular: Record<string, unknown> = {};
+circular['self'] = circular;
+const UNSERIALIZABLE: [string, unknown][] = [
+  ['an object that refers back to itself', circular],
+  ['a BigInt', { id: 1n }],
+  ['an object whose toJSON returns undefined', { toJSON: () => undefined }],
+];
+
+describe('stringifyJSON and stringifyJSONDeterministically on values JSON cannot hold', () => {
+  test.each(UNSERIALIZABLE)('stringifyJSON throws UNABLE_TO_SERIALIZE_JSON for %s', (_, value) => {
+    expectToThrowCode(() => stringifyJSON(value), ERRORS.UNABLE_TO_SERIALIZE_JSON);
+  });
+
+  test.each(UNSERIALIZABLE)(
+    'stringifyJSONDeterministically throws UNABLE_TO_SERIALIZE_JSON for %s',
+    (_, value) => {
+      expectToThrowCode(
+        () => stringifyJSONDeterministically(value),
+        ERRORS.UNABLE_TO_SERIALIZE_JSON,
+      );
+    },
+  );
+
+  test("keeps JSON's error as the cause", () => {
+    let thrown: unknown;
+    try {
+      stringifyJSON({ id: 1n });
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toMatchObject({ code: ERRORS.UNABLE_TO_SERIALIZE_JSON });
+    expect((thrown as { cause?: unknown }).cause).toBeInstanceOf(TypeError);
+  });
+});
+
 describe('stringifyJSONDeterministically', () => {
   test.each([[undefined], [null], [''], ['hello world'], [true], [123], [NaN]])(
     'stringifyJSONDeterministically(%o) -> throws UNSUPPORTED_DATA_TYPE',

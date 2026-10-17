@@ -248,6 +248,32 @@ describe('Value Procesors', () => {
   });
 
   describe('prettifyValue', () => {
+    test('throws INVALID_BIGNUMBER_FORMAT, with the cause, for a format bignumber.js rejects', () => {
+      expectToThrowCode(
+        () => prettifyValue(1234.5, { format: { groupSize: Symbol('size') as unknown as number } }),
+        ERRORS.INVALID_BIGNUMBER_FORMAT,
+      );
+      const cause = new Error('not a string');
+      expect(() =>
+        prettifyValue(1234.5, {
+          format: {
+            prefix: {
+              toString: () => {
+                throw cause;
+              },
+            } as unknown as string,
+          },
+        }),
+      ).toThrow(expect.objectContaining({ code: ERRORS.INVALID_BIGNUMBER_FORMAT, cause }));
+    });
+
+    test('passes an invalid processing setting through with its own code', () => {
+      expectToThrowCode(
+        () => prettifyValue(1, { processing: { decimalPlaces: -1 } }),
+        ERRORS.INVALID_DECIMAL_PLACES,
+      );
+    });
+
     test('can prettify a number with any number of decimals and any rounding mode', () => {
       expect(prettifyValue(1.555, { processing: { roundingMode: 'ROUND_HALF_UP' } })).toBe('1.56');
       expect(prettifyValue(1.555, { processing: { roundingMode: 'ROUND_HALF_DOWN' } })).toBe(
