@@ -29,7 +29,8 @@ Packages follow semantic versioning:
 
    Expected result: `release:verify` prints `PASS <name>@<version>` for every package.
 
-4. Commit on `development`, open a pull request to `main`, and merge it once CI passes. CI publishes the new version and pushes its `<name>-v<version>` tag.
+4. Check whether the change affects jg-skills' guidance, as [Keeping jg-skills in sync](package-guidelines.md#keeping-jg-skills-in-sync) describes, and record its matching change or why none is needed.
+5. Commit on `development`, open a pull request to `main`, and merge it once CI passes. CI publishes the new version and pushes its `<name>-v<version>` tag.
 
 ### Releasing with a sibling it needs
 

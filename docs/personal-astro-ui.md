@@ -97,6 +97,16 @@ Only `theme-control`, the copy buttons, `tabs`, and the header's menu run JavaSc
 
 External links show an arrow after their text. On a `button`, `externalIcon={false}` hides it, and so does `externalIcon: false` on a `site-footer` link; the jg-packages site does that on the links to its own repository.
 
+## Navigation
+
+Every page the package's components build crossfades into the next, and prerenders when the pointer rests on its link, without JavaScript:
+
+- `contract.css` turns on cross-document view transitions with `@view-transition { navigation: auto; }`, with a 180 ms crossfade, and turns them off under `prefers-reduced-motion: reduce`.
+- `site-header` carries `view-transition-name: jg-site-header`, so the header stays still while the page under it changes. The footer moves with the page, because its position differs from page to page.
+- `document-head` adds a `<script type="speculationrules">`, JSON the browser reads rather than code it runs. It prerenders same-site pages with `moderate` eagerness, which waits for the pointer to rest on a link, and never links to `.md`, `.txt`, `.xml` or `.png` files.
+
+Chromium supports both, Safari only the transitions, and Firefox neither; where a browser doesn't, pages load as they always did.
+
 ## Modules
 
 | Subpath                                   | What it exports                                                                                         |

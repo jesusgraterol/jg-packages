@@ -7,7 +7,12 @@ interface Props {
   packages: readonly IListedPackage[];
 }
 
+// the most tiles the hero shows, so it keeps its shape as packages are added; "View all packages"
+// reaches the rest
+const HERO_PACKAGE_LIMIT = 12;
+
 const { class: className, packages } = Astro.props;
+const shownPackages = packages.slice(0, HERO_PACKAGE_LIMIT);
 ---
 
 {/* the whole set at a glance: every listed package as an icon tile that opens its page */}
@@ -15,7 +20,7 @@ const { class: className, packages } = Astro.props;
   class:list={['grid grid-cols-2 gap-2 sm:gap-3', className]}
   aria-label="The packages"
 >
-  {packages.map((listedPackage) => (
+  {shownPackages.map((listedPackage) => (
     <li>
       <a
         href={`/packages/${listedPackage.name}/`}

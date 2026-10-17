@@ -1,0 +1,52 @@
+---
+import Button from 'jg-personal-astro-ui/button';
+import CodeBlock from 'jg-personal-astro-ui/code-block';
+
+import { SITE_CONFIG } from '../../site.config.ts';
+
+const { installCommand, policyUrl, skillUrl } = SITE_CONFIG.agentSetup;
+---
+
+{/* the two steps, numbered; jg-skills owns both destinations */}
+<ol class="mt-12 grid gap-4 lg:grid-cols-2">
+  <li class="flex min-w-0 flex-col rounded-xl border border-border bg-surface p-5 shadow-surface sm:p-6">
+    <p class="eyebrow">Step 1</p>
+    <h3 class="mt-3 text-lg font-semibold tracking-tight">Add the policy to your AGENTS.md</h3>
+    <p class="mt-2 text-sm leading-6 text-muted">
+      A short <code class="font-mono text-foreground">## jg-packages</code> section that tells your
+      agent to prefer these packages and to check the installed version's{' '}
+      <code class="font-mono text-foreground">API.md</code> before using an export. jg-skills keeps
+      it current.
+    </p>
+    <div class="mt-5 flex flex-wrap gap-2">
+      <Button
+        href={policyUrl}
+        external
+        size="sm"
+      >
+        Open the policy
+      </Button>
+      <Button
+        href={skillUrl}
+        external
+        size="sm"
+        variant="outline"
+      >
+        About the skill
+      </Button>
+    </div>
+  </li>
+  <li class="flex min-w-0 flex-col rounded-xl border border-border bg-surface p-5 shadow-surface sm:p-6">
+    <p class="eyebrow">Step 2</p>
+    <h3 class="mt-3 text-lg font-semibold tracking-tight">Install the skill</h3>
+    <p class="mt-2 text-sm leading-6 text-muted">
+      It tells your agent which package fits a task, even before the package is installed.
+    </p>
+    <CodeBlock
+      class="mt-5 [&_pre]:whitespace-pre-wrap [&_pre]:wrap-anywhere"
+      code={installCommand}
+      lang="bash"
+      title="Terminal"
+    />
+  </li>
+</ol>

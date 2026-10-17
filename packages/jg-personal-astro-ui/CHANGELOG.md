@@ -11,5 +11,6 @@ The first release of `jg-personal-astro-ui`.
 - Code windows: `code-block` shows highlighted code on the dark terminal surface in both themes, with window dots, a caption, and a copy button, and `./code-window-plugin` puts a site's Markdown code blocks in the same windows.
 - Copy buttons copy with `jg-clipboard`, and say what to do when the browser refuses, for each reason it gives.
 - External links in `button`, `text-link`, and `site-footer` show an arrow; `button` and the footer's links take `externalIcon: false` to hide it.
+- Smooth navigation without JavaScript: pages crossfade through cross-document view transitions, with the header held still, and `document-head`'s speculation rules prerender a page when the pointer rests on its link.
 - `./theme-preference`, which reads, stores, and resolves the visitor's theme.
 - `API.md`, the full API reference, generated from the TSDoc of the version it ships with, so it can be read from `node_modules` without a browser.

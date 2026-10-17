@@ -20,7 +20,8 @@ const isCurrent = (href: string): boolean => currentPath !== undefined && href =
 const hasMobileActions = Astro.slots.has('mobile-actions');
 ---
 
-<header class="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
+{/* named, so it stays still while the page under it crossfades to the next */}
+<header class="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md [view-transition-name:jg-site-header]">
   <div class="jg-container flex min-h-16 items-center justify-between gap-4">
     <a
       href="/"

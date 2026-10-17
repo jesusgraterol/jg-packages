@@ -164,3 +164,16 @@ A package with entries for different runtimes typechecks each entry's directory 
 ## Keeping the docs current
 
 A change to a process, script, check, or convention updates the doc that describes it in the same pull request.
+
+## Keeping jg-skills in sync
+
+[jg-skills](https://github.com/jesusgraterol/jg-skills) connects projects to these packages in two parts: the `jg-packages` skill, which tells an agent which package fits a task, and its policy asset, the `## jg-packages` section projects add to their `AGENTS.md`. Each package's docs own its API, the policy asset owns the policy, and the skill owns which package fits which task. Nothing syncs them automatically, so a change here checks them by hand.
+
+Whenever a listed package is added, renamed or removed, or changes a capability, a runtime, an entry point, a cross-package contract, where its docs live, or a version jg-skills names:
+
+1. Check what in jg-skills refers to it: `skills/jg-packages/SKILL.md`, with its package map and the version bullet that names the versions it was written for; the policy asset, `skills/jg-packages/assets/agents-section.md`; the coding-instructions candidate's skill index; and the jg-skills site's descriptions.
+2. Record the jg-skills change that matches, in the pull request or the release notes, or say why none is needed. An internal change that leaves the guidance accurate needs no edit.
+3. Remove any recommendation of something removed or renamed. Advance the skill's version bullet only after reviewing the guidance it covers.
+4. Make the jg-skills change with that repository's own checks, in `docs/skill-guidelines.md`, and its protected-instructions handoff, which never edits the canonical instructions directly.
+
+When the access or the authorization to change jg-skills is missing, report the exact work left to do there instead of calling it done.

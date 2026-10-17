@@ -249,7 +249,21 @@
   }
 }
 
+/* pages crossfade into each other where the browser supports cross-document view transitions */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+
   *,
   *::before,
   *::after {

@@ -18,11 +18,11 @@ pnpm --filter @jg-packages/website preview
 
 | Content            | Source                                                                                                                                                                                       |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The package list   | `PACKAGE_CATALOG` in `website/src/site.config.ts`: each package's title, description, `useWhen`, icon, runtimes, and position. Names and versions come from `package.json`.                  |
+| The package list   | `PACKAGE_CATALOG` in `website/src/site.config.ts`: each package's title, description, icon, runtimes, and position. Names and versions come from `package.json`.                             |
 | A package's README | `packages/<name>/README.md`, loaded by the `packageReadmes` collection without the title, the summary, and the Install, Documentation, and License sections, which the page shows elsewhere. |
 | The API reference  | `website/src/generated/api/<name>.json`, which `generate` writes from each package's TSDoc. It's ignored by Git.                                                                             |
 
-The build fails when the catalog and `packages/` disagree: every published package needs an entry except those in `UNLISTED_PACKAGES` (`jg-personal-astro-ui`), orders and icons must be unique, descriptions must be 70 to 160 characters, and each `useWhen` 40 to 140. `generate` fails when an export has no TSDoc.
+The build fails when the catalog and `packages/` disagree: every published package needs an entry except those in `UNLISTED_PACKAGES` (`jg-personal-astro-ui`), orders and icons must be unique, and descriptions must be 70 to 160 characters. `generate` fails when an export has no TSDoc.
 
 ## Pages
 
@@ -30,19 +30,33 @@ The build fails when the catalog and `packages/` disagree: every published packa
 | ------------------- | ------------------------------------------------------------------------------------------------ |
 | `/`                 | The home page, in the sections below                                                             |
 | `/packages/<name>/` | The package's header and install command, its README, its API reference, and a table of contents |
-| `/agents.md`        | The AGENTS.md block for every package, as Markdown                                               |
 
 The home page's sections, in order:
 
-1. **The hero:** what coding agents gain, the two actions "Add them to your AGENTS.md" and "View all packages", and every package as an icon tile, from `package-grid`.
+1. **The hero:** what coding agents gain, the two actions "Set up your agent" and "View all packages", and the packages as icon tiles, from `package-grid`, which shows at most 12 so the hero keeps its shape as packages are added.
 2. **The packages** (`#packages`), grouped by their first runtime.
 3. **Why agents use them** (`#why`): six benefits, which also cover how the packages are built.
-4. **Add them to your AGENTS.md** (`#agents-md`): the picker from `agents-block`. Every package starts checked; its script rebuilds the preview, a code window, as packages are checked and unchecked, and the window's copy button copies exactly the preview.
+4. **Set up your agent** (`#setup`): the two steps from `agent-setup`, described below.
 5. **Docs for agents** (`#agents`): what agents can read, each linked once the site serves it.
 
-### The AGENTS.md block
+### Agent setup
 
-`src/utilities/agents-block` builds it, at build time for the page and `/agents.md`, and in the browser for the picker, so the two never differ. It opens with a `## jg-packages` heading and an instruction to prefer the packages and read each one's `API.md`, then lists one line per package: its name, its `useWhen`, and the URL of its page's Markdown.
+A project connects to the packages through [jg-skills](https://jg-skills.jesusgraterol.dev/), in two steps:
+
+1. **The policy:** a `## jg-packages` section for the project's `AGENTS.md`, telling its agent to prefer these packages and to check the installed version's `API.md`. The section links to it.
+2. **The skill:** `jg-packages`, which tells the agent which package fits a task. The section shows its install command, in a code window with a copy button.
+
+`SITE_CONFIG.agentSetup` holds the three destinations: `policyUrl`, `skillUrl` and `installCommand`. jg-skills owns all three, so a change there is one edit here. How package changes keep jg-skills current is in [Keeping jg-skills in sync](package-guidelines.md#keeping-jg-skills-in-sync).
+
+**The launch order,** so no link points at a page that isn't live:
+
+1. jg-skills publishes its skill page and policy, and its Pages deploy finishes.
+2. This site launches, after checking that both destinations answer with the expected page and file.
+3. jg-skills publishes its home page section, which links here.
+
+### Navigation
+
+Pages crossfade into each other, and a page is prerendered when the pointer rests on its link, both from `jg-personal-astro-ui` without JavaScript. [`personal-astro-ui.md`](personal-astro-ui.md#navigation) describes them. Judge how navigation feels on the built site, through `pnpm --filter @jg-packages/website preview`: the dev server loads unbundled modules on every page.
 
 ## Package icons
 
@@ -68,4 +82,4 @@ To add one, confirm the icon exists as `website/node_modules/@lucide/astro/src/i
 
 ## Listing a new package
 
-Add its entry to `PACKAGE_CATALOG`, with a description of 70 to 160 characters and a `useWhen` of 40 to 140, one sentence that starts "Use" and says when an agent should reach for the package, and a `"jg-<name>": "workspace:*"` devDependency to `website/package.json`, so the site rebuilds when the package changes. A package that should stay off the site goes in `UNLISTED_PACKAGES` instead.
+Add its entry to `PACKAGE_CATALOG`, with a description of 70 to 160 characters, and a `"jg-<name>": "workspace:*"` devDependency to `website/package.json`, so the site rebuilds when the package changes. A package that should stay off the site goes in `UNLISTED_PACKAGES` instead.
