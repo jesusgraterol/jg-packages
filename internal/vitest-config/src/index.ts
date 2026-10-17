@@ -50,8 +50,8 @@ const buildProject = (
 
 /**
  * Creates a package's Vitest configuration with one project per test category it has, named after
- * the category, so `vitest run --project unit` or `vitest bench --run --project bench` runs exactly
- * that category.
+ * the category, so `vitest run --project unit` runs exactly that category. Benchmarks live in a
+ * `bench` project that runs no regular tests, and `vitest bench --run` runs them.
  * @param options The categories the package has and the environment its tests run in.
  * @returns The Vitest configuration.
  * @example

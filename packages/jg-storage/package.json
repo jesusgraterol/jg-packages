@@ -1,0 +1,67 @@
+{
+  "name": "jg-storage",
+  "version": "1.0.0",
+  "description": "Typed key-value stores over localStorage, sessionStorage, IndexedDB, and memory, for browsers and workers.",
+  "author": "Jesus Graterol",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesusgraterol/jg-packages.git",
+    "directory": "packages/jg-storage"
+  },
+  "homepage": "https://jg-packages.jesusgraterol.dev/packages/jg-storage/",
+  "bugs": {
+    "url": "https://github.com/jesusgraterol/jg-packages/issues"
+  },
+  "keywords": [
+    "browser",
+    "storage",
+    "localstorage",
+    "sessionstorage",
+    "indexeddb",
+    "key-value"
+  ],
+  "scripts": {
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "pnpm test:unit && pnpm test:integration",
+    "test:integration": "vitest run --project integration",
+    "test:unit": "vitest run --project unit",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json"
+  },
+  "dependencies": {
+    "idb-keyval": "^6.3.0",
+    "jg-exception": "workspace:^"
+  },
+  "devDependencies": {
+    "@jg-packages/eslint-config": "workspace:*",
+    "@jg-packages/tsconfig": "workspace:*",
+    "@jg-packages/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "browser-keyval-stores": "1.1.1",
+    "eslint": "catalog:",
+    "fake-indexeddb": "6.2.5",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

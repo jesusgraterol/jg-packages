@@ -1,0 +1,34 @@
+{
+  "name": "@jg-packages/release-checks",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Verifies, packs, publishes, and tags the jg-packages releases.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "pnpm test:unit && pnpm test:integration",
+    "test:integration": "vitest run --project integration",
+    "test:unit": "vitest run --project unit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
+    "@jg-packages/api-reference": "workspace:*",
+    "publint": "0.3.25",
+    "semver": "7.8.5"
+  },
+  "devDependencies": {
+    "@jg-packages/eslint-config": "workspace:*",
+    "@jg-packages/tsconfig": "workspace:*",
+    "@jg-packages/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/semver": "7.8.0",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "name": "jg-sw",
+  "version": "1.0.0",
+  "description": "Service workers for web apps: a generated caching worker with a Vite plugin and CLI, plus registration, updates, and installation.",
+  "author": "Jesus Graterol",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/runtime/index.d.ts",
+      "default": "./dist/runtime/index.js"
+    },
+    "./build": {
+      "types": "./dist/build/index.d.ts",
+      "default": "./dist/build/index.js"
+    }
+  },
+  "bin": {
+    "jg-sw": "./dist/cli/cli.js"
+  },
+  "main": "./dist/runtime/index.js",
+  "types": "./dist/runtime/index.d.ts",
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesusgraterol/jg-packages.git",
+    "directory": "packages/jg-sw"
+  },
+  "homepage": "https://jg-packages.jesusgraterol.dev/packages/jg-sw/",
+  "bugs": {
+    "url": "https://github.com/jesusgraterol/jg-packages/issues"
+  },
+  "keywords": [
+    "service-worker",
+    "pwa",
+    "cache",
+    "precache",
+    "vite-plugin",
+    "firebase-cloud-messaging"
+  ],
+  "scripts": {
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/build-tools/src/copy-assets.ts 'build/templates/*.sw.js'",
+    "lint": "eslint .",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:e2e",
+    "test:e2e": "playwright test",
+    "test:integration": "vitest run --project integration",
+    "test:unit": "vitest run --project unit",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.browser.json"
+  },
+  "dependencies": {
+    "jg-exception": "workspace:^",
+    "jg-fs": "workspace:^",
+    "jg-utils": "workspace:^",
+    "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "vite": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@jg-packages/eslint-config": "workspace:*",
+    "@jg-packages/tsconfig": "workspace:*",
+    "@jg-packages/vitest-config": "workspace:*",
+    "@playwright/test": "1.64.1",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vite": "8.3.4",
+    "vitest": "catalog:"
+  }
+}
