@@ -14,6 +14,9 @@ export default defineConfig({
           unstubEnvs: true,
           unstubGlobals: true,
           include: ['src/**/*.test-integration.ts'],
+          // type-aware linting builds a TypeScript program, which takes several seconds on a busy
+          // machine
+          testTimeout: 30_000,
         },
       },
     ],
