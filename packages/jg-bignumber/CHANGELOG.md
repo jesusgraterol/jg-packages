@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+### Changed
+
+- Published by CI from `jesusgraterol/jg-packages`, with npm provenance. The code is the same as 1.0.0.
+
 ## 1.0.0
 
 The first release of `jg-bignumber`, which replaces `bignumber-utils` 1.1.0.

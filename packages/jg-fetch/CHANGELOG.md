@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+### Changed
+
+- Published by CI from `jesusgraterol/jg-packages`, with npm provenance. The code is the same as 0.1.0.
+
 ## 0.1.0
 
 The first release of `jg-fetch`, which replaces `fetch-request-browser` and `fetch-request-node` 1.1.0 with one package for browsers and Node.js.
