@@ -38,8 +38,9 @@ const git = async (runGit: ITagDependencies['runGit'], args: string[]): Promise<
 
 /**
  * The `tag` command: creates and pushes an annotated `<name>-v<version>` tag on the current
- * commit for every version the publish run put on npm, skipping tags `origin` already has. Tags
- * are created as `github-actions[bot]`, because GitHub runners configure no git identity.
+ * commit for every version in `published.json`, the release's versions on npm, skipping tags
+ * `origin` already has, so a re-run also tags what a failed run published. Tags are created as
+ * `github-actions[bot]`, because GitHub runners configure no git identity.
  * @param releaseDirectory The release directory, whose manifest lists the release's packages.
  * @param publishedFile The `published.json` the publish run wrote.
  * @param dependencies The git runner and logger.

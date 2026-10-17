@@ -1,7 +1,7 @@
 // file listing a release's tarballs in publish order, written by `pack`
 export const RELEASE_MANIFEST_FILE = 'release-manifest.json';
 
-// file listing what `publish` put on npm, read by `tag`
+// file listing the release's versions that are on npm, written by `publish` and read by `tag`
 export const PUBLISHED_FILE = 'published.json';
 
 // manifest fields whose ranges point at other packages
@@ -14,9 +14,10 @@ export const DEPENDENCY_FIELDS = [
 // npm's dist-tag for prereleases, so they never become `latest`
 export const PRERELEASE_DIST_TAG = 'next';
 
-// how often and how far apart `publish` checks that a new version reached the registry
-export const REGISTRY_POLL_ATTEMPTS = 10;
-export const REGISTRY_POLL_INTERVAL_SECONDS = 6;
+// how long `publish` waits for npm to serve the versions it published, and how often it checks.
+// npm takes a few minutes to release a new version, while it scans it
+export const REGISTRY_WAIT_SECONDS = 900;
+export const REGISTRY_POLL_INTERVAL_SECONDS = 15;
 
 // the identity release tags are created with, which GitHub runners don't configure
 export const TAGGER_NAME = 'github-actions[bot]';

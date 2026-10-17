@@ -14,8 +14,10 @@ let releaseDirectory: string;
 // a fake npm that serves versions from memory and records what it runs
 const createFakeNpm = (registry: Map<string, string[]>, { visibleAfterPolls = 0 } = {}) => {
   const publishes: string[][] = [];
+  const calls: string[] = [];
   const pendingPolls = new Map<string, number>();
   const runNpm = (args: string[]): Promise<ICommandResult> => {
+    calls.push(args.slice(0, 2).join(' '));
     const ok = (stdout: string): Promise<ICommandResult> =>
       Promise.resolve({ exitCode: 0, stdout, stderr: '' });
     const notFound = (): Promise<ICommandResult> =>
@@ -36,7 +38,11 @@ const createFakeNpm = (registry: Map<string, string[]>, { visibleAfterPolls = 0 
         pendingPolls.set(spec, remaining - 1);
         return ok('');
       }
-      const matching = versions.filter((version) => semver.satisfies(version, range));
+      // a version npm hasn't served yet matches no range either
+      const matching = versions.filter(
+        (version) =>
+          (pendingPolls.get(`${name}@${version}`) ?? 0) === 0 && semver.satisfies(version, range),
+      );
       return ok(
         matching.length === 0 ? '' : JSON.stringify(matching.length === 1 ? matching[0] : matching),
       );
@@ -55,7 +61,7 @@ const createFakeNpm = (registry: Map<string, string[]>, { visibleAfterPolls = 0 
     }
     return Promise.reject(new Error(`unexpected npm command: ${args.join(' ')}`));
   };
-  return { runNpm, publishes };
+  return { runNpm, publishes, calls };
 };
 
 // writes one tarball into the release directory and returns its manifest entry
@@ -120,7 +126,9 @@ describe('publishRelease', () => {
 
     const { published, logs } = await publish(fakeNpm);
 
+    // the release's versions on npm, the one published before included, so tag can tag it
     expect(published).toStrictEqual([
+      { name: 'jg-exception', version: '1.0.0' },
       { name: 'jg-utils', version: '1.1.0' },
       { name: 'jg-fetch', version: '0.2.0-beta.0' },
     ]);
@@ -129,6 +137,8 @@ describe('publishRelease', () => {
       [join(releaseDirectory, 'jg-fetch-0.2.0-beta.0.tgz'), '--access', 'public', '--tag', 'next'],
     ]);
     expect(logs).toContain('Skipped jg-exception@1.0.0: already on npm');
+    expect(logs).toContain('Published jg-utils@1.1.0');
+    expect(logs).toContain('jg-fetch@0.2.0-beta.0 is on npm');
     expect(logs).toContain(
       "Warning: skipped jg-brand-new@1.0.0: jg-brand-new isn't on npm yet, and its first publish is manual",
     );
@@ -137,22 +147,44 @@ describe('publishRelease', () => {
     ).toStrictEqual(published);
   });
 
-  test('waits for each version to appear on the registry, polling a bounded number of times', async () => {
-    await writeRelease([{ name: 'jg-utils', version: '1.1.0' }]);
-    const fakeNpm = createFakeNpm(new Map([['jg-utils', ['1.0.0']]]), { visibleAfterPolls: 2 });
+  test('publishes every version, a dependent right after its sibling, then waits for npm to serve them', async () => {
+    await writeRelease([
+      { name: 'jg-exception', version: '1.1.0' },
+      { name: 'jg-utils', version: '1.1.0', dependencies: { 'jg-exception': '^1.1.0' } },
+    ]);
+    const fakeNpm = createFakeNpm(
+      new Map([
+        ['jg-exception', ['1.0.0']],
+        ['jg-utils', ['1.0.0']],
+      ]),
+      { visibleAfterPolls: 2 },
+    );
 
-    const { sleeps } = await publish(fakeNpm);
+    const { published, sleeps } = await publish(fakeNpm);
 
-    expect(sleeps).toStrictEqual([6000, 6000]);
+    expect(published).toStrictEqual([
+      { name: 'jg-exception', version: '1.1.0' },
+      { name: 'jg-utils', version: '1.1.0' },
+    ]);
+    // jg-utils is published right after jg-exception, without waiting for npm to serve it
+    const publishCalls = fakeNpm.calls.flatMap((call, index) =>
+      call.startsWith('publish') ? [index] : [],
+    );
+    expect(publishCalls).toHaveLength(2);
+    expect(fakeNpm.calls.slice(publishCalls[0], publishCalls[1])).not.toContain(
+      'view jg-exception@1.1.0',
+    );
+    expect(sleeps).toStrictEqual([15_000, 15_000]);
   });
 
-  test('fails when a version never appears on the registry', async () => {
+  test('fails, without writing published.json, when npm never serves a version', async () => {
     await writeRelease([{ name: 'jg-utils', version: '1.1.0' }]);
-    const fakeNpm = createFakeNpm(new Map([['jg-utils', ['1.0.0']]]), { visibleAfterPolls: 99 });
+    const fakeNpm = createFakeNpm(new Map([['jg-utils', ['1.0.0']]]), { visibleAfterPolls: 999 });
 
     await expect(publish(fakeNpm)).rejects.toThrow(
-      "jg-utils@1.1.0 didn't appear on the registry after publishing.",
+      "npm accepted jg-utils@1.1.0 but didn't serve them within 15 minutes. Re-run the publish job once they're on npm; it skips and tags them.",
     );
+    await expect(readFile(join(releaseDirectory, 'published.json'), 'utf8')).rejects.toThrow();
   });
 
   test('fails instead of skipping when a sibling range has no version on npm', async () => {
