@@ -122,7 +122,7 @@ export const SITE_CONFIG = {
     'Small, tested TypeScript packages for coding agents to build on: errors, HTTP requests, storage, files, and processes, with docs inside each one.',
   language: 'en',
   license: 'MIT',
-  name: 'JG Packages',
+  name: 'jg-packages',
   navigation: [
     { href: '/#packages', label: 'Packages' },
     { href: '/#why', label: 'Why' },
@@ -134,7 +134,7 @@ export const SITE_CONFIG = {
   relatedSites: [
     { href: 'https://jesusgraterol.dev/', label: 'jesusgraterol.dev' },
     { href: 'https://agenticcoding.jesusgraterol.dev/', label: 'Agentic Coding' },
-    { href: 'https://jg-skills.jesusgraterol.dev/', label: 'JG Skills' },
+    { href: 'https://jg-skills.jesusgraterol.dev/', label: 'jg-skills' },
   ],
   repositoryUrl: 'https://github.com/jesusgraterol/jg-packages',
   storageKeys: {

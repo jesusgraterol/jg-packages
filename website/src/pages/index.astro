@@ -8,7 +8,7 @@ import {
   Ruler,
 } from '@lucide/astro';
 import Button from 'jg-personal-astro-ui/button';
-import GridLines from 'jg-personal-astro-ui/grid-lines';
+import HeroBackdrop from 'jg-personal-astro-ui/hero-backdrop';
 import Section from 'jg-personal-astro-ui/section';
 import TextLink from 'jg-personal-astro-ui/text-link';
 
@@ -98,7 +98,7 @@ const groups = (Object.keys(RUNTIMES) as IRuntime[])
   title={`${SITE_CONFIG.name} | TypeScript packages for coding agents`}
 >
   <section class="relative isolate overflow-hidden border-b border-border">
-    <GridLines />
+    <HeroBackdrop />
     <div class="jg-container grid items-center gap-12 pt-14 pb-16 sm:pt-20 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14">
       <div>
         <p class="eyebrow">TypeScript packages for coding agents</p>
@@ -117,7 +117,7 @@ const groups = (Object.keys(RUNTIMES) as IRuntime[])
             href="#packages"
             variant="outline"
           >
-            Browse the packages
+            View all packages
           </Button>
         </div>
       </div>

@@ -4,7 +4,7 @@ Where the marks, fonts, and icons the website and `jg-personal-astro-ui` use com
 
 ## JG mark
 
-`website/public/favicon.svg` is an unchanged copy of the `JG/` monogram from jesusgraterol.dev's `public/favicon.svg`, which JG Skills uses too. `website/src/components/brand-mark/brand-mark.astro` redraws the same monogram with the theme's terminal tokens, so it's a dark tile in both themes. Don't alter its letterforms or the accent slash.
+`website/public/favicon.svg` is an unchanged copy of the `JG/` monogram from jesusgraterol.dev's `public/favicon.svg`, which jg-skills uses too. `website/src/components/brand-mark/brand-mark.astro` redraws the same monogram with the theme's terminal tokens, so it's a dark tile in both themes. Don't alter its letterforms or the accent slash.
 
 ## Fonts
 

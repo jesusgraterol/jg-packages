@@ -110,7 +110,7 @@ const declaration =
         {signature.parameters.length > 0 && (
           <div>
             <p class="eyebrow">Parameters</p>
-            <dl class="mt-2 divide-y divide-border border-y border-border text-sm">
+            <dl class="mt-2 divide-y divide-border border-t border-border text-sm">
               {signature.parameters.map((parameter) => (
                 <div class="grid gap-1 py-3 sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] sm:gap-6">
                   <dt class="min-w-0">
@@ -141,7 +141,7 @@ const declaration =
         {signature.returnType !== 'void' && signature.returnType !== '' && (
           <div>
             <p class="eyebrow">Returns</p>
-            <div class="mt-2 grid gap-1 border-y border-border py-3 text-sm sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] sm:gap-6">
+            <div class="mt-2 grid gap-1 border-t border-border py-3 text-sm sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] sm:gap-6">
               <code class="font-mono text-xs text-muted wrap-anywhere">{signature.returnType}</code>
               <div
                 class:list={['leading-6 text-muted', DOC_TEXT_CLASSES]}
@@ -153,7 +153,7 @@ const declaration =
         {signature.throws.length > 0 && (
           <div>
             <p class="eyebrow">Throws</p>
-            <ul class="mt-2 divide-y divide-border border-y border-border text-sm">
+            <ul class="mt-2 divide-y divide-border border-t border-border text-sm">
               {signature.throws.map((item) => {
                 const { code, message } = splitThrowsItem(item);
                 return (
@@ -185,7 +185,7 @@ const declaration =
   {symbol.members.length > 0 && (
     <div class="mt-5">
       <p class="eyebrow">Members</p>
-      <ul class="mt-2 divide-y divide-border border-y border-border text-sm">
+      <ul class="mt-2 divide-y divide-border border-t border-border text-sm">
         {symbol.members.map((member) => (
           <li class="py-3">
             <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">

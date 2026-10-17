@@ -34,7 +34,7 @@ The build fails when the catalog and `packages/` disagree: every published packa
 
 The home page's sections, in order:
 
-1. **The hero:** what coding agents gain, the two actions "Add them to your AGENTS.md" and "Browse the packages", and every package as an icon tile, from `package-grid`.
+1. **The hero:** what coding agents gain, the two actions "Add them to your AGENTS.md" and "View all packages", and every package as an icon tile, from `package-grid`.
 2. **The packages** (`#packages`), grouped by their first runtime.
 3. **Why agents use them** (`#why`): six benefits, which also cover how the packages are built.
 4. **Add them to your AGENTS.md** (`#agents-md`): the picker from `agents-block`. Every package starts checked; its script rebuilds the preview, a code window, as packages are checked and unchecked, and the window's copy button copies exactly the preview.
@@ -42,11 +42,11 @@ The home page's sections, in order:
 
 ### The AGENTS.md block
 
-`src/utilities/agents-block` builds it, at build time for the page and `/agents.md`, and in the browser for the picker, so the two never differ. It opens with a `## JG Packages` heading and an instruction to prefer the packages and read each one's `API.md`, then lists one line per package: its name, its `useWhen`, and the URL of its page's Markdown.
+`src/utilities/agents-block` builds it, at build time for the page and `/agents.md`, and in the browser for the picker, so the two never differ. It opens with a `## jg-packages` heading and an instruction to prefer the packages and read each one's `API.md`, then lists one line per package: its name, its `useWhen`, and the URL of its page's Markdown.
 
 ## Package icons
 
-Every package has one icon, set as `icon` in its catalog entry. It leads the package's card and opens its page, drawn in one theme color on the dark tile, as on [JG Skills](https://jg-skills.jesusgraterol.dev/).
+Every package has one icon, set as `icon` in its catalog entry. It leads the package's card and opens its page, drawn in one theme color on the dark tile, as on [jg-skills](https://jg-skills.jesusgraterol.dev/).
 
 - A package written for one technology would use that technology's mark. None of the current packages is, so all of them use a [Lucide](https://lucide.dev/icons/) icon.
 - Pick one idea, named for what the package is for. It must read at 20 pixels, and differ from every other package's icon; the build rejects a repeat.

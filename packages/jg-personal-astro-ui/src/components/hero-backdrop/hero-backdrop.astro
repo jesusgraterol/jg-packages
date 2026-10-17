@@ -1,0 +1,13 @@
+---
+interface Props {
+  class?: string | undefined;
+}
+
+const { class: className } = Astro.props;
+---
+
+{/* decorative only: the jg sites' backdrop, filling its positioned parent and fading towards the bottom */}
+<div
+  class:list={['jg-hero-backdrop pointer-events-none absolute inset-0 -z-10', className]}
+  aria-hidden="true"
+></div>

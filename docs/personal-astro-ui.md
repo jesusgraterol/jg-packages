@@ -43,7 +43,7 @@ Then render `DocumentHead` and `ThemeInitScript` in every page's `<head>`, so th
 
 ## The token contract
 
-`contract.css` maps `--jg-*` custom properties to Tailwind CSS theme values, so components use utilities such as `bg-surface` and `text-muted`. It also defines the `dark` variant, which follows the `.dark` class the theme script sets on `<html>`, and the shared classes `eyebrow`, `display-title`, `section-title`, `lede`, `jg-container`, `jg-container-prose`, `jg-section-space`, `jg-grid-lines`, `jg-code`, and the code window's `jg-code-window`, `jg-code-window-header`, `jg-code-window-dots`, and `jg-code-window-caption`.
+`contract.css` maps `--jg-*` custom properties to Tailwind CSS theme values, so components use utilities such as `bg-surface` and `text-muted`. It also defines the `dark` variant, which follows the `.dark` class the theme script sets on `<html>`, and the shared classes `eyebrow`, `display-title`, `section-title`, `lede`, `jg-container`, `jg-container-prose`, `jg-section-space`, `jg-hero-backdrop`, `jg-code`, and the code window's `jg-code-window`, `jg-code-window-header`, `jg-code-window-dots`, and `jg-code-window-caption`.
 
 `theme.css` gives every property its value, in a light palette on `:root` and a dark one on `.dark`, with the system preference deciding until the theme script runs. Code windows stay dark in both themes, so it also gives `.jg-code-window` the dark palette's `--jg-syntax-*` values. Components use only the contract, so a site can replace `theme.css` with its own, as long as it defines every property and the code window's syntax colours.
 
@@ -81,7 +81,7 @@ Each component is its own subpath, such as `jg-personal-astro-ui/button`. Most t
 | `theme-control`        | The light and dark switch, which stores the choice                                                      |
 | `brand-logo`           | The site's name beside the mark the site supplies                                                       |
 | `container`, `section` | The page and reading columns, and a home page section with its eyebrow, title, and lede                 |
-| `grid-lines`           | The faint grid behind heroes                                                                            |
+| `hero-backdrop`        | The jg sites' hero backdrop: a faint dot lattice under a soft accent glow                               |
 | `breadcrumb`           | A trail of links, ending at the current page                                                            |
 | `button`, `text-link`  | Pill buttons and links, with variants and sizes, and an arrow and the new-tab notice on external links  |
 | `badge`                | A small label, with status variants                                                                     |

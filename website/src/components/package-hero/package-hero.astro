@@ -3,7 +3,7 @@ import { BookOpen, GitBranch, Package } from '@lucide/astro';
 import Badge from 'jg-personal-astro-ui/badge';
 import Breadcrumb from 'jg-personal-astro-ui/breadcrumb';
 import Button from 'jg-personal-astro-ui/button';
-import GridLines from 'jg-personal-astro-ui/grid-lines';
+import HeroBackdrop from 'jg-personal-astro-ui/hero-backdrop';
 import PackageManagerTabs from 'jg-personal-astro-ui/package-manager-tabs';
 
 import { SITE_CONFIG } from '../../site.config.ts';
@@ -19,7 +19,7 @@ const sourceUrl = `${SITE_CONFIG.repositoryUrl}/tree/main/packages/${listedPacka
 ---
 
 <header class="relative isolate overflow-hidden border-b border-border">
-  <GridLines class="opacity-70" />
+  <HeroBackdrop class="opacity-70" />
   <div class="jg-container pt-8 pb-12 sm:pt-10 sm:pb-16">
     <Breadcrumb
       items={[

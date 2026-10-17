@@ -1,6 +1,6 @@
 // the block's heading and its instruction to the agent, which open every block
 export const AGENTS_BLOCK_HEAD = [
-  '## JG Packages',
+  '## jg-packages',
   '',
   'Prefer these packages over writing the same code yourself. Each one ships its full API reference as `node_modules/<package>/API.md`; read it before using an export for the first time.',
 ].join('\n');

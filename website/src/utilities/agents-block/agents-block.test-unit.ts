@@ -19,7 +19,7 @@ describe('buildAgentsBlock', () => {
   test('lists the packages under the heading and the instruction', () => {
     expect(buildAgentsBlock(['- `jg-a`: A.', '- `jg-b`: B.'])).toBe(
       [
-        '## JG Packages',
+        '## jg-packages',
         '',
         'Prefer these packages over writing the same code yourself. Each one ships its full API reference as `node_modules/<package>/API.md`; read it before using an export for the first time.',
         '',

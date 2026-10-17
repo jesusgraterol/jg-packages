@@ -30,6 +30,12 @@
     font-size: clamp(1.625rem, 3.5vw, 2.125rem);
   }
 
+  /* the page above already ends with a divider, so the first heading draws none */
+  .jg-prose > h2:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
   .jg-prose h3 {
     margin-top: 2.25rem;
     font-size: 1.3125rem;
