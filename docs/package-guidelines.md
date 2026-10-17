@@ -37,7 +37,7 @@ Every package is ESM only (`"type": "module"`). `exports` declares every entry p
 | Stateless logic                            | named functions                     | `isEqual(a, b)`                                                 |
 | One piece of browser state per page        | module state behind named functions | `registerServiceWorker()`, `subscribeToServiceWorker(listener)` |
 | Something a consumer creates several times | a `create*` factory                 | `createLocalStore<T>('settings')`                               |
-| Something whose identity matters           | a class                             | `new Exception(message, { code })`, `instanceof FetchException` |
+| Something whose identity matters           | a class                             | `new Exception(message, code)`, `instanceof FetchException`     |
 
 Module state that a UI reads exposes `subscribe` and `getSnapshot` functions, so React's `useSyncExternalStore` can read it directly.
 

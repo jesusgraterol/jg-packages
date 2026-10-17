@@ -25,21 +25,21 @@ How to set up the repository, run its checks, and change its dependencies.
    pnpm check
    ```
 
-   It should end with `All matched files use Prettier code style!`.
+   It should end with a `PASS <name>@<version>` line for every package.
 
 ## Commands
 
 Run these from the repository root.
 
-| Command             | What it does                                                                                 |
-| ------------------- | -------------------------------------------------------------------------------------------- |
-| `pnpm check`        | Lint, typecheck, unit tests, build, integration and end-to-end tests, then the format check. |
-| `pnpm build`        | Builds every package in dependency order.                                                    |
-| `pnpm lint`         | Runs ESLint in every package.                                                                |
-| `pnpm typecheck`    | Typechecks every package against each runtime it targets.                                    |
-| `pnpm test`         | Runs every package's unit, integration, and end-to-end tests.                                |
-| `pnpm format`       | Formats the whole repository with Prettier.                                                  |
-| `pnpm format:check` | Fails when a file isn't formatted.                                                           |
+| Command             | What it does                                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `pnpm check`        | Lint, typecheck, unit tests, build, integration and end-to-end tests, the format check, then `pnpm release:verify`. |
+| `pnpm build`        | Builds every package in dependency order.                                                                           |
+| `pnpm lint`         | Runs ESLint in every package.                                                                                       |
+| `pnpm typecheck`    | Typechecks every package against each runtime it targets.                                                           |
+| `pnpm test`         | Runs every package's unit, integration, and end-to-end tests.                                                       |
+| `pnpm format`       | Formats the whole repository with Prettier.                                                                         |
+| `pnpm format:check` | Fails when a file isn't formatted.                                                                                  |
 
 To work on one package, filter by its name, or run its scripts from its directory:
 

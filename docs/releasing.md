@@ -2,7 +2,7 @@
 
 How versions are chosen, checked, published, and tagged. Releases are cut from `main`: CI packs every package, publishes the versions npm doesn't have yet, and tags them. You never run `npm publish` by hand except for a package's first version.
 
-> The CI jobs that publish and tag arrive with the first release of the packages, so until then nothing is published. `pnpm check` runs `pnpm release:verify` once the first package lands.
+> The CI jobs that publish and tag arrive with the first release of the packages, so until then nothing is published.
 
 ## Versions
 

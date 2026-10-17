@@ -4,7 +4,11 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 
 ## Packages
 
-No package has landed yet. Each one gets a row here when it's added to `packages/`.
+| Package                                 | What it does                                                                             | Replaces              |
+| --------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------- |
+| [`jg-exception`](packages/jg-exception) | Extracts, encodes, and decodes error messages and codes, with a coded `Exception` class. | `error-message-utils` |
+
+Each package gets a row here when it's added to `packages/`.
 
 ## Quick start
 
@@ -15,7 +19,7 @@ pnpm install
 pnpm check
 ```
 
-`pnpm check` runs every check CI runs: lint, typecheck, unit tests, builds, integration and end-to-end tests, and the format check. [`docs/development.md`](docs/development.md) covers the rest of the daily workflow.
+`pnpm check` runs every check CI runs: lint, typecheck, unit tests, builds, integration and end-to-end tests, the format check, and the release checks. [`docs/development.md`](docs/development.md) covers the rest of the daily workflow.
 
 ## Documentation
 
