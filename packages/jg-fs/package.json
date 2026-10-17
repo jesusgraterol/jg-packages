@@ -1,6 +1,6 @@
 {
   "name": "jg-fs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Filesystem helpers for Node.js, async at the root and sync at jg-fs/sync: paths, directories, text, JSON, atomic and bounded files.",
   "author": "Jesus Graterol",
   "license": "MIT",

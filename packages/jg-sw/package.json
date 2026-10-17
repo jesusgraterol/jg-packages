@@ -1,6 +1,6 @@
 {
   "name": "jg-sw",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Service workers for web apps: a generated caching worker with a Vite plugin and CLI, plus registration, updates, and installation.",
   "author": "Jesus Graterol",
   "license": "MIT",

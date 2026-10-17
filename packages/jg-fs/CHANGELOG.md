@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+### Changed
+
+- Published by CI from `jesusgraterol/jg-packages`, with npm provenance. The code is the same as 1.0.0.
+
 ## 1.0.0
 
 The first release of `jg-fs`, which replaces `fs-utils-async` 1.0.1 and, at `jg-fs/sync`, `fs-utils-sync` 1.2.0.

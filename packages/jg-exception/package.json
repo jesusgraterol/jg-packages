@@ -1,6 +1,6 @@
 {
   "name": "jg-exception",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Extract, encode, and decode error messages and codes from errors of any shape, with a coded Exception class.",
   "author": "Jesus Graterol",
   "license": "MIT",
