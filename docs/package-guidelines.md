@@ -78,6 +78,21 @@ The message is written where the error is thrown, so it can name the value that 
  */
 ```
 
+## Checking data
+
+Every option that validates data from outside the program, such as a response, a stored record, or a file, is named `schema`, with the same structural type:
+
+```ts
+export type ISchema<T> = {
+  parse(value: unknown): T;
+};
+```
+
+- A Zod schema satisfies it, and so does any validator with that method. Each package declares the type itself instead of importing it from another package.
+- The data's type comes from the schema. Without one, it's `unknown`, unless the caller passes a type argument.
+- The schema's own error, such as a `ZodError`, propagates unchanged from a function that throws. A function that never throws, such as jg-fetch's `request`, returns its own error code with the schema's error as `cause`.
+- Each package that takes a schema has a contract test that runs a real Zod schema, for the valid case and the failing one.
+
 ## Naming
 
 - Exported types are `IPascalCase`, constants are `UPPER_SNAKE_CASE`, and functions and variables are `camelCase`.

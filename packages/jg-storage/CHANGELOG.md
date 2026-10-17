@@ -4,10 +4,15 @@
 
 A fresh start: breaking changes in a minor version, once, because nothing depended on 1.0.x.
 
+### Added
+
+- `ISchema<T>`, the type of the `schema` option: anything with `parse(value: unknown): T`, such as a Zod schema.
+
 ### Changed
 
 - Errors are `Exception`s from `jg-exception` 1.1.0: the code, the data, and the cause each have their own field, nothing is encoded into the message, and `toJSON()` and `toString()` follow `jg-exception`.
 - Error messages say what failed at that step and keep the error underneath as `cause`, instead of repeating its message, so `extractMessage` prints each layer of the chain once.
+- The `schema` option replaces `parse`: pass the schema itself, such as `schema: Settings`, and the store's record type comes from it. Its errors propagate unchanged.
 
 ## 1.0.1
 

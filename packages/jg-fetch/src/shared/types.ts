@@ -20,7 +20,7 @@ export type IQueryParams = Record<string, IQueryScalar | readonly IQueryScalar[]
 export type IParseAs = 'envelope' | 'json' | 'text' | 'bytes' | 'blob' | 'response' | 'none';
 
 // validates parsed data and returns it typed, which a Zod schema does
-export type IResponseSchema<T> = {
+export type ISchema<T> = {
   parse(value: unknown): T;
 };
 
@@ -95,7 +95,7 @@ export type IRequestOptions<T> = {
   parseAs?: IParseAs;
 
   // validates the parsed data, or the envelope's data, such as a Zod schema
-  schema?: IResponseSchema<T>;
+  schema?: ISchema<T>;
 
   // aborts the call. An abort whose reason is a TimeoutError, such as AbortSignal.timeout's,
   // reports TIMEOUT, and any other ABORTED

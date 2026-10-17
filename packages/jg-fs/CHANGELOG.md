@@ -4,10 +4,15 @@
 
 A fresh start: breaking changes in a minor version, once, because nothing depended on 1.0.x.
 
+### Added
+
+- A `schema` option for `readJSONFile`, in the async and sync APIs, which validates the parsed content and types the result. Its errors propagate unchanged. `ISchema` and `IReadJSONFileOptions` are exported.
+
 ### Changed
 
 - Errors are `Exception`s from `jg-exception` 1.1.0: the code, the data, and the cause each have their own field, nothing is encoded into the message, and `toJSON()` and `toString()` follow `jg-exception`.
 - Error messages say what failed at that step and keep the error underneath as `cause`, instead of repeating its message, so `extractMessage` prints each layer of the chain once.
+- `readJSONFile` returns `unknown` without a schema or a type argument, instead of `Record<string, unknown>`.
 
 ## 1.0.1
 

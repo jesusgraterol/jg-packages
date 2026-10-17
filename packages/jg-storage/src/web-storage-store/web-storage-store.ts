@@ -117,7 +117,7 @@ const createWebStorageStore = <T>(
  * localStorage is read and probed on the first call, never when the store is created.
  * @param id The identifier every record key starts with.
  * @param options fallback: 'memory' keeps records in memory when localStorage is unavailable, and
- * parse runs on every stored value get reads.
+ * schema validates every stored value get reads.
  * @returns The store.
  * @example
  * const settings = createLocalStore<{ theme: 'light' | 'dark' }>('settings');
@@ -140,7 +140,7 @@ export const createLocalStore = <T>(id: string, options: IStoreOptions<T> = {}):
  * unchanged. sessionStorage is read and probed on the first call, never when the store is created.
  * @param id The identifier every record key starts with.
  * @param options fallback: 'memory' keeps records in memory when sessionStorage is unavailable,
- * and parse runs on every stored value get reads.
+ * and schema validates every stored value get reads.
  * @returns The store.
  * @example
  * const wizard = createSessionStore<number>('wizard-step', { fallback: 'memory' });

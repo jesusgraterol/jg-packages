@@ -42,7 +42,7 @@ const probeIndexedDb = async (): Promise<boolean> => {
  * call, never when the store is created.
  * @param id The identifier every record key starts with.
  * @param options fallback: 'memory' keeps records in memory when IndexedDB is unavailable, and
- * parse runs on every stored value get reads.
+ * schema validates every stored value get reads.
  * @returns The store.
  * @example
  * const devices = createIndexedDbStore<{ token: string }>('devices');

@@ -26,6 +26,7 @@ import {
   serializeJSONData,
   type IReadBufferFileOptions,
   type IReadFileOptions,
+  type IReadJSONFileOptions,
   type IReadStringFileOptions,
 } from '../../shared/index.js';
 import { getPathElement } from '../general/index.js';
@@ -147,17 +148,23 @@ export const readTextFile = (path: string): Promise<string> =>
   readFile(path, { encoding: 'utf-8' });
 
 /**
- * Reads and parses a JSON file.
+ * Reads and parses a JSON file, and validates it with the schema when there is one. Without a
+ * schema, the value is `unknown`, or the type you pass.
  * @param path The file's path.
+ * @param options The schema, such as a Zod schema, whose errors propagate unchanged.
  * @returns A promise that resolves to the parsed value.
  * @example
- * const config = await readJSONFile<{ port: number }>('config.json');
+ * const config = await readJSONFile('config.json', { schema: Config }); // Config's type
+ * @example
+ * const value = await readJSONFile('data.json'); // unknown
  * @throws
  * - NOT_A_FILE: if the path doesn't exist or is not a file
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the file's JSON content cannot be parsed
  */
-export const readJSONFile = async <T = Record<string, unknown>>(path: string): Promise<T> =>
-  parseJSONContent<T>(path, await readTextFile(path));
+export const readJSONFile = async <T = unknown>(
+  path: string,
+  options: IReadJSONFileOptions<T> = {},
+): Promise<T> => parseJSONContent(path, await readTextFile(path), options.schema);
 
 /**
  * Reads a binary file. An empty file reads as an empty Buffer.

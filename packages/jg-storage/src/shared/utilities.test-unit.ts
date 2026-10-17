@@ -19,14 +19,14 @@ describe('buildDataKey', () => {
 });
 
 describe('parseValue', () => {
-  test('returns the value as it is without a parse option', () => {
+  test('returns the value as it is without a schema', () => {
     const value = { foo: 'bar' };
     expect(parseValue(value, {})).toBe(value);
   });
 
-  test('runs the parse option and returns its result', () => {
+  test('runs the schema and returns its result', () => {
     const parse = vi.fn((value: unknown) => String(value).toUpperCase());
-    expect(parseValue('hello', { parse })).toBe('HELLO');
+    expect(parseValue('hello', { schema: { parse } })).toBe('HELLO');
     expect(parse).toHaveBeenCalledWith('hello');
   });
 });

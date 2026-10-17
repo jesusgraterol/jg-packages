@@ -62,6 +62,7 @@
     "eslint": "catalog:",
     "fake-indexeddb": "6.2.5",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "zod": "4.6.7"
   }
 }

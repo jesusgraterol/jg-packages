@@ -10,7 +10,7 @@ import {
  * Creates a store that keeps its records in memory for as long as the store exists. Values are
  * kept as they are, without serializing them, and the store is always available.
  * @param id The identifier every record key starts with.
- * @param options parse runs on every stored value get reads. fallback has no effect, because
+ * @param options schema validates every stored value get reads. fallback has no effect, because
  * memory is always available.
  * @returns The store.
  * @example

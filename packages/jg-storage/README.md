@@ -42,7 +42,7 @@ import { z } from 'zod';
 const Step = z.number().int().min(1);
 const wizard = createSessionStore('wizard-step', {
   fallback: 'memory', // without it, set and del throw STORE_UNAVAILABLE
-  parse: (value) => Step.parse(value), // runs on every stored value get reads
+  schema: Step, // validates every stored value get reads; its errors propagate unchanged
 });
 wizard.set(undefined, 2);
 wizard.get(); // 2
@@ -77,7 +77,7 @@ Every store probes its mechanism on its first call, never when it's created, so 
 - Stored data is compatible: the keys, the compatibility probe's record, idb-keyval's default `keyval-store` database, JSON values in web storage, and structured-clone values in IndexedDB are all the same, so records written by `browser-keyval-stores` read back unchanged.
 - `set` on a web storage store accepts any value JSON can represent, primitives included. It used to accept only objects and arrays and throw `INVALID_JSON_DATA`, which is gone. A value JSON can't represent, such as `undefined` or a `bigint`, throws `FAILED_TO_STRINGIFY_JSON`.
 - When a mechanism is unavailable, a store without `fallback: 'memory'` returns `undefined` from `get` and throws `STORE_UNAVAILABLE` from `set` and `del`, instead of silently keeping records in memory.
-- The new `parse` option runs on every stored value `get` reads, and its errors propagate.
+- The new `schema` option validates every stored value `get` reads, and its errors propagate.
 - Nothing reads `window`: web storage is read from `globalThis` on the first call, and IndexedDB keeps using `globalThis.indexedDB`, so the IndexedDB store also works in workers.
 - Errors are `Exception`s from `jg-exception`.
 

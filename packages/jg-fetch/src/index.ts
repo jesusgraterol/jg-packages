@@ -9,7 +9,7 @@ export type {
   IRequestOptions,
   IRequestResult,
   IResponseMeta,
-  IResponseSchema,
+  ISchema,
   IRetryContext,
 } from './shared/index.js';
 export type { IFetchErrorKind } from './shared/index.js';

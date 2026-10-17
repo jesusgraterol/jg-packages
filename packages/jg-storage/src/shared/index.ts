@@ -8,6 +8,7 @@ export { ERRORS } from './errors.js';
 export type {
   IAsyncStore,
   IRecordId,
+  ISchema,
   IStoreMechanism,
   IStoreOptions,
   ISyncStore,

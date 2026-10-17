@@ -2,6 +2,7 @@
 export type {
   IAsyncStore,
   IRecordId,
+  ISchema,
   IStoreMechanism,
   IStoreOptions,
   ISyncStore,

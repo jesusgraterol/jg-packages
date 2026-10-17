@@ -9,7 +9,9 @@ export type {
   IPathElement,
   IReadBufferFileOptions,
   IReadFileOptions,
+  IReadJSONFileOptions,
   IReadStringFileOptions,
+  ISchema,
 } from './types.js';
 
 // constants

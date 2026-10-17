@@ -74,7 +74,7 @@ describe('createIndexedDbStore', () => {
       }
       return value;
     });
-    const store = createIndexedDbStore('unit-test', { parse });
+    const store = createIndexedDbStore('unit-test', { schema: { parse } });
     await expect(store.get()).resolves.toBeUndefined();
     expect(parse).not.toHaveBeenCalled();
     vi.mocked(get).mockResolvedValue(7);

@@ -112,7 +112,7 @@ describe('createLocalStore', () => {
       }
       return { theme: String(value.theme) };
     });
-    const store = createLocalStore('settings', { parse });
+    const store = createLocalStore('settings', { schema: { parse } });
     expect(store.get()).toBeUndefined();
     expect(parse).not.toHaveBeenCalled();
     store.set(undefined, { theme: 'dark' });
@@ -163,7 +163,7 @@ describe('createLocalStore', () => {
   test('with the memory fallback, it keeps records in memory when localStorage is missing', () => {
     vi.stubGlobal('localStorage', undefined);
     const parse = vi.fn((value: unknown) => value as { hello: string });
-    const store = createLocalStore('unit-test', { fallback: 'memory', parse });
+    const store = createLocalStore('unit-test', { fallback: 'memory', schema: { parse } });
     const other = createLocalStore('unit-test', { fallback: 'memory' });
     expect(store.isCompatible()).toBe(false);
     expect(store.get()).toBeUndefined();

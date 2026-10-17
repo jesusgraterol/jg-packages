@@ -13,13 +13,13 @@ export const buildDataKey = (storeId: string, recordId: IRecordId): string =>
   recordId === undefined ? storeId : `${storeId}_${recordId}`;
 
 /**
- * Runs the store's parse option on a stored value, or returns the value as it is without one.
+ * Validates a stored value with the store's schema, or returns it as it is without one.
  * @param value The stored value.
  * @param options The store's options.
  * @returns The value.
  */
 export const parseValue = <T>(value: unknown, options: IStoreOptions<T>): T =>
-  options.parse === undefined ? (value as T) : options.parse(value);
+  options.schema === undefined ? (value as T) : options.schema.parse(value);
 
 /**
  * Parses a value read from web storage.

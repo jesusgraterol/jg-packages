@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer';
 import { Exception } from 'jg-exception';
 
 import { ERRORS } from './errors.js';
+import type { ISchema } from './types.js';
 
 /*
  * The checks and exceptions both entries share, so the async and sync functions validate data and
@@ -96,22 +97,25 @@ export const serializeJSONData = (path: string, data: unknown, space: number): s
 };
 
 /**
- * Parses a JSON file's text.
+ * Parses a JSON file's text, and validates it with the schema when there is one.
  * @param path The file's path.
  * @param content The file's text.
+ * @param schema The schema, whose errors propagate unchanged.
  * @returns The parsed value.
  * @throws
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the file's JSON content cannot be parsed
  */
-export const parseJSONContent = <T>(path: string, content: string): T => {
+export const parseJSONContent = <T>(path: string, content: string, schema?: ISchema<T>): T => {
+  let value: unknown;
   try {
-    return JSON.parse(content) as T;
+    value = JSON.parse(content);
   } catch (error) {
     throw new Exception(`The JSON file '${path}' could not be parsed.`, {
       code: ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
       cause: error,
     });
   }
+  return schema === undefined ? (value as T) : schema.parse(value);
 };
 
 /**

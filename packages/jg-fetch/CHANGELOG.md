@@ -8,6 +8,7 @@
 - An envelope whose `error` is a string is no longer an envelope, so a successful status with one reports `ENVELOPE_INVALID`.
 - `FetchException` is built on `jg-exception` 1.1.0, so `toJSON()` and `toString()` follow it, and `data` is a JSON value.
 - `INVALID_BODY` uses its default message and keeps JSON's error as `cause`, instead of adding that error's message, which can name the body's keys.
+- `ISchema` is renamed `ISchema`, the name every package uses for its `schema` option.
 
 ### Fixed
 

@@ -7,6 +7,8 @@ export type {
   IDirectoryElementsOptions,
   IDirectoryPathElements,
   IPathElement,
+  IReadJSONFileOptions,
+  ISchema,
 } from '../shared/index.js';
 
 // general actions

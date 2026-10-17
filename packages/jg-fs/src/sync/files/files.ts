@@ -31,6 +31,7 @@ import {
   serializeJSONData,
   type IReadBufferFileOptions,
   type IReadFileOptions,
+  type IReadJSONFileOptions,
   type IReadStringFileOptions,
 } from '../../shared/index.js';
 import { getPathElement } from '../general/index.js';
@@ -142,17 +143,21 @@ export function readFile(path: string, options: IReadFileOptions = null): string
 export const readTextFile = (path: string): string => readFile(path, { encoding: 'utf-8' });
 
 /**
- * Reads and parses a JSON file.
+ * Reads and parses a JSON file, and validates it with the schema when there is one. Without a
+ * schema, the value is `unknown`, or the type you pass.
  * @param path The file's path.
+ * @param options The schema, such as a Zod schema, whose errors propagate unchanged.
  * @returns The parsed value.
  * @example
- * const config = readJSONFile<{ port: number }>('config.json');
+ * const config = readJSONFile('config.json', { schema: Config }); // Config's type
+ * @example
+ * const value = readJSONFile('data.json'); // unknown
  * @throws
  * - NOT_A_FILE: if the path doesn't exist or is not a file
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the file's JSON content cannot be parsed
  */
-export const readJSONFile = <T = Record<string, unknown>>(path: string): T =>
-  parseJSONContent<T>(path, readTextFile(path));
+export const readJSONFile = <T = unknown>(path: string, options: IReadJSONFileOptions<T> = {}): T =>
+  parseJSONContent(path, readTextFile(path), options.schema);
 
 /**
  * Reads a binary file. An empty file reads as an empty Buffer.
