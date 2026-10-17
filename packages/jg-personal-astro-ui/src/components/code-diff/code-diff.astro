@@ -1,0 +1,157 @@
+---
+import { diffLines } from 'diff';
+
+import { highlightToLines, renderLineTokens } from '../../highlighting/index.ts';
+
+// one side of the comparison
+interface IDiffSide {
+  code: string;
+  // the caption above the side, such as the package's name
+  title: string;
+}
+
+interface Props {
+  after: IDiffSide;
+  before: IDiffSide;
+  class?: string | undefined;
+  lang: string;
+}
+
+// one line of the unified view
+type IUnifiedLine = { kind: 'added' | 'context' | 'removed'; html: string };
+
+// one row of the split view: the line on each side, or nothing where the other side changed
+type ISplitRow = {
+  before: { kind: 'context' | 'removed'; html: string } | undefined;
+  after: { kind: 'added' | 'context'; html: string } | undefined;
+};
+
+// the marker and colour of each kind of line
+const LINE_STYLES = {
+  added: { marker: '+', classes: 'bg-diff-added', label: 'Added line' },
+  context: { marker: ' ', classes: '', label: undefined },
+  removed: { marker: '−', classes: 'bg-diff-removed', label: 'Removed line' },
+} as const;
+
+const { after, before, class: className, lang } = Astro.props;
+const beforeLines = (await highlightToLines(before.code, lang)).map(renderLineTokens);
+const afterLines = (await highlightToLines(after.code, lang)).map(renderLineTokens);
+
+const unified: IUnifiedLine[] = [];
+const split: ISplitRow[] = [];
+let beforeIndex = 0;
+let afterIndex = 0;
+// pairs consecutive removals and additions, so the split view shows a change side by side
+let pendingRemoved: string[] = [];
+const flushRemoved = (added: string[] = []): void => {
+  const rows = Math.max(pendingRemoved.length, added.length);
+  for (let row = 0; row < rows; row += 1) {
+    const removedHtml = pendingRemoved[row];
+    const addedHtml = added[row];
+    split.push({
+      before: removedHtml === undefined ? undefined : { kind: 'removed', html: removedHtml },
+      after: addedHtml === undefined ? undefined : { kind: 'added', html: addedHtml },
+    });
+  }
+  pendingRemoved = [];
+};
+for (const part of diffLines(before.code.replace(/\n?$/, '\n'), after.code.replace(/\n?$/, '\n'))) {
+  const count = part.count ?? 0;
+  if (part.removed) {
+    const lines = beforeLines.slice(beforeIndex, beforeIndex + count);
+    beforeIndex += count;
+    unified.push(...lines.map((html) => ({ kind: 'removed' as const, html })));
+    pendingRemoved.push(...lines);
+  } else if (part.added) {
+    const lines = afterLines.slice(afterIndex, afterIndex + count);
+    afterIndex += count;
+    unified.push(...lines.map((html) => ({ kind: 'added' as const, html })));
+    flushRemoved(lines);
+  } else {
+    flushRemoved();
+    const lines = afterLines.slice(afterIndex, afterIndex + count);
+    beforeIndex += count;
+    afterIndex += count;
+    unified.push(...lines.map((html) => ({ kind: 'context' as const, html })));
+    split.push(
+      ...lines.map((html) => ({
+        before: { kind: 'context' as const, html },
+        after: { kind: 'context' as const, html },
+      })),
+    );
+  }
+}
+flushRemoved();
+
+/**
+ * Renders one line of a view: its marker, its kind for screen readers, and its code.
+ * @param kind The kind of line.
+ * @param html The line's highlighted HTML.
+ * @returns The line's HTML.
+ */
+const renderLine = (kind: keyof typeof LINE_STYLES, html: string): string => {
+  const { classes, label, marker } = LINE_STYLES[kind];
+  const kindLabel =
+    label === undefined ? '' : `<span class="sr-only select-none">${label}: </span>`;
+  return `<span class="flex min-w-fit pr-4 ${classes}"><span class="w-8 shrink-0 select-none text-center text-muted" aria-hidden="true">${marker}</span>${kindLabel}<span>${html.length === 0 ? ' ' : html}</span></span>`;
+};
+
+// an empty row, where the other side has a line this side doesn't
+const EMPTY_ROW =
+  '<span class="flex min-w-fit bg-secondary/40 pr-4" aria-hidden="true"><span class="w-8 shrink-0"></span> </span>';
+
+const unifiedHtml = `<code>${unified.map(({ kind, html }) => renderLine(kind, html)).join('')}</code>`;
+const splitHtml = {
+  before: `<code>${split.map(({ before: line }) => (line === undefined ? EMPTY_ROW : renderLine(line.kind, line.html))).join('')}</code>`,
+  after: `<code>${split.map(({ after: line }) => (line === undefined ? EMPTY_ROW : renderLine(line.kind, line.html))).join('')}</code>`,
+};
+---
+
+{/*
+ * A comparison computed at build time. Narrow containers show one column with - and + lines;
+ * wide ones show the two versions side by side. Screen readers hear each changed line's kind.
+ */}
+<figure
+  class:list={['@container overflow-hidden rounded-xl border border-border bg-code', className]}
+  data-code-diff
+>
+  <figcaption class="grid border-b border-border font-mono text-xs @3xl:grid-cols-2">
+    <span class="flex min-h-10 items-center gap-2 px-4 text-muted">
+      <span
+        class="size-2 rounded-full bg-danger"
+        aria-hidden="true"
+      ></span>
+      {before.title}
+    </span>
+    <span class="flex min-h-10 items-center gap-2 border-t border-border px-4 text-muted @3xl:border-t-0 @3xl:border-l">
+      <span
+        class="size-2 rounded-full bg-success"
+        aria-hidden="true"
+      ></span>
+      {after.title}
+    </span>
+  </figcaption>
+  <pre
+    class="jg-code overflow-x-auto py-3 text-[0.8125rem] leading-6 outline-offset-[-2px] sm:text-sm @3xl:hidden"
+    tabindex="0"
+    role="group"
+    aria-label={`Changes from ${before.title} to ${after.title}`}
+    set:html={unifiedHtml}
+  />
+  <div class="hidden grid-cols-2 @3xl:grid">
+    <pre
+      class="jg-code overflow-x-auto py-3 text-sm leading-6 outline-offset-[-2px]"
+      tabindex="0"
+      role="group"
+      aria-label={before.title}
+      set:html={splitHtml.before}
+    />
+    <pre
+      class="jg-code overflow-x-auto border-l border-border py-3 text-sm leading-6 outline-offset-[-2px]"
+      tabindex="0"
+      role="group"
+      aria-label={after.title}
+      set:html={splitHtml.after}
+    />
+  </div>
+</figure>

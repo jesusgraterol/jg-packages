@@ -273,7 +273,7 @@ Expected result: `pnpm --filter jg-<name> test` passes.
 
 ## 6. List it on the website
 
-Once the website exists, every listed package needs an entry in `website/src/site.config.ts` and a `"jg-<name>": "workspace:*"` devDependency in `website/package.json`, so the site rebuilds when the package changes. A package that should stay off the site is marked unlisted there instead. Until `website/` exists, skip this step.
+Every listed package needs an entry in `website/src/site.config.ts`, with an icon chosen as [`website.md`](website.md#package-icons) describes, and a `"jg-<name>": "workspace:*"` devDependency in `website/package.json`, so the site rebuilds when the package changes. A package that should stay off the site goes in `UNLISTED_PACKAGES` instead. [`website.md`](website.md#listing-a-new-package) has the details.
 
 ## 7. Run every check
 
@@ -298,5 +298,5 @@ Publish its first version by hand, following [the first publish](releasing.md#th
 - [ ] Every export has TSDoc, and every function and class an `@example`.
 - [ ] The tests sit next to their files, and each category has a script.
 - [ ] The README has its sections in order, and the changelog has a section for the version.
-- [ ] The package is listed on the website, or marked unlisted.
+- [ ] The package is listed on the website with its own icon, or marked unlisted.
 - [ ] `pnpm check` and `pnpm release:verify` pass.

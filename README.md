@@ -16,6 +16,8 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 | [`jg-sw`](packages/jg-sw)                     | Service workers for web apps: a generated caching worker with a Vite plugin and CLI, plus registration, updates, and installation. | `sw-service`, `sw-builder`                    |
 | [`jg-fetch`](packages/jg-fetch)               | A fetch wrapper for browsers and Node.js that never throws: timeouts, retries with Retry-After, response caps, and API envelopes.  | `fetch-request-browser`, `fetch-request-node` |
 
+[`jg-personal-astro-ui`](packages/jg-personal-astro-ui) is also published from `packages/`: the Astro components and theme Jesus Graterol's own sites share. It isn't meant for general use, so the website doesn't list it.
+
 Each package gets a row here when it's added to `packages/`.
 
 ## Quick start
@@ -38,6 +40,9 @@ pnpm check
 | follow the conventions every package shares       | [`docs/package-guidelines.md`](docs/package-guidelines.md) |
 | create a package                                  | [`docs/creating-a-package.md`](docs/creating-a-package.md) |
 | release a version, or publish a new package       | [`docs/releasing.md`](docs/releasing.md)                   |
+| work on the website                               | [`docs/website.md`](docs/website.md)                       |
+| use or change the shared Astro components         | [`docs/personal-astro-ui.md`](docs/personal-astro-ui.md)   |
+| check where a font, icon, or mark comes from      | [`docs/asset-attribution.md`](docs/asset-attribution.md)   |
 
 ## Project blueprint
 
@@ -45,10 +50,13 @@ pnpm check
 .
 ├── .github/workflows/ci.yml  # the check, floor, publish, and tag jobs
 ├── docs/
+│   ├── asset-attribution.md  # where the website's mark, fonts, and icons come from
 │   ├── creating-a-package.md # every step from a package's name to its first release
 │   ├── development.md        # setup, commands, dependencies, branches, troubleshooting
 │   ├── package-guidelines.md # conventions every package follows
-│   └── releasing.md          # versions, the release checks, publishing, and tags
+│   ├── personal-astro-ui.md  # the shared Astro components and their token contract
+│   ├── releasing.md          # versions, the release checks, publishing, and tags
+│   └── website.md            # running the website and where its content comes from
 ├── internal/                 # private workspace packages, never published
 │   ├── api-reference/        # extracts each package's API and TSDoc with TypeDoc
 │   ├── build-tools/          # clean-dist and copy-assets scripts used by package builds
@@ -56,7 +64,8 @@ pnpm check
 │   ├── release-checks/       # the verify, pack, publish, and tag release commands
 │   ├── tsconfig/             # base, library, browser and node TypeScript configurations
 │   └── vitest-config/        # createVitestConfig(), one Vitest project per test category
-├── packages/                 # the published jg-* packages
+├── packages/                 # the published jg-* packages, and jg-personal-astro-ui
+├── website/                  # the Astro site at jg-packages.jesusgraterol.dev, private
 ├── LICENSE
 ├── package.json              # workspace scripts, pinned pnpm, Node.js engines
 ├── pnpm-workspace.yaml       # workspace globs and the version catalog

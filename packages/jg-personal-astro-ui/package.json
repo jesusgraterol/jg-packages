@@ -1,0 +1,103 @@
+{
+  "name": "jg-personal-astro-ui",
+  "version": "0.1.0",
+  "description": "Jesus Graterol's Astro components, Tailwind token contract, and theme, shared by his personal websites.",
+  "author": "Jesus Graterol",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./styles/contract.css": {
+      "style": "./src/styles/contract.css",
+      "default": "./src/styles/contract.css"
+    },
+    "./styles/theme.css": {
+      "style": "./src/styles/theme.css",
+      "default": "./src/styles/theme.css"
+    },
+    "./styles/prose.css": {
+      "style": "./src/styles/prose.css",
+      "default": "./src/styles/prose.css"
+    },
+    "./syntax-theme": "./src/syntax-theme/index.ts",
+    "./theme-preference": "./src/theme-preference/index.ts",
+    "./badge": "./src/components/badge/badge.astro",
+    "./brand-logo": "./src/components/brand-logo/brand-logo.astro",
+    "./breadcrumb": "./src/components/breadcrumb/breadcrumb.astro",
+    "./button": "./src/components/button/button.astro",
+    "./code-block": "./src/components/code-block/code-block.astro",
+    "./code-diff": "./src/components/code-diff/code-diff.astro",
+    "./container": "./src/components/container/container.astro",
+    "./copy-button": "./src/components/copy-button/copy-button.astro",
+    "./document-head": "./src/components/document-head/document-head.astro",
+    "./grid-lines": "./src/components/grid-lines/grid-lines.astro",
+    "./link-card": "./src/components/link-card/link-card.astro",
+    "./package-manager-tabs": "./src/components/package-manager-tabs/package-manager-tabs.astro",
+    "./prose": "./src/components/prose/prose.astro",
+    "./section": "./src/components/section/section.astro",
+    "./site-footer": "./src/components/site-footer/site-footer.astro",
+    "./site-header": "./src/components/site-header/site-header.astro",
+    "./skip-link": "./src/components/skip-link/skip-link.astro",
+    "./tabs": "./src/components/tabs/tabs.astro",
+    "./text-link": "./src/components/text-link/text-link.astro",
+    "./theme-control": "./src/components/theme-control/theme-control.astro",
+    "./theme-init-script": "./src/components/theme-init-script/theme-init-script.astro"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test-*",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesusgraterol/jg-packages.git",
+    "directory": "packages/jg-personal-astro-ui"
+  },
+  "homepage": "https://github.com/jesusgraterol/jg-packages/tree/main/packages/jg-personal-astro-ui#readme",
+  "bugs": {
+    "url": "https://github.com/jesusgraterol/jg-packages/issues"
+  },
+  "keywords": [
+    "astro",
+    "astro-components",
+    "tailwindcss",
+    "design-tokens",
+    "theme"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "test": "pnpm test:unit",
+    "test:unit": "vitest run --project unit",
+    "typecheck": "astro check"
+  },
+  "peerDependencies": {
+    "astro": "^7.4.0",
+    "tailwindcss": "^4.3.0"
+  },
+  "dependencies": {
+    "@fontsource-variable/ubuntu-sans": "^5.3.0",
+    "@fontsource-variable/ubuntu-sans-mono": "^5.3.0",
+    "@lucide/astro": "^1.58.0",
+    "diff": "^9.0.0",
+    "shiki": "^4.5.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "catalog:",
+    "@jg-packages/eslint-config": "workspace:*",
+    "@jg-packages/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "astro": "catalog:",
+    "eslint": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

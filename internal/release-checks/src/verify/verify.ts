@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 
+import { checkAstroFixture } from '../checks/astro-fixture.ts';
 import { checkFileList } from '../checks/file-list.ts';
 import { checkInstallAndImport } from '../checks/install-import.ts';
 import { checkPackagingLint } from '../checks/packaging-lint.ts';
@@ -80,8 +81,8 @@ const addProblems = (problems: Map<string, string[]>, name: string, additions: s
 
 /**
  * Packs every publishable package into a directory and runs every release check on the tarballs:
- * the file list, the release docs, a consumer install and imports, publint and attw, TSDoc, and
- * the registry comparison.
+ * the file list, the release docs, a consumer install and imports, an Astro fixture build for
+ * packages with Astro components, publint and attw, TSDoc, and the registry comparison.
  * @param rootDirectory The repository root.
  * @param outputDirectory An existing, empty directory for the tarballs.
  * @param dependencies The registry, command runner, and logger.
@@ -114,6 +115,10 @@ export const packAndCheck = async (
   }
   log('Installing the tarballs into a consumer project');
   for (const [name, packageProblems] of await checkInstallAndImport(packages, runCommand)) {
+    addProblems(problems, name, packageProblems);
+  }
+  log('Building an Astro site from each package with Astro components');
+  for (const [name, packageProblems] of await checkAstroFixture(packages, runCommand)) {
     addProblems(problems, name, packageProblems);
   }
   for (const packed of packages) {

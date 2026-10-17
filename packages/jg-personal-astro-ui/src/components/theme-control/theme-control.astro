@@ -1,0 +1,65 @@
+---
+import { Moon, Sun } from '@lucide/astro';
+
+interface Props {
+  class?: string | undefined;
+  // the key the site stores the visitor's theme preference under, as passed to the theme script
+  storageKey: string;
+}
+
+const { class: className, storageKey } = Astro.props;
+---
+
+{/* shows the moon in the light theme and the sun in the dark one, with a label naming the switch */}
+<button
+  type="button"
+  class:list={[
+    'inline-flex size-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-secondary hover:text-foreground',
+    className,
+  ]}
+  data-theme-control
+  data-theme-storage-key={storageKey}
+  aria-label="Toggle color theme"
+  title="Toggle color theme"
+>
+  <Moon
+    class="size-4 [[data-resolved-theme=dark]_&]:hidden"
+    aria-hidden="true"
+  />
+  <Sun
+    class="hidden size-4 [[data-resolved-theme=dark]_&]:block"
+    aria-hidden="true"
+  />
+</button>
+
+<script>
+  import {
+    THEME_APPLIED_EVENT,
+    THEME_CHANGE_EVENT,
+    writeThemePreference,
+  } from '../../theme-preference/index.ts';
+
+  const getResolvedTheme = (): 'light' | 'dark' =>
+    document.documentElement.dataset['resolvedTheme'] === 'dark' ? 'dark' : 'light';
+
+  // names each control after the theme it switches to
+  const updateLabels = (): void => {
+    const label = getResolvedTheme() === 'dark' ? 'Use light theme' : 'Use dark theme';
+    document.querySelectorAll<HTMLButtonElement>('[data-theme-control]').forEach((control) => {
+      control.setAttribute('aria-label', label);
+      control.title = label;
+    });
+  };
+
+  document.querySelectorAll<HTMLButtonElement>('[data-theme-control]').forEach((control) => {
+    control.addEventListener('click', () => {
+      const preference = getResolvedTheme() === 'dark' ? 'light' : 'dark';
+      // the page applies the theme even when the browser blocks storage
+      writeThemePreference(control.dataset['themeStorageKey'] ?? 'jg-theme', preference);
+      window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, { detail: { preference } }));
+    });
+  });
+
+  window.addEventListener(THEME_APPLIED_EVENT, updateLabels);
+  updateLabels();
+</script>

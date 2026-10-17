@@ -1,0 +1,189 @@
+/*
+ * The token contract: maps the --jg-* custom properties a theme defines into Tailwind's theme, so
+ * the components style themselves with utilities such as bg-surface and text-muted. Import it
+ * after Tailwind, with a theme that defines every --jg-* property, such as theme.css.
+ */
+
+/* dark mode follows the .dark class the theme script sets on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* the components' class names, so Tailwind generates their utilities */
+@source "../components";
+
+@theme inline {
+  --font-sans: var(--jg-font-sans);
+  --font-mono: var(--jg-font-mono);
+
+  --color-background: var(--jg-background);
+  --color-foreground: var(--jg-foreground);
+  --color-surface: var(--jg-surface);
+  --color-secondary: var(--jg-secondary);
+  --color-muted: var(--jg-muted);
+  --color-border: var(--jg-border);
+  --color-border-strong: var(--jg-border-strong);
+  --color-primary: var(--jg-primary);
+  --color-primary-foreground: var(--jg-primary-foreground);
+  --color-accent: var(--jg-accent);
+  --color-accent-foreground: var(--jg-accent-foreground);
+  --color-terminal: var(--jg-terminal);
+  --color-terminal-foreground: var(--jg-terminal-foreground);
+  --color-terminal-accent: var(--jg-terminal-accent);
+  --color-focus: var(--jg-focus);
+  --color-code: var(--jg-code);
+  --color-success: var(--jg-success);
+  --color-warning: var(--jg-warning);
+  --color-danger: var(--jg-danger);
+  --color-diff-added: var(--jg-diff-added);
+  --color-diff-removed: var(--jg-diff-removed);
+
+  --radius-sm: calc(var(--jg-radius) * 0.75);
+  --radius-md: var(--jg-radius);
+  --radius-lg: calc(var(--jg-radius) * 1.25);
+  --radius-xl: calc(var(--jg-radius) * 1.75);
+  --radius-2xl: calc(var(--jg-radius) * 2.25);
+
+  --spacing-page: var(--jg-page-gutter);
+  --spacing-section: var(--jg-section-space);
+  --container-page: var(--jg-page-width);
+  --container-prose: var(--jg-prose-width);
+
+  --shadow-surface: var(--jg-shadow-surface);
+  --shadow-raised: var(--jg-shadow-raised);
+}
+
+@layer base {
+  * {
+    border-color: var(--jg-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background: var(--jg-background);
+    font-family: var(--jg-font-sans);
+  }
+
+  body {
+    min-width: 20rem;
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: clip;
+    background: var(--jg-background);
+    color: var(--jg-foreground);
+    font-family: var(--jg-font-sans);
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--jg-accent);
+    color: var(--jg-accent-foreground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--jg-focus);
+    outline-offset: 3px;
+  }
+
+  button:not(:disabled),
+  select:not(:disabled),
+  summary,
+  a {
+    cursor: pointer;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--jg-font-mono);
+  }
+}
+
+@layer components {
+  /* the shared vocabulary of the jg sites: a small mono label, the page titles, and the lede */
+  .eyebrow {
+    color: var(--jg-muted);
+    font-family: var(--jg-font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .display-title {
+    max-width: 18ch;
+    font-size: clamp(2.75rem, 7vw, 4.25rem);
+    font-weight: 650;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    text-wrap: balance;
+  }
+
+  .section-title {
+    max-width: 24ch;
+    font-size: clamp(2.125rem, 5vw, 3.25rem);
+    font-weight: 650;
+    letter-spacing: -0.04em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+
+  .lede {
+    max-width: 42rem;
+    color: var(--jg-muted);
+    font-size: clamp(1.125rem, 2.2vw, 1.375rem);
+    line-height: 1.65;
+  }
+
+  /* the page and prose widths, inside the page gutter */
+  .jg-container {
+    width: min(100% - (2 * var(--jg-page-gutter)), var(--jg-page-width));
+    margin-inline: auto;
+  }
+
+  .jg-container-prose {
+    width: min(100% - (2 * var(--jg-page-gutter)), var(--jg-prose-width));
+    margin-inline: auto;
+  }
+
+  .jg-section-space {
+    padding-block: var(--jg-section-space);
+  }
+
+  /* the faint grid behind heroes, fading out towards the bottom */
+  .jg-grid-lines {
+    background-image:
+      linear-gradient(
+        to right,
+        color-mix(in oklab, var(--jg-border) 60%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in oklab, var(--jg-border) 60%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 3rem 3rem;
+    mask-image: linear-gradient(to bottom, black, transparent 92%);
+  }
+
+  /* Shiki writes each token's colour as a --jg-syntax-* variable, so code follows the theme */
+  .jg-code {
+    background: transparent;
+    color: var(--jg-syntax-foreground);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

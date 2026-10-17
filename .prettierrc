@@ -8,5 +8,15 @@
   "bracketSpacing": true,
   "arrowParens": "always",
   "endOfLine": "lf",
-  "singleAttributePerLine": true
+  "singleAttributePerLine": true,
+  "plugins": ["prettier-plugin-astro"],
+  "overrides": [
+    {
+      "files": "*.astro",
+      "options": {
+        "plugins": ["prettier-plugin-astro", "prettier-plugin-tailwindcss"],
+        "tailwindStylesheet": "./website/src/styles/global.css"
+      }
+    }
+  ]
 }

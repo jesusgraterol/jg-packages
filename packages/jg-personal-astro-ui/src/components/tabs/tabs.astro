@@ -1,0 +1,171 @@
+---
+// one tab: its id names the slot that holds its panel
+interface ITab {
+  id: string;
+  label: string;
+}
+
+interface Props {
+  class?: string | undefined;
+  // a prefix for the tab and panel ids, unique on the page
+  id: string;
+  // the tab list's accessible name
+  label: string;
+  // remembers the choice in localStorage under this key, and syncs it across the page's tabs
+  storageKey?: string | undefined;
+  tabs: readonly ITab[];
+  // 'default' on the page, 'terminal' inside a dark terminal panel
+  variant?: 'default' | 'terminal' | undefined;
+}
+
+const { class: className, id, label, storageKey, tabs, variant = 'default' } = Astro.props;
+const panels = await Promise.all(
+  tabs.map(async (tab) => ({ ...tab, html: await Astro.slots.render(tab.id) })),
+);
+---
+
+<div
+  class:list={['min-w-0', className]}
+  data-tabs
+  data-tabs-storage-key={storageKey}
+>
+  <div
+    class:list={[
+      'flex min-w-0 items-center gap-1 overflow-x-auto',
+      variant === 'terminal'
+        ? 'border-b border-terminal-foreground/15 px-2 py-1.5'
+        : 'border-b border-border',
+    ]}
+  >
+    <div
+      role="tablist"
+      aria-label={label}
+      class="flex gap-1"
+    >
+      {tabs.map((tab, index) => (
+        <button
+          type="button"
+          role="tab"
+          id={`${id}-tab-${tab.id}`}
+          aria-controls={`${id}-panel-${tab.id}`}
+          aria-selected={index === 0 ? 'true' : 'false'}
+          tabindex={index === 0 ? 0 : -1}
+          data-tab-id={tab.id}
+          class:list={[
+            'shrink-0 font-mono text-xs font-semibold transition-colors',
+            variant === 'terminal'
+              ? 'rounded-md px-2.5 py-1.5 text-terminal-foreground/60 hover:text-terminal-foreground focus-visible:outline-terminal-accent aria-selected:bg-terminal-foreground/10 aria-selected:text-terminal-foreground'
+              : '-mb-px border-b-2 border-transparent px-3 py-2.5 text-muted outline-offset-[-2px] hover:text-foreground aria-selected:border-foreground aria-selected:text-foreground',
+          ]}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+    <slot name="actions" />
+  </div>
+  {panels.map((panel, index) => (
+    <div
+      role="tabpanel"
+      id={`${id}-panel-${panel.id}`}
+      aria-labelledby={`${id}-tab-${panel.id}`}
+      data-tab-panel={panel.id}
+      hidden={index !== 0}
+      set:html={panel.html}
+    />
+  ))}
+</div>
+
+<script>
+  /**
+   * Lists a group's own elements matching a selector, leaving out those of tabs nested in its
+   * panels.
+   * @param group The tabs element.
+   * @param selector The selector, such as '[role="tab"]'.
+   * @returns The group's own matching elements.
+   */
+  const ownElements = <T extends HTMLElement>(group: HTMLElement, selector: string): T[] =>
+    [...group.querySelectorAll<T>(selector)].filter(
+      (element) => element.closest('[data-tabs]') === group,
+    );
+
+  /**
+   * Selects one tab of a group, shows its panel, and moves the roving tabindex to it.
+   * @param group The tabs element.
+   * @param tabId The tab to select.
+   */
+  const selectTab = (group: HTMLElement, tabId: string): boolean => {
+    const tabs = ownElements<HTMLButtonElement>(group, '[role="tab"]');
+    if (!tabs.some((tab) => tab.dataset['tabId'] === tabId)) {
+      return false;
+    }
+    tabs.forEach((tab) => {
+      const isSelected = tab.dataset['tabId'] === tabId;
+      tab.setAttribute('aria-selected', String(isSelected));
+      tab.tabIndex = isSelected ? 0 : -1;
+    });
+    ownElements(group, '[role="tabpanel"]').forEach((panel) => {
+      panel.hidden = panel.dataset['tabPanel'] !== tabId;
+    });
+    return true;
+  };
+
+  /**
+   * Selects a tab in every group that shares the storage key, and remembers the choice.
+   * @param storageKey The shared key.
+   * @param tabId The tab to select.
+   */
+  const syncTabs = (storageKey: string, tabId: string): void => {
+    document
+      .querySelectorAll<HTMLElement>(`[data-tabs][data-tabs-storage-key="${storageKey}"]`)
+      .forEach((group) => selectTab(group, tabId));
+    try {
+      localStorage.setItem(storageKey, tabId);
+    } catch {
+      // the choice still applies to this page
+    }
+  };
+
+  document.querySelectorAll<HTMLElement>('[data-tabs]').forEach((group) => {
+    const storageKey = group.dataset['tabsStorageKey'];
+    const tabs = ownElements<HTMLButtonElement>(group, '[role="tab"]');
+
+    if (storageKey !== undefined) {
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored !== null) selectTab(group, stored);
+      } catch {
+        // without storage, the first tab stays selected
+      }
+    }
+
+    const choose = (tab: HTMLButtonElement): void => {
+      const tabId = tab.dataset['tabId'] ?? '';
+      if (storageKey === undefined) {
+        selectTab(group, tabId);
+      } else {
+        syncTabs(storageKey, tabId);
+      }
+    };
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => choose(tab));
+      tab.addEventListener('keydown', (event) => {
+        const targets: Record<string, number> = {
+          ArrowLeft: (index - 1 + tabs.length) % tabs.length,
+          ArrowRight: (index + 1) % tabs.length,
+          End: tabs.length - 1,
+          Home: 0,
+        };
+        const target = targets[event.key];
+        const next = target === undefined ? undefined : tabs[target];
+        if (next === undefined) {
+          return;
+        }
+        event.preventDefault();
+        choose(next);
+        next.focus();
+      });
+    });
+  });
+</script>

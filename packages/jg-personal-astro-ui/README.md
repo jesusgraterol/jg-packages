@@ -1,0 +1,46 @@
+# jg-personal-astro-ui
+
+Jesus Graterol's Astro components, Tailwind token contract, and theme, shared by his personal websites.
+
+> This package exists for Jesus Graterol's own sites. It follows their design, and its API can change in any `0.x` release. You're welcome to read it and use it, but expect breaking changes.
+
+## Install
+
+```bash
+npm install jg-personal-astro-ui astro tailwindcss @tailwindcss/vite
+```
+
+## Usage
+
+Import Tailwind, the token contract, a theme, and the prose styles in the site's stylesheet:
+
+```css
+@import 'tailwindcss';
+@import 'jg-personal-astro-ui/styles/contract.css';
+@import 'jg-personal-astro-ui/styles/theme.css';
+@import 'jg-personal-astro-ui/styles/prose.css';
+```
+
+Then build pages from the components, each at its own subpath:
+
+```astro
+---
+import Button from 'jg-personal-astro-ui/button';
+import ThemeInitScript from 'jg-personal-astro-ui/theme-init-script';
+---
+
+<head>
+  <ThemeInitScript storageKey="my-site-theme" />
+</head>
+<Button href="/start">Get started</Button>
+```
+
+The components style themselves with the contract's tokens only, so another theme can replace `theme.css` by defining every `--jg-*` property.
+
+## Documentation
+
+The token contract, every component, and how to use them in a site are in [docs/personal-astro-ui.md](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md).
+
+## License
+
+[MIT](https://github.com/jesusgraterol/jg-packages/blob/main/packages/jg-personal-astro-ui/LICENSE)

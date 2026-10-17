@@ -1,0 +1,26 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "generate": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/internal/api-reference/src/**"],
+      "outputs": ["src/generated/**"]
+    },
+    "build": {
+      "dependsOn": ["$TURBO_EXTENDS$", "generate"],
+      "inputs": ["$TURBO_EXTENDS$", "$TURBO_ROOT$/packages/jg-personal-astro-ui/src/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["$TURBO_EXTENDS$", "generate"],
+      "inputs": ["$TURBO_EXTENDS$", "$TURBO_ROOT$/packages/jg-personal-astro-ui/src/**"]
+    },
+    "lint": {
+      "dependsOn": ["$TURBO_EXTENDS$", "generate"],
+      "inputs": ["$TURBO_EXTENDS$", "$TURBO_ROOT$/packages/jg-personal-astro-ui/src/**"]
+    },
+    "dev": {
+      "dependsOn": ["$TURBO_EXTENDS$", "generate"]
+    }
+  }
+}

@@ -1,0 +1,41 @@
+---
+import Badge from 'jg-personal-astro-ui/badge';
+import LinkCard from 'jg-personal-astro-ui/link-card';
+
+import { RUNTIMES, type IListedPackage } from '../../utilities/package-catalog/index.ts';
+import PackageIcon from '../package-icon/package-icon.astro';
+
+interface Props {
+  // the heading level of the package's name, to fit the page's outline
+  headingLevel: 2 | 3 | 4;
+  package: IListedPackage;
+}
+
+const { headingLevel, package: listedPackage } = Astro.props;
+---
+
+<LinkCard
+  href={`/packages/${listedPackage.name}/`}
+  headingLevel={headingLevel}
+  title={listedPackage.name}
+  monoTitle
+>
+  <PackageIcon
+    slot="icon"
+    icon={listedPackage.icon}
+    size="card"
+  />
+  <p
+    slot="meta"
+    class="mt-0.5 text-xs font-semibold text-muted"
+  >
+    {listedPackage.title}
+  </p>
+  {listedPackage.description}
+  <Fragment slot="footer">
+    <Badge variant="outline">v{listedPackage.version}</Badge>
+    {listedPackage.runtimes.map((runtime) => (
+      <Badge variant="secondary">{RUNTIMES[runtime].label}</Badge>
+    ))}
+  </Fragment>
+</LinkCard>

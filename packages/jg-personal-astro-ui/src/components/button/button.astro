@@ -1,0 +1,74 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+// the look of each variant
+const VARIANT_CLASSES = {
+  default:
+    'border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:border-primary/90',
+  outline: 'border-border-strong bg-transparent text-foreground hover:bg-secondary',
+  secondary: 'border-transparent bg-secondary text-foreground hover:bg-secondary/70',
+  ghost: 'border-transparent bg-transparent text-muted hover:bg-secondary hover:text-foreground',
+  destructive: 'border-danger bg-danger text-background hover:bg-danger/90',
+  link: 'border-transparent bg-transparent px-0 text-foreground underline-offset-4 hover:underline',
+} as const;
+
+// the height and padding of each size; touch keeps a 44 px target
+const SIZE_CLASSES = {
+  xs: 'min-h-7 gap-1 px-2.5 text-xs',
+  sm: 'min-h-9 gap-1.5 px-3.5 text-sm',
+  default: 'min-h-11 gap-2 px-4.5 text-sm',
+  lg: 'min-h-12 gap-2 px-6 text-base',
+  icon: 'size-9 justify-center',
+  touch: 'size-11 justify-center',
+} as const;
+
+// spoken after an external link's text, so screen reader users know it opens a new tab
+const NEW_TAB_NOTICE = ' (opens in a new tab)';
+
+type Props = {
+  class?: string | undefined;
+  // opens the link in a new tab, with the new-tab notice and no referrer
+  external?: boolean | undefined;
+  // renders a link instead of a button, which takes the same global and ARIA attributes
+  href?: string | undefined;
+  size?: keyof typeof SIZE_CLASSES | undefined;
+  variant?: keyof typeof VARIANT_CLASSES | undefined;
+} & Omit<HTMLAttributes<'button'>, 'class'>;
+
+const {
+  class: className,
+  external = false,
+  href,
+  size = 'default',
+  type = 'button',
+  variant = 'default',
+  ...attributes
+} = Astro.props;
+const classes = [
+  'inline-flex shrink-0 items-center justify-center rounded-full border font-semibold no-underline transition-colors disabled:pointer-events-none disabled:opacity-50',
+  SIZE_CLASSES[size],
+  VARIANT_CLASSES[variant],
+  className,
+];
+---
+
+{href === undefined ? (
+  <button
+    type={type}
+    class:list={classes}
+    {...attributes}
+  >
+    <slot />
+  </button>
+) : (
+  <a
+    href={href}
+    class:list={classes}
+    target={external ? '_blank' : undefined}
+    rel={external ? 'noreferrer' : undefined}
+    {...attributes}
+  >
+    <slot />
+    {external && <span class="sr-only">{NEW_TAB_NOTICE}</span>}
+  </a>
+)}

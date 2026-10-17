@@ -1,0 +1,13 @@
+---
+interface Props {
+  class?: string | undefined;
+}
+
+const { class: className } = Astro.props;
+---
+
+{/* decorative only: a faint grid that fills its positioned parent and fades towards the bottom */}
+<div
+  class:list={['jg-grid-lines pointer-events-none absolute inset-0 -z-10', className]}
+  aria-hidden="true"
+></div>

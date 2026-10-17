@@ -1,0 +1,56 @@
+---
+import { ArrowRight } from '@lucide/astro';
+
+interface Props {
+  class?: string | undefined;
+  // the heading level of the title, to fit the page's outline
+  headingLevel?: 2 | 3 | 4 | undefined;
+  href: string;
+  // shows the title in the mono font, as for package names
+  monoTitle?: boolean | undefined;
+  title: string;
+}
+
+const { class: className, headingLevel = 3, href, monoTitle = false, title } = Astro.props;
+const Heading = `h${headingLevel}` as const;
+---
+
+{/* the title's link covers the whole card, so the card draws the keyboard focus ring for it */}
+<article
+  class:list={[
+    'group relative flex h-full flex-col rounded-xl border border-border bg-surface p-5 shadow-surface transition-colors hover:border-border-strong has-focus-visible:outline-2 has-focus-visible:outline-offset-3 has-focus-visible:outline-focus',
+    className,
+  ]}
+>
+  <div class="flex items-start gap-3">
+    <slot name="icon" />
+    <div class="min-w-0 flex-1">
+      <Heading
+        class:list={[
+          'text-base font-semibold tracking-tight wrap-anywhere',
+          monoTitle && 'font-mono font-bold',
+        ]}
+      >
+        <a
+          href={href}
+          class="no-underline outline-none after:absolute after:inset-0 after:rounded-xl"
+        >
+          {title}
+        </a>
+      </Heading>
+      <slot name="meta" />
+    </div>
+    <ArrowRight
+      class="mt-0.5 size-4 shrink-0 text-muted transition-[color,translate] group-hover:translate-x-0.5 group-hover:text-foreground"
+      aria-hidden="true"
+    />
+  </div>
+  <div class="mt-3 flex-1 text-sm leading-6 text-muted">
+    <slot />
+  </div>
+  {Astro.slots.has('footer') && (
+    <div class="relative mt-4 flex flex-wrap items-center gap-2">
+      <slot name="footer" />
+    </div>
+  )}
+</article>

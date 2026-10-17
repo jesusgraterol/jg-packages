@@ -1,0 +1,89 @@
+---
+import type { IApiReference } from '@jg-packages/api-reference';
+import type { GetStaticPaths } from 'astro';
+import { getEntry, render } from 'astro:content';
+import Prose from 'jg-personal-astro-ui/prose';
+
+import ApiReference from '../../components/api-reference/api-reference.astro';
+import OnThisPage from '../../components/on-this-page/on-this-page.astro';
+import PackageHero from '../../components/package-hero/package-hero.astro';
+import BaseLayout from '../../layouts/base-layout.astro';
+import { PACKAGE_CATALOG, PACKAGES_DIRECTORY, SITE_CONFIG } from '../../site.config.ts';
+import { groupSymbols } from '../../utilities/api-reference/index.ts';
+import { loadListedPackages, type IListedPackage } from '../../utilities/package-catalog/index.ts';
+
+interface Props {
+  package: IListedPackage;
+}
+
+export const getStaticPaths = (async () =>
+  (await loadListedPackages(PACKAGE_CATALOG, PACKAGES_DIRECTORY)).map((listedPackage) => ({
+    params: { name: listedPackage.name },
+    props: { package: listedPackage },
+  }))) satisfies GetStaticPaths;
+
+// every package's API reference, written by the generate task
+const API_REFERENCES = import.meta.glob<IApiReference>('../../generated/api/*.json', {
+  eager: true,
+  import: 'default',
+});
+
+const { package: listedPackage } = Astro.props;
+const reference = API_REFERENCES[`../../generated/api/${listedPackage.name}.json`];
+if (reference === undefined) {
+  throw new Error(
+    `${listedPackage.name} has no API reference. Run the site's tasks through Turborepo, such as pnpm turbo run build --filter=@jg-packages/website, so generate runs first.`,
+  );
+}
+const readme = await getEntry('packageReadmes', listedPackage.name);
+if (readme === undefined) {
+  throw new Error(`${listedPackage.name} has no README entry`);
+}
+const { Content, headings } = await render(readme);
+const contents = [
+  ...headings
+    .filter(({ depth }) => depth === 2)
+    .map(({ slug, text }) => ({ href: `#${slug}`, label: text })),
+  {
+    href: '#api-reference',
+    label: 'API reference',
+    children: reference.entryPoints.flatMap((entryPoint) =>
+      groupSymbols(entryPoint).map(({ heading, id }) => ({
+        href: `#${id}`,
+        label:
+          reference.entryPoints.length > 1 && entryPoint.subpath !== '.'
+            ? `${heading} (${entryPoint.subpath.replace(/^\.\//, '')})`
+            : heading,
+      })),
+    ),
+  },
+];
+---
+
+<BaseLayout
+  canonicalPath={`/packages/${listedPackage.name}/`}
+  description={listedPackage.description}
+  title={`${listedPackage.name}: ${listedPackage.title} | ${SITE_CONFIG.name}`}
+>
+  <PackageHero package={listedPackage} />
+  <div class="jg-container grid gap-10 py-10 sm:py-14 lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-14">
+    <div class="min-w-0 lg:max-w-[48rem]">
+      <div class="lg:hidden">
+        <OnThisPage
+          items={contents}
+          variant="disclosure"
+        />
+      </div>
+      <Prose class="mt-8 lg:mt-0">
+        <Content />
+      </Prose>
+      <ApiReference reference={reference} />
+    </div>
+    <aside class="hidden lg:block">
+      <OnThisPage
+        items={contents}
+        variant="sidebar"
+      />
+    </aside>
+  </div>
+</BaseLayout>

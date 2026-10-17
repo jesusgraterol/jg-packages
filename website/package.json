@@ -1,0 +1,48 @@
+{
+  "name": "@jg-packages/website",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The jg-packages website: a showcase and the documentation of every listed package, built for people and agents.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "astro build",
+    "dev": "astro dev",
+    "generate": "node scripts/generate-api-reference.ts",
+    "lint": "eslint .",
+    "preview": "astro preview",
+    "test": "pnpm test:unit",
+    "test:unit": "vitest run --project unit",
+    "typecheck": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "3.7.4",
+    "@lucide/astro": "1.58.0",
+    "@tailwindcss/vite": "catalog:",
+    "astro": "catalog:",
+    "jg-personal-astro-ui": "workspace:*",
+    "tailwindcss": "catalog:"
+  },
+  "devDependencies": {
+    "@astrojs/check": "catalog:",
+    "@jg-packages/api-reference": "workspace:*",
+    "@jg-packages/eslint-config": "workspace:*",
+    "@jg-packages/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "jg-api-response": "workspace:*",
+    "jg-bignumber": "workspace:*",
+    "jg-exception": "workspace:*",
+    "jg-fetch": "workspace:*",
+    "jg-fs": "workspace:*",
+    "jg-process": "workspace:*",
+    "jg-storage": "workspace:*",
+    "jg-sw": "workspace:*",
+    "jg-utilities": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

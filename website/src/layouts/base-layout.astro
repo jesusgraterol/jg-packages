@@ -1,0 +1,145 @@
+---
+import { GitBranch } from '@lucide/astro';
+import BrandLogo from 'jg-personal-astro-ui/brand-logo';
+import Button from 'jg-personal-astro-ui/button';
+import DocumentHead from 'jg-personal-astro-ui/document-head';
+import SiteFooter from 'jg-personal-astro-ui/site-footer';
+import SiteHeader from 'jg-personal-astro-ui/site-header';
+import SkipLink from 'jg-personal-astro-ui/skip-link';
+import TextLink from 'jg-personal-astro-ui/text-link';
+import ThemeControl from 'jg-personal-astro-ui/theme-control';
+import ThemeInitScript from 'jg-personal-astro-ui/theme-init-script';
+
+import BrandMark from '../components/brand-mark/brand-mark.astro';
+import { SITE_CONFIG } from '../site.config.ts';
+import '../styles/global.css';
+
+interface Props {
+  // the page's path, such as '/packages/jg-fetch/', which its canonical URL builds on
+  canonicalPath: string;
+  description: string;
+  title: string;
+}
+
+const { canonicalPath, description, title } = Astro.props;
+const canonicalUrl = new URL(canonicalPath, SITE_CONFIG.url).toString();
+const footerColumns = [
+  {
+    title: 'Site',
+    links: SITE_CONFIG.navigation,
+  },
+  {
+    title: 'Projects',
+    links: SITE_CONFIG.relatedSites.map((site) => ({ ...site, external: true })),
+  },
+  {
+    title: 'Repository',
+    links: [
+      { href: SITE_CONFIG.repositoryUrl, label: 'Source', external: true },
+      { href: `${SITE_CONFIG.repositoryUrl}/releases`, label: 'Releases', external: true },
+      { href: `${SITE_CONFIG.repositoryUrl}/issues`, label: 'Issues', external: true },
+    ],
+  },
+];
+---
+
+<!doctype html>
+<html lang={SITE_CONFIG.language}>
+  <head>
+    <DocumentHead
+      author={SITE_CONFIG.author.name}
+      canonicalUrl={canonicalUrl}
+      description={description}
+      favicon={{ href: '/favicon.svg', type: 'image/svg+xml' }}
+      siteName={SITE_CONFIG.name}
+      themeColors={SITE_CONFIG.themeColors}
+      title={title}
+      twitterCreator={SITE_CONFIG.author.twitterHandle}
+    />
+    <ThemeInitScript
+      storageKey={SITE_CONFIG.storageKeys.theme}
+      themeColors={SITE_CONFIG.themeColors}
+    />
+  </head>
+  <body>
+    <SkipLink />
+    <SiteHeader
+      currentPath={Astro.url.pathname}
+      homeLabel={`${SITE_CONFIG.name} home`}
+      items={SITE_CONFIG.navigation}
+    >
+      <BrandLogo
+        slot="brand"
+        name={SITE_CONFIG.name}
+      >
+        <BrandMark
+          slot="mark"
+          class="size-8 shrink-0"
+        />
+      </BrandLogo>
+      <Fragment slot="actions">
+        <Button
+          href={SITE_CONFIG.repositoryUrl}
+          external
+          size="icon"
+          variant="ghost"
+          title="Source repository"
+        >
+          <GitBranch
+            class="size-4"
+            aria-hidden="true"
+          />
+          <span class="sr-only">Source repository</span>
+        </Button>
+        <ThemeControl storageKey={SITE_CONFIG.storageKeys.theme} />
+      </Fragment>
+      <Fragment slot="mobile-actions">
+        <Button
+          href={SITE_CONFIG.repositoryUrl}
+          external
+          size="sm"
+          variant="outline"
+        >
+          <GitBranch
+            class="size-4"
+            aria-hidden="true"
+          />
+          Source
+        </Button>
+        <ThemeControl
+          class="ml-auto"
+          storageKey={SITE_CONFIG.storageKeys.theme}
+        />
+      </Fragment>
+    </SiteHeader>
+    <main id="main-content">
+      <slot />
+    </main>
+    <SiteFooter
+      columns={footerColumns}
+      notes={[SITE_CONFIG.url.replace('https://', ''), `${SITE_CONFIG.license} License, © 2026`]}
+    >
+      <BrandLogo
+        slot="brand"
+        name={SITE_CONFIG.name}
+      >
+        <BrandMark
+          slot="mark"
+          class="size-8 shrink-0"
+        />
+      </BrandLogo>
+      <Fragment slot="about">
+        Small, focused TypeScript packages, built and maintained by{' '}
+        <TextLink
+          href={SITE_CONFIG.author.url}
+          external
+        >
+          {SITE_CONFIG.author.name}
+        </TextLink>
+        {
+          '. Each one is tested as the tarball you install, and documented for people and agents alike.'
+        }
+      </Fragment>
+    </SiteFooter>
+  </body>
+</html>
