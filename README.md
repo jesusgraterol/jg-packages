@@ -43,7 +43,7 @@ pnpm check
 
 ```text
 .
-├── .github/workflows/ci.yml  # the check and floor jobs
+├── .github/workflows/ci.yml  # the check, floor, publish, and tag jobs
 ├── docs/
 │   ├── creating-a-package.md # every step from a package's name to its first release
 │   ├── development.md        # setup, commands, dependencies, branches, troubleshooting

@@ -44,6 +44,21 @@ jobs:
       - name: Run every check
         run: pnpm check
 
+      # on main, the checked tarballs are packed once and handed to the publish job
+      - name: Pack the release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: pnpm release:pack
+
+      - name: Upload the release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v7
+        with:
+          name: release
+          path: .release/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
   floor:
     name: Package tests on Node.js 24.0.0
     runs-on: ubuntu-latest
@@ -68,3 +83,82 @@ jobs:
 
       - name: Run the package unit and integration tests
         run: pnpm turbo run test:unit test:integration --filter='./packages/*'
+
+  publish:
+    name: Publish to npm
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [check, floor]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # id-token lets npm verify this workflow as the packages' trusted publisher
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      # trusted publishing needs npm 11.5.1 or later
+      - name: Install npm
+        run: npm install --global npm@11.12.1
+
+      - name: Download the release
+        uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: release
+
+      # the publish command imports only Node.js built-ins, so no dependency is installed here
+      - name: Publish the new versions
+        run: node internal/release-checks/src/cli.ts publish --from release
+
+      - name: Upload the published versions
+        uses: actions/upload-artifact@v7
+        with:
+          name: published
+          path: release/published.json
+          if-no-files-found: error
+          retention-days: 1
+
+  tag:
+    name: Tag the release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      # the credentials stay, because the tag command pushes the tags
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          package-manager-cache: false
+
+      - name: Download the release
+        uses: actions/download-artifact@v8
+        with:
+          name: release
+          path: release
+
+      - name: Download the published versions
+        uses: actions/download-artifact@v8
+        with:
+          name: published
+          path: published
+
+      - name: Tag the published versions
+        run: node internal/release-checks/src/cli.ts tag --from release --published published/published.json

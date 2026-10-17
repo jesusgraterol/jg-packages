@@ -2,8 +2,6 @@
 
 How versions are chosen, checked, published, and tagged. Releases are cut from `main`: CI packs every package, publishes the versions npm doesn't have yet, and tags them. You never run `npm publish` by hand except for a package's first version.
 
-> The CI jobs that publish and tag arrive with the first release of the packages, so until then nothing is published.
-
 ## Versions
 
 Packages follow semantic versioning:
@@ -60,6 +58,18 @@ For a package already on npm:
 
 The release commands run on Linux and macOS.
 
+## What CI does on `main`
+
+Every push to `main`, which is every merged pull request, runs these after the usual checks:
+
+| Job       | What it does                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check`   | After `pnpm check`, runs `pnpm release:pack` and uploads `.release/` as the `release` artifact, kept for a day.                                                                                                                                                                                                                                                                                            |
+| `publish` | Checks each tarball against the manifest's SHA-256, then publishes, in manifest order, every version npm doesn't have, through the package's trusted publisher. It skips versions already on npm, skips packages that aren't on npm yet with a warning, and stops before publishing a package whose sibling range has no version on npm. It uploads the versions it published as the `published` artifact. |
+| `tag`     | Creates and pushes an annotated `<name>-v<version>` tag on the merged commit for each version `publish` published, as `github-actions[bot]`.                                                                                                                                                                                                                                                               |
+
+`publish` installs no dependencies and holds `id-token: write` only so npm can verify the workflow. `tag` holds `contents: write` only to push its tags.
+
 ## The first publish of a new package
 
 CI only publishes packages that already exist on npm, because a package's trusted publisher can only be set up once it exists. The first version goes out by hand:
@@ -88,12 +98,13 @@ CI only publishes packages that already exist on npm, because a package's truste
    - add a trusted publisher: GitHub Actions, repository `jesusgraterol/jg-packages`, workflow `ci.yml`
    - set publishing access to "Require two-factor authentication and disallow tokens"
 
-4. Tag the release and push the tag:
+4. Once every version in `release-manifest.json` is on npm, tag them on the merged `main` and push the tags:
 
    ```bash
-   git tag --annotate jg-<name>-v<version> --message "jg-<name> <version>"
-   git push origin refs/tags/jg-<name>-v<version>
+   node internal/release-checks/src/cli.ts tag --from .release --published .release/release-manifest.json
    ```
+
+   Expected result: a `Pushed <name>-v<version>` line for each new version. It tags as `github-actions[bot]`, the same as CI, and skips the tags `origin` already has.
 
 5. Remove `.release/`.
 
@@ -113,4 +124,4 @@ npm deprecate jg-<name>@<version> "<what's wrong>, upgrade to <fixed version>"
 - **`npm publish` fails with an OIDC or 404 error in CI.** The package's trusted publisher is missing or names another workflow. Check its settings on npmjs.com against step 3 of the first publish.
 - **A version already exists.** npm never accepts the same version twice. Bump the version and add its changelog section.
 - **"contents changed without a version bump".** A file that ships changed while the version stayed the same. Bump the version and add the changelog section. A sibling's release within the published range never triggers it, but a sibling's new major does, so release the dependent with the new range. Dev-dependency updates and script edits never trigger it either. A toolchain update that changes the built output does, so release patch versions of the packages it names.
-- **"depends on … which has no matching version on npm or in this release".** The package needs a sibling version that isn't published. Release the sibling first, or in the same pull request.
+- **"depends on … which has no matching version on npm or in this release"**, from `release:verify`, or **"depends on … which has no version on npm"**, from the publish job. The package needs a sibling version that isn't published. Release the sibling first, or in the same pull request. When the sibling is new, publish it by hand first, as described above.
