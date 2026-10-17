@@ -16,20 +16,20 @@ pnpm --filter @jg-packages/website preview
 
 ## Where the content comes from
 
-| Content            | Source                                                                                                                                                                                         |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The package list   | `PACKAGE_CATALOG` in `website/src/site.config.ts`: each package's title, description, icon, runtimes, the packages it replaces, and its position. Names and versions come from `package.json`. |
-| A package's README | `packages/<name>/README.md`, loaded by the `packageReadmes` collection without the title, the summary, and the Install, Documentation, and License sections, which the page shows elsewhere.   |
-| The API reference  | `website/src/generated/api/<name>.json`, which `generate` writes from each package's TSDoc. It's ignored by Git.                                                                               |
+| Content            | Source                                                                                                                                                                                       |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The package list   | `PACKAGE_CATALOG` in `website/src/site.config.ts`: each package's title, description, icon, runtimes, and position. Names and versions come from `package.json`.                             |
+| A package's README | `packages/<name>/README.md`, loaded by the `packageReadmes` collection without the title, the summary, and the Install, Documentation, and License sections, which the page shows elsewhere. |
+| The API reference  | `website/src/generated/api/<name>.json`, which `generate` writes from each package's TSDoc. It's ignored by Git.                                                                             |
 
 The build fails when the catalog and `packages/` disagree: every published package needs an entry except those in `UNLISTED_PACKAGES` (`jg-personal-astro-ui`), and orders and icons must be unique. `generate` fails when an export has no TSDoc.
 
 ## Pages
 
-| Path                | What it shows                                                                                                          |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `/`                 | What the packages are, the catalog grouped by runtime, the conventions they share, a migration example, and agent docs |
-| `/packages/<name>/` | The package's header and install command, its README, its API reference, and a table of contents                       |
+| Path                | What it shows                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------- |
+| `/`                 | What the packages are, the catalog grouped by runtime, the conventions they share, and agent docs |
+| `/packages/<name>/` | The package's header and install command, its README, its API reference, and a table of contents  |
 
 ## Package icons
 

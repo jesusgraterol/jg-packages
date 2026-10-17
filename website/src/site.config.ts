@@ -13,7 +13,6 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
       'Coded errors for every jg package: an Exception with a stable code and JSON data, message extraction, code checks, and test assertions.',
     icon: 'octagon-alert',
     runtimes: ['universal'],
-    previousPackages: ['error-message-utils'],
     order: 1,
   },
   'jg-api-response': {
@@ -22,7 +21,6 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
       'Build and recognise the success, data, and error envelope that services exchange over HTTP, with errors as a code, a message, and data.',
     icon: 'braces',
     runtimes: ['universal'],
-    previousPackages: ['api-response-utils'],
     order: 2,
   },
   'jg-utilities': {
@@ -31,7 +29,6 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
       'Validations, formatters, secure random generators, pagination cursors, and collection, async, and environment helpers.',
     icon: 'wrench',
     runtimes: ['universal'],
-    previousPackages: ['web-utils-kit'],
     order: 3,
   },
   'jg-bignumber': {
@@ -40,7 +37,6 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
       'Exact decimal math on bignumber.js: rounding modes, formatting, and financial calculations such as percentage changes.',
     icon: 'calculator',
     runtimes: ['universal'],
-    previousPackages: ['bignumber-utils'],
     order: 4,
   },
   'jg-fetch': {
@@ -49,7 +45,6 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
       'A fetch wrapper that never throws: timeouts, retries that honour Retry-After, response size caps, and API envelopes.',
     icon: 'globe',
     runtimes: ['universal'],
-    previousPackages: ['fetch-request-browser', 'fetch-request-node'],
     order: 5,
   },
   'jg-storage': {
@@ -58,7 +53,6 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
       'Typed key-value stores over localStorage, sessionStorage, IndexedDB, and memory, for pages and workers alike.',
     icon: 'database',
     runtimes: ['browser'],
-    previousPackages: ['browser-keyval-stores'],
     order: 6,
   },
   'jg-sw': {
@@ -67,7 +61,6 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
       'A generated caching worker with a Vite plugin and CLI, plus registration, updates that reload once, and app installation.',
     icon: 'cloud-off',
     runtimes: ['browser', 'node'],
-    previousPackages: ['sw-service', 'sw-builder'],
     order: 7,
   },
   'jg-fs': {
@@ -76,7 +69,6 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
       'Filesystem helpers, async and sync: path checks, directories, text and JSON files, atomic writes, and bounded reads.',
     icon: 'folder-open',
     runtimes: ['node'],
-    previousPackages: ['fs-utils-async', 'fs-utils-sync'],
     order: 8,
   },
   'jg-process': {
@@ -85,7 +77,6 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
       'Run and stop child processes without a shell: timeouts, output limits, abort signals, and whole process trees.',
     icon: 'cpu',
     runtimes: ['node'],
-    previousPackages: ['node-process-utils'],
     order: 9,
   },
 };

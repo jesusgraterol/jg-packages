@@ -1,8 +1,8 @@
 // the mechanism a store keeps its records in
 export type IStoreMechanism = 'tempMemory' | 'localStorage' | 'sessionStorage' | 'indexedDB';
 
-// identifies a record in a store. undefined addresses the store's root record, and a string or a
-// number addresses the record stored under `${storeId}_${recordId}`
+// identifies a record in a store. undefined addresses the store's root record. A number becomes a
+// string, so 1 and '1' address the same record in every mechanism
 export type IRecordId = undefined | string | number;
 
 // validates data and returns it typed, which a Zod schema does

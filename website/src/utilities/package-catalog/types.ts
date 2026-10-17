@@ -24,8 +24,6 @@ export type IPackageCatalogEntry = {
   icon: IPackageIcon;
   // the runtimes, the first of which groups the package on the home page
   runtimes: readonly [IRuntime, ...IRuntime[]];
-  // the npm packages this one replaces
-  previousPackages: readonly string[];
   // the position in the catalog, from 1
   order: number;
 };

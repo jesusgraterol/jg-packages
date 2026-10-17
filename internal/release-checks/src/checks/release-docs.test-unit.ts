@@ -13,8 +13,6 @@ const README = [
   '',
   '## Usage',
   '',
-  '## Coming from sample-utils',
-  '',
   '## Documentation',
   '',
   '## License',
@@ -37,13 +35,21 @@ describe('checkReleaseDocs', () => {
     expect(checkReleaseDocs(MANIFEST, toFiles(README, CHANGELOG))).toStrictEqual([]);
   });
 
-  test('accepts a README without a Coming from section and with extra sections', () => {
-    const readme = README.replace('## Coming from sample-utils\n\n', '').replace(
-      '## Usage',
-      '## Usage\n\n## Browser support',
-    );
+  test('accepts a README with extra sections', () => {
+    const readme = README.replace('## Usage', '## Usage\n\n## Browser support');
 
     expect(checkReleaseDocs(MANIFEST, toFiles(readme, CHANGELOG))).toStrictEqual([]);
+  });
+
+  test('reports a Coming from section', () => {
+    const readme = README.replace(
+      '## Documentation',
+      '## Coming from sample-utils\n\n## Documentation',
+    );
+
+    expect(checkReleaseDocs(MANIFEST, toFiles(readme, CHANGELOG))).toStrictEqual([
+      'README.md has a `## Coming from sample-utils` section, but no package has a predecessor',
+    ]);
   });
 
   test('reports a changelog without a section for the version', () => {
@@ -67,7 +73,7 @@ describe('checkReleaseDocs', () => {
     expect(checkReleaseDocs(MANIFEST, toFiles(readme, CHANGELOG))).toStrictEqual([
       "README.md doesn't start with the title `# jg-sample`",
       'README.md has no summary between the title and the first section',
-      'README.md needs the sections `## Install`, `## Usage`, `## Coming from sample-utils`, `## Documentation`, `## License` once each, in that order',
+      'README.md needs the sections `## Install`, `## Usage`, `## Documentation`, `## License` once each, in that order',
     ]);
   });
 });

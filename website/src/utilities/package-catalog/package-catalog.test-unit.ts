@@ -22,7 +22,6 @@ const entry = (
   description,
   icon,
   runtimes: ['universal'],
-  previousPackages: [],
   order,
 });
 

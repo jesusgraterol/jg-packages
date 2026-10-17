@@ -98,27 +98,6 @@ Messages never include the URL or the body, and `url` and `meta.url` drop the qu
 
 A browser lets the page read only a few response headers from another origin. To read `Retry-After`, a `cf-ray`, or any custom header, the API must list them in `Access-Control-Expose-Headers`. Otherwise `headers.get()` returns `null`, and a `429` never retries, because its `Retry-After` can't be read.
 
-## Coming from `fetch-request-browser` and `fetch-request-node`
-
-| `fetch-request-browser` and `fetch-request-node`            | `jg-fetch`                                           |
-| ----------------------------------------------------------- | ---------------------------------------------------- |
-| `send(input, options)`                                      | `request(url, options)`                              |
-| `sendGET`, `sendPOST`, `sendPUT`, `sendPATCH`, `sendDELETE` | `request(url, { method })`                           |
-| `retryDelaySchedule` (browser)                              | `retryDelaysSeconds`                                 |
-| `skipStatusCodeValidation`                                  | read `error.status`, `error.body` and `meta` instead |
-| `IRequestMethod`                                            | `IHttpMethod`                                        |
-| `IResponseDataType`                                         | `IParseAs`                                           |
-| `IRequestResponse`                                          | `IRequestResult<T>`                                  |
-| thrown encoded errors                                       | the returned `error`, a `FetchException`             |
-
-`IRequestInput`, `IRequestOptions`, and `IOptions` are replaced by `string | URL` and the new `IRequestOptions<T>`.
-
-- One package works in browsers and Node.js.
-- `request` never throws: every failure is returned, with its `kind`.
-- Retry decisions match exact statuses, not substrings of the message, and only the methods in `retryMethods` retry, which leaves out `POST` by default.
-- Every call has a timeout, 15 seconds by default, and buffered bodies are capped at 10 MiB.
-- A redirect no longer logs a warning.
-
 ## Documentation
 
 The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-fetch/.

@@ -18,22 +18,12 @@ A fresh start: breaking changes in a minor version, once, because nothing depend
 
 ## 1.0.0
 
-The first release of `jg-utilities`, which replaces `web-utils-kit` 1.4.0.
+The first release.
 
 ### Added
 
-- `ERRORS`, the codes of every error the package throws.
-- `createTimestamp`, which formats a date, an epoch, or a date string as an ISO 8601 timestamp.
-- `encodeCursor` and `decodeCursor`, for opaque pagination cursors, with the `INVALID_CURSOR` code.
-- The `ONE_SECOND_IN_MILLISECONDS` to `ONE_YEAR_IN_MILLISECONDS` constants.
-
-### Changed
-
-- The random generators and `shuffleArray` draw from `crypto.getRandomValues` with rejection sampling.
-- `isEqual` compares primitives, `null`, and `undefined` with `Object.is` instead of throwing.
-- Errors are `Exception`s from `jg-exception`.
-
-### Removed
-
-- `createDeepClone`, replaced by the built-in `structuredClone`, and its `UNABLE_TO_CREATE_DEEP_CLONE` code.
-- `expectToThrowCode` and `expectToRejectCode`, which moved to `jg-exception/testing`.
+- Validations, such as `isEmailValid`, `isUUIDValid`, and `isEqual`, which compares any values.
+- Transformers, such as `toSlug`, `createTimestamp`, `prettifyNumber`, and `encodeCursor` and `decodeCursor` for opaque pagination cursors.
+- Generators, such as `generateUUID` and `generateRandomString`, and `shuffleArray`, which draw from `crypto.getRandomValues` with rejection sampling.
+- Collection, sorting, async, and environment utilities, such as `pickProps`, `sortRecords`, `retryAsyncFunction`, and `hasWindow`.
+- The `ONE_SECOND_IN_MILLISECONDS` to `ONE_YEAR_IN_MILLISECONDS` constants, and `ERRORS`, the codes of every error the package throws.

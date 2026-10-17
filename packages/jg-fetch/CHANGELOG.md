@@ -23,7 +23,7 @@
 
 ## 0.1.0
 
-The first release of `jg-fetch`, which replaces `fetch-request-browser` and `fetch-request-node` 1.1.0 with one package for browsers and Node.js.
+The first release: one fetch wrapper for browsers and Node.js.
 
 ### Added
 

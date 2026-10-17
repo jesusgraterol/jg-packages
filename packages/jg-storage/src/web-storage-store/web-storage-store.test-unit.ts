@@ -68,18 +68,18 @@ describe('createLocalStore', () => {
     expect(setItem).toHaveBeenCalledOnce();
   });
 
-  test('round-trips JSON values, primitives included, under the old keys', () => {
+  test('round-trips JSON values, primitives included, under jg-storage keys', () => {
     const storage = createFakeStorage();
     vi.stubGlobal('localStorage', storage);
     const store = createLocalStore<unknown>('settings');
     const values = [{ theme: 'dark' }, [1, 2], 'text', 0, 12.5, true, false, null];
     for (const value of values) {
       store.set(undefined, value);
-      expect(storage.getItem('settings')).toBe(JSON.stringify(value));
+      expect(storage.getItem('jg-storage:settings')).toBe(JSON.stringify(value));
       expect(store.get()).toStrictEqual(value);
     }
     store.set('draft', 'record');
-    expect(storage.getItem('settings_draft')).toBe('"record"');
+    expect(storage.getItem('jg-storage:settings:draft')).toBe('"record"');
     expect(store.get('draft')).toBe('record');
   });
 
@@ -97,13 +97,13 @@ describe('createLocalStore', () => {
     const storage = createFakeStorage();
     vi.stubGlobal('localStorage', storage);
     const store = createLocalStore('settings');
-    storage.setItem('settings', '{not json');
+    storage.setItem('jg-storage:settings', '{not json');
     expectToThrowCode(() => store.get(), ERRORS.FAILED_TO_PARSE_JSON);
-    storage.setItem('settings', '');
+    storage.setItem('jg-storage:settings', '');
     expect(store.get()).toBeUndefined();
   });
 
-  test('runs parse on every stored value get reads, and lets its errors propagate', () => {
+  test('runs the schema on every stored value get reads, and lets its errors propagate', () => {
     const storage = createFakeStorage();
     vi.stubGlobal('localStorage', storage);
     const parse = vi.fn((value: unknown) => {
@@ -119,7 +119,7 @@ describe('createLocalStore', () => {
     expect(store.get()).toStrictEqual({ theme: 'dark' });
     expect(store.get()).toStrictEqual({ theme: 'dark' });
     expect(parse).toHaveBeenCalledTimes(2);
-    storage.setItem('settings', '{"color":"red"}');
+    storage.setItem('jg-storage:settings', '{"color":"red"}');
     expect(() => store.get()).toThrow('invalid settings');
   });
 
@@ -218,7 +218,7 @@ describe('createSessionStore', () => {
     const store = createSessionStore<number>('wizard-step');
     expect(store.mechanism).toBe('sessionStorage');
     store.set(undefined, 2);
-    expect(session.getItem('wizard-step')).toBe('2');
+    expect(session.getItem('jg-storage:wizard-step')).toBe('2');
     expect(local.length).toBe(0);
     expect(store.get()).toBe(2);
     store.del();

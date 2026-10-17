@@ -57,7 +57,7 @@ describe('File Actions', () => {
     (await readdir(path)).filter((name) => name.endsWith('.tmp'));
 
   beforeAll(async () => {
-    root = await mkdtemp(join(tmpdir(), 'fs-utils-async-'));
+    root = await mkdtemp(join(tmpdir(), 'jg-fs-'));
   });
 
   beforeEach(async () => {

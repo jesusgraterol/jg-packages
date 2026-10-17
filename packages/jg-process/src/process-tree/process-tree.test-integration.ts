@@ -50,7 +50,7 @@ describe.skipIf(IS_WINDOWS)('startProcess & stopProcessTree', () => {
   };
 
   beforeAll(async () => {
-    directory = await mkdtemp(join(tmpdir(), 'node-process-utils-'));
+    directory = await mkdtemp(join(tmpdir(), 'jg-process-'));
   });
 
   afterEach(() => {

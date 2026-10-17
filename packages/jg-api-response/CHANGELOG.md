@@ -24,14 +24,10 @@ A fresh start: breaking changes in a minor version, once, because nothing depend
 
 ## 1.0.0
 
-The first release of `jg-api-response`, which replaces `api-response-utils` 1.1.1.
+The first release.
 
 ### Added
 
-- `IParsedAPIResponse<T>`, the envelope as it arrives after `JSON.parse`.
-
-### Changed
-
-- `isResponse` accepts parsed envelopes, including `error: null`, and narrows to `IParsedAPIResponse<T>`.
-- `buildResponse` turns any error that is passed, even a falsy one, into a message.
-- Error messages come from `jg-exception`, and the unused zod dependency is gone.
+- `buildResponse`, which builds the `{ success, data, error }` envelope, with any error that is passed, even a falsy one, as its message.
+- `isResponse`, which recognises an envelope, including one parsed from JSON with `error: null` or missing fields, and narrows it to `IParsedAPIResponse<T>`.
+- The `IAPIResponse<T>` and `IParsedAPIResponse<T>` types.

@@ -58,7 +58,6 @@
     "@jg-packages/tsconfig": "workspace:*",
     "@jg-packages/vitest-config": "workspace:*",
     "@types/node": "catalog:",
-    "browser-keyval-stores": "1.1.1",
     "eslint": "catalog:",
     "fake-indexeddb": "6.2.5",
     "typescript": "catalog:",

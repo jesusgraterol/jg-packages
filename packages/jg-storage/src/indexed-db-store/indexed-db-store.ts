@@ -1,9 +1,11 @@
-import { del, get, set } from 'idb-keyval';
+import { createStore, del, get, set, type UseStore } from 'idb-keyval';
 
 import { createMemoryStore } from '../memory-store/index.js';
 import {
+  INDEXED_DB_DATABASE,
   STORAGE_TEST_DATA,
-  buildDataKey,
+  assertStoreId,
+  buildIndexedDbKey,
   buildUnavailableException,
   parseValue,
   type IAsyncStore,
@@ -16,9 +18,17 @@ import {
 // so it's optional here
 const indexedDbGlobals: { indexedDB?: IDBFactory } = globalThis;
 
+// the jg-storage database's records object store, opened on first use, because opening it reads
+// the indexedDB global, which some environments lack
+let recordsStore: UseStore | undefined;
+const getRecordsStore = (): UseStore => {
+  recordsStore ??= createStore(INDEXED_DB_DATABASE.name, INDEXED_DB_DATABASE.storeName);
+  return recordsStore;
+};
+
 /**
- * Probes whether IndexedDB accepts writes, by writing and deleting a record in idb-keyval's
- * default database.
+ * Probes whether IndexedDB accepts writes, by writing and deleting a record in the jg-storage
+ * database. The probe's key is a string, and every data key an array, so they never collide.
  * @returns Whether IndexedDB is available.
  */
 const probeIndexedDb = async (): Promise<boolean> => {
@@ -26,8 +36,8 @@ const probeIndexedDb = async (): Promise<boolean> => {
     if (!indexedDbGlobals.indexedDB) {
       return false;
     }
-    await set(STORAGE_TEST_DATA.key, STORAGE_TEST_DATA.value);
-    await del(STORAGE_TEST_DATA.key);
+    await set(STORAGE_TEST_DATA.key, STORAGE_TEST_DATA.value, getRecordsStore());
+    await del(STORAGE_TEST_DATA.key, getRecordsStore());
     return true;
   } catch {
     return false;
@@ -35,21 +45,22 @@ const probeIndexedDb = async (): Promise<boolean> => {
 };
 
 /**
- * Creates a store over IndexedDB, which works in pages and workers alike. Records live in
- * idb-keyval's default database, `keyval-store`, under the same keys browser-keyval-stores used,
- * so their records read back unchanged. Values are stored with the structured clone algorithm,
- * so dates, maps, and binary data keep their types. IndexedDB is read and probed on the first
- * call, never when the store is created.
- * @param id The identifier every record key starts with.
+ * Creates a store over IndexedDB, which works in pages and workers alike. Records live in the
+ * `records` object store of the `jg-storage` database, under `[id]` for the root record and
+ * `[id, recordId]` for the others. Values are stored with the structured clone algorithm, so dates,
+ * maps, and binary data keep their types. IndexedDB is read and probed on the first call, never
+ * when the store is created.
+ * @param id The store's identifier: letters, digits, underscores, and hyphens.
  * @param options fallback: 'memory' keeps records in memory when IndexedDB is unavailable, and
  * schema validates every stored value get reads.
  * @returns The store.
  * @example
  * const devices = createIndexedDbStore<{ token: string }>('devices');
- * await devices.set('phone', { token: 'abc' }); // stored under the key 'devices_phone'
+ * await devices.set('phone', { token: 'abc' }); // stored under the key ['devices', 'phone']
  * await devices.get('phone'); // { token: 'abc' }
  * await devices.del('phone');
  * @throws
+ * - INVALID_STORE_ID: The store id must hold only letters, digits, underscores, and hyphens.
  * - STORE_UNAVAILABLE: set or del ran while IndexedDB is unavailable, without a fallback.
  *
  * Errors from IndexedDB itself, such as a value it can't clone, propagate.
@@ -58,6 +69,7 @@ export const createIndexedDbStore = <T>(
   id: string,
   options: IStoreOptions<T> = {},
 ): IAsyncStore<T> => {
+  assertStoreId(id);
   let compatibility: Promise<boolean> | undefined;
   let memory: ISyncStore<T> | undefined;
 
@@ -83,12 +95,12 @@ export const createIndexedDbStore = <T>(
       if (!(await isCompatible())) {
         return getMemory()?.get(recordId);
       }
-      const value: unknown = await get(buildDataKey(id, recordId));
+      const value: unknown = await get(buildIndexedDbKey(id, recordId), getRecordsStore());
       return value === undefined ? undefined : parseValue(value, options);
     },
     set: async (recordId: IRecordId, value: T) => {
       if (await isCompatible()) {
-        await set(buildDataKey(id, recordId), value);
+        await set(buildIndexedDbKey(id, recordId), value, getRecordsStore());
         return;
       }
       const fallback = getMemory();
@@ -99,7 +111,7 @@ export const createIndexedDbStore = <T>(
     },
     del: async (recordId?: IRecordId) => {
       if (await isCompatible()) {
-        await del(buildDataKey(id, recordId));
+        await del(buildIndexedDbKey(id, recordId), getRecordsStore());
         return;
       }
       const fallback = getMemory();

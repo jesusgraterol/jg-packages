@@ -80,7 +80,7 @@ describe.skipIf(IS_WINDOWS)('runProcess', () => {
   };
 
   beforeAll(async () => {
-    directory = await mkdtemp(join(tmpdir(), 'node-process-utils-'));
+    directory = await mkdtemp(join(tmpdir(), 'jg-process-'));
   });
 
   afterEach(() => {

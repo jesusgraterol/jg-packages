@@ -17,13 +17,10 @@ A fresh start: breaking changes in a minor version, once, because nothing depend
 
 ## 1.0.0
 
-The first release of `jg-process`, which replaces `node-process-utils` 1.0.1.
+The first release.
 
 ### Added
 
+- `runProcess`, which runs a command without a shell, with timeouts, output limits, and abort signals.
+- `startProcess(command)`, which takes the command, its arguments, and its options in one `IStartProcessCommand` object, and `stopProcessTree`.
 - `ERRORS`, the codes of every error the package throws.
-- `startProcess(command)`, which takes the command, its arguments, and its options in one `IStartProcessCommand` object.
-
-### Changed
-
-- Errors are `Exception`s from `jg-exception`.

@@ -1,5 +1,5 @@
 // constants
-export { STORAGE_TEST_DATA } from './constants.js';
+export { INDEXED_DB_DATABASE, STORAGE_TEST_DATA } from './constants.js';
 
 // errors
 export { ERRORS } from './errors.js';
@@ -16,7 +16,9 @@ export type {
 
 // utilities
 export {
+  assertStoreId,
   buildDataKey,
+  buildIndexedDbKey,
   buildUnavailableException,
   parseJSON,
   parseValue,

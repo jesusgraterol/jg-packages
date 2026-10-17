@@ -53,23 +53,6 @@ await retryAsyncFunction(() => fetchData(), [3, 5]); // retries after 3, then 5 
 await waitUntil(() => readStatus() === 'ready' || undefined, { timeoutSeconds: 30 });
 ```
 
-## Coming from `web-utils-kit`
-
-| `web-utils-kit`                           | `jg-utilities`                                                                 |
-| ----------------------------------------- | ------------------------------------------------------------------------------ |
-| `import … from 'web-utils-kit'`           | `import … from 'jg-utilities'`                                                 |
-| `createDeepClone(value)`                  | `structuredClone(value)`                                                       |
-| `expectToThrowCode`, `expectToRejectCode` | `import { expectToThrowCode, expectToRejectCode } from 'jg-exception/testing'` |
-| `ERRORS.UNABLE_TO_CREATE_DEEP_CLONE`      | removed, along with `createDeepClone`                                          |
-
-Changed behavior:
-
-- `generateRandomString`, `generateRandomInteger`, `generateRandomFloat`, and `shuffleArray` draw from `crypto.getRandomValues` with rejection sampling instead of `Math.random`, so every result is equally likely and random strings are fit for secrets. Their signatures are unchanged.
-- `isEqual` accepts any values: primitives, `null`, and `undefined` are compared with `Object.is`, and an object never equals a primitive. It used to throw `UNSUPPORTED_DATA_TYPE` for anything but objects and arrays.
-- Errors are `Exception`s from `jg-exception`, so their codes are always strings.
-
-New: `ERRORS`, `createTimestamp`, `encodeCursor` and `decodeCursor` (with the `INVALID_CURSOR` code), and the `ONE_SECOND_IN_MILLISECONDS` to `ONE_YEAR_IN_MILLISECONDS` constants.
-
 ## Documentation
 
 The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-utilities/.

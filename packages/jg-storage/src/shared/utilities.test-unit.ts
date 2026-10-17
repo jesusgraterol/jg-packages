@@ -2,19 +2,56 @@ import { expectToThrowCode } from 'jg-exception/testing';
 import { describe, expect, test, vi } from 'vitest';
 
 import { ERRORS } from './errors.js';
-import { buildDataKey, parseJSON, parseValue, stringifyJSON } from './utilities.js';
+import {
+  assertStoreId,
+  buildDataKey,
+  buildIndexedDbKey,
+  parseJSON,
+  parseValue,
+  stringifyJSON,
+} from './utilities.js';
 
 describe('buildDataKey', () => {
   test.each([
-    [
-      'testStoreID',
-      '16ceb975-4989-4c86-8b63-99294e86a13d',
-      'testStoreID_16ceb975-4989-4c86-8b63-99294e86a13d',
-    ],
-    ['testStoreID', 655643215461, 'testStoreID_655643215461'],
-    ['testStoreID', undefined, 'testStoreID'],
+    ['settings', undefined, 'jg-storage:settings'],
+    ['settings', 'draft', 'jg-storage:settings:draft'],
+    ['settings', 655643215461, 'jg-storage:settings:655643215461'],
+    ['settings', '', 'jg-storage:settings:'],
+    ['settings', 'a:b', 'jg-storage:settings:a:b'],
   ])('buildDataKey(%s, %s) -> %s', (storeId, recordId, expected) => {
     expect(buildDataKey(storeId, recordId)).toBe(expected);
+  });
+
+  test('gives 1 and "1" the same key', () => {
+    expect(buildDataKey('settings', 1)).toBe(buildDataKey('settings', '1'));
+  });
+});
+
+describe('buildIndexedDbKey', () => {
+  test.each([
+    ['devices', undefined, ['devices']],
+    ['devices', 'phone', ['devices', 'phone']],
+    ['devices', 1, ['devices', '1']],
+  ])('buildIndexedDbKey(%s, %s) -> %o', (storeId, recordId, expected) => {
+    expect(buildIndexedDbKey(storeId, recordId)).toStrictEqual(expected);
+  });
+});
+
+describe('assertStoreId', () => {
+  test.each(['settings', 'wizard-step', 'user_1', 'probe', 'A9'])('accepts %s', (storeId) => {
+    expect(() => assertStoreId(storeId)).not.toThrow();
+  });
+
+  test.each(['', 'a:b', 'a b', 'ä', 'a/b', 'jg-storage:x', ' settings'])(
+    'rejects %o with INVALID_STORE_ID',
+    (storeId) => {
+      expectToThrowCode(() => assertStoreId(storeId), ERRORS.INVALID_STORE_ID);
+    },
+  );
+
+  test('rejects ids that are not strings, from untyped callers', () => {
+    expectToThrowCode(() => assertStoreId(undefined as unknown as string), ERRORS.INVALID_STORE_ID);
+    expectToThrowCode(() => assertStoreId(1 as unknown as string), ERRORS.INVALID_STORE_ID);
   });
 });
 

@@ -223,14 +223,6 @@ npm install jg-<name>
 
 <The two or three things most people do with it, as short examples.>
 
-## Coming from `<old package>`
-
-| Old                               | New               |
-| --------------------------------- | ----------------- |
-| <every removed or renamed symbol> | <its replacement> |
-
-<Every changed behavior, one bullet each.>
-
 ## Documentation
 
 The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-<name>/.
@@ -240,7 +232,7 @@ The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-<
 [MIT](https://github.com/jesusgraterol/jg-packages/blob/main/packages/jg-<name>/LICENSE)
 ````
 
-Leave out "Coming from" for a package without a predecessor. Every link is absolute, because the README is also the package's npm page.
+Every link is absolute, because the README is also the package's npm page.
 
 ### `CHANGELOG.md`
 

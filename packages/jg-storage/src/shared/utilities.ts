@@ -1,16 +1,46 @@
 import { Exception } from 'jg-exception';
 
+import { KEY_NAMESPACE, STORE_ID_PATTERN } from './constants.js';
 import { ERRORS } from './errors.js';
 import type { IRecordId, IStoreMechanism, IStoreOptions } from './types.js';
 
 /**
- * Builds the key a record is stored under, the same one browser-keyval-stores used.
+ * Checks that a store id holds only letters, digits, underscores, and hyphens.
+ * @param storeId The store's identifier.
+ * @throws
+ * - INVALID_STORE_ID: The store id must hold only letters, digits, underscores, and hyphens.
+ */
+export const assertStoreId = (storeId: string): void => {
+  if (typeof storeId !== 'string' || !STORE_ID_PATTERN.test(storeId)) {
+    throw new Exception(
+      `The store id '${String(storeId)}' must hold only letters, digits, underscores, and hyphens.`,
+      { code: ERRORS.INVALID_STORE_ID },
+    );
+  }
+};
+
+/**
+ * Builds the web storage key a record is stored under: `jg-storage:<storeId>` for the root record,
+ * and `jg-storage:<storeId>:<recordId>` for the others. Record ids become strings, so `1` and `'1'`
+ * share a record.
  * @param storeId The store's identifier.
  * @param recordId The record's identifier, or undefined for the store's root record.
  * @returns The key.
  */
 export const buildDataKey = (storeId: string, recordId: IRecordId): string =>
-  recordId === undefined ? storeId : `${storeId}_${recordId}`;
+  recordId === undefined
+    ? `${KEY_NAMESPACE}:${storeId}`
+    : `${KEY_NAMESPACE}:${storeId}:${String(recordId)}`;
+
+/**
+ * Builds the IndexedDB key a record is stored under: `[storeId]` for the root record, and
+ * `[storeId, recordId]` for the others, with the record id as a string, as in web storage.
+ * @param storeId The store's identifier.
+ * @param recordId The record's identifier, or undefined for the store's root record.
+ * @returns The key.
+ */
+export const buildIndexedDbKey = (storeId: string, recordId: IRecordId): string[] =>
+  recordId === undefined ? [storeId] : [storeId, String(recordId)];
 
 /**
  * Validates a stored value with the store's schema, or returns it as it is without one.

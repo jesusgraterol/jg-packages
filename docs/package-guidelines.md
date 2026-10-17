@@ -96,7 +96,7 @@ export type ISchema<T> = {
 ## Naming
 
 - Exported types are `IPascalCase`, constants are `UPPER_SNAKE_CASE`, and functions and variables are `camelCase`.
-- New names case acronyms as words: `createIndexedDbStore`, `IHttpMethod`, `parseRetryAfterMs`. Names that carry over from the old packages keep their spelling, such as `writeJSONFile`.
+- New names case acronyms as words: `createIndexedDbStore`, `IHttpMethod`, `parseRetryAfterMs`. Names released in 1.0.0 keep their spelling, such as `writeJSONFile` and `isURLValid`.
 - Timing options are in seconds, and every option or field with a unit names it: `timeoutSeconds`, `retryDelaysSeconds`. Measured output uses the unit it's measured in, such as `durationMs`.
 
 ## Runtimes
@@ -119,9 +119,8 @@ A package with entries for different runtimes typechecks each entry's directory 
   1. the package name as the title, then a one-sentence summary
   2. `## Install`
   3. `## Usage`
-  4. `## Coming from <old package>`: a table of every removed or renamed symbol with its replacement, and every changed behavior. A package without a predecessor leaves it out.
-  5. `## Documentation`: a link to the package's page on the site
-  6. `## License`
+  4. `## Documentation`: a link to the package's page on the site
+  5. `## License`
 - README links are absolute URLs, because the README is also the package's npm page. There's no hand-written API reference: the site generates it from the TSDoc.
 
 ## Changelogs

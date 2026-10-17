@@ -18,17 +18,11 @@ A fresh start: breaking changes in a minor version, once, because nothing depend
 
 ## 1.0.0
 
-The first release of `jg-bignumber`, which replaces `bignumber-utils` 1.1.0.
+The first release.
 
 ### Added
 
-- `BigNumber`, the package's own bignumber.js constructor.
-- `ERRORS`, the codes of every error the package throws.
-
-### Changed
-
-- `decimalPlaces` applies to every rounding mode, including `*_CEIL` and `*_FLOOR`.
-- `NaN` and `±Infinity` are rejected as `INVALID_VALUE`.
-- `calculateWeightedEntry` returns 0 when the amounts add up to 0.
-- The package no longer changes the global bignumber.js configuration, and it uses bignumber.js 11.
-- Errors are `Exception`s from `jg-exception`.
+- `processValue`, `prettifyValue`, and `getBigNumber`, which round, format, and convert decimal values with bignumber.js 11, with `decimalPlaces` applied to every rounding mode.
+- Calculations, such as `calculateSum`, `calculateMean`, `calculatePercentageChange`, and `calculateWeightedEntry`, which returns 0 when the amounts add up to 0.
+- `BigNumber`, the package's own bignumber.js constructor, so the global bignumber.js configuration is left alone.
+- `ERRORS`, the codes of every error the package throws. `NaN` and `±Infinity` are rejected as `INVALID_VALUE`.

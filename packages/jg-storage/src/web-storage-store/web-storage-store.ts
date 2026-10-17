@@ -1,6 +1,7 @@
 import { createMemoryStore } from '../memory-store/index.js';
 import {
   STORAGE_TEST_DATA,
+  assertStoreId,
   buildDataKey,
   buildUnavailableException,
   parseJSON,
@@ -49,6 +50,7 @@ const createWebStorageStore = <T>(
   mechanism: IWebStorageMechanism,
   options: IStoreOptions<T>,
 ): ISyncStore<T> => {
+  assertStoreId(id);
   let isProbed = false;
   let storage: Storage | undefined;
   let memory: ISyncStore<T> | undefined;
@@ -113,18 +115,19 @@ const createWebStorageStore = <T>(
 
 /**
  * Creates a store over localStorage, whose records outlive the page. Values are stored as JSON,
- * under the same keys browser-keyval-stores used, so their records read back unchanged.
+ * under `jg-storage:<id>` for the root record and `jg-storage:<id>:<recordId>` for the others.
  * localStorage is read and probed on the first call, never when the store is created.
- * @param id The identifier every record key starts with.
+ * @param id The store's identifier: letters, digits, underscores, and hyphens.
  * @param options fallback: 'memory' keeps records in memory when localStorage is unavailable, and
  * schema validates every stored value get reads.
  * @returns The store.
  * @example
  * const settings = createLocalStore<{ theme: 'light' | 'dark' }>('settings');
- * settings.set(undefined, { theme: 'dark' }); // stored under the key 'settings'
+ * settings.set(undefined, { theme: 'dark' }); // stored under the key 'jg-storage:settings'
  * settings.get(); // { theme: 'dark' }
- * settings.set('draft', { theme: 'light' }); // stored under the key 'settings_draft'
+ * settings.set('draft', { theme: 'light' }); // stored under the key 'jg-storage:settings:draft'
  * @throws
+ * - INVALID_STORE_ID: The store id must hold only letters, digits, underscores, and hyphens.
  * - FAILED_TO_STRINGIFY_JSON: set received a value JSON can't represent.
  * - FAILED_TO_PARSE_JSON: get read a value that isn't JSON.
  * - STORE_UNAVAILABLE: set or del ran while localStorage is unavailable, without a fallback.
@@ -136,9 +139,9 @@ export const createLocalStore = <T>(id: string, options: IStoreOptions<T> = {}):
 
 /**
  * Creates a store over sessionStorage, whose records last as long as the browser tab. Values are
- * stored as JSON, under the same keys browser-keyval-stores used, so their records read back
- * unchanged. sessionStorage is read and probed on the first call, never when the store is created.
- * @param id The identifier every record key starts with.
+ * stored as JSON, under `jg-storage:<id>` for the root record and `jg-storage:<id>:<recordId>` for
+ * the others. sessionStorage is read and probed on the first call, never when the store is created.
+ * @param id The store's identifier: letters, digits, underscores, and hyphens.
  * @param options fallback: 'memory' keeps records in memory when sessionStorage is unavailable,
  * and schema validates every stored value get reads.
  * @returns The store.
@@ -148,6 +151,7 @@ export const createLocalStore = <T>(id: string, options: IStoreOptions<T> = {}):
  * wizard.get(); // 2
  * wizard.del();
  * @throws
+ * - INVALID_STORE_ID: The store id must hold only letters, digits, underscores, and hyphens.
  * - FAILED_TO_STRINGIFY_JSON: set received a value JSON can't represent.
  * - FAILED_TO_PARSE_JSON: get read a value that isn't JSON.
  * - STORE_UNAVAILABLE: set or del ran while sessionStorage is unavailable, without a fallback.

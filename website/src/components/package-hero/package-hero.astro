@@ -94,18 +94,6 @@ const sourceUrl = `${SITE_CONFIG.repositoryUrl}/tree/main/packages/${listedPacka
             API reference
           </Button>
         </div>
-        {listedPackage.previousPackages.length > 0 && (
-          <p class="text-sm text-muted">
-            Replaces{' '}
-            {listedPackage.previousPackages.map((name, index) => (
-              <>
-                {index > 0 && ' and '}
-                <code class="font-mono text-foreground">{name}</code>
-              </>
-            ))}
-            .
-          </p>
-        )}
       </div>
     </div>
   </div>
