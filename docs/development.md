@@ -19,7 +19,7 @@ How to set up the repository, run its checks, and change its dependencies.
 
    The install should finish without warnings about ignored build scripts.
 
-2. Install the browsers Playwright runs the tests in: Chromium, Firefox, and WebKit for the browser tests, and Chromium for the end-to-end tests:
+2. Install the browsers Playwright runs the browser and end-to-end tests in: Chromium, Firefox, and WebKit:
 
    ```bash
    pnpm --filter jg-sw exec playwright install chromium firefox webkit
@@ -75,7 +75,7 @@ Each package's `vitest.config.ts` calls `createVitestConfig()` from `@jg-package
 - **Coverage.** Every workspace with unit or integration tests has a `test:coverage` script, `vitest run --coverage` over those projects, and `pnpm check` runs it instead of `test:unit` and `test:integration`, so each suite runs once. It prints a V8 coverage summary of `src`, without tests, test utilities, and fixtures, and fails below the thresholds a package sets with `createVitestConfig({ coverage: { thresholds } })`. `pnpm release:verify` fails when a workspace has `test:unit` or `test:integration` but no `test:coverage`, because its tests would drop out of `pnpm check` unnoticed.
 - **Browser tests** run the same file in headless Chromium, Firefox, and WebKit through Vitest's Playwright provider, for behavior that needs a real browser, such as storage or the clipboard. They can't use Node.js modules.
 
-End-to-end tests run in Chromium with Playwright instead of Vitest, from the package's `playwright.config.ts`, against its built `dist`. Helpers they share, such as a fixture server, go in `.test-utils.ts` files, which never ship either.
+End-to-end tests run in Chromium, Firefox, and WebKit with Playwright instead of Vitest, from the package's `playwright.config.ts`, against its built `dist`. Helpers they share, such as a fixture server, go in `.test-utils.ts` files, which never ship either.
 
 When you add or change integration tests, run them three times with retries off, so a flaky test shows up. Do the same for end-to-end tests:
 

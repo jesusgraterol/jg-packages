@@ -7,6 +7,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { extractMessage } from 'jg-exception';
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
 
+import { FORCED_STOP_SECONDS } from '../process-tree/constants.js';
 import { DEFAULT_GRACE_PERIOD_SECONDS, ERRORS } from '../shared/index.js';
 
 import { runProcess } from './run-process.js';
@@ -224,7 +225,7 @@ describe.skipIf(IS_WINDOWS)('runProcess', () => {
     expect(isGone(pids.grandchild)).toBe(true);
   });
 
-  test('stops a child that ignores SIGTERM once the grace period has passed', async () => {
+  test('escalates a timeout from SIGTERM to SIGKILL after the grace period, for the whole tree', async () => {
     const pidFile = nextPidFile();
     const startedAt = Date.now();
     await expect(
@@ -237,9 +238,15 @@ describe.skipIf(IS_WINDOWS)('runProcess', () => {
         timeoutSeconds: 0.5,
       }),
     ).rejects.toMatchObject({ code: ERRORS.PROCESS_TIMED_OUT });
-    expect(Date.now() - startedAt).toBeGreaterThanOrEqual(DEFAULT_GRACE_PERIOD_SECONDS * 1000);
+    const elapsedMs = Date.now() - startedAt;
+    // SIGTERM at the timeout, SIGKILL once the grace period passed, then at most the forced stop
+    expect(elapsedMs).toBeGreaterThanOrEqual(500 + DEFAULT_GRACE_PERIOD_SECONDS * 1000);
+    expect(elapsedMs).toBeLessThan(
+      500 + (DEFAULT_GRACE_PERIOD_SECONDS + FORCED_STOP_SECONDS + 2) * 1000,
+    );
     const pids = await readPids(pidFile);
     expect(isGone(pids.child)).toBe(true);
+    expect(isGone(pids.grandchild)).toBe(true);
   }, 20_000);
 
   test('stops a grandchild that keeps stdout open after the child exits', async () => {
