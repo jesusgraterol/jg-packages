@@ -1,0 +1,23 @@
+{
+  "name": "jg-release-checks-sample",
+  "version": "1.0.0",
+  "description": "A sample package the release-checks integration tests pack and check.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=24"
+  }
+}

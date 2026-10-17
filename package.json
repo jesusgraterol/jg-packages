@@ -19,6 +19,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "turbo run lint",
+    "release:pack": "node internal/release-checks/src/cli.ts pack --out .release",
+    "release:verify": "node internal/release-checks/src/cli.ts verify",
     "test": "turbo run test:unit test:integration test:e2e",
     "typecheck": "turbo run typecheck"
   },

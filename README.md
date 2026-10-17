@@ -23,6 +23,8 @@ pnpm check
 | ------------------------------------------------- | ---------------------------------------------------------- |
 | set up the repo, run checks, and add dependencies | [`docs/development.md`](docs/development.md)               |
 | follow the conventions every package shares       | [`docs/package-guidelines.md`](docs/package-guidelines.md) |
+| create a package                                  | [`docs/creating-a-package.md`](docs/creating-a-package.md) |
+| release a version, or publish a new package       | [`docs/releasing.md`](docs/releasing.md)                   |
 
 ## Project blueprint
 
@@ -30,11 +32,15 @@ pnpm check
 .
 ├── .github/workflows/ci.yml  # the check and floor jobs
 ├── docs/
+│   ├── creating-a-package.md # every step from a package's name to its first release
 │   ├── development.md        # setup, commands, dependencies, branches, troubleshooting
-│   └── package-guidelines.md # conventions every package follows
+│   ├── package-guidelines.md # conventions every package follows
+│   └── releasing.md          # versions, the release checks, publishing, and tags
 ├── internal/                 # private workspace packages, never published
+│   ├── api-reference/        # extracts each package's API and TSDoc with TypeDoc
 │   ├── build-tools/          # clean-dist and copy-assets scripts used by package builds
 │   ├── eslint-config/        # createEslintConfig(), the shared ESLint flat configuration
+│   ├── release-checks/       # the verify, pack, publish, and tag release commands
 │   ├── tsconfig/             # base, library, browser and node TypeScript configurations
 │   └── vitest-config/        # createVitestConfig(), one Vitest project per test category
 ├── packages/                 # the published jg-* packages

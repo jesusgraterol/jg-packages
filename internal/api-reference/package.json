@@ -1,0 +1,35 @@
+{
+  "name": "@jg-packages/api-reference",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Extracts a package's public API and its TSDoc with TypeDoc, and finds undocumented exports.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "pnpm test:unit",
+    "test:unit": "vitest run --project unit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "typedoc": "0.28.20"
+  },
+  "peerDependencies": {
+    "typescript": "catalog:"
+  },
+  "devDependencies": {
+    "@jg-packages/eslint-config": "workspace:*",
+    "@jg-packages/tsconfig": "workspace:*",
+    "@jg-packages/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
