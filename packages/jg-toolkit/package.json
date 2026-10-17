@@ -1,5 +1,5 @@
 {
-  "name": "jg-utils",
+  "name": "jg-toolkit",
   "version": "1.0.0",
   "description": "Validations, transformers, generators, and collection, async, and environment utilities for browsers and Node.js.",
   "author": "Jesus Graterol",
@@ -27,9 +27,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jesusgraterol/jg-packages.git",
-    "directory": "packages/jg-utils"
+    "directory": "packages/jg-toolkit"
   },
-  "homepage": "https://jg-packages.jesusgraterol.dev/packages/jg-utils/",
+  "homepage": "https://jg-packages.jesusgraterol.dev/packages/jg-toolkit/",
   "bugs": {
     "url": "https://github.com/jesusgraterol/jg-packages/issues"
   },

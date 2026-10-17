@@ -32,7 +32,7 @@ export type IPublishDependencies = {
 /**
  * Checks whether npm has a version, or a version matching a range.
  * @param runNpm Runs npm.
- * @param spec A package spec, such as `jg-utils@1.0.0` or `jg-utils@^1.0.0`.
+ * @param spec A package spec, such as `jg-toolkit@1.0.0` or `jg-toolkit@^1.0.0`.
  * @returns A promise that resolves to whether a matching version exists.
  * @throws
  * - npm view {spec} failed: {stderr}

@@ -155,7 +155,7 @@ export const isEmailValid = (
  * @param maxLength? The maximum length of the slug. Defaults to 16.
  * @returns A boolean indicating whether the value is a valid slug.
  * @example
- * isSlugValid('jg-utils'); // true
+ * isSlugValid('jg-toolkit'); // true
  * isSlugValid('JG Utils'); // false
  */
 export const isSlugValid = (
