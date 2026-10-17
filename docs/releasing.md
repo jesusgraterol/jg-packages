@@ -85,20 +85,30 @@ CI only publishes packages that already exist on npm, because a package's truste
 
    Expected result: `.release/` holds the package's tarball and `release-manifest.json`.
 
-2. Sign in to npm and publish the tarball with two-factor authentication:
+2. Sign in through a temporary npm config, so the login you use for other work stays as it is, publish the new packages' tarballs in the order `release-manifest.json` lists, then sign out and remove the config:
 
    ```bash
-   npm login
+   mkdir -p /tmp/jg-npm-release && chmod 700 /tmp/jg-npm-release
+   export NPM_CONFIG_USERCONFIG=/tmp/jg-npm-release/.npmrc
+   npm login --auth-type=web
+   npm whoami
    npm publish .release/<file> --access public
+   npm logout
+   unset NPM_CONFIG_USERCONFIG
+   rm -rf /tmp/jg-npm-release
    ```
 
-   Publish in the order `release-manifest.json` lists, when there are several.
+   `npm whoami` should print the account that owns the packages. Each publish asks you to approve it in the browser, which offers to skip the prompt for the next 5 minutes. `npm logout` also revokes the temporary session's token.
 
-3. On the package's settings page on npmjs.com:
-   - add a trusted publisher: GitHub Actions, repository `jesusgraterol/jg-packages`, workflow `ci.yml`
+   npm can refuse a new name at this point as "too similar to existing package". Rename the package, following [Choose the name](creating-a-package.md#1-choose-the-name), merge the rename, and pack again.
+
+3. Approve the release on npmjs.com. A new package's first publish is staged: until you approve it, npm shows only a `0.0.0-stage` version, which `latest` points to. Expected result: `npm view <name> dist-tags` shows the new version as `latest`.
+
+4. On the package's settings page, `https://www.npmjs.com/package/<name>/access`:
+   - add a trusted publisher: GitHub Actions, user `jesusgraterol`, repository `jg-packages`, workflow `ci.yml`, no environment, and tick **npm publish** under Allowed actions, which new entries leave off
    - set publishing access to "Require two-factor authentication and disallow tokens"
 
-4. Once every version in `release-manifest.json` is on npm, tag them on the merged `main` and push the tags:
+5. Once every version in `release-manifest.json` is on npm, tag them on the merged `main` and push the tags:
 
    ```bash
    node internal/release-checks/src/cli.ts tag --from .release --published .release/release-manifest.json
@@ -106,9 +116,9 @@ CI only publishes packages that already exist on npm, because a package's truste
 
    Expected result: a `Pushed <name>-v<version>` line for each new version. It tags as `github-actions[bot]`, the same as CI, and skips the tags `origin` already has.
 
-5. Remove `.release/`.
+6. Remove `.release/`.
 
-From then on, CI publishes every new version of the package.
+From then on, CI publishes every new version of the package, with provenance. The first version, published from your machine, has none.
 
 ## Deprecating a version
 
@@ -121,7 +131,9 @@ npm deprecate jg-<name>@<version> "<what's wrong>, upgrade to <fixed version>"
 ## Troubleshooting
 
 - **The publish job failed halfway.** Re-run it. Versions already on npm are skipped, so it publishes only what's missing.
-- **`npm publish` fails with an OIDC or 404 error in CI.** The package's trusted publisher is missing or names another workflow. Check its settings on npmjs.com against step 3 of the first publish.
+- **`npm publish` fails in CI with a bare `404 Not Found - PUT`.** The package has no trusted publisher, or it names another repository or workflow. Check its settings against step 4 of the first publish.
+- **`npm publish` fails in CI with `403 OIDC permission denied`.** The trusted publisher exists, but **npm publish** isn't ticked under its Allowed actions.
+- **`npm publish` fails with "Package name too similar to existing package".** npm refuses names a prefix away from a popular package. Pick another name, following [Choose the name](creating-a-package.md#1-choose-the-name).
 - **A version already exists.** npm never accepts the same version twice. Bump the version and add its changelog section.
 - **"contents changed without a version bump".** A file that ships changed while the version stayed the same. Bump the version and add the changelog section. A sibling's release within the published range never triggers it, but a sibling's new major does, so release the dependent with the new range. Dev-dependency updates and script edits never trigger it either. A toolchain update that changes the built output does, so release patch versions of the packages it names.
 - **"depends on … which has no matching version on npm or in this release"**, from `release:verify`, or **"depends on … which has no version on npm"**, from the publish job. The package needs a sibling version that isn't published. Release the sibling first, or in the same pull request. When the sibling is new, publish it by hand first, as described above.
