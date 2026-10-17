@@ -1,11 +1,11 @@
-# jg-toolkit
+# jg-utilities
 
 Validations, transformers, generators, and collection, async, and environment utilities for browsers and Node.js.
 
 ## Install
 
 ```bash
-npm install jg-toolkit
+npm install jg-utilities
 ```
 
 ## Usage
@@ -13,7 +13,7 @@ npm install jg-toolkit
 Validate input before using it:
 
 ```ts
-import { isEmailValid, isIntegerValid, isStringValid } from 'jg-toolkit';
+import { isEmailValid, isIntegerValid, isStringValid } from 'jg-utilities';
 
 isStringValid(name, 1, 100); // a non-blank string of 1 to 100 characters
 isIntegerValid(page, 1); // an integer of at least 1
@@ -23,7 +23,7 @@ isEmailValid(email); // a valid address without a forbidden extension
 Format values for people:
 
 ```ts
-import { prettifyDate, prettifyFileSize, prettifyNumber, toSlug } from 'jg-toolkit';
+import { prettifyDate, prettifyFileSize, prettifyNumber, toSlug } from 'jg-utilities';
 
 prettifyNumber(1234567.891); // '1,234,567.89'
 prettifyFileSize(1536); // '1.50 kB'
@@ -34,7 +34,7 @@ toSlug('Héllo, World! 2026'); // 'hello-world-2026'
 Generate secure random values, IDs, and timestamps:
 
 ```ts
-import { createTimestamp, generateRandomString, generateUUID } from 'jg-toolkit';
+import { createTimestamp, generateRandomString, generateUUID } from 'jg-utilities';
 
 generateRandomString(16); // drawn with crypto.getRandomValues, fit for secrets
 generateUUID(7); // a time-ordered UUID
@@ -44,7 +44,7 @@ createTimestamp(); // '2026-10-17T08:30:00.000Z'
 Paginate with opaque cursors, and wait or retry with timing in seconds:
 
 ```ts
-import { decodeCursor, encodeCursor, retryAsyncFunction, waitUntil } from 'jg-toolkit';
+import { decodeCursor, encodeCursor, retryAsyncFunction, waitUntil } from 'jg-utilities';
 
 const cursor = encodeCursor({ createdAt: lastRow.createdAt, id: lastRow.id });
 const continuation = decodeCursor(cursorFromClient); // throws INVALID_CURSOR for anything else
@@ -55,9 +55,9 @@ await waitUntil(() => readStatus() === 'ready' || undefined, { timeoutSeconds: 3
 
 ## Coming from `web-utils-kit`
 
-| `web-utils-kit`                           | `jg-toolkit`                                                                   |
+| `web-utils-kit`                           | `jg-utilities`                                                                 |
 | ----------------------------------------- | ------------------------------------------------------------------------------ |
-| `import … from 'web-utils-kit'`           | `import … from 'jg-toolkit'`                                                   |
+| `import … from 'web-utils-kit'`           | `import … from 'jg-utilities'`                                                 |
 | `createDeepClone(value)`                  | `structuredClone(value)`                                                       |
 | `expectToThrowCode`, `expectToRejectCode` | `import { expectToThrowCode, expectToRejectCode } from 'jg-exception/testing'` |
 | `ERRORS.UNABLE_TO_CREATE_DEEP_CLONE`      | removed, along with `createDeepClone`                                          |
@@ -72,8 +72,8 @@ New: `ERRORS`, `createTimestamp`, `encodeCursor` and `decodeCursor` (with the `I
 
 ## Documentation
 
-The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-toolkit/.
+The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-utilities/.
 
 ## License
 
-[MIT](https://github.com/jesusgraterol/jg-packages/blob/main/packages/jg-toolkit/LICENSE)
+[MIT](https://github.com/jesusgraterol/jg-packages/blob/main/packages/jg-utilities/LICENSE)

@@ -2,7 +2,7 @@
 
 ## 1.0.0
 
-The first release of `jg-toolkit`, which replaces `web-utils-kit` 1.4.0.
+The first release of `jg-utilities`, which replaces `web-utils-kit` 1.4.0.
 
 ### Added
 

@@ -16,7 +16,7 @@ export type ITagDependencies = {
 /**
  * Builds a release tag's name, so each package keeps its own release history.
  * @param entry The published version.
- * @returns The tag name, such as `jg-toolkit-v1.2.0`.
+ * @returns The tag name, such as `jg-utilities-v1.2.0`.
  */
 export const toTagName = ({ name, version }: IPublishedEntry): string => `${name}-v${version}`;
 

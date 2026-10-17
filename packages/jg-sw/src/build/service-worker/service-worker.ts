@@ -1,6 +1,6 @@
 import { join, resolve } from 'node:path';
 import { writeTextFile } from 'jg-fs';
-import { generateRandomString } from 'jg-toolkit';
+import { generateRandomString } from 'jg-utilities';
 
 import { SERVICE_WORKER_FILE_NAME } from '../../shared/index.js';
 import {

@@ -60,7 +60,7 @@
   "dependencies": {
     "jg-exception": "workspace:^",
     "jg-fs": "workspace:^",
-    "jg-toolkit": "workspace:^",
+    "jg-utilities": "workspace:^",
     "zod": "^4.6.7"
   },
   "peerDependencies": {
