@@ -112,7 +112,13 @@ packages/jg-<name>/
 | `dependencies`    | Siblings use `workspace:^`. Other runtime dependencies use caret ranges, such as `^11.1.5`. A package that throws depends on `jg-exception`.                                                                                                                                            |
 | `devDependencies` | Internal packages use `workspace:*`; shared tools use `catalog:`.                                                                                                                                                                                                                       |
 
-Add `bin` for a command-line tool, and `peerDependencies` (with `peerDependenciesMeta` for optional ones) only for what the consumer must provide.
+Add `bin` for a command-line tool, and `peerDependencies` (with `peerDependenciesMeta` for optional ones) only for what the consumer must provide. A command must exit 0 on `--help`, because the release checks run it.
+
+When the package ships files the compiler doesn't emit, such as templates, copy them into `dist` at the end of `build`, with a glob relative to `src`:
+
+```json
+"build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/build-tools/src/copy-assets.ts 'build/templates/*.sw.js'"
+```
 
 ### TypeScript configurations
 
@@ -163,6 +169,15 @@ For a browser package, extend `@jg-packages/tsconfig/browser.json` instead of `n
 import { createEslintConfig } from '@jg-packages/eslint-config';
 
 export default createEslintConfig({ rootDirectory: import.meta.dirname });
+```
+
+A package that ships classic service worker scripts lists them in `serviceWorkerFiles`, so they're linted with the service worker globals instead of Node.js's:
+
+```js
+export default createEslintConfig({
+  rootDirectory: import.meta.dirname,
+  serviceWorkerFiles: ['src/build/templates/*.sw.js'],
+});
 ```
 
 `vitest.config.ts`, listing only the categories the package has:

@@ -44,14 +44,14 @@ A version with a prerelease part, such as `1.2.0-beta.0`, is published under the
 
 `pnpm release:verify` packs every package under `packages/` that isn't private, checks the tarballs, and removes them. `pnpm release:pack` runs the same checks and keeps the tarballs in `.release/`, with a `release-manifest.json` that lists each one in publish order with its SHA-256.
 
-| Check              | Fails when                                                                                                                                                                                                    |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| File list          | the tarball ships something outside `files` (besides `package.json`, `README.md`, `LICENSE`, and `CHANGELOG.md`), a test or `.tsbuildinfo` file, or is missing an `exports` or `bin` target                   |
-| Install and import | the tarballs can't be installed together into a temporary project, an installed manifest still has a `workspace:` or `catalog:` range, a subpath can't be imported by name, or a private path can be imported |
-| Packaging lint     | `publint --strict` reports a problem, or `attw --profile esm-only` finds a type resolution problem                                                                                                            |
-| Release docs       | `CHANGELOG.md` has no section for the version, or the README lacks its title, summary, or sections in order                                                                                                   |
-| TSDoc              | an export lacks a summary, or a function or class lacks an `@example`                                                                                                                                         |
-| Versions on npm    | only for packages already on npm: see below                                                                                                                                                                   |
+| Check              | Fails when                                                                                                                                                                                                                                         |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| File list          | the tarball ships something outside `files` (besides `package.json`, `README.md`, `LICENSE`, and `CHANGELOG.md`), a test or `.tsbuildinfo` file, or is missing an `exports` or `bin` target                                                        |
+| Install and import | the tarballs can't be installed together into a temporary project, an installed manifest still has a `workspace:` or `catalog:` range, a subpath can't be imported by name, a private path can be imported, or an installed command fails `--help` |
+| Packaging lint     | `publint --strict` reports a problem, or `attw --profile esm-only` finds a type resolution problem                                                                                                                                                 |
+| Release docs       | `CHANGELOG.md` has no section for the version, or the README lacks its title, summary, or sections in order                                                                                                                                        |
+| TSDoc              | an export lacks a summary, or a function or class lacks an `@example`                                                                                                                                                                              |
+| Versions on npm    | only for packages already on npm: see below                                                                                                                                                                                                        |
 
 For a package already on npm:
 

@@ -34,11 +34,17 @@ const writeFixturePackage = async (files: Record<string, string>): Promise<void>
 };
 
 // lints the fixture package with the factory's configuration and returns the rule ids it reported
-const lintRuleIds = async (patterns: string[]): Promise<Record<string, string[]>> => {
+const lintRuleIds = async (
+  patterns: string[],
+  serviceWorkerFiles?: string[],
+): Promise<Record<string, string[]>> => {
   const eslint = new ESLint({
     cwd: packageDirectory,
     overrideConfigFile: true,
-    overrideConfig: createEslintConfig({ rootDirectory: packageDirectory }),
+    overrideConfig: createEslintConfig({
+      rootDirectory: packageDirectory,
+      ...(serviceWorkerFiles === undefined ? {} : { serviceWorkerFiles }),
+    }),
   });
   const results = await eslint.lintFiles(patterns);
   return Object.fromEntries(
@@ -87,5 +93,29 @@ describe('createEslintConfig', () => {
     });
 
     expect(await lintRuleIds(['.'])).toStrictEqual({ 'eslint.config.js': [] });
+  });
+
+  test('lints service worker scripts with service worker globals and no Node.js globals', async () => {
+    await writeFixturePackage({
+      'src/worker.sw.js': [
+        "self.addEventListener('install', () => self.skipWaiting());",
+        "importScripts('extra.js');",
+        'caches.keys();',
+        'process.exit(1);',
+        '',
+      ].join('\n'),
+      'eslint.config.js': 'export default process.env.CI;\n',
+    });
+
+    expect(await lintRuleIds(['.'], ['src/**/*.sw.js'])).toStrictEqual({
+      'eslint.config.js': [],
+      // process
+      'src/worker.sw.js': ['no-undef'],
+    });
+    expect(await lintRuleIds(['.'])).toStrictEqual({
+      'eslint.config.js': [],
+      // self twice, importScripts, and caches
+      'src/worker.sw.js': ['no-undef', 'no-undef', 'no-undef', 'no-undef'],
+    });
   });
 });

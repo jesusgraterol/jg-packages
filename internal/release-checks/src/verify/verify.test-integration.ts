@@ -105,6 +105,20 @@ describe('packAndCheck', () => {
     expect(problems).toContain('is missing an `exports` or `bin` target: ./dist/index.d.ts');
   }, 120_000);
 
+  test('fails a command that exits with an error on --help', async () => {
+    await editFile(
+      'package.json',
+      '"main": "./dist/index.js",',
+      '"bin": {\n    "sample": "./dist/cli.js"\n  },\n  "main": "./dist/index.js",',
+    );
+    await writeFile(
+      join(packageDirectory, 'dist', 'cli.js'),
+      "#!/usr/bin/env node\nconsole.error('no help here');\nprocess.exitCode = 3;\n",
+    );
+
+    expect(await checkProblems()).toStrictEqual(['`sample --help` exits with 3: no help here']);
+  }, 120_000);
+
   test('fails when no package is publishable', async () => {
     await editFile('package.json', '"license": "MIT",', '"license": "MIT",\n  "private": true,');
 

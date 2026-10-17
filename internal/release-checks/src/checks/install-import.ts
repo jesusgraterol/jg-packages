@@ -55,8 +55,44 @@ const importSpecifier = (runCommand: IRunCommand, projectDirectory: string, spec
   });
 
 /**
+ * Lists the commands an installed package puts in `node_modules/.bin`.
+ * @param name The package name.
+ * @param bin The installed manifest's `bin`.
+ * @returns The command names. A `bin` string installs one command named after the package,
+ * without its scope.
+ */
+const getCommandNames = (name: string, bin: IPackageManifest['bin']): string[] =>
+  typeof bin === 'string' ? [name.slice(name.lastIndexOf('/') + 1)] : Object.keys(bin ?? {});
+
+/**
+ * Runs an installed command with `--help` from the consumer project, the way a consumer would.
+ * @param runCommand Runs a command.
+ * @param projectDirectory The consumer project.
+ * @param command The command's name.
+ * @returns A promise that resolves to the problem, or undefined when the command exits 0.
+ */
+const checkCommandHelp = async (
+  runCommand: IRunCommand,
+  projectDirectory: string,
+  command: string,
+): Promise<string | undefined> => {
+  try {
+    const result = await runCommand(
+      join(projectDirectory, 'node_modules', '.bin', command),
+      ['--help'],
+      { cwd: projectDirectory },
+    );
+    return result.exitCode === 0
+      ? undefined
+      : `\`${command} --help\` exits with ${result.exitCode}: ${result.stderr.trim().split('\n')[0] ?? ''}`;
+  } catch (error) {
+    return `\`${command} --help\` can't run: ${error instanceof Error ? error.message : String(error)}`;
+  }
+};
+
+/**
  * Checks one installed package: no unpublished range in its manifest, every JavaScript subpath
- * imports by name, and a private path is refused.
+ * imports by name, a private path is refused, and every command it installs runs `--help`.
  * @param runCommand Runs a command.
  * @param projectDirectory The consumer project.
  * @param packed The packed package.
@@ -99,12 +135,18 @@ const checkInstalledPackage = async (
       );
     }
   }
+  for (const command of getCommandNames(name, installed.bin)) {
+    const problem = await checkCommandHelp(runCommand, projectDirectory, command);
+    if (problem !== undefined) {
+      problems.push(problem);
+    }
+  }
   return problems;
 };
 
 /**
  * Check 2: installs every tarball together into a temporary ESM project, the way a consumer
- * would, then checks each package's installed manifest and imports.
+ * would, then checks each package's installed manifest, imports, and commands.
  * @param packages The packed packages.
  * @param runCommand Runs a command.
  * @returns A promise that resolves to each package's problems, by name.
