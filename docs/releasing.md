@@ -14,7 +14,7 @@ Packages follow semantic versioning:
 
 - Deprecate in a minor release before removing in a major one: mark the symbol `@deprecated` in its TSDoc and list it under `### Deprecated` in the changelog.
 - In `0.x` versions, a minor bump may break the API and a patch never does.
-- One exception happened once: the eight `1.x` packages released `1.1.0` with breaking changes, a fresh start while nothing depended on `1.0.x`, and each changelog says so. Every breaking change after it is a major version.
+- One exception happened once: the eight `1.x` packages released `1.1.0` with breaking changes, a fresh start while nothing depended on `1.0.x`, and each changelog says so. `jg-fetch` started over in `0.2.0` at the same time. Every version below `1.1.0`, and below `0.2.0` for `jg-fetch`, is deprecated, because it doesn't work with the others, as described in [Deprecating a version](#deprecating-a-version). Every breaking change after it is a major version.
 - A package needs a release only when the files it ships changed. `release:verify` decides that from the packed tarball, not from the diff, so a change to tests, `devDependencies`, or scripts needs no release.
 
 ## Releasing a version
@@ -134,10 +134,19 @@ Never unpublish. Deprecate a broken version and release a fix:
 npm deprecate jg-<name>@<version> "<what's wrong>, upgrade to <fixed version>"
 ```
 
+A range in quotes deprecates every version in it. After the `1.1.0` fresh start, each package's older versions were deprecated this way, `<0.2.0` for `jg-fetch`, all signed in through one temporary npm config, as in [the first publish](#the-first-publish-of-a-new-package):
+
+```bash
+npm deprecate jg-fs@"<1.1.0" "Superseded by 1.1.0. Earlier versions don't work with the current jg-* packages."
+```
+
+Expected result: `npm view jg-fs@1.0.1 deprecated` prints the message, and `npm view jg-fs@1.1.0 deprecated` prints nothing.
+
 ## Troubleshooting
 
 - **The publish job failed halfway.** Re-run the failed jobs. Versions already on npm are skipped, so it publishes only what's missing, and the tag job also tags what the failed run published.
 - **The publish job fails with "npm accepted … but didn't serve them within 15 minutes".** npm accepted the versions but is still releasing them. Once `npm view <name>@<version> version` prints each one, re-run the failed jobs to tag them.
+- **`release:pack` fails with "npm pack <name>@<version> failed" and a 404, right after a release.** npm lists a new version a few minutes before it serves its tarball. Wait until `curl -s -o /dev/null -w '%{http_code}' https://registry.npmjs.org/<name>/-/<name>-<version>.tgz` prints `200`, remove `.release/`, which the failed run left its tarballs in, and pack again.
 - **`npm publish` fails in CI with a bare `404 Not Found - PUT`.** The package has no trusted publisher, or it names another repository or workflow. Check its settings against step 4 of the first publish.
 - **`npm publish` fails in CI with `403 OIDC permission denied`.** The trusted publisher exists, but **npm publish** isn't ticked under its Allowed actions.
 - **`npm publish` fails with "Package name too similar to existing package".** npm refuses names a prefix away from a popular package. Pick another name, following [Choose the name](creating-a-package.md#1-choose-the-name).
