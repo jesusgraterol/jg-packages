@@ -74,13 +74,17 @@ const raceSignal = async <V>(value: V | PromiseLike<V>, signal: AbortSignal): Pr
   // once the signal aborted, the value is ignored, but its rejection must never go unhandled
   pending.catch(() => undefined);
   signal.throwIfAborted();
-  let onAbort = (): void => undefined;
+  // aborting this controller removes the abort listener once the race settles
+  const settled = new AbortController();
   const aborted = new Promise<never>((_resolve, reject) => {
-    onAbort = (): void => {
-      reject(new Error('The signal aborted.', { cause: signal.reason }));
-    };
+    signal.addEventListener(
+      'abort',
+      () => {
+        reject(new Error('The signal aborted.', { cause: signal.reason }));
+      },
+      { once: true, signal: settled.signal },
+    );
   });
-  signal.addEventListener('abort', onAbort, { once: true });
   // AbortSignal.timeout's timer doesn't keep Node.js running, and a promise waiting on nothing holds
   // no handle either, so without this the process could exit before the timeout fires
   const keepAlive = setInterval(() => undefined, MAX_TIMER_DELAY_MS);
@@ -88,7 +92,7 @@ const raceSignal = async <V>(value: V | PromiseLike<V>, signal: AbortSignal): Pr
     return await Promise.race([pending, aborted]);
   } finally {
     clearInterval(keepAlive);
-    signal.removeEventListener('abort', onAbort);
+    settled.abort();
   }
 };
 
@@ -237,19 +241,21 @@ export async function request<T>(
     attempts,
     durationMs: getDurationMs(),
   });
+  const toException = (
+    kind: IFetchErrorKind,
+    details: IFailureDetails,
+    meta: IResponseMeta,
+  ): FetchException =>
+    new FetchException(kind, {
+      ...details,
+      method,
+      url: meta.url,
+      attempts,
+      durationMs: meta.durationMs,
+    });
   const toResult = (kind: IFetchErrorKind, details: IFailureDetails): IRequestResult<T> => {
     const meta = getMeta();
-    return {
-      data: null,
-      error: new FetchException(kind, {
-        ...details,
-        method,
-        url: meta.url,
-        attempts,
-        durationMs: meta.durationMs,
-      }),
-      meta,
-    };
+    return { data: null, error: toException(kind, details, meta), meta };
   };
 
   let resolved: IResolvedOptions<T>;
@@ -311,10 +317,11 @@ export async function request<T>(
       return toResult(failure.kind, failure.details);
     }
     try {
-      const { error } = toResult(failure.kind, failure.details);
-      if (error !== null) {
-        resolved.onRetry?.({ attempt: attempts, error, delayMs: decision.delayMs });
-      }
+      resolved.onRetry?.({
+        attempt: attempts,
+        error: toException(failure.kind, failure.details, getMeta()),
+        delayMs: decision.delayMs,
+      });
     } catch {
       // onRetry is a notification; its failures never stop the call
     }

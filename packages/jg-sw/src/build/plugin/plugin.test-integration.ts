@@ -90,6 +90,17 @@ describe('serviceWorkerPlugin', () => {
     expect(precacheAssets[2]).toMatch(/^\/assets\/index-[\w-]+\.js$/);
   });
 
+  test('takes the config as an object instead of a file', async () => {
+    await build({
+      root,
+      configFile: false,
+      logLevel: 'silent',
+      plugins: [serviceWorkerPlugin({ config: CONFIG })],
+    });
+
+    expect(await pathExists(join(root, 'dist', 'sw.js'))).toBe(true);
+  });
+
   test('writes no worker for a server-side rendering build', async () => {
     await build({
       root,

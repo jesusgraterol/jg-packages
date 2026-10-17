@@ -310,4 +310,20 @@ describe('Sorting Utils', () => {
       ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
     );
   });
+
+  test('keeps the order of strings that differ only in case', () => {
+    expect(['b', 'A', 'a'].sort(sortPrimitives('asc'))).toStrictEqual(['A', 'a', 'b']);
+  });
+
+  test("reports a date value that can't be converted with the conversion's error as the cause", () => {
+    let thrown: unknown;
+    try {
+      [{ at: Symbol('at') }, { at: 1 }].sort(sortRecordsWithDateValue('at', 'asc'));
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toMatchObject({ code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES });
+    expect((thrown as { cause?: unknown }).cause).toBeInstanceOf(TypeError);
+  });
 });

@@ -157,4 +157,18 @@ describe('registerServiceWorker', () => {
     expect(consoleLog).toHaveBeenCalledWith('[jg-sw] Registered the service worker', registration);
     consoleLog.mockRestore();
   });
+
+  test('reports no worker once the registration has none left', async () => {
+    const registration = new FakeRegistration();
+    registration.active = new FakeServiceWorker('activated');
+    const { container } = stubBrowser(registration);
+    const { registerServiceWorker, getServiceWorkerSnapshot } = await loadRuntime();
+    await registerServiceWorker();
+
+    registration.active = null;
+    container.changeController(null);
+
+    expect(getServiceWorkerSnapshot().worker).toBeUndefined();
+    expect(getServiceWorkerSnapshot().registration).toBe(registration);
+  });
 });

@@ -93,6 +93,21 @@ export type ISchema<T> = {
 - The schema's own error, such as a `ZodError`, propagates unchanged from a function that throws. A function that never throws, such as jg-fetch's `request`, returns its own error code with the schema's error as `cause`.
 - Each package that takes a schema has a contract test that runs a real Zod schema, for the valid case and the failing one.
 
+## What to test
+
+Test by risk, not by a coverage percentage, with the [categories in `development.md`](development.md#tests):
+
+- **Every behavior a caller relies on,** with unit tests, and integration tests for anything that touches the filesystem, processes, or the network, against a temporary directory or a local server. Test the failure paths too: each `@throws` line is a behavior.
+- **Every error code,** asserted in a test, which release check 9 enforces: `expectToThrowCode(…, ERRORS.X)`, or `code: ERRORS.X` in a matcher.
+- **Examples,** which release check 8 typechecks, and runs for the packages without I/O. State results with `// =>` rather than repeating them in tests.
+- **Contracts between packages,** with the real packages on both sides, such as an envelope built by `jg-api-response` and read by `jg-fetch`, or a real Zod schema in every `schema` option.
+- **Types,** with `expectTypeOf` inside unit tests, only where generics or overloads decide a type, such as `request`'s data by `parseAs` and `schema`.
+- **Properties,** with `fast-check`, only where the inputs are endless, such as round trips, rounding, or a function that must never throw. Keep most generated cases valid enough to reach the interesting code, and assert that they do.
+- **Browser APIs,** with `.test-browser.ts` files, which run in Chromium, Firefox, and WebKit, because engines differ there. Everything else runs in Node.js.
+- **Coverage** finds what the tests missed. Every uncovered branch gets a test or is deleted as dead code, unless a test can't reach it, such as a Windows-only path or a fallback the type checker requires, and each published package's thresholds keep what was measured.
+
+Don't test what can't break on its own: re-exports, constants, types without generics, or behavior a contract test already proves.
+
 ## Naming
 
 - Exported types are `IPascalCase`, constants are `UPPER_SNAKE_CASE`, and functions and variables are `camelCase`.

@@ -124,4 +124,108 @@ describe('request', () => {
     expect(timedOut.error?.kind).toBe('TIMEOUT');
     expect(aborted.meta.attempts).toBe(1);
   });
+
+  test('reports an option it fails to read as INVALID_OPTIONS, with the error as the cause', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    const cause = new Error('a getter that throws');
+    const options = {
+      get method(): never {
+        throw cause;
+      },
+    };
+
+    const { error } = await request(URL_WITH_TOKEN, options);
+
+    expect(error).toMatchObject({ kind: 'INVALID_OPTIONS', cause });
+  });
+
+  test('reads a response without a body as empty bytes', async () => {
+    vi.stubGlobal('fetch', () => Promise.resolve(new Response(null, { status: 200 })));
+
+    const { data, error } = await request(URL_WITH_TOKEN, { parseAs: 'bytes' });
+
+    expect(error).toBeNull();
+    expect(data).toStrictEqual(new Uint8Array(0));
+  });
+
+  test('gives a blob the response content type, or none', async () => {
+    vi.stubGlobal('fetch', () =>
+      Promise.resolve(new Response(new Uint8Array([1, 2]), { status: 200 })),
+    );
+
+    const { data } = await request(URL_WITH_TOKEN, { parseAs: 'blob' });
+
+    expect(data?.type).toBe('');
+    expect(data?.size).toBe(2);
+  });
+
+  test('reports an error body that breaks while it streams as NETWORK_ERROR, not HTTP_ERROR', async () => {
+    const cause = new TypeError('The connection was reset.');
+    vi.stubGlobal('fetch', () =>
+      Promise.resolve(
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.error(cause);
+            },
+          }),
+          { status: 500 },
+        ),
+      ),
+    );
+
+    const { error } = await request(URL_WITH_TOKEN, { retryDelaysSeconds: [] });
+
+    expect(error).toMatchObject({ kind: 'NETWORK_ERROR', cause });
+  });
+
+  test('reports an unread error response whose body breaks as NETWORK_ERROR', async () => {
+    const cause = new TypeError('The connection was reset.');
+    vi.stubGlobal('fetch', () =>
+      Promise.resolve(
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.error(cause);
+            },
+          }),
+          { status: 500 },
+        ),
+      ),
+    );
+
+    const { error } = await request(URL_WITH_TOKEN, { parseAs: 'none', retryDelaysSeconds: [] });
+
+    expect(error).toMatchObject({ kind: 'NETWORK_ERROR', cause });
+  });
+
+  test('reports a successful response that is not JSON as PARSE_ERROR, with its text', async () => {
+    vi.stubGlobal('fetch', () => Promise.resolve(new Response('not json', { status: 200 })));
+
+    const { error } = await request(URL_WITH_TOKEN);
+
+    expect(error).toMatchObject({ kind: 'PARSE_ERROR', body: 'not json' });
+    expect(error?.cause).toBeInstanceOf(SyntaxError);
+  });
+
+  test('leaves out an unread error body too large to read, and reports the status', async () => {
+    vi.stubGlobal('fetch', () => Promise.resolve(new Response('x'.repeat(100), { status: 500 })));
+
+    const { error } = await request(URL_WITH_TOKEN, {
+      parseAs: 'none',
+      maxResponseBytes: 10,
+      retryDelaysSeconds: [],
+    });
+
+    expect(error).toMatchObject({ kind: 'HTTP_ERROR', status: 500, body: undefined });
+  });
+
+  test('reads a status without a body as empty bytes, without reading', async () => {
+    vi.stubGlobal('fetch', () => Promise.resolve(new Response(null, { status: 204 })));
+
+    const { data, error } = await request(URL_WITH_TOKEN, { parseAs: 'bytes' });
+
+    expect(error).toBeNull();
+    expect(data).toStrictEqual(new Uint8Array(0));
+  });
 });

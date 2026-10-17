@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import {
   parseThemePreference,
@@ -81,5 +81,27 @@ describe('readThemePreference and writeThemePreference', () => {
   test('survive blocked storage', () => {
     expect(readThemePreference('site-theme', BLOCKED_STORAGE)).toBe('system');
     expect(writeThemePreference('site-theme', 'light', BLOCKED_STORAGE)).toBe(false);
+  });
+});
+
+describe('the default storage', () => {
+  test('reads and writes localStorage when no storage is given', () => {
+    const items = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => items.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        items.set(key, value);
+      },
+    });
+
+    expect(writeThemePreference('site-theme', 'dark')).toBe(true);
+    expect(readThemePreference('site-theme')).toBe('dark');
+  });
+
+  test('falls back to the system theme, and reports the write failed, without localStorage', () => {
+    vi.stubGlobal('localStorage', undefined);
+
+    expect(readThemePreference('site-theme')).toBe('system');
+    expect(writeThemePreference('site-theme', 'dark')).toBe(false);
   });
 });

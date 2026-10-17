@@ -82,6 +82,23 @@ const invalid = [
 
 describe('Value Procesors', () => {
   describe('getBigNumber', () => {
+    test('keeps the error bignumber.js throws as the cause, when a consumer turns STRICT on', () => {
+      BigNumber.config({ STRICT: true });
+      try {
+        let thrown: unknown;
+        try {
+          getBigNumber('not a number');
+        } catch (error) {
+          thrown = error;
+        }
+
+        expect(thrown).toMatchObject({ code: ERRORS.INVALID_VALUE });
+        expect((thrown as { cause?: unknown }).cause).toBeInstanceOf(Error);
+      } finally {
+        BigNumber.config({ STRICT: false });
+      }
+    });
+
     test('can instantiate BigNumber with any valid value', () => {
       valid.forEach((value) => {
         const bn = getBigNumber(value);
@@ -635,6 +652,15 @@ describe('Percentage Calculations', () => {
   });
 
   describe('adjustByPercentage', () => {
+    test('leaves a value as it is at 0%', () => {
+      expect(adjustByPercentage(100, 0)).toBe(100);
+    });
+
+    test('takes a value down to 0, never below, at -100% or less', () => {
+      expect(adjustByPercentage(100, -100)).toBe(0);
+      expect(adjustByPercentage(100, -150)).toBe(0);
+    });
+
     test('throws if the value is less than or equal to 0', () => {
       expectToThrowCode(() => adjustByPercentage(0, 100), ERRORS.NEGATIVE_VALUE_NOT_ALLOWED);
       expectToThrowCode(() => adjustByPercentage(-10, 100), ERRORS.NEGATIVE_VALUE_NOT_ALLOWED);

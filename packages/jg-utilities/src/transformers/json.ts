@@ -136,9 +136,8 @@ export const pruneJSON = <T extends IJSONValue>(value: T): T | null => {
       if (item === undefined) return;
       const cleanedItem = pruneJSON(item);
 
+      // pruneJSON returns null for anything empty, so what's left has content
       if (cleanedItem === null || cleanedItem === undefined) return;
-      if (Array.isArray(cleanedItem) && cleanedItem.length === 0) return;
-      if (isObjectValid(cleanedItem, true) && !isObjectValid(cleanedItem)) return;
 
       cleanedObject[key] = cleanedItem;
     });
