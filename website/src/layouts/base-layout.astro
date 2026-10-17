@@ -35,9 +35,19 @@ const footerColumns = [
   {
     title: 'Repository',
     links: [
-      { href: SITE_CONFIG.repositoryUrl, label: 'Source', external: true },
-      { href: `${SITE_CONFIG.repositoryUrl}/releases`, label: 'Releases', external: true },
-      { href: `${SITE_CONFIG.repositoryUrl}/issues`, label: 'Issues', external: true },
+      { href: SITE_CONFIG.repositoryUrl, label: 'Source', external: true, externalIcon: false },
+      {
+        href: `${SITE_CONFIG.repositoryUrl}/releases`,
+        label: 'Releases',
+        external: true,
+        externalIcon: false,
+      },
+      {
+        href: `${SITE_CONFIG.repositoryUrl}/issues`,
+        label: 'Issues',
+        external: true,
+        externalIcon: false,
+      },
     ],
   },
 ];
@@ -81,6 +91,7 @@ const footerColumns = [
         <Button
           href={SITE_CONFIG.repositoryUrl}
           external
+          externalIcon={false}
           size="icon"
           variant="ghost"
           title="Source repository"
@@ -97,6 +108,7 @@ const footerColumns = [
         <Button
           href={SITE_CONFIG.repositoryUrl}
           external
+          externalIcon={false}
           size="sm"
           variant="outline"
         >

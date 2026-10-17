@@ -1,5 +1,5 @@
 ---
-import { ArrowUpRight } from '@lucide/astro';
+import NewTabMarker from '../new-tab-marker/new-tab-marker.astro';
 
 interface Props {
   class?: string | undefined;
@@ -8,10 +8,9 @@ interface Props {
   href: string;
 }
 
-// spoken after the link text, so screen reader users know the link opens a new tab
-const NEW_TAB_NOTICE = ' (opens in a new tab)';
-
 const { class: className, external = false, href } = Astro.props;
+// trimmed, so the line breaks around the text in the page's markup never space out the arrow
+const content = (await Astro.slots.render('default')).trim();
 ---
 
 <a
@@ -23,14 +22,6 @@ const { class: className, external = false, href } = Astro.props;
   target={external ? '_blank' : undefined}
   rel={external ? 'noreferrer' : undefined}
 >
-  <slot />
-  {external && (
-    <>
-      <ArrowUpRight
-        class="ml-0.5 inline-block size-3.5 shrink-0 align-[-0.1em]"
-        aria-hidden="true"
-      />
-      <span class="sr-only">{NEW_TAB_NOTICE}</span>
-    </>
-  )}
+  <Fragment set:html={content} />
+  {external && <NewTabMarker />}
 </a>

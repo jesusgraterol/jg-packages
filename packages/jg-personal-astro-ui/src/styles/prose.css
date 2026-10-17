@@ -40,7 +40,7 @@
     font-size: 1.0625rem;
   }
 
-  .jg-prose :is(p, ul, ol, blockquote, pre, table) {
+  .jg-prose :is(p, ul, ol, blockquote, table, .jg-code-window, pre:not(.jg-code-window pre)) {
     margin-top: 1.25rem;
   }
 
@@ -90,7 +90,8 @@
     overflow-wrap: anywhere;
   }
 
-  .jg-prose pre {
+  /* a code block outside a code window, when the site doesn't use codeWindowPlugin */
+  .jg-prose pre:not(.jg-code-window pre) {
     overflow-x: auto;
     border: 1px solid var(--jg-border);
     border-radius: calc(var(--jg-radius) * 1.25);

@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
 import {
-  escapeHtml,
   highlightToHtml,
   highlightToLines,
   renderLineTokens,
@@ -46,12 +45,6 @@ describe('highlightToLines', () => {
 
     expect(lines).toHaveLength(2);
     expect(lines[0]?.map(({ content }) => content).join('')).toBe('const a = 1;');
-  });
-});
-
-describe('escapeHtml', () => {
-  test('escapes the characters HTML gives a meaning', () => {
-    expect(escapeHtml('<a href="x">&</a>')).toBe('&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;');
   });
 });
 

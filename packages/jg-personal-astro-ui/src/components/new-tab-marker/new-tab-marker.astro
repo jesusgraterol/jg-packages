@@ -1,0 +1,24 @@
+---
+import { ArrowUpRight } from '@lucide/astro';
+
+interface Props {
+  // shows the arrow; the notice for screen readers always renders
+  icon?: boolean | undefined;
+}
+
+// spoken after an external link's text, so screen reader users know it opens a new tab
+const NEW_TAB_NOTICE = ' (opens in a new tab)';
+
+const { icon = true } = Astro.props;
+---
+
+{/* the viewBox crops Lucide's padding, so no blank space sits between the arrow and the next character */}
+{icon && (
+  <ArrowUpRight
+    class="ml-[0.15em] inline-block size-[0.6em] shrink-0"
+    viewBox="6 6 12 12"
+    stroke-width={1.75}
+    aria-hidden="true"
+  />
+)}
+<span class="sr-only">{NEW_TAB_NOTICE}</span>

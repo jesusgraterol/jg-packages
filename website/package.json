@@ -20,6 +20,7 @@
     "typecheck": "astro check"
   },
   "dependencies": {
+    "@astrojs/markdown-satteri": "0.4.4",
     "@astrojs/sitemap": "3.7.4",
     "@lucide/astro": "1.58.0",
     "@tailwindcss/vite": "catalog:",
