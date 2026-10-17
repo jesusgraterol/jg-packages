@@ -1,4 +1,4 @@
-import { delay } from 'jg-utils';
+import { delay } from 'jg-toolkit';
 
 import { FetchException } from '../fetch-exception/index.js';
 import type {

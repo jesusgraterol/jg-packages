@@ -4,7 +4,7 @@ Every step to add a new `jg-*` package, from choosing its name to its first rele
 
 ## 1. Choose the name
 
-Packages are named `jg-<name>`, with a short, lowercase `<name>`, such as `jg-utils`. Check that npm has neither the name nor the same name without punctuation, because npm rejects names that differ from an existing package only by `-`, `.`, or `_`:
+Packages are named `jg-<name>`, with a short, lowercase `<name>`, such as `jg-toolkit`. Check that npm has neither the name nor the same name without punctuation, because npm rejects names that differ from an existing package only by `-`, `.`, or `_`:
 
 ```bash
 npm view jg-<name> name
@@ -12,6 +12,12 @@ npm view jg<name> name
 ```
 
 Both should fail with `npm error code E404`.
+
+npm also rejects a name too close to a popular package, and only says so when you publish: `jg-utils` was refused for its likeness to `xe-utils`, and became `jg-toolkit`. Look up the names a letter or two away, such as `js-<name>` or `ng-<name>`, and avoid a name near one with thousands of weekly downloads:
+
+```bash
+curl -s https://api.npmjs.org/downloads/point/last-week/js-<name>
+```
 
 ## 2. Choose the runtime
 

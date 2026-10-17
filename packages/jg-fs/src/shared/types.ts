@@ -1,4 +1,4 @@
-import type { ISortDirection } from 'jg-utils';
+import type { ISortDirection } from 'jg-toolkit';
 
 // the details of a path, read with lstat, so a symbolic link is described rather than followed
 export type IPathElement = {
