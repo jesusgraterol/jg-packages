@@ -36,6 +36,10 @@ const CATEGORY_FILE_PATTERNS: Record<ITestCategory, string> = {
   browser: 'src/**/*.test-browser.ts',
 };
 
+// how long a test or hook may run before it fails: long enough that a CI runner several times
+// slower than a laptop never fails a working test, short enough to catch one that hangs
+const TEST_TIMEOUT_MS = 30_000;
+
 // the browsers the browser category runs every test in, headless
 export const BROWSER_INSTANCES = ['chromium', 'firefox', 'webkit'] as const;
 
@@ -60,7 +64,13 @@ const buildProject = (
   environment: ITestEnvironment,
 ): TestProjectInlineConfiguration => {
   const pattern = CATEGORY_FILE_PATTERNS[category];
-  const shared = { name: category, unstubEnvs: true, unstubGlobals: true };
+  const shared = {
+    name: category,
+    unstubEnvs: true,
+    unstubGlobals: true,
+    testTimeout: TEST_TIMEOUT_MS,
+    hookTimeout: TEST_TIMEOUT_MS,
+  };
   if (category === 'browser') {
     return {
       test: {
@@ -90,7 +100,8 @@ const buildProject = (
  * Creates a package's Vitest configuration with one project per test category it has, named after
  * the category, so `vitest run --project unit` runs exactly that category. Benchmarks live in a
  * `bench` project that runs no regular tests, and `vitest bench --run` runs them. The `browser`
- * project runs its tests in headless Chromium, Firefox, and WebKit. `vitest run --coverage`
+ * project runs its tests in headless Chromium, Firefox, and WebKit. Tests and hooks fail after 30
+ * seconds unless they set their own timeout. `vitest run --coverage`
  * measures the source with V8 and prints a summary, failing below the thresholds when there are
  * any.
  * @param options The categories the package has, the environment its tests run in, and its

@@ -247,7 +247,7 @@ describe.skipIf(IS_WINDOWS)('runProcess', () => {
     const pids = await readPids(pidFile);
     expect(isGone(pids.child)).toBe(true);
     expect(isGone(pids.grandchild)).toBe(true);
-  }, 20_000);
+  });
 
   test('stops a grandchild that keeps stdout open after the child exits', async () => {
     const pidFile = nextPidFile();
@@ -282,5 +282,5 @@ describe.skipIf(IS_WINDOWS)('runProcess', () => {
     const pids = await readPids(pidFile);
     // the grandchild left the group with setsid, so the test stops it itself
     expect(isGone(pids.grandchild)).toBe(false);
-  }, 20_000);
+  });
 });

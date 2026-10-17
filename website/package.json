@@ -12,7 +12,7 @@
     "build": "astro build",
     "dev": "astro dev",
     "generate": "node scripts/generate-api-reference.ts",
-    "lint": "eslint .",
+    "lint": "astro sync && eslint .",
     "preview": "astro preview",
     "test": "pnpm test:unit",
     "test:coverage": "vitest run --coverage --project unit",
