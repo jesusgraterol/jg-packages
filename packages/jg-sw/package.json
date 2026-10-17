@@ -6,6 +6,10 @@
   "license": "MIT",
   "type": "module",
   "exports": {
+    ".": {
+      "types": "./dist/runtime/index.d.ts",
+      "default": "./dist/runtime/index.js"
+    },
     "./build": {
       "types": "./dist/build/index.d.ts",
       "default": "./dist/build/index.js"
@@ -14,6 +18,8 @@
   "bin": {
     "jg-sw": "./dist/cli/cli.js"
   },
+  "main": "./dist/runtime/index.js",
+  "types": "./dist/runtime/index.d.ts",
   "files": [
     "dist",
     "CHANGELOG.md"
@@ -45,10 +51,11 @@
   "scripts": {
     "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/build-tools/src/copy-assets.ts 'build/templates/*.sw.js'",
     "lint": "eslint .",
-    "test": "pnpm test:unit && pnpm test:integration",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:e2e",
+    "test:e2e": "playwright test",
     "test:integration": "vitest run --project integration",
     "test:unit": "vitest run --project unit",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.browser.json"
   },
   "dependencies": {
     "jg-exception": "workspace:^",
@@ -68,6 +75,7 @@
     "@jg-packages/eslint-config": "workspace:*",
     "@jg-packages/tsconfig": "workspace:*",
     "@jg-packages/vitest-config": "workspace:*",
+    "@playwright/test": "1.64.1",
     "@types/node": "catalog:",
     "eslint": "catalog:",
     "typescript": "catalog:",

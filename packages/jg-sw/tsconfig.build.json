@@ -1,5 +1,8 @@
 {
-  "extends": ["@jg-packages/tsconfig/node.json", "@jg-packages/tsconfig/library.json"],
+  "extends": ["@jg-packages/tsconfig/browser.json", "@jg-packages/tsconfig/library.json"],
+  "compilerOptions": {
+    "types": ["node"]
+  },
   "include": ["src"],
   "exclude": ["src/**/*.test-*.ts"]
 }

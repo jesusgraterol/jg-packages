@@ -1,0 +1,8 @@
+{
+  "extends": "@jg-packages/tsconfig/node.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/build", "src/cli", "src/shared"],
+  "exclude": ["src/**/*.test-*.ts"]
+}

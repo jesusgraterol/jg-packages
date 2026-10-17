@@ -37,6 +37,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # the end-to-end tests run in Chromium, with the system libraries it needs
+      - name: Install Chromium
+        run: pnpm --filter jg-sw exec playwright install --with-deps chromium
+
       - name: Run every check
         run: pnpm check
 

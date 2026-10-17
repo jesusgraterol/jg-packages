@@ -23,6 +23,7 @@ You need Node.js 24 or later and pnpm, which switches itself to the version pinn
 
 ```bash
 pnpm install
+pnpm --filter jg-sw exec playwright install chromium
 pnpm check
 ```
 
