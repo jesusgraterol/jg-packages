@@ -7,29 +7,42 @@ How the site at [jg-packages.jesusgraterol.dev](https://jg-packages.jesusgratero
 Run the site's tasks through Turborepo, so the packages build and the API reference is generated first:
 
 ```bash
-pnpm turbo run dev --filter=@jg-packages/website
+pnpm dev
 pnpm turbo run build --filter=@jg-packages/website
 pnpm --filter @jg-packages/website preview
 ```
 
-`dev` serves the site at `http://localhost:4321/` and reloads when a README or a component changes. Running `astro dev` or `astro build` directly skips `generate`, and the package pages then fail with "has no API reference".
+`pnpm dev` runs the site's `dev` task through Turborepo. It serves the site at `http://localhost:4321/` and reloads when a README or a component changes. Running `astro dev` or `astro build` directly skips `generate`, and the package pages then fail with "has no API reference".
 
 ## Where the content comes from
 
 | Content            | Source                                                                                                                                                                                       |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The package list   | `PACKAGE_CATALOG` in `website/src/site.config.ts`: each package's title, description, icon, runtimes, and position. Names and versions come from `package.json`.                             |
+| The package list   | `PACKAGE_CATALOG` in `website/src/site.config.ts`: each package's title, description, `useWhen`, icon, runtimes, and position. Names and versions come from `package.json`.                  |
 | A package's README | `packages/<name>/README.md`, loaded by the `packageReadmes` collection without the title, the summary, and the Install, Documentation, and License sections, which the page shows elsewhere. |
 | The API reference  | `website/src/generated/api/<name>.json`, which `generate` writes from each package's TSDoc. It's ignored by Git.                                                                             |
 
-The build fails when the catalog and `packages/` disagree: every published package needs an entry except those in `UNLISTED_PACKAGES` (`jg-personal-astro-ui`), and orders and icons must be unique. `generate` fails when an export has no TSDoc.
+The build fails when the catalog and `packages/` disagree: every published package needs an entry except those in `UNLISTED_PACKAGES` (`jg-personal-astro-ui`), orders and icons must be unique, descriptions must be 70 to 160 characters, and each `useWhen` 40 to 140. `generate` fails when an export has no TSDoc.
 
 ## Pages
 
-| Path                | What it shows                                                                                     |
-| ------------------- | ------------------------------------------------------------------------------------------------- |
-| `/`                 | What the packages are, the catalog grouped by runtime, the conventions they share, and agent docs |
-| `/packages/<name>/` | The package's header and install command, its README, its API reference, and a table of contents  |
+| Path                | What it shows                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------ |
+| `/`                 | The home page, in the sections below                                                             |
+| `/packages/<name>/` | The package's header and install command, its README, its API reference, and a table of contents |
+| `/agents.md`        | The AGENTS.md block for every package, as Markdown                                               |
+
+The home page's sections, in order:
+
+1. **The hero:** what coding agents gain, the two actions "Add them to your AGENTS.md" and "Browse the packages", and every package as an icon tile, from `package-grid`.
+2. **The packages** (`#packages`), grouped by their first runtime.
+3. **Why agents use them** (`#why`): six benefits, which also cover how the packages are built.
+4. **Add them to your AGENTS.md** (`#agents-md`): the picker from `agents-block`. Every package starts checked; its script rebuilds the preview, a code window, as packages are checked and unchecked, and the window's copy button copies exactly the preview.
+5. **Docs for agents** (`#agents`): what agents can read, each linked once the site serves it.
+
+### The AGENTS.md block
+
+`src/utilities/agents-block` builds it, at build time for the page and `/agents.md`, and in the browser for the picker, so the two never differ. It opens with a `## JG Packages` heading and an instruction to prefer the packages and read each one's `API.md`, then lists one line per package: its name, its `useWhen`, and the URL of its page's Markdown.
 
 ## Package icons
 
@@ -55,4 +68,4 @@ To add one, confirm the icon exists as `website/node_modules/@lucide/astro/src/i
 
 ## Listing a new package
 
-Add its entry to `PACKAGE_CATALOG`, with a description of 70 to 160 characters, and a `"jg-<name>": "workspace:*"` devDependency to `website/package.json`, so the site rebuilds when the package changes. A package that should stay off the site goes in `UNLISTED_PACKAGES` instead.
+Add its entry to `PACKAGE_CATALOG`, with a description of 70 to 160 characters and a `useWhen` of 40 to 140, one sentence that starts "Use" and says when an agent should reach for the package, and a `"jg-<name>": "workspace:*"` devDependency to `website/package.json`, so the site rebuilds when the package changes. A package that should stay off the site goes in `UNLISTED_PACKAGES` instead.

@@ -21,6 +21,9 @@ export type IPackageCatalogEntry = {
   title: string;
   // the summary on cards and in search results, 70 to 160 characters
   description: string;
+  // one sentence saying when an agent should reach for the package, 40 to 140 characters, for the
+  // AGENTS.md block
+  useWhen: string;
   // the icon on the package's card and page, unique in the catalog
   icon: IPackageIcon;
   // the runtimes, the first of which groups the package on the home page

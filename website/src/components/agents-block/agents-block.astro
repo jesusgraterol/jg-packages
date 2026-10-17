@@ -1,0 +1,72 @@
+---
+import CodeBlock from 'jg-personal-astro-ui/code-block';
+
+import { SITE_CONFIG } from '../../site.config.ts';
+import { buildAgentsBlock, buildAgentsBlockLine } from '../../utilities/agents-block/index.ts';
+import type { IListedPackage } from '../../utilities/package-catalog/index.ts';
+
+interface Props {
+  packages: readonly IListedPackage[];
+}
+
+const { packages } = Astro.props;
+const lines = packages.map((listedPackage) => ({
+  ...listedPackage,
+  line: buildAgentsBlockLine(listedPackage, SITE_CONFIG.url),
+}));
+---
+
+{/* every package starts checked; the preview is what the copy button copies */}
+<div
+  class="mt-12 grid gap-8 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-10"
+  data-agents-block
+>
+  <fieldset class="min-w-0">
+    <legend class="text-sm font-semibold">The packages your project uses</legend>
+    <ul class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+      {lines.map(({ line, name, title }) => (
+        <li>
+          <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-surface px-3 py-2.5 transition-colors hover:border-border-strong">
+            <input
+              type="checkbox"
+              class="size-4 shrink-0 accent-accent"
+              checked
+              value={name}
+              data-line={line}
+            />
+            <span class="min-w-0">
+              <span class="block font-mono text-sm font-semibold wrap-anywhere">{name}</span>
+              <span class="block text-xs text-muted">{title}</span>
+            </span>
+          </label>
+        </li>
+      ))}
+    </ul>
+  </fieldset>
+  <CodeBlock
+    class="self-start [&_pre]:whitespace-pre-wrap [&_pre]:wrap-anywhere"
+    code={buildAgentsBlock(lines.map(({ line }) => line))}
+    lang="text"
+    title="AGENTS.md"
+  />
+</div>
+
+<script>
+  import { buildAgentsBlock } from '../../utilities/agents-block/index.ts';
+
+  // rebuilds each preview from its checked packages, in catalog order
+  document.querySelectorAll<HTMLElement>('[data-agents-block]').forEach((picker) => {
+    const code = picker.querySelector('pre code');
+    const checkboxes = [...picker.querySelectorAll<HTMLInputElement>('input[data-line]')];
+    const render = (): void => {
+      if (code) {
+        code.textContent = buildAgentsBlock(
+          checkboxes.filter(({ checked }) => checked).map(({ dataset }) => dataset['line'] ?? ''),
+        );
+      }
+    };
+    picker.addEventListener('change', render);
+    // browsers can restore the checkboxes on reload, so the preview follows them from the start
+    render();
+  });
+</script>

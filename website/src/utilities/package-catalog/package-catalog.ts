@@ -1,13 +1,13 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { DESCRIPTION_LENGTH, UNLISTED_PACKAGES } from './constants.ts';
+import { DESCRIPTION_LENGTH, UNLISTED_PACKAGES, USE_WHEN_LENGTH } from './constants.ts';
 import type { IListedPackage, IPackageCatalogEntry, IWorkspaceManifest } from './types.ts';
 
 /**
  * Lists the problems between the catalog and the workspace's packages: every published package
  * except the unlisted ones must have an entry, nothing else may, orders and icons must be unique,
- * and every description must be 70 to 160 characters.
+ * every description must be 70 to 160 characters, and every useWhen 40 to 140.
  * @param catalog The catalog, by package name.
  * @param manifests The manifests of the packages under packages/.
  * @returns One message per problem.
@@ -31,7 +31,7 @@ export const findCatalogProblems = (
   }
   const orders = new Map<number, string>();
   const icons = new Map<string, string>();
-  for (const [name, { description, icon, order }] of Object.entries(catalog)) {
+  for (const [name, { description, icon, order, useWhen }] of Object.entries(catalog)) {
     if (!listable.has(name)) {
       problems.push(`${name} is in the catalog but isn't a listed package under packages/`);
     }
@@ -54,6 +54,11 @@ export const findCatalogProblems = (
     ) {
       problems.push(
         `${name}'s description has ${description.length} characters, outside ${DESCRIPTION_LENGTH.min} to ${DESCRIPTION_LENGTH.max}`,
+      );
+    }
+    if (useWhen.length < USE_WHEN_LENGTH.min || useWhen.length > USE_WHEN_LENGTH.max) {
+      problems.push(
+        `${name}'s useWhen has ${useWhen.length} characters, outside ${USE_WHEN_LENGTH.min} to ${USE_WHEN_LENGTH.max}`,
       );
     }
   }

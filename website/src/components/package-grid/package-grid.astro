@@ -1,0 +1,37 @@
+---
+import type { IListedPackage } from '../../utilities/package-catalog/index.ts';
+import PackageIcon from '../package-icon/package-icon.astro';
+
+interface Props {
+  class?: string | undefined;
+  packages: readonly IListedPackage[];
+}
+
+const { class: className, packages } = Astro.props;
+---
+
+{/* the whole set at a glance: every listed package as an icon tile that opens its page */}
+<ul
+  class:list={['grid grid-cols-2 gap-2 sm:gap-3', className]}
+  aria-label="The packages"
+>
+  {packages.map((listedPackage) => (
+    <li>
+      <a
+        href={`/packages/${listedPackage.name}/`}
+        class="group flex h-full min-w-0 flex-col items-start gap-2.5 rounded-xl border border-border bg-surface p-3 shadow-surface transition-colors hover:border-border-strong sm:flex-row sm:items-center sm:gap-3"
+      >
+        <PackageIcon
+          icon={listedPackage.icon}
+          size="card"
+        />
+        <span class="min-w-0">
+          <span class="block font-mono text-sm font-semibold wrap-anywhere group-hover:underline">
+            {listedPackage.name}
+          </span>
+          <span class="block text-xs text-muted">{listedPackage.title}</span>
+        </span>
+      </a>
+    </li>
+  ))}
+</ul>

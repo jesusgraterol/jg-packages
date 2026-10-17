@@ -1,5 +1,5 @@
 // constants
-export { DESCRIPTION_LENGTH, RUNTIMES, UNLISTED_PACKAGES } from './constants.ts';
+export { DESCRIPTION_LENGTH, RUNTIMES, UNLISTED_PACKAGES, USE_WHEN_LENGTH } from './constants.ts';
 
 // types
 export type {

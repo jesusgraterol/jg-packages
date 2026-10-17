@@ -11,15 +11,19 @@ const ICONS: readonly IPackageIcon[] = ['braces', 'calculator', 'cloud-off', 'cp
  * Builds a catalog entry.
  * @param order The order.
  * @param description The description.
+ * @param icon The icon.
+ * @param useWhen When an agent should use the package.
  * @returns The entry.
  */
 const entry = (
   order: number,
   description = 'x'.repeat(80),
   icon: IPackageIcon = ICONS[order % ICONS.length] ?? 'cpu',
+  useWhen = 'y'.repeat(60),
 ): IPackageCatalogEntry => ({
   title: 'Example',
   description,
+  useWhen,
   icon,
   runtimes: ['universal'],
   order,
@@ -59,6 +63,27 @@ describe('findCatalogProblems', () => {
       'jg-c has the same icon as jg-a: calculator',
       "jg-personal-astro-ui is in the catalog but isn't a listed package under packages/",
       'jg-personal-astro-ui has the same icon as jg-a: calculator',
+    ]);
+  });
+});
+
+describe('findCatalogProblems and useWhen', () => {
+  test('accepts a useWhen of 40 to 140 characters, and reports any other length', () => {
+    const manifests = ['jg-a', 'jg-b', 'jg-c', 'jg-d'].map((name) => ({ name, version: '1.0.0' }));
+
+    expect(
+      findCatalogProblems(
+        {
+          'jg-a': entry(1, undefined, undefined, 'y'.repeat(40)),
+          'jg-b': entry(2, undefined, undefined, 'y'.repeat(140)),
+          'jg-c': entry(3, undefined, undefined, 'y'.repeat(39)),
+          'jg-d': entry(4, undefined, undefined, 'y'.repeat(141)),
+        },
+        manifests,
+      ),
+    ).toStrictEqual([
+      "jg-c's useWhen has 39 characters, outside 40 to 140",
+      "jg-d's useWhen has 141 characters, outside 40 to 140",
     ]);
   });
 });

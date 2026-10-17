@@ -24,3 +24,6 @@ export const RUNTIMES: Record<IRuntime, { label: string; heading: string; summar
 
 // the summary length search engines show in full
 export const DESCRIPTION_LENGTH = { min: 70, max: 160 } as const;
+
+// the length of a useWhen sentence, short enough to keep each AGENTS.md line readable
+export const USE_WHEN_LENGTH = { min: 40, max: 140 } as const;
