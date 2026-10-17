@@ -1,6 +1,6 @@
 {
   "name": "jg-storage",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Typed key-value stores over localStorage, sessionStorage, IndexedDB, and memory, for browsers and workers.",
   "author": "Jesus Graterol",
   "license": "MIT",

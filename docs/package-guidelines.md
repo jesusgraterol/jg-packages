@@ -37,7 +37,7 @@ Every package is ESM only (`"type": "module"`). `exports` declares every entry p
 | Stateless logic                            | named functions                     | `isEqual(a, b)`                                                 |
 | One piece of browser state per page        | module state behind named functions | `registerServiceWorker()`, `subscribeToServiceWorker(listener)` |
 | Something a consumer creates several times | a `create*` factory                 | `createLocalStore<T>('settings')`                               |
-| Something whose identity matters           | a class                             | `new Exception(message, code)`, `instanceof FetchException`     |
+| Something whose identity matters           | a class                             | `new Exception(message, { code })`, `instanceof FetchException` |
 
 Module state that a UI reads exposes `subscribe` and `getSnapshot` functions, so React's `useSyncExternalStore` can read it directly.
 
@@ -50,15 +50,22 @@ export const ERRORS = {
   INVALID_CURSOR: 'INVALID_CURSOR',
 } as const;
 
-throw new Exception(
-  `The cursor is not a valid encoded value: ${extractMessage(error)}`,
-  ERRORS.INVALID_CURSOR,
-);
+throw new Exception('The cursor is not a valid encoded value.', {
+  code: ERRORS.INVALID_CURSOR,
+  data: { cursor },
+  cause: error,
+});
 
 if (hasErrorCode(error, ERRORS.INVALID_CURSOR)) {
   // handle it
 }
 ```
+
+- **The constructor** is `new Exception(message, { code, data, cause })`. Nothing is encoded into the message: the code, the data, and the cause each have their own field.
+- **Codes are strings**, `UPPER_SNAKE_CASE`, and stable: callers branch on them, so changing one is a breaking change. `getErrorCode` and `hasErrorCode` read a string `code` property from any error, including Node.js system errors such as `ENOENT`.
+- **`UNKNOWN_ERROR_CODE`** (`'UNKNOWN_ERROR'`) is the code for an error that has none, such as when `jg-api-response` sends a plain `Error` to a client. Don't throw it yourself; give every error you throw its own code.
+- **`data` is an `IJSONValue`**, context that helps whoever handles or debugs the error, such as the id that wasn't found. A `BigInt`, a `Date`, or a class instance is a type error. Object values may be `undefined`, so `{ email }` works when `email` is optional. An interface has no index signature, so pass an interface-typed value as `{ ...value }`, or declare its type with `type`. Never put secrets in it: it reaches clients.
+- **`toJSON()`** returns `{ name, code, message, data }`, which `JSON.stringify` and `jg-api-response` use. Data that can't be serialized at runtime, such as an object that refers back to itself, becomes `null` there, as do `NaN` and `Infinity`, as in any JSON.
 
 The message is written where the error is thrown, so it can name the value that failed. Each function documents what it throws, one `- CODE: message` line per code, with the stable part of the message:
 

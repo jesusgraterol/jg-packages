@@ -50,7 +50,7 @@ export const splitArrayIntoBatches = <T>(items: T[], batchSize: number): Array<T
   if (!isIntegerValid(batchSize, 1)) {
     throw new Exception(
       `In order to split an array into batches, the batch size must be an integer greater than 0. Received: ${String(batchSize)}`,
-      ERRORS.INVALID_BATCH_SIZE,
+      { code: ERRORS.INVALID_BATCH_SIZE },
     );
   }
 

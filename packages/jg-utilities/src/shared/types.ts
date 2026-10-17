@@ -1,9 +1,5 @@
-/**
- * JSON Value
- * A value that can be represented in JSON format.
- */
-export type IJSONValue =
-  string | number | boolean | null | IJSONValue[] | { [key: string]: IJSONValue };
+// a value that survives a trip through JSON, shared with jg-exception
+export type { IJSONValue } from 'jg-exception';
 
 /**
  * UUID Version

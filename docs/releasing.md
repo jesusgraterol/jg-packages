@@ -14,6 +14,7 @@ Packages follow semantic versioning:
 
 - Deprecate in a minor release before removing in a major one: mark the symbol `@deprecated` in its TSDoc and list it under `### Deprecated` in the changelog.
 - In `0.x` versions, a minor bump may break the API and a patch never does.
+- One exception happened once: the eight `1.x` packages released `1.1.0` with breaking changes, a fresh start while nothing depended on `1.0.x`, and each changelog says so. Every breaking change after it is a major version.
 - A package needs a release only when the files it ships changed. `release:verify` decides that from the packed tarball, not from the diff, so a change to tests, `devDependencies`, or scripts needs no release.
 
 ## Releasing a version

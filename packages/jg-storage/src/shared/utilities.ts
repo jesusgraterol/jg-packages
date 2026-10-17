@@ -32,12 +32,10 @@ export const parseJSON = (data: string): unknown => {
   try {
     return JSON.parse(data);
   } catch (error) {
-    throw new Exception(
-      `Unable to parse the JSON data: ${extractMessage(error)}`,
-      ERRORS.FAILED_TO_PARSE_JSON,
-      undefined,
-      { cause: error },
-    );
+    throw new Exception(`Unable to parse the JSON data: ${extractMessage(error)}`, {
+      code: ERRORS.FAILED_TO_PARSE_JSON,
+      cause: error,
+    });
   }
 };
 
@@ -53,19 +51,17 @@ export const stringifyJSON = (value: unknown): string => {
   try {
     data = JSON.stringify(value);
   } catch (error) {
-    throw new Exception(
-      `Unable to stringify the JSON data: ${extractMessage(error)}`,
-      ERRORS.FAILED_TO_STRINGIFY_JSON,
-      undefined,
-      { cause: error },
-    );
+    throw new Exception(`Unable to stringify the JSON data: ${extractMessage(error)}`, {
+      code: ERRORS.FAILED_TO_STRINGIFY_JSON,
+      cause: error,
+    });
   }
 
   // JSON.stringify returns undefined for undefined, functions, and symbols
   if (data === undefined) {
     throw new Exception(
       `Unable to stringify the JSON data: JSON can't represent a value of type '${typeof value}'.`,
-      ERRORS.FAILED_TO_STRINGIFY_JSON,
+      { code: ERRORS.FAILED_TO_STRINGIFY_JSON },
     );
   }
   return data;
@@ -80,5 +76,5 @@ export const stringifyJSON = (value: unknown): string => {
 export const buildUnavailableException = (storeId: string, mechanism: IStoreMechanism): Exception =>
   new Exception(
     `The store '${storeId}' can't write because ${mechanism} is unavailable. Pass { fallback: 'memory' } to keep its records in memory instead.`,
-    ERRORS.STORE_UNAVAILABLE,
+    { code: ERRORS.STORE_UNAVAILABLE },
   );

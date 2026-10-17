@@ -147,10 +147,9 @@ const waitFor = async (condition: () => boolean, milliseconds: number): Promise<
  * @returns The error.
  */
 const treeSurvived = (pid: number): Exception =>
-  new Exception(
-    `The process tree of pid ${pid} is still running after it was force-stopped.`,
-    ERRORS.PROCESS_TREE_SURVIVED,
-  );
+  new Exception(`The process tree of pid ${pid} is still running after it was force-stopped.`, {
+    code: ERRORS.PROCESS_TREE_SURVIVED,
+  });
 
 /**
  * Stops a process tree on POSIX: SIGTERM to the group, then SIGKILL after the grace period.

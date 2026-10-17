@@ -1,7 +1,7 @@
 {
   "name": "jg-exception",
-  "version": "1.0.1",
-  "description": "Extract, encode, and decode error messages and codes from errors of any shape, with a coded Exception class.",
+  "version": "1.1.0",
+  "description": "Coded errors for every jg package: an Exception with a stable code and JSON data, message extraction, code checks, and test assertions.",
   "author": "Jesus Graterol",
   "license": "MIT",
   "type": "module",

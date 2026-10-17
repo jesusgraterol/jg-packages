@@ -47,7 +47,7 @@ export const parseServiceWorkerConfig = (value: unknown, source?: string): IServ
     .join('; ');
   throw new Exception(
     `The service worker config${source === undefined ? '' : ` '${source}'`} is invalid: ${issues}`,
-    getConfigErrorCode(result.error.issues),
+    { code: getConfigErrorCode(result.error.issues) },
   );
 };
 
@@ -66,7 +66,7 @@ export const parseEnvironment = (
   }
   throw new Exception(
     `The environment '${environment}' isn't supported. Use development, staging, or production.`,
-    ERRORS.INVALID_ENVIRONMENT,
+    { code: ERRORS.INVALID_ENVIRONMENT },
   );
 };
 
@@ -89,7 +89,7 @@ export const readServiceWorkerConfig = async (path: string): Promise<IServiceWor
   } catch (error) {
     throw new Exception(
       `Unable to read the service worker config '${path}': ${extractMessage(error)}`,
-      ERRORS.FAILED_TO_READ_BASE_CONFIG,
+      { code: ERRORS.FAILED_TO_READ_BASE_CONFIG },
     );
   }
   return parseServiceWorkerConfig(value, path);

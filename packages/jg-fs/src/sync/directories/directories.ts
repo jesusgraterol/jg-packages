@@ -45,10 +45,9 @@ export const deleteDirectory = (path: string): void =>
 export const createDirectory = (path: string, deleteIfExists?: boolean): void => {
   const element = getPathElement(path);
   if (element !== null && !element.isDirectory) {
-    throw new Exception(
-      `The path '${path}' already exists and is not a directory.`,
-      ERRORS.DIRECTORY_ALREADY_EXISTS,
-    );
+    throw new Exception(`The path '${path}' already exists and is not a directory.`, {
+      code: ERRORS.DIRECTORY_ALREADY_EXISTS,
+    });
   }
   if (element !== null && deleteIfExists) {
     deleteDirectory(path);
@@ -86,10 +85,9 @@ export const copyDirectory = (srcPath: string, destPath: string): void => {
 export const createDirectorySymLink = (target: string, path: string): void => {
   const element = getPathElement(target);
   if (element === null) {
-    throw new Exception(
-      `The target directory '${target}' does not exist.`,
-      ERRORS.NON_EXISTENT_DIRECTORY,
-    );
+    throw new Exception(`The target directory '${target}' does not exist.`, {
+      code: ERRORS.NON_EXISTENT_DIRECTORY,
+    });
   }
   if (!element.isDirectory) {
     throw notADirectory(target);

@@ -217,7 +217,9 @@ export const deleteFile = async (path: string): Promise<void> => {
 export const createFileSymLink = async (target: string, path: string): Promise<void> => {
   const element = await getPathElement(target);
   if (element === null) {
-    throw new Exception(`The target file '${target}' does not exist.`, ERRORS.NON_EXISTENT_FILE);
+    throw new Exception(`The target file '${target}' does not exist.`, {
+      code: ERRORS.NON_EXISTENT_FILE,
+    });
   }
   if (!element.isFile) {
     throw notAFile(target);

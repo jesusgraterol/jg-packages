@@ -134,7 +134,7 @@ export const toMS = (str: ITimeString): number => {
     default:
       throw new Exception(
         `The unit provided to the toMS function is invalid: "${unit}". Received: ${str}`,
-        ERRORS.INVALID_TIME_STRING,
+        { code: ERRORS.INVALID_TIME_STRING },
       );
   }
 };

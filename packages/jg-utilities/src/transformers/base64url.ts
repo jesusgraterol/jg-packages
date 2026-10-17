@@ -33,10 +33,9 @@ export const encodeBase64Url = (value: string): string =>
  */
 export const decodeBase64Url = (value: string): string => {
   if (typeof value !== 'string' || !BASE64URL_PATTERN.test(value) || value.length % 4 === 1) {
-    throw new Exception(
-      'The value is not a valid base64url string without padding.',
-      ERRORS.INVALID_BASE64URL,
-    );
+    throw new Exception('The value is not a valid base64url string without padding.', {
+      code: ERRORS.INVALID_BASE64URL,
+    });
   }
   const base64 = value.replaceAll('-', '+').replaceAll('_', '/');
   const binary = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='));
@@ -48,14 +47,13 @@ export const decodeBase64Url = (value: string): string => {
   } catch (error) {
     throw new Exception(
       `The base64url value doesn't encode valid UTF-8: ${extractMessage(error)}`,
-      ERRORS.INVALID_BASE64URL,
+      { code: ERRORS.INVALID_BASE64URL },
     );
   }
   if (encodeBase64Url(decoded) !== value) {
-    throw new Exception(
-      'The value is not the canonical base64url encoding of its result.',
-      ERRORS.INVALID_BASE64URL,
-    );
+    throw new Exception('The value is not the canonical base64url encoding of its result.', {
+      code: ERRORS.INVALID_BASE64URL,
+    });
   }
   return decoded;
 };

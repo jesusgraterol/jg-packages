@@ -51,10 +51,9 @@ export const deleteDirectory = (path: string): Promise<void> =>
 export const createDirectory = async (path: string, deleteIfExists?: boolean): Promise<void> => {
   const element = await getPathElement(path);
   if (element !== null && !element.isDirectory) {
-    throw new Exception(
-      `The path '${path}' already exists and is not a directory.`,
-      ERRORS.DIRECTORY_ALREADY_EXISTS,
-    );
+    throw new Exception(`The path '${path}' already exists and is not a directory.`, {
+      code: ERRORS.DIRECTORY_ALREADY_EXISTS,
+    });
   }
   if (element !== null && deleteIfExists) {
     await deleteDirectory(path);
@@ -94,10 +93,9 @@ export const copyDirectory = async (srcPath: string, destPath: string): Promise<
 export const createDirectorySymLink = async (target: string, path: string): Promise<void> => {
   const element = await getPathElement(target);
   if (element === null) {
-    throw new Exception(
-      `The target directory '${target}' does not exist.`,
-      ERRORS.NON_EXISTENT_DIRECTORY,
-    );
+    throw new Exception(`The target directory '${target}' does not exist.`, {
+      code: ERRORS.NON_EXISTENT_DIRECTORY,
+    });
   }
   if (!element.isDirectory) {
     throw notADirectory(target);

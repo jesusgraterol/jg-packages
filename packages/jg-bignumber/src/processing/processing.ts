@@ -1,4 +1,4 @@
-import { Exception, extractMessage, isEncodedError } from 'jg-exception';
+import { Exception, extractMessage, isException } from 'jg-exception';
 
 import { BigNumber } from '../shared/constants.js';
 import { ERRORS } from '../shared/errors.js';
@@ -91,13 +91,12 @@ export const prettifyValue = (
       type: 'bignumber',
     }).toFormat(buildFormatConfig(config.format));
   } catch (error) {
-    if (isEncodedError(error)) {
+    if (isException(error)) {
       throw error;
     }
-    throw new Exception(
-      `The value could not be formatted: ${extractMessage(error)}`,
-      ERRORS.INVALID_BIGNUMBER_FORMAT,
-    );
+    throw new Exception(`The value could not be formatted: ${extractMessage(error)}`, {
+      code: ERRORS.INVALID_BIGNUMBER_FORMAT,
+    });
   }
 };
 

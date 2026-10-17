@@ -1,5 +1,4 @@
 import { extractMessage, getErrorCode, hasErrorCode } from '../error-handler/index.js';
-import type { IErrorCode } from '../shared/types.js';
 
 /**
  * Verifies that an unknown error carries the expected code.
@@ -9,7 +8,7 @@ import type { IErrorCode } from '../shared/types.js';
  * - Expected error code "{expectedCode}", but the error did not include a code.
  * - Expected error code "{expectedCode}", but received error code "{actualCode}".
  */
-const assertErrorCode = (error: unknown, expectedCode: IErrorCode): void => {
+const assertErrorCode = (error: unknown, expectedCode: string): void => {
   if (hasErrorCode(error, expectedCode)) {
     return;
   }
@@ -17,8 +16,8 @@ const assertErrorCode = (error: unknown, expectedCode: IErrorCode): void => {
   const actualCode = getErrorCode(error);
   const message =
     actualCode === null
-      ? `Expected error code "${String(expectedCode)}", but the error did not include a code.`
-      : `Expected error code "${String(expectedCode)}", but received error code "${actualCode}".`;
+      ? `Expected error code "${expectedCode}", but the error did not include a code.`
+      : `Expected error code "${expectedCode}", but received error code "${actualCode}".`;
 
   throw new Error(message, { cause: error });
 };
@@ -58,7 +57,7 @@ const assertErrorMessage = (error: unknown, expectedMessage?: string): void => {
  */
 export const assertError = (
   error: unknown,
-  expectedCode: IErrorCode,
+  expectedCode: string,
   expectedMessage?: string,
 ): void => {
   assertErrorCode(error, expectedCode);

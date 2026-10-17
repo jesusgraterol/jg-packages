@@ -1,5 +1,5 @@
 import { isResponse } from 'jg-api-response';
-import { DEFAULT_CODE, decodeError } from 'jg-exception';
+import type { IJSONValue } from 'jg-exception';
 
 import { parseRetryAfterMs } from '../retry-after/index.js';
 import { ERROR_MESSAGES, type IHttpMethod } from '../shared/index.js';
@@ -108,8 +108,8 @@ const validate = <T>(data: unknown, options: IResolvedOptions<T>, details: IFail
 
 /**
  * Reads a jg-api-response envelope. An empty successful body gives undefined, a failed status or
- * success: false gives API_ERROR with the API's decoded code, and the data goes through the
- * schema.
+ * success: false gives API_ERROR with the envelope error's code, message, and data, and the data
+ * goes through the schema.
  * @param text The body's text.
  * @param response The response.
  * @param options The resolved options.
@@ -148,15 +148,14 @@ const readEnvelope = <T>(
       : httpError(response.status, details, parsed);
   }
   if (!response.ok || !parsed.success) {
-    const decoded =
-      typeof parsed.error === 'string' && parsed.error !== ''
-        ? decodeError(parsed.error)
-        : undefined;
+    const { error } = parsed;
     throw new RequestFailure('API_ERROR', {
       ...details,
-      message: decoded?.message || ERROR_MESSAGES.API_ERROR,
-      code: decoded === undefined || decoded.code === DEFAULT_CODE ? 'API_ERROR' : decoded.code,
-      data: parsed.data,
+      message: error?.message || ERROR_MESSAGES.API_ERROR,
+      code: error?.code || 'API_ERROR',
+      // isResponse leaves the error's data unchecked, but it came from JSON.parse, which only
+      // produces JSON values. Services may leave it out, so a missing one becomes null
+      data: (error?.data as IJSONValue | undefined) ?? null,
       body: parsed,
     });
   }

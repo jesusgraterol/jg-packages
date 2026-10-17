@@ -1,7 +1,7 @@
 {
   "name": "jg-api-response",
-  "version": "1.0.1",
-  "description": "Build and recognise the { success, data, error } envelope that services exchange over HTTP.",
+  "version": "1.1.0",
+  "description": "Build and recognise the { success, data, error } envelope that services exchange over HTTP, with errors carried as a code, a message, and data.",
   "author": "Jesus Graterol",
   "license": "MIT",
   "type": "module",

@@ -13,7 +13,7 @@ export const validateDecimalPlaces = (decimalPlaces: number): void => {
   if (typeof decimalPlaces !== 'number' || decimalPlaces < 0 || decimalPlaces > 100) {
     throw new Exception(
       `The decimalPlaces '${String(decimalPlaces)}' must be a number ranging 0 - 100.`,
-      ERRORS.INVALID_DECIMAL_PLACES,
+      { code: ERRORS.INVALID_DECIMAL_PLACES },
     );
   }
 };
@@ -29,7 +29,7 @@ export const validateValuesArray = (values: unknown, calculationName: string): v
   if (!Array.isArray(values)) {
     throw new Exception(
       `Cannot run ${calculationName} on an invalid sequence of BigNumber Values. Received: ${String(values)}`,
-      ERRORS.INVALID_VALUES_ARRAY,
+      { code: ERRORS.INVALID_VALUES_ARRAY },
     );
   }
 };
@@ -43,14 +43,12 @@ export const validateValuesArray = (values: unknown, calculationName: string): v
  */
 export const validatePositiveValue = (value: IBigNumber, allowZero?: boolean): void => {
   if (allowZero && value.isLessThan(0)) {
-    throw new Exception(
-      `The value '${value.toString()}' must be greater than or equal to 0.`,
-      ERRORS.NEGATIVE_VALUE_NOT_ALLOWED,
-    );
+    throw new Exception(`The value '${value.toString()}' must be greater than or equal to 0.`, {
+      code: ERRORS.NEGATIVE_VALUE_NOT_ALLOWED,
+    });
   } else if (!allowZero && value.isLessThanOrEqualTo(0)) {
-    throw new Exception(
-      `The value '${value.toString()}' must be greater than 0.`,
-      ERRORS.NEGATIVE_VALUE_NOT_ALLOWED,
-    );
+    throw new Exception(`The value '${value.toString()}' must be greater than 0.`, {
+      code: ERRORS.NEGATIVE_VALUE_NOT_ALLOWED,
+    });
   }
 };

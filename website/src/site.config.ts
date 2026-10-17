@@ -10,7 +10,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
   'jg-exception': {
     title: 'Errors',
     description:
-      'Errors with codes for every package: a message and code wire format, an Exception class, decoding helpers, and test assertions.',
+      'Coded errors for every jg package: an Exception with a stable code and JSON data, message extraction, code checks, and test assertions.',
     icon: 'octagon-alert',
     runtimes: ['universal'],
     previousPackages: ['error-message-utils'],
@@ -19,7 +19,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
   'jg-api-response': {
     title: 'API envelopes',
     description:
-      'Build and recognise the success, data, and error envelope that services exchange over HTTP, including envelopes parsed from JSON.',
+      'Build and recognise the success, data, and error envelope that services exchange over HTTP, with errors as a code, a message, and data.',
     icon: 'braces',
     runtimes: ['universal'],
     previousPackages: ['api-response-utils'],

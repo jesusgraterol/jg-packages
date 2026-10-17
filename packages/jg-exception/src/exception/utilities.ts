@@ -7,7 +7,7 @@ import type { Exception } from './exception.js';
  * @param value The value to check.
  * @returns Whether the value is an Exception.
  * @example
- * isException(new Exception('Not found', 'NOT_FOUND')); // true
+ * isException(new Exception('Not found', { code: 'NOT_FOUND' })); // true
  * isException(new Error('Not found')); // false
  */
 export const isException = (value: unknown): value is Exception =>

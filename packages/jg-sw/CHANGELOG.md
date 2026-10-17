@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0
+
+A fresh start: breaking changes in a minor version, once, because nothing depended on 1.0.x.
+
+### Added
+
+- `ERRORS.SW_REGISTRATION_FAILED`, the code of a registration the browser rejects, with the browser's error as `cause`.
+
+### Changed
+
+- `registrationError` in the snapshot is an `Exception` with one of the `ERRORS` codes, instead of an encoded message.
+- Errors are `Exception`s from `jg-exception` 1.1.0: the code, the data, and the cause each have their own field, nothing is encoded into the message, and `toJSON()` and `toString()` follow `jg-exception`.
+
 ## 1.0.1
 
 ### Changed

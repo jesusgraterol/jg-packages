@@ -50,7 +50,7 @@ export const buildInvalidValueException = (value: unknown, error?: unknown): Exc
     error === undefined
       ? `BigNumber could not be instantiated with: ${describeValue(value)}.`
       : `BigNumber could not be instantiated with: ${describeValue(value)} | ${extractMessage(error)}`,
-    ERRORS.INVALID_VALUE,
+    { code: ERRORS.INVALID_VALUE },
   );
 
 /**
@@ -81,10 +81,9 @@ export const buildConfig = (config?: Partial<IConfig>): IConfig => {
 const getRoundingMode = (name: IBigNumberRoundingModeName): IBigNumberRoundingMode => {
   const roundingMode = Object.hasOwn(ROUNDING_MODES, name) ? ROUNDING_MODES[name] : undefined;
   if (roundingMode === undefined) {
-    throw new Exception(
-      `The rounding mode '${describeValue(name)}' is invalid.`,
-      ERRORS.INVALID_ROUNDING_MODE,
-    );
+    throw new Exception(`The rounding mode '${describeValue(name)}' is invalid.`, {
+      code: ERRORS.INVALID_ROUNDING_MODE,
+    });
   }
   return roundingMode;
 };
@@ -126,7 +125,7 @@ export const convertBigNumberToType = <T extends IType>(
     default:
       throw new Exception(
         `The buildType '${describeValue(type)}' is invalid for '${value.toString()}'.`,
-        ERRORS.INVALID_TYPE,
+        { code: ERRORS.INVALID_TYPE },
       );
   }
 };

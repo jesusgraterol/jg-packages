@@ -81,7 +81,7 @@ export const installApp = async (): Promise<IInstallationPromptOutcome> => {
   if (!canPrompt(prompt)) {
     throw new Exception(
       "The app can't be installed because the browser didn't offer the installation prompt.",
-      ERRORS.NO_APP_INSTALLER,
+      { code: ERRORS.NO_APP_INSTALLER },
     );
   }
   try {
@@ -92,9 +92,8 @@ export const installApp = async (): Promise<IInstallationPromptOutcome> => {
     updateSnapshot({}, { canInstall: false, promptOutcome: choice.outcome });
     return choice.outcome;
   } catch (error) {
-    throw new Exception(
-      `The installation prompt failed: ${extractMessage(error)}`,
-      ERRORS.UNKNOWN_INSTALLATION_PROMPT_ERROR,
-    );
+    throw new Exception(`The installation prompt failed: ${extractMessage(error)}`, {
+      code: ERRORS.UNKNOWN_INSTALLATION_PROMPT_ERROR,
+    });
   }
 };

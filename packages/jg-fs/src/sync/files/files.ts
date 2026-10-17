@@ -209,7 +209,9 @@ export const deleteFile = (path: string): void => {
 export const createFileSymLink = (target: string, path: string): void => {
   const element = getPathElement(target);
   if (element === null) {
-    throw new Exception(`The target file '${target}' does not exist.`, ERRORS.NON_EXISTENT_FILE);
+    throw new Exception(`The target file '${target}' does not exist.`, {
+      code: ERRORS.NON_EXISTENT_FILE,
+    });
   }
   if (!element.isFile) {
     throw notAFile(target);

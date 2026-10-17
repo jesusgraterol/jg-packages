@@ -1,4 +1,4 @@
-import { Exception } from 'jg-exception';
+import { Exception, type IJSONValue } from 'jg-exception';
 
 import { ERROR_MESSAGES, type IFetchErrorKind, type IHttpMethod } from '../shared/index.js';
 
@@ -7,11 +7,11 @@ export type IFetchExceptionInit = {
   // the message. Defaults to the kind's message
   message?: string;
 
-  // the code. Defaults to the kind; an API error's decoded code takes its place
+  // the code. Defaults to the kind; an API error's own code takes its place
   code?: string;
 
-  // the envelope's data, for an API error
-  data?: unknown;
+  // the envelope error's data, for an API error
+  data?: IJSONValue;
 
   // the HTTP status, or null when no response arrived
   status?: number | null;
@@ -43,13 +43,14 @@ export type IFetchExceptionInit = {
 
 /**
  * The error request returns when a call fails, never throws. kind says what failed, one of the
- * ERRORS codes, and code is the API's own code when the envelope carried one, or the kind
- * otherwise. Its message never includes the URL or the body.
+ * ERRORS codes. For an API error, code, message, and data are the envelope error's; otherwise code
+ * is the kind. Its message never includes the URL or the body.
  * @example
  * const { data, error } = await request<IUser>('/users/1', { baseUrl, parseAs: 'envelope' });
  * if (error) {
  *   error.kind; // 'API_ERROR'
- *   error.code; // 'USER_NOT_FOUND', decoded from the envelope's error
+ *   error.code; // 'USER_NOT_FOUND', the envelope error's code
+ *   error.data; // { id: 1 }, the envelope error's data
  *   error.status; // 404
  * }
  */
@@ -82,12 +83,11 @@ export class FetchException extends Exception {
   readonly durationMs: number;
 
   constructor(kind: IFetchErrorKind, init: IFetchExceptionInit) {
-    super(
-      init.message ?? ERROR_MESSAGES[kind],
-      init.code ?? kind,
-      init.data,
-      init.cause === undefined ? undefined : { cause: init.cause },
-    );
+    super(init.message ?? ERROR_MESSAGES[kind], {
+      code: init.code ?? kind,
+      data: init.data,
+      cause: init.cause,
+    });
     this.name = 'FetchException';
     this.kind = kind;
     this.status = init.status ?? null;

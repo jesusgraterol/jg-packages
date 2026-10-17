@@ -82,7 +82,7 @@ export const sortPrimitives =
     }
     throw new Exception(
       `Unable to sort list of primitive values as they can only be string | number | bigint and must not be mixed. Received: ${typeof firstValue}, ${typeof secondValue}`,
-      ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+      { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
     );
   };
 
@@ -112,7 +112,7 @@ export const sortRecords =
     }
     throw new Exception(
       `Unable to sort list of record values as they can only be string | number | bigint and must not be mixed. Received: ${typeof firstValue}, ${typeof secondValue}`,
-      ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+      { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
     );
   };
 
@@ -142,7 +142,7 @@ export const sortRecordsWithBigIntString =
 
       throw new Exception(
         `Unable to sort list of record values as they can only be stringified bigints. Received: ${typeof firstValue}, ${typeof secondValue}`,
-        ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+        { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
       );
     } catch (error) {
       if (error instanceof Exception && error.code === ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES) {
@@ -150,7 +150,7 @@ export const sortRecordsWithBigIntString =
       }
       throw new Exception(
         `Failed to sort list of record values as they can only be stringified bigints: ${extractMessage(error)}`,
-        ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+        { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
       );
     }
   };
@@ -181,7 +181,7 @@ export const sortRecordsWithDateValue =
       ) {
         throw new Exception(
           'Unable to sort list of record values as they can only be valid date values.',
-          ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+          { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
         );
       }
 
@@ -190,7 +190,7 @@ export const sortRecordsWithDateValue =
       if (Number.isNaN(firstDate.getTime()) || Number.isNaN(secondDate.getTime())) {
         throw new Exception(
           'Unable to sort list of record values as they can only be valid date values.',
-          ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+          { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
         );
       }
 
@@ -201,7 +201,7 @@ export const sortRecordsWithDateValue =
       }
       throw new Exception(
         `Failed to sort list of record values as they can only be valid date values: ${extractMessage(error)}`,
-        ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES,
+        { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
       );
     }
   };

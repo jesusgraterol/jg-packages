@@ -14,7 +14,7 @@ import { ERRORS } from './errors.js';
  * @returns The NOT_A_FILE exception.
  */
 export const notAFile = (path: string): Exception =>
-  new Exception(`The path '${path}' is not a file.`, ERRORS.NOT_A_FILE);
+  new Exception(`The path '${path}' is not a file.`, { code: ERRORS.NOT_A_FILE });
 
 /**
  * Builds the exception for a path that isn't a directory.
@@ -22,7 +22,7 @@ export const notAFile = (path: string): Exception =>
  * @returns The NOT_A_DIRECTORY exception.
  */
 export const notADirectory = (path: string): Exception =>
-  new Exception(`The path '${path}' is not a directory.`, ERRORS.NOT_A_DIRECTORY);
+  new Exception(`The path '${path}' is not a directory.`, { code: ERRORS.NOT_A_DIRECTORY });
 
 /**
  * Builds the exception for a file larger than a bounded read allows.
@@ -31,7 +31,9 @@ export const notADirectory = (path: string): Exception =>
  * @returns The FILE_TOO_LARGE exception.
  */
 export const fileTooLarge = (path: string, maxBytes: number): Exception =>
-  new Exception(`The file '${path}' is larger than ${maxBytes} bytes.`, ERRORS.FILE_TOO_LARGE);
+  new Exception(`The file '${path}' is larger than ${maxBytes} bytes.`, {
+    code: ERRORS.FILE_TOO_LARGE,
+  });
 
 /**
  * Ensures text written to a file is a string. An empty string is valid and writes an empty file.
@@ -44,7 +46,7 @@ export const assertTextData = (path: string, data: unknown): void => {
   if (typeof data !== 'string') {
     throw new Exception(
       `The data for the file '${path}' must be a string. Received: ${typeof data}`,
-      ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
+      { code: ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID },
     );
   }
 };
@@ -60,7 +62,7 @@ export const assertBufferData = (path: string, data: unknown): void => {
   if (!Buffer.isBuffer(data)) {
     throw new Exception(
       `The data for the file '${path}' must be a Buffer. Received: ${typeof data}`,
-      ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
+      { code: ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID },
     );
   }
 };
@@ -82,14 +84,13 @@ export const serializeJSONData = (path: string, data: unknown, space: number): s
   } catch (error) {
     throw new Exception(
       `The JSON data for the file '${path}' could not be stringified: ${extractMessage(error)}`,
-      ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
+      { code: ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID },
     );
   }
   if (typeof text !== 'string' || text === '') {
-    throw new Exception(
-      `The JSON data for the file '${path}' is empty.`,
-      ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
-    );
+    throw new Exception(`The JSON data for the file '${path}' is empty.`, {
+      code: ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
+    });
   }
   return text;
 };
@@ -106,10 +107,9 @@ export const parseJSONContent = <T>(path: string, content: string): T => {
   try {
     return JSON.parse(content) as T;
   } catch (error) {
-    throw new Exception(
-      `The JSON file '${path}' could not be parsed: ${extractMessage(error)}`,
-      ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
-    );
+    throw new Exception(`The JSON file '${path}' could not be parsed: ${extractMessage(error)}`, {
+      code: ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
+    });
   }
 };
 
@@ -130,7 +130,7 @@ export const isNotFoundError = (error: unknown): boolean =>
 export const notARegularFile = (path: string, error: unknown): Exception =>
   new Exception(
     `The file '${path}' doesn't exist or is a symbolic link: ${extractMessage(error)}`,
-    ERRORS.NOT_A_FILE,
+    { code: ERRORS.NOT_A_FILE },
   );
 
 /**

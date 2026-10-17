@@ -1,6 +1,6 @@
 # jg-api-response
 
-Build and recognise the `{ success, data, error }` envelope that services exchange over HTTP.
+Build and recognise the `{ success, data, error }` envelope that services exchange over HTTP, with errors carried as a code, a message, and data.
 
 ## Install
 
@@ -10,20 +10,41 @@ npm install jg-api-response
 
 ## Usage
 
-Build the body a service responds with. A response is successful when no error is passed, and the error, whatever its shape, becomes a message:
+Build the body a service responds with. A response is successful when no error is passed:
 
 ```ts
 import { buildResponse } from 'jg-api-response';
-import { Exception } from 'jg-exception';
 
 buildResponse({ id: 1 });
-// { success: true, data: { id: 1 }, error: undefined }
-
-buildResponse(undefined, new Exception('The user was not found.', 'USER_NOT_FOUND'));
-// { success: false, data: undefined, error: 'The user was not found.' }
+// { success: true, data: { id: 1 }, error: null }
 ```
 
-Check a body you received, after `JSON.parse` dropped its undefined fields or a service sent `error: null`:
+A failed response carries the error as `{ code, message, data }`, so the client gets everything it needs to handle or debug it. An `Exception` from `jg-exception` keeps its code, message, and data:
+
+```ts
+import { Exception } from 'jg-exception';
+
+buildResponse(
+  undefined,
+  new Exception('The user was not found.', { code: 'USER_NOT_FOUND', data: { id: 1 } }),
+);
+// {
+//   success: false,
+//   data: undefined,
+//   error: { code: 'USER_NOT_FOUND', message: 'The user was not found.', data: { id: 1 } },
+// }
+```
+
+Any other error keeps its string `code`, such as a Node.js `ENOENT`, or gets `UNKNOWN_ERROR`, with its message and `null` data:
+
+```ts
+buildResponse(undefined, new Error('Request failed'));
+// { success: false, data: undefined, error: { code: 'UNKNOWN_ERROR', message: 'Request failed', data: null } }
+```
+
+The envelope can always be serialized when its data can: Exception data that JSON can't hold becomes `null`.
+
+Check a body you received, after `JSON.parse` dropped its undefined fields, or from a service that leaves out `error` or its `data`:
 
 ```ts
 import { isResponse } from 'jg-api-response';
@@ -32,23 +53,11 @@ const body: unknown = await response.json();
 if (isResponse<IUser>(body)) {
   body.success; // boolean
   body.data; // IUser | undefined
-  body.error; // string | null | undefined
+  body.error; // { code: string; message: string; data?: unknown } | null | undefined
 }
 ```
 
-## Coming from `api-response-utils`
-
-| `api-response-utils`                      | `jg-api-response`                                                                                                 |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `import … from 'api-response-utils'`      | `import … from 'jg-api-response'`                                                                                 |
-| `isResponse` narrows to `IAPIResponse<T>` | `isResponse` narrows to the new `IParsedAPIResponse<T>`: `{ success: boolean; data?: T; error?: string \| null }` |
-
-Changed behavior:
-
-- `isResponse` accepts envelopes parsed from JSON, such as `{ "success": true }` and `{ "success": true, "error": null }`, which it used to reject because `data` or `error` was missing. It still rejects anything without a boolean `success`, or with an `error` that isn't a string or `null`.
-- `buildResponse(data, error)` turns any error that is passed into a message, so `null`, `''`, and `0` produce a failed response with a message where they used to produce one with no `error`.
-
-The wire format is unchanged.
+`isResponse` checks the error's `code` and `message`, but not its `data`, which is `unknown` until you check it.
 
 ## Documentation
 

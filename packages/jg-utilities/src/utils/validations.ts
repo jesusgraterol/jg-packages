@@ -16,10 +16,9 @@ import {
  */
 export const canArrayBeShuffled = (input: unknown[]): void => {
   if (!Array.isArray(input) || input.length <= 1) {
-    throw new Exception(
-      'For an array to be shuffled it must contain at least 2 items.',
-      ERRORS.INVALID_OR_EMPTY_ARRAY,
-    );
+    throw new Exception('For an array to be shuffled it must contain at least 2 items.', {
+      code: ERRORS.INVALID_OR_EMPTY_ARRAY,
+    });
   }
 };
 
@@ -33,16 +32,14 @@ export const canArrayBeShuffled = (input: unknown[]): void => {
  */
 export const validateObjectAndKeys = (input: unknown, propKeys: unknown): void => {
   if (!isObjectValid(input)) {
-    throw new Exception(
-      'The input must be a valid and non-empty object.',
-      ERRORS.INVALID_OR_EMPTY_OBJECT,
-    );
+    throw new Exception('The input must be a valid and non-empty object.', {
+      code: ERRORS.INVALID_OR_EMPTY_OBJECT,
+    });
   }
   if (!isArrayValid(propKeys)) {
-    throw new Exception(
-      'The keys must be a valid and non-empty array of strings.',
-      ERRORS.INVALID_OR_EMPTY_ARRAY,
-    );
+    throw new Exception('The keys must be a valid and non-empty array of strings.', {
+      code: ERRORS.INVALID_OR_EMPTY_ARRAY,
+    });
   }
 };
 
@@ -56,7 +53,7 @@ export const validateAuthorizationHeader = (header: unknown): void => {
   if (!isAuthorizationHeaderValid(header)) {
     throw new Exception(
       `The provided authorization header does not comply with the expected format (RFC6750). Received: ${String(header)}`,
-      ERRORS.INVALID_AUTHORIZATION_HEADER,
+      { code: ERRORS.INVALID_AUTHORIZATION_HEADER },
     );
   }
 };
@@ -71,7 +68,7 @@ export const validateEmailAddress = (email: unknown): void => {
   if (!isEmailValid(email)) {
     throw new Exception(
       `The provided email address is not valid or has a forbidden extension. Received: ${String(email)}`,
-      ERRORS.INVALID_EMAIL_ADDRESS,
+      { code: ERRORS.INVALID_EMAIL_ADDRESS },
     );
   }
 };

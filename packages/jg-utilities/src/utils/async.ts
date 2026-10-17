@@ -164,10 +164,9 @@ export const waitUntil = async <T>(
   const { timeoutSeconds, intervalSeconds = 1, signal } = options;
   const deadline = Date.now() + timeoutSeconds * 1000;
   const timedOut = (): Error =>
-    new Exception(
-      `The condition wasn't met within ${timeoutSeconds} seconds.`,
-      ERRORS.WAIT_UNTIL_TIMED_OUT,
-    );
+    new Exception(`The condition wasn't met within ${timeoutSeconds} seconds.`, {
+      code: ERRORS.WAIT_UNTIL_TIMED_OUT,
+    });
   for (;;) {
     // probes run one after another by design
     const result = await race(runProbe(probe), signal, {

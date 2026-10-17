@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 
 import { FetchException } from '../fetch-exception/index.js';
+import { ERROR_MESSAGES } from '../shared/index.js';
 import { request } from './request.js';
 import { sendJson, startTestServer, type ITestServer } from './server.test-utils.js';
 
@@ -154,22 +155,30 @@ describe('envelopes', () => {
     expect(second).toMatchObject({ data: 2, error: null });
   });
 
-  test('reports a failed envelope as API_ERROR with the decoded code and the data', async () => {
+  test("reports a failed envelope as API_ERROR with the envelope error's code, message, and data", async () => {
     const path = uniquePath('api-error');
     server.route(path, (_request, response, attempt) => {
       if (attempt === 1) {
         sendJson(response, 404, {
           success: false,
-          data: { id: 7 },
-          error: 'The user was not found.{(USER_NOT_FOUND)}',
+          data: { partial: true },
+          error: { code: 'USER_NOT_FOUND', message: 'The user was not found.', data: { id: 7 } },
         });
         return;
       }
-      sendJson(response, 200, { success: false, error: 'No code here.' });
+      if (attempt === 2) {
+        sendJson(response, 200, {
+          success: false,
+          error: { code: 'RATE_LIMITED', message: 'Slow down.' },
+        });
+        return;
+      }
+      sendJson(response, 200, { success: false, error: null });
     });
 
     const notFound = await request(`${server.origin}${path}`, { parseAs: 'envelope' });
-    const uncoded = await request(`${server.origin}${path}`, { parseAs: 'envelope' });
+    const withoutData = await request(`${server.origin}${path}`, { parseAs: 'envelope' });
+    const withoutError = await request(`${server.origin}${path}`, { parseAs: 'envelope' });
 
     expect(notFound.error).toBeInstanceOf(FetchException);
     expect(notFound.error).toMatchObject({
@@ -177,15 +186,39 @@ describe('envelopes', () => {
       code: 'USER_NOT_FOUND',
       message: 'The user was not found.',
       data: { id: 7 },
+      body: {
+        success: false,
+        data: { partial: true },
+        error: { code: 'USER_NOT_FOUND', message: 'The user was not found.', data: { id: 7 } },
+      },
       status: 404,
       attempts: 1,
     });
-    expect(uncoded.error).toMatchObject({
+    expect(withoutData.error).toMatchObject({
       kind: 'API_ERROR',
-      code: 'API_ERROR',
-      message: 'No code here.',
+      code: 'RATE_LIMITED',
+      message: 'Slow down.',
+      data: null,
       status: 200,
     });
+    expect(withoutError.error).toMatchObject({
+      kind: 'API_ERROR',
+      code: 'API_ERROR',
+      message: ERROR_MESSAGES.API_ERROR,
+      data: null,
+      status: 200,
+    });
+  });
+
+  test('reports an envelope whose error is a string as ENVELOPE_INVALID', async () => {
+    const path = uniquePath('string-error');
+    server.route(path, (_request, response) => {
+      sendJson(response, 200, { success: false, error: 'Not found' });
+    });
+
+    const { error } = await request(`${server.origin}${path}`, { parseAs: 'envelope' });
+
+    expect(error).toMatchObject({ kind: 'ENVELOPE_INVALID', code: 'ENVELOPE_INVALID' });
   });
 
   test('reports an HTML 502 as HTTP_ERROR with its body', async () => {
@@ -328,7 +361,10 @@ describe('retries', () => {
       response.writeHead(404).end();
     });
     server.route(quota, (_request, response) => {
-      sendJson(response, 503, { success: false, error: 'Quota exceeded.{(QUOTA)}' });
+      sendJson(response, 503, {
+        success: false,
+        error: { code: 'QUOTA', message: 'Quota exceeded.', data: null },
+      });
     });
 
     const first = await request(`${server.origin}${notFound}`, {
@@ -544,7 +580,7 @@ describe('error messages', () => {
     expect(error?.url).toBe(`${server.origin}${path}`);
     expect(meta.url).toBe(`${server.origin}${path}`);
     expect(error?.body).toBe('internal detail');
-    for (const serialized of [String(error), JSON.stringify(error?.toRecord())]) {
+    for (const serialized of [String(error), JSON.stringify(error)]) {
       expect(serialized).not.toContain('secret-token');
       expect(serialized).not.toContain('hunter2');
     }

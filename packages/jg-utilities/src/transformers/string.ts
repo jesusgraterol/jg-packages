@@ -51,10 +51,9 @@ export const toSlug = (value: string): string => {
     .replace(/-+/g, '-') // collapse multiple "-"
     .replace(/^-|-$/g, ''); // trim "-" from start/end
   if (slug.length === 0) {
-    throw new Exception(
-      `Failed to slugify the string '${value}': the resulting slug is empty.`,
-      ERRORS.UNABLE_TO_SLUGIFY_STRING,
-    );
+    throw new Exception(`Failed to slugify the string '${value}': the resulting slug is empty.`, {
+      code: ERRORS.UNABLE_TO_SLUGIFY_STRING,
+    });
   }
   return slug;
 };

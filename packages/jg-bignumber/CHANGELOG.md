@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0
+
+A fresh start: breaking changes in a minor version, once, because nothing depended on 1.0.x.
+
+### Changed
+
+- Errors are `Exception`s from `jg-exception` 1.1.0: the code, the data, and the cause each have their own field, nothing is encoded into the message, and `toJSON()` and `toString()` follow `jg-exception`.
+- `prettifyValue` passes an `Exception` from the processing step through unchanged, and wraps any other error in `INVALID_BIGNUMBER_FORMAT`.
+
 ## 1.0.1
 
 ### Changed

@@ -41,17 +41,15 @@ export const decodeCursor = (cursor: string, maxLength: number = 2048): ICursorV
   if (typeof cursor !== 'string' || cursor.length > maxLength || !CURSOR_PATTERN.test(cursor)) {
     throw new Exception(
       `The cursor is not a valid encoded value: it must be a base64url string of at most ${maxLength} characters.`,
-      ERRORS.INVALID_CURSOR,
+      { code: ERRORS.INVALID_CURSOR },
     );
   }
   try {
     return parseJSON<ICursorValue>(decodeBase64Url(cursor));
   } catch (error) {
-    throw new Exception(
-      `The cursor is not a valid encoded value: ${extractMessage(error)}`,
-      ERRORS.INVALID_CURSOR,
-      undefined,
-      { cause: error },
-    );
+    throw new Exception(`The cursor is not a valid encoded value: ${extractMessage(error)}`, {
+      code: ERRORS.INVALID_CURSOR,
+      cause: error,
+    });
   }
 };

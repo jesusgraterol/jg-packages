@@ -33,7 +33,7 @@ export const stringifyJSON = <T>(value: T): string => {
     if (getErrorCode(error) !== ERRORS.UNABLE_TO_SERIALIZE_JSON) {
       throw new Exception(
         `Failed to stringify the JSON value '${String(value)}': ${extractMessage(error)}`,
-        ERRORS.UNABLE_TO_SERIALIZE_JSON,
+        { code: ERRORS.UNABLE_TO_SERIALIZE_JSON },
       );
     }
     throw error;
@@ -60,7 +60,7 @@ export const stringifyJSONDeterministically = <T>(value: T): string => {
     if (getErrorCode(error) !== ERRORS.UNABLE_TO_SERIALIZE_JSON) {
       throw new Exception(
         `Failed to stringify the JSON value deterministically '${String(value)}': ${extractMessage(error)}`,
-        ERRORS.UNABLE_TO_SERIALIZE_JSON,
+        { code: ERRORS.UNABLE_TO_SERIALIZE_JSON },
       );
     }
     throw error;
@@ -86,10 +86,9 @@ export const parseJSON = <T>(value: string): T => {
     return result as T;
   } catch (error) {
     if (getErrorCode(error) !== ERRORS.UNABLE_TO_DESERIALIZE_JSON) {
-      throw new Exception(
-        `Failed to parse the JSON value '${value}': ${extractMessage(error)}`,
-        ERRORS.UNABLE_TO_DESERIALIZE_JSON,
-      );
+      throw new Exception(`Failed to parse the JSON value '${value}': ${extractMessage(error)}`, {
+        code: ERRORS.UNABLE_TO_DESERIALIZE_JSON,
+      });
     }
     throw error;
   }
@@ -125,6 +124,7 @@ export const pruneJSON = <T extends IJSONValue>(value: T): T | null => {
     const cleanedObject: Record<string, IJSONValue> = {};
 
     Object.entries(value).forEach(([key, item]) => {
+      if (item === undefined) return;
       const cleanedItem = pruneJSON(item);
 
       if (cleanedItem === null || cleanedItem === undefined) return;

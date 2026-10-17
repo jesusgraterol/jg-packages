@@ -40,8 +40,10 @@ const { data, error } = await request('/users/me', {
   headers: async () => ({ authorization: `Bearer ${await getIdToken()}` }),
 });
 if (error?.kind === 'API_ERROR') {
-  error.code; // the API's own code, such as 'USER_NOT_FOUND'
-  error.data; // the envelope's data
+  error.code; // the envelope error's code, such as 'USER_NOT_FOUND'
+  error.message; // the envelope error's message
+  error.data; // the envelope error's data, or null without any
+  error.body; // the whole envelope
 }
 ```
 
@@ -80,15 +82,15 @@ Pass `signal` to cancel: its abort reports `ABORTED`, or `TIMEOUT` when its reas
 
 The error is a `FetchException`, an `Exception` from `jg-exception`:
 
-| Field                                     | Holds                                                                    |
-| ----------------------------------------- | ------------------------------------------------------------------------ |
-| `kind`                                    | What failed, one of `ERRORS`                                             |
-| `code`                                    | The API's own code for an `API_ERROR`, otherwise the kind                |
-| `status`, `headers`, `body`               | The response's status, headers, and body, parsed as JSON when it is JSON |
-| `data`                                    | The envelope's data, for an `API_ERROR`                                  |
-| `retryAfterMs`                            | The wait `Retry-After` asked for                                         |
-| `method`, `url`, `attempts`, `durationMs` | The request, without its query string or fragment                        |
-| `cause`                                   | The original error                                                       |
+| Field                                     | Holds                                                                                        |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `kind`                                    | What failed, one of `ERRORS`                                                                 |
+| `code`, `message`                         | The envelope error's code and message for an `API_ERROR`, otherwise the kind and its message |
+| `status`, `headers`, `body`               | The response's status, headers, and body, parsed as JSON when it is JSON                     |
+| `data`                                    | The envelope error's data for an `API_ERROR`, `null` when it has none; otherwise undefined   |
+| `retryAfterMs`                            | The wait `Retry-After` asked for                                                             |
+| `method`, `url`, `attempts`, `durationMs` | The request, without its query string or fragment                                            |
+| `cause`                                   | The original error                                                                           |
 
 Messages never include the URL or the body, and `url` and `meta.url` drop the query string and fragment, where tokens such as `?key=` sit.
 

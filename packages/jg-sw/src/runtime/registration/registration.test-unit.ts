@@ -1,4 +1,4 @@
-import { hasErrorCode } from 'jg-exception';
+import { hasErrorCode, isException } from 'jg-exception';
 import { describe, expect, test, vi } from 'vitest';
 
 import {
@@ -71,7 +71,12 @@ describe('registerServiceWorker', () => {
     const snapshot = await registerServiceWorker();
 
     expect(snapshot.registration).toBeUndefined();
-    expect(snapshot.registrationError).toBe('The script has an unsupported MIME type.');
+    expect(isException(snapshot.registrationError)).toBe(true);
+    expect(snapshot.registrationError).toMatchObject({
+      code: 'SW_REGISTRATION_FAILED',
+      message: "The Service Worker couldn't be registered.",
+      cause: new Error('The script has an unsupported MIME type.'),
+    });
   });
 
   test('reports EMPTY_SW_REGISTRATION for a registration without workers', async () => {

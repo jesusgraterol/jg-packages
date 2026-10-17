@@ -18,7 +18,7 @@ import { registerServiceWorker } from 'jg-sw';
 const { registration, registrationError } = await registerServiceWorker(); // registers /sw.js
 ```
 
-It never rejects: a failure lands in `registrationError`. Later calls return the first call's promise, and nothing runs until the first call, so it's safe to import during server-side rendering.
+It never rejects: a failure lands in `registrationError`, an `Exception` whose code is one of `ERRORS`. Later calls return the first call's promise, and nothing runs until the first call, so it's safe to import during server-side rendering.
 
 ### Offer updates and installation
 
