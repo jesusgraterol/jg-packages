@@ -9,6 +9,11 @@
 - `FetchException` is built on `jg-exception` 1.1.0, so `toJSON()` and `toString()` follow it, and `data` is a JSON value.
 - `INVALID_BODY` uses its default message and keeps JSON's error as `cause`, instead of adding that error's message, which can name the body's keys.
 
+### Fixed
+
+- A `headers` callback that never settles no longer holds the request past its timeout: its result is raced against the attempt's signal, so the call ends as `TIMEOUT`, the attempt's timeout retries, and the caller's abort ends it as `ABORTED`. While it waits, Node.js stays running until the timeout, even with nothing else to do.
+- A fractional `timeoutSeconds` or `attemptTimeoutSeconds`, such as `0.0015`, no longer makes `request` reject: timeouts are rounded up to whole milliseconds, with a minimum of 1.
+
 ## 0.1.1
 
 ### Changed

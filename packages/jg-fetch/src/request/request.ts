@@ -58,8 +58,41 @@ const toFailure = (
   return new RequestFailure('NETWORK_ERROR', { cause: error });
 };
 
+// the longest delay a timer accepts, in milliseconds
+const MAX_TIMER_DELAY_MS = 2_147_483_647;
+
 /**
- * Builds an attempt's headers, running the headers function when there is one.
+ * Waits for a value, or rejects as soon as the signal aborts, so a promise that never settles can't
+ * hold an attempt past its timeout or the caller's abort. A promise that settles after the abort is
+ * still handled, and ignored.
+ * @param value The value or promise to wait for.
+ * @param signal The attempt's signal.
+ * @returns A promise that settles like the value, or rejects when the signal aborts first.
+ */
+const raceSignal = async <V>(value: V | PromiseLike<V>, signal: AbortSignal): Promise<V> => {
+  signal.throwIfAborted();
+  let onAbort = (): void => undefined;
+  const aborted = new Promise<never>((_resolve, reject) => {
+    onAbort = (): void => {
+      reject(new Error('The signal aborted.', { cause: signal.reason }));
+    };
+  });
+  signal.addEventListener('abort', onAbort, { once: true });
+  // AbortSignal.timeout's timer doesn't keep Node.js running, and a promise waiting on nothing holds
+  // no handle either, so without this the process could exit before the timeout fires
+  const keepAlive = setInterval(() => undefined, MAX_TIMER_DELAY_MS);
+  try {
+    return await Promise.race([value, aborted]);
+  } finally {
+    clearInterval(keepAlive);
+    signal.removeEventListener('abort', onAbort);
+  }
+};
+
+/**
+ * Builds an attempt's headers, running the headers function when there is one. The function's
+ * result is raced against the attempt's signal, so one that never settles ends as TIMEOUT or
+ * ABORTED like any other abort.
  * @param options The resolved options.
  * @param body The serialized body.
  * @param attempt The attempt's number.
@@ -78,10 +111,14 @@ const buildHeaders = async <T>(
   try {
     const init =
       typeof options.headers === 'function'
-        ? await options.headers({ attempt, signal })
+        ? await raceSignal(options.headers({ attempt, signal }), signal)
         : options.headers;
     headers = new Headers(init);
   } catch (error) {
+    // an abort while the headers were built is the attempt's timeout or the caller's abort
+    if (signal.aborted) {
+      throw error;
+    }
     throw new RequestFailure('INVALID_HEADERS', { cause: error });
   }
   if (body.isJson && !headers.has('content-type')) {

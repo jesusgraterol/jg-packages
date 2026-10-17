@@ -79,6 +79,26 @@ describe('resolveOptions', () => {
     });
   });
 
+  test.each([
+    [0.0015, 2],
+    [0.0001, 1],
+    [Number.MIN_VALUE, 1],
+    [1.0001, 1_001],
+    [0.1 + 0.2, 301],
+    [MAX_TIMEOUT_SECONDS, MAX_TIMEOUT_SECONDS * 1000],
+  ])('rounds timeouts of %d seconds up to %d whole milliseconds', (seconds, ms) => {
+    const resolved = resolveOptions({ timeoutSeconds: seconds, attemptTimeoutSeconds: seconds });
+
+    expect(resolved.timeoutMs).toBe(ms);
+    expect(resolved.attemptTimeoutMs).toBe(ms);
+    expect(() => AbortSignal.timeout(resolved.timeoutMs)).not.toThrow();
+  });
+
+  test('rounds maxRetryAfterSeconds up too, and keeps 0', () => {
+    expect(resolveOptions({ maxRetryAfterSeconds: 0.0015 }).maxRetryAfterMs).toBe(2);
+    expect(resolveOptions({ maxRetryAfterSeconds: 0 }).maxRetryAfterMs).toBe(0);
+  });
+
   test.each<[string, unknown]>([
     ['the options', null],
     ['method', { method: 'TRACE' }],

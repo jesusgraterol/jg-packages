@@ -1,3 +1,8 @@
+import { execFile } from 'node:child_process';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { promisify } from 'node:util';
+
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 
 import { FetchException } from '../fetch-exception/index.js';
@@ -529,6 +534,123 @@ describe('timeouts and aborts', () => {
     });
 
     expect(error).toMatchObject({ kind: 'TIMEOUT' });
+  });
+});
+
+describe('headers callbacks that never settle', () => {
+  // a headers callback whose promise never settles, such as a token refresh that hangs
+  const neverSettles = (): Promise<Record<string, string>> => new Promise(() => undefined);
+
+  test('the whole call ends at timeoutSeconds with TIMEOUT, without sending anything', async () => {
+    const path = uniquePath('headers-hang');
+    server.route(path, (_request, response) => {
+      sendJson(response, 200, { ok: true });
+    });
+
+    const { data, error, meta } = await request(`${server.origin}${path}`, {
+      timeoutSeconds: 0.05,
+      headers: neverSettles,
+    });
+
+    expect(data).toBeNull();
+    expect(error).toMatchObject({ kind: 'TIMEOUT', attempts: 1 });
+    expect(meta.durationMs).toBeLessThan(1_000);
+    expect(server.requests(path)).toHaveLength(0);
+  });
+
+  test('the attempt ends at attemptTimeoutSeconds, and the next attempt goes ahead', async () => {
+    const path = uniquePath('headers-hang-once');
+    server.route(path, (request, response) => {
+      sendJson(response, 200, { token: request.headers['authorization'] });
+    });
+
+    const { data, error, meta } = await request(`${server.origin}${path}`, {
+      attemptTimeoutSeconds: 0.05,
+      retryDelaysSeconds: [0],
+      headers: ({ attempt }) =>
+        attempt === 1 ? neverSettles() : { authorization: `Bearer token-${attempt}` },
+    });
+
+    expect(error).toBeNull();
+    expect(data).toStrictEqual({ token: 'Bearer token-2' });
+    expect(meta.attempts).toBe(2);
+    expect(server.requests(path)).toHaveLength(1);
+  });
+
+  test('a Node.js process with nothing else to do stays alive until the timeout', async () => {
+    // the built package, which `test:integration` builds first
+    const entry = pathToFileURL(join(import.meta.dirname, '..', '..', 'dist', 'index.js')).href;
+    const script = [
+      `import { request } from ${JSON.stringify(entry)};`,
+      "const { error } = await request('http://127.0.0.1:9/', {",
+      '  timeoutSeconds: 0.05,',
+      '  headers: () => new Promise(() => undefined),',
+      '});',
+      'process.stdout.write(error.kind);',
+    ].join('\n');
+
+    const { stdout } = await promisify(execFile)(
+      process.execPath,
+      ['--input-type=module', '--eval', script],
+      { timeout: 10_000 },
+    );
+
+    expect(stdout).toBe('TIMEOUT');
+  });
+
+  test("the caller's abort ends the call as ABORTED", async () => {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 50);
+
+    const { error, meta } = await request(`${server.origin}${uniquePath('headers-abort')}`, {
+      signal: controller.signal,
+      headers: neverSettles,
+    });
+
+    expect(error).toMatchObject({ kind: 'ABORTED', attempts: 1 });
+    expect(meta.durationMs).toBeLessThan(1_000);
+  });
+
+  test('a callback that rejects after the abort changes nothing', async () => {
+    const { error } = await request(`${server.origin}${uniquePath('headers-late')}`, {
+      timeoutSeconds: 0.05,
+      headers: () =>
+        new Promise((_resolve, reject) => {
+          setTimeout(() => reject(new Error('too late')), 150);
+        }),
+    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    expect(error).toMatchObject({ kind: 'TIMEOUT' });
+  });
+
+  test('a callback that rejects in time is still INVALID_HEADERS', async () => {
+    const cause = new Error('no token');
+
+    const { error } = await request(`${server.origin}${uniquePath('headers-reject')}`, {
+      headers: () => Promise.reject(cause),
+    });
+
+    expect(error).toMatchObject({ kind: 'INVALID_HEADERS', cause });
+  });
+});
+
+describe('fractional timeouts', () => {
+  test.each([
+    ['timeoutSeconds', { timeoutSeconds: 0.0015 }],
+    ['attemptTimeoutSeconds', { attemptTimeoutSeconds: 0.0015, retryDelaysSeconds: [] }],
+    ['both', { timeoutSeconds: 0.0015, attemptTimeoutSeconds: 0.0015 }],
+  ])('%s of 0.0015 resolves with a result instead of rejecting', async (_, options) => {
+    const path = uniquePath('fractional');
+    server.route(path, async (_request, response) => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      sendJson(response, 200, { ok: true });
+    });
+
+    const result = await request(`${server.origin}${path}`, options);
+
+    expect(result.error).toMatchObject({ kind: 'TIMEOUT' });
+    expect(result.data).toBeNull();
   });
 });
 
