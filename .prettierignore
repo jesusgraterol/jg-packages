@@ -1,0 +1,14 @@
+# dependencies and build output
+**/node_modules
+dist
+.turbo
+.astro
+coverage
+.release
+
+# lockfile
+pnpm-lock.yaml
+
+# test output
+playwright-report/
+test-results/

@@ -1,0 +1,29 @@
+{
+  "name": "jg-packages",
+  "private": true,
+  "description": "Jesus Graterol's personal npm packages, built, tested, and released from one pnpm and Turborepo monorepo.",
+  "author": "Jesus Graterol",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesusgraterol/jg-packages.git"
+  },
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "check": "turbo run lint typecheck test:unit build test:integration test:e2e && pnpm format:check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "turbo run lint",
+    "test": "turbo run test:unit test:integration test:e2e",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10",
+    "turbo": "2.11.8"
+  }
+}

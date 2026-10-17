@@ -1,0 +1,3 @@
+import { createVitestConfig } from '@jg-packages/vitest-config';
+
+export default createVitestConfig({ categories: ['integration'] });

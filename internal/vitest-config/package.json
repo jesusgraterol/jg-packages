@@ -1,0 +1,31 @@
+{
+  "name": "@jg-packages/vitest-config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared Vitest configuration factory for the jg-packages workspace.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "pnpm test:unit",
+    "test:unit": "vitest run --project unit",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "vitest": "catalog:"
+  },
+  "devDependencies": {
+    "@jg-packages/eslint-config": "workspace:*",
+    "@jg-packages/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
