@@ -1,0 +1,20 @@
+---
+// renders once per page, in its layout; contract.css draws it and its script shows it
+---
+
+{/* hidden until a navigation takes more than 150 ms; indeterminate, so it has no value */}
+<div
+  class="jg-navigation-progress"
+  role="progressbar"
+  aria-label="Loading the next page"
+  data-navigation-progress
+  hidden
+>
+  <div class="jg-navigation-progress-indicator"></div>
+</div>
+
+<script>
+  import { registerNavigationProgress } from './navigation-progress-behavior.ts';
+
+  registerNavigationProgress();
+</script>

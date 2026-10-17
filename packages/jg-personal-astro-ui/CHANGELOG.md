@@ -12,5 +12,6 @@ The first release of `jg-personal-astro-ui`.
 - Copy buttons copy with `jg-clipboard`, and say what to do when the browser refuses, for each reason it gives.
 - External links in `button`, `text-link`, and `site-footer` show an arrow; `button` and the footer's links take `externalIcon: false` to hide it.
 - Smooth navigation without JavaScript: pages crossfade through cross-document view transitions, with the header held still, and `document-head`'s speculation rules prerender a page when the pointer rests on its link.
+- `navigation-progress`, a thin bar along the top of the viewport that shows when the next page takes more than 150 ms to arrive.
 - `./theme-preference`, which reads, stores, and resolves the visitor's theme.
 - `API.md`, the full API reference, generated from the TSDoc of the version it ships with, so it can be read from `node_modules` without a browser.

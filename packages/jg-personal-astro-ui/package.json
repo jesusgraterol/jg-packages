@@ -32,6 +32,7 @@
     "./document-head": "./src/components/document-head/document-head.astro",
     "./hero-backdrop": "./src/components/hero-backdrop/hero-backdrop.astro",
     "./link-card": "./src/components/link-card/link-card.astro",
+    "./navigation-progress": "./src/components/navigation-progress/navigation-progress.astro",
     "./package-manager-tabs": "./src/components/package-manager-tabs/package-manager-tabs.astro",
     "./prose": "./src/components/prose/prose.astro",
     "./section": "./src/components/section/section.astro",

@@ -3,6 +3,7 @@ import { GitBranch } from '@lucide/astro';
 import BrandLogo from 'jg-personal-astro-ui/brand-logo';
 import Button from 'jg-personal-astro-ui/button';
 import DocumentHead from 'jg-personal-astro-ui/document-head';
+import NavigationProgress from 'jg-personal-astro-ui/navigation-progress';
 import SiteFooter from 'jg-personal-astro-ui/site-footer';
 import SiteHeader from 'jg-personal-astro-ui/site-header';
 import SkipLink from 'jg-personal-astro-ui/skip-link';
@@ -73,6 +74,7 @@ const footerColumns = [
   </head>
   <body>
     <SkipLink />
+    <NavigationProgress />
     <SiteHeader
       currentPath={Astro.url.pathname}
       homeLabel={`${SITE_CONFIG.name} home`}

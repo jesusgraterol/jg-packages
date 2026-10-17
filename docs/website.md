@@ -33,7 +33,7 @@ The build fails when the catalog and `packages/` disagree: every published packa
 
 The home page's sections, in order:
 
-1. **The hero:** what coding agents gain, the two actions "Set up your agent" and "View all packages", and the packages as icon tiles, from `package-grid`, which shows at most 12 so the hero keeps its shape as packages are added.
+1. **The hero:** what coding agents gain, the two actions "Set up your agent" and "View all packages", and the packages as icon tiles, from `package-grid`. It shows the first 8, so the hero keeps its shape as packages are added, and below them a "View all <count> packages" link, with a down arrow, to the packages section.
 2. **The packages** (`#packages`), grouped by their first runtime.
 3. **Why agents use them** (`#why`): six benefits, which also cover how the packages are built.
 4. **Set up your agent** (`#setup`): the two steps from `agent-setup`, described below.
@@ -56,7 +56,7 @@ A project connects to the packages through [jg-skills](https://jg-skills.jesusgr
 
 ### Navigation
 
-Pages crossfade into each other, and a page is prerendered when the pointer rests on its link, both from `jg-personal-astro-ui` without JavaScript. [`personal-astro-ui.md`](personal-astro-ui.md#navigation) describes them. Judge how navigation feels on the built site, through `pnpm --filter @jg-packages/website preview`: the dev server loads unbundled modules on every page.
+Pages crossfade into each other, and a page is prerendered when the pointer rests on its link, both from `jg-personal-astro-ui` without JavaScript. When a page is slow to arrive, the layout's `navigation-progress` shows a thin bar along the top until it does. [`personal-astro-ui.md`](personal-astro-ui.md#navigation) describes all three. Judge how navigation feels on the built site, through `pnpm --filter @jg-packages/website preview`: the dev server loads unbundled modules on every page.
 
 ## Package icons
 

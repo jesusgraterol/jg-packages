@@ -82,6 +82,7 @@ Each component is its own subpath, such as `jg-personal-astro-ui/button`. Most t
 | `brand-logo`           | The site's name beside the mark the site supplies                                                       |
 | `container`, `section` | The page and reading columns, and a home page section with its eyebrow, title, and lede                 |
 | `hero-backdrop`        | The jg sites' hero backdrop: a faint dot lattice under a soft accent glow                               |
+| `navigation-progress`  | The page-loading bar along the top of the viewport, shown when the next page is slow to arrive          |
 | `breadcrumb`           | A trail of links, ending at the current page                                                            |
 | `button`, `text-link`  | Pill buttons and links, with variants and sizes, and an arrow and the new-tab notice on external links  |
 | `badge`                | A small label, with status variants                                                                     |
@@ -93,7 +94,7 @@ Each component is its own subpath, such as `jg-personal-astro-ui/button`. Most t
 | `tabs`                 | ARIA tabs, with arrow keys, Home and End, and an optional remembered choice                             |
 | `package-manager-tabs` | An install command for npm and pnpm in a terminal panel, with the choice remembered across the site     |
 
-Only `theme-control`, the copy buttons, `tabs`, and the header's menu run JavaScript in the browser, besides the theme script. Copy buttons come from `copy-button`, `code-block`, and the code windows in Markdown, which `prose` makes work; one click listener on the document serves them all, however many there are.
+Only `theme-control`, the copy buttons, `tabs`, the header's menu, and `navigation-progress` run JavaScript in the browser, besides the theme script. Copy buttons come from `copy-button`, `code-block`, and the code windows in Markdown, which `prose` makes work; one click listener on the document serves them all, however many there are.
 
 External links show an arrow after their text. On a `button`, `externalIcon={false}` hides it, and so does `externalIcon: false` on a `site-footer` link; the jg-packages site does that on the links to its own repository.
 
@@ -106,6 +107,13 @@ Every page the package's components build crossfades into the next, and prerende
 - `document-head` adds a `<script type="speculationrules">`, JSON the browser reads rather than code it runs. It prerenders same-site pages with `moderate` eagerness, which waits for the pointer to rest on a link, and never links to `.md`, `.txt`, `.xml` or `.png` files.
 
 Chromium supports both, Safari only the transitions, and Firefox neither; where a browser doesn't, pages load as they always did.
+
+`navigation-progress` covers the pages that are slow to arrive. A site's layout renders it once, and its script listens for clicks on the document:
+
+- **When it shows:** 150 ms after a primary-button click, without modifier keys, on a link to another page of the same site in the same tab: no `target` but `_self`, no `download`, and more than a jump within the current page. A click a script already handled doesn't count. Prerendered and fast pages arrive first, so the bar never flashes on them.
+- **When it hides:** the next page replaces it, a page restored from the back/forward cache hides it, and so does a 15-second stall, such as a link that downloaded a file.
+- **Its look:** a 4 px bar in `--jg-foreground` on `--jg-background`, whose indicator sweeps across once a second. Under `prefers-reduced-motion: reduce` it's a still bar a third wide.
+- **What it can't see:** the back and forward buttons, a typed URL, and a form submission load pages without a click it catches; the browser's own loading indicator covers them.
 
 ## Modules
 
