@@ -11,6 +11,7 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 | [`jg-utils`](packages/jg-utils)               | Validations, transformers, generators, and collection, async, and environment utilities.                  | `web-utils-kit`                   |
 | [`jg-bignumber`](packages/jg-bignumber)       | Exact decimal math with bignumber.js: rounding, formatting, and financial calculations.                   | `bignumber-utils`                 |
 | [`jg-fs`](packages/jg-fs)                     | Filesystem helpers for Node.js, async and sync: paths, directories, text, JSON, atomic and bounded files. | `fs-utils-async`, `fs-utils-sync` |
+| [`jg-process`](packages/jg-process)           | Runs and stops child processes without a shell: timeouts, output limits, abort signals, process trees.    | `node-process-utils`              |
 
 Each package gets a row here when it's added to `packages/`.
 
