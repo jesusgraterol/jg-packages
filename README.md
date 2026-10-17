@@ -4,17 +4,18 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 
 ## Packages
 
-| Package                                       | What it does                                                                                                                       |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| [`jg-exception`](packages/jg-exception)       | Coded errors for every jg package: an `Exception` with a stable code and JSON data, message extraction, and code checks.           |
-| [`jg-api-response`](packages/jg-api-response) | Builds and recognises the `{ success, data, error }` envelope services exchange over HTTP.                                         |
-| [`jg-utilities`](packages/jg-utilities)       | Validations, transformers, generators, and collection, async, and environment utilities.                                           |
-| [`jg-bignumber`](packages/jg-bignumber)       | Exact decimal math with bignumber.js: rounding, formatting, and financial calculations.                                            |
-| [`jg-fs`](packages/jg-fs)                     | Filesystem helpers for Node.js, async and sync: paths, directories, text, JSON, atomic and bounded files.                          |
-| [`jg-process`](packages/jg-process)           | Runs and stops child processes without a shell: timeouts, output limits, abort signals, process trees.                             |
-| [`jg-storage`](packages/jg-storage)           | Typed key-value stores over localStorage, sessionStorage, IndexedDB, and memory, for browsers and workers.                         |
-| [`jg-sw`](packages/jg-sw)                     | Service workers for web apps: a generated caching worker with a Vite plugin and CLI, plus registration, updates, and installation. |
-| [`jg-fetch`](packages/jg-fetch)               | A fetch wrapper for browsers and Node.js that never throws: timeouts, retries with Retry-After, response caps, and API envelopes.  |
+| Package                                       | What it does                                                                                                                          |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| [`jg-exception`](packages/jg-exception)       | Coded errors for every jg package: an `Exception` with a stable code and JSON data, message extraction, and code checks.              |
+| [`jg-api-response`](packages/jg-api-response) | Builds and recognises the `{ success, data, error }` envelope services exchange over HTTP.                                            |
+| [`jg-utilities`](packages/jg-utilities)       | Validations, transformers, generators, and collection, async, and environment utilities.                                              |
+| [`jg-bignumber`](packages/jg-bignumber)       | Exact decimal math with bignumber.js: rounding, formatting, and financial calculations.                                               |
+| [`jg-fs`](packages/jg-fs)                     | Filesystem helpers for Node.js, async and sync: paths, directories, text, JSON, atomic and bounded files.                             |
+| [`jg-process`](packages/jg-process)           | Runs and stops child processes without a shell: timeouts, output limits, abort signals, process trees.                                |
+| [`jg-storage`](packages/jg-storage)           | Typed key-value stores over localStorage, sessionStorage, IndexedDB, and memory, for browsers and workers.                            |
+| [`jg-sw`](packages/jg-sw)                     | Service workers for web apps: a generated caching worker with a Vite plugin and CLI, plus registration, updates, and installation.    |
+| [`jg-fetch`](packages/jg-fetch)               | A fetch wrapper for browsers and Node.js that never throws: timeouts, retries with Retry-After, response caps, and API envelopes.     |
+| [`jg-clipboard`](packages/jg-clipboard)       | Copies and reads text, HTML, and images on the browser clipboard, with support detection and errors that say why the browser refused. |
 
 [`jg-personal-astro-ui`](packages/jg-personal-astro-ui) is also published from `packages/`: the Astro components and theme Jesus Graterol's own sites share. It isn't meant for general use, so the website doesn't list it.
 

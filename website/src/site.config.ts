@@ -79,6 +79,14 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['node'],
     order: 9,
   },
+  'jg-clipboard': {
+    title: 'Clipboard',
+    description:
+      'Copy and read text, HTML, and images on the browser clipboard, with support detection and coded errors that say why the browser refused.',
+    icon: 'clipboard',
+    runtimes: ['browser'],
+    order: 10,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/

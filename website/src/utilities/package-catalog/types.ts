@@ -6,6 +6,7 @@ export type IRuntime = 'universal' | 'browser' | 'node';
 export type IPackageIcon =
   | 'braces'
   | 'calculator'
+  | 'clipboard'
   | 'cloud-off'
   | 'cpu'
   | 'database'

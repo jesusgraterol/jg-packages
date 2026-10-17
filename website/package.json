@@ -37,6 +37,7 @@
     "eslint": "catalog:",
     "jg-api-response": "workspace:*",
     "jg-bignumber": "workspace:*",
+    "jg-clipboard": "workspace:*",
     "jg-exception": "workspace:*",
     "jg-fetch": "workspace:*",
     "jg-fs": "workspace:*",
