@@ -60,6 +60,10 @@ beforeEach(async () => {
   outputDirectory = join(workDirectory, 'release');
   await mkdir(outputDirectory, { recursive: true });
   await cp(FIXTURE_DIRECTORY, packageDirectory, { recursive: true });
+  await writeFile(
+    join(rootDirectory, 'pnpm-workspace.yaml'),
+    'packages:\n  - internal/*\n  - packages/*\n',
+  );
   await buildFixture();
 }, 60_000);
 
@@ -118,6 +122,25 @@ describe('packAndCheck', () => {
 
     expect(await checkProblems()).toStrictEqual(['`sample --help` exits with 3: no help here']);
   }, 120_000);
+
+  test('fails a workspace whose tests pnpm check would skip, even a private one', async () => {
+    await mkdir(join(rootDirectory, 'internal', 'tool'), { recursive: true });
+    await writeFile(
+      join(rootDirectory, 'internal', 'tool', 'package.json'),
+      JSON.stringify({
+        name: '@sample/tool',
+        private: true,
+        scripts: { 'test:unit': 'vitest run' },
+      }),
+    );
+
+    const { workspaceProblems } = await packAndCheck(rootDirectory, outputDirectory, dependencies);
+
+    expect(workspaceProblems).toStrictEqual([
+      '@sample/tool has test:unit but no test:coverage, so pnpm check never runs its tests',
+    ]);
+    expect(await runPack(rootDirectory, join(workDirectory, 'blocked'), dependencies)).toBe(1);
+  });
 
   test('fails when no package is publishable', async () => {
     await editFile('package.json', '"license": "MIT",', '"license": "MIT",\n  "private": true,');

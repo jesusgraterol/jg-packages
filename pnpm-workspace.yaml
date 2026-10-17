@@ -9,10 +9,14 @@ catalog:
   '@eslint/js': 10.0.1
   '@tailwindcss/vite': 4.3.3
   '@types/node': 24.19.2
+  '@vitest/browser-playwright': 5.0.5
+  '@vitest/coverage-v8': 5.0.5
   astro: 7.4.0
   eslint: 10.12.0
   eslint-config-prettier: 10.1.8
+  fast-check: 4.10.2
   globals: 17.13.0
+  playwright: 1.64.1
   tailwindcss: 4.3.3
   typescript: 6.0.3
   typescript-eslint: 8.71.2

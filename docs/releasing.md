@@ -43,6 +43,8 @@ A version with a prerelease part, such as `1.2.0-beta.0`, is published under the
 
 `pnpm release:verify` packs every package under `packages/` that isn't private, checks the tarballs, and removes them. `pnpm release:pack` runs the same checks and keeps the tarballs in `.release/`, with a `release-manifest.json` that lists each one in publish order with its SHA-256.
 
+Before packing, it runs the workspace check once: every workspace `pnpm-workspace.yaml` lists, private ones included, that has a `test:unit` or `test:integration` script must also have `test:coverage`, because that's how `pnpm check` runs its tests. A missing one prints `FAIL workspaces` with the workspace's name. It reads the manifests directly, outside Turborepo, so a cached task can never hide a suite that dropped out.
+
 | Check              | Fails when                                                                                                                                                                                                                                                 |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | File list          | the tarball ships something outside `files` (besides `package.json`, `README.md`, `LICENSE`, and `CHANGELOG.md`), a test or `.tsbuildinfo` file, or is missing an `exports` or `bin` target                                                                |

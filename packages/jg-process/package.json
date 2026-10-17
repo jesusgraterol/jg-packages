@@ -47,6 +47,7 @@
     "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json",
     "lint": "eslint .",
     "test": "pnpm test:unit && pnpm test:integration",
+    "test:coverage": "vitest run --coverage --project unit --project integration",
     "test:integration": "vitest run --project integration",
     "test:unit": "vitest run --project unit",
     "typecheck": "tsc -p tsconfig.json"
@@ -59,6 +60,7 @@
     "@jg-packages/tsconfig": "workspace:*",
     "@jg-packages/vitest-config": "workspace:*",
     "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

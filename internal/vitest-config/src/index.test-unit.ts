@@ -26,6 +26,17 @@ describe('createVitestConfig', () => {
             },
           },
         ],
+        coverage: {
+          provider: 'v8',
+          include: ['src/**/*.ts'],
+          exclude: [
+            'src/**/*.test-*.ts',
+            'src/**/test-utils/**',
+            'src/**/fixtures/**',
+            'src/**/*.d.ts',
+          ],
+          reporter: ['text-summary'],
+        },
       },
     });
   });
@@ -55,6 +66,37 @@ describe('createVitestConfig', () => {
         (project) => typeof project === 'object' && 'test' in project && project.test?.environment,
       ),
     ).toStrictEqual(['jsdom', 'jsdom']);
+  });
+
+  test('runs the browser category headless in Chromium, Firefox, and WebKit with Playwright', () => {
+    const [project] = createVitestConfig({ categories: ['browser'] }).test?.projects ?? [];
+
+    expect(project).toMatchObject({
+      test: {
+        name: 'browser',
+        unstubEnvs: true,
+        unstubGlobals: true,
+        include: ['src/**/*.test-browser.ts'],
+        browser: {
+          enabled: true,
+          headless: true,
+          provider: { name: 'playwright' },
+          instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+        },
+      },
+    });
+    expect(project).not.toHaveProperty('test.environment');
+  });
+
+  test('passes coverage thresholds through, and sets none by default', () => {
+    const thresholds = { lines: 95, branches: 90, functions: 100, statements: 95 };
+
+    expect(
+      createVitestConfig({ categories: ['unit'], coverage: { thresholds } }).test?.coverage,
+    ).toMatchObject({ provider: 'v8', thresholds });
+    expect(createVitestConfig({ categories: ['unit'] }).test?.coverage).not.toHaveProperty(
+      'thresholds',
+    );
   });
 
   test.each([

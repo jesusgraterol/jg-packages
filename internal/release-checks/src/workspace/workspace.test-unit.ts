@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { sortByDependencies, type IWorkspacePackage } from './workspace.ts';
+import { readWorkspacePatterns, sortByDependencies, type IWorkspacePackage } from './workspace.ts';
 
 // builds a package that depends on the given siblings
 const workspacePackage = (
@@ -40,5 +40,28 @@ describe('sortByDependencies', () => {
         workspacePackage('b', { a: 'workspace:^' }),
       ]),
     ).toThrow('The packages depend on each other in a cycle: a, b');
+  });
+});
+
+describe('readWorkspacePatterns', () => {
+  test('reads the packages list, quoted or not, and stops at the next key', () => {
+    const yaml = [
+      'packages:',
+      '  - internal/*',
+      "  - 'packages/*'",
+      '',
+      '  # the site',
+      '  - "website"',
+      '',
+      'catalog:',
+      '  - not-a-workspace',
+      '',
+    ].join('\n');
+
+    expect(readWorkspacePatterns(yaml)).toStrictEqual(['internal/*', 'packages/*', 'website']);
+  });
+
+  test('reads nothing without a packages list', () => {
+    expect(readWorkspacePatterns('catalog:\n  vitest: 5.0.5\n')).toStrictEqual([]);
   });
 });

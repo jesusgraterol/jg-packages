@@ -96,3 +96,83 @@ export const findPublishablePackages = async (
   }
   return sortByDependencies(packages);
 };
+
+// the file at the repository root that lists the workspace directories
+const WORKSPACE_FILE = 'pnpm-workspace.yaml';
+
+// a workspace directory, private or not, with its manifest
+export type IWorkspace = {
+  directory: string;
+  manifest: IPackageManifest;
+};
+
+/**
+ * Reads the directory patterns in pnpm-workspace.yaml's `packages` list, such as `packages/*`.
+ * @param yaml The file's text.
+ * @returns The patterns, in order.
+ */
+export const readWorkspacePatterns = (yaml: string): string[] => {
+  const patterns: string[] = [];
+  let isInPackages = false;
+  for (const line of yaml.split('\n')) {
+    if (/^packages:\s*$/.test(line)) {
+      isInPackages = true;
+      continue;
+    }
+    if (!isInPackages || line.trim() === '' || line.trim().startsWith('#')) {
+      continue;
+    }
+    const item = /^\s+-\s+(.+?)\s*$/.exec(line);
+    if (item === null) {
+      break;
+    }
+    patterns.push((item[1] ?? '').replace(/^['"]|['"]$/g, ''));
+  }
+  return patterns;
+};
+
+/**
+ * Lists the directories a workspace pattern names: the directory itself, or with `/*`, each of its
+ * subdirectories.
+ * @param rootDirectory The repository root.
+ * @param pattern The pattern, such as `packages/*` or `website`.
+ * @returns A promise that resolves to the directories.
+ * @throws
+ * - pnpm-workspace.yaml has a pattern the release checks can't read: {pattern}
+ */
+const listPatternDirectories = async (
+  rootDirectory: string,
+  pattern: string,
+): Promise<string[]> => {
+  if (pattern.endsWith('/*') && !pattern.slice(0, -2).includes('*')) {
+    const parent = join(rootDirectory, pattern.slice(0, -2));
+    const entries = await readdir(parent, { withFileTypes: true }).catch(() => []);
+    return entries.filter((entry) => entry.isDirectory()).map((entry) => join(parent, entry.name));
+  }
+  if (pattern.includes('*') || pattern.startsWith('!')) {
+    throw new Error(`pnpm-workspace.yaml has a pattern the release checks can't read: ${pattern}`);
+  }
+  return [join(rootDirectory, pattern)];
+};
+
+/**
+ * Finds every workspace that pnpm-workspace.yaml lists and that has a package.json, private ones
+ * included.
+ * @param rootDirectory The repository root.
+ * @returns A promise that resolves to the workspaces, in the file's order.
+ * @throws
+ * - pnpm-workspace.yaml has a pattern the release checks can't read: {pattern}
+ */
+export const findWorkspaces = async (rootDirectory: string): Promise<IWorkspace[]> => {
+  const yaml = await readFile(join(rootDirectory, WORKSPACE_FILE), 'utf8');
+  const workspaces: IWorkspace[] = [];
+  for (const pattern of readWorkspacePatterns(yaml)) {
+    for (const directory of await listPatternDirectories(rootDirectory, pattern)) {
+      const manifest = await readFile(join(directory, 'package.json'), 'utf8').catch(() => null);
+      if (manifest !== null) {
+        workspaces.push({ directory, manifest: JSON.parse(manifest) as IPackageManifest });
+      }
+    }
+  }
+  return workspaces;
+};

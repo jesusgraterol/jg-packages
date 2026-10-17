@@ -1,3 +1,3 @@
 import { createVitestConfig } from '@jg-packages/vitest-config';
 
-export default createVitestConfig({ categories: ['unit', 'integration'] });
+export default createVitestConfig({ categories: ['unit', 'integration', 'browser'] });

@@ -9,9 +9,14 @@ import { checkPackagingLint } from '../checks/packaging-lint.ts';
 import { checkRegistryVersions } from '../checks/registry-versions.ts';
 import { checkReleaseDocs } from '../checks/release-docs.ts';
 import { checkTsdoc } from '../checks/tsdoc.ts';
+import { checkWorkspaceScripts } from '../checks/workspace-scripts.ts';
 import { sha256, writeReleaseManifest } from '../shared/release-files.ts';
 import { readTarballFiles } from '../shared/tarball.ts';
-import { findPublishablePackages, type IWorkspacePackage } from '../workspace/workspace.ts';
+import {
+  findPublishablePackages,
+  findWorkspaces,
+  type IWorkspacePackage,
+} from '../workspace/workspace.ts';
 import type { IPackedPackage, IRegistry } from '../checks/types.ts';
 import type { IPackageManifest, IReleaseManifestEntry, IRunCommand } from '../shared/types.ts';
 
@@ -22,10 +27,12 @@ export type IVerifyDependencies = {
   log: (message: string) => void;
 };
 
-// the outcome of packing and checking every publishable package
+// the outcome of checking the workspaces, then packing and checking every publishable package
 export type IReleaseCheckResult = {
   entries: IReleaseManifestEntry[];
   problems: Map<string, string[]>;
+  // the problems of the workspace check, which no single package owns
+  workspaceProblems: string[];
 };
 
 /**
@@ -80,9 +87,10 @@ const addProblems = (problems: Map<string, string[]>, name: string, additions: s
 };
 
 /**
- * Packs every publishable package into a directory and runs every release check on the tarballs:
- * the file list, the release docs, a consumer install and imports, an Astro fixture build for
- * packages with Astro components, publint and attw, TSDoc, and the registry comparison.
+ * Checks that every workspace's tests run in `pnpm check`, then packs every publishable package
+ * into a directory and runs every release check on the tarballs: the file list, the release docs,
+ * a consumer install and imports, an Astro fixture build for packages with Astro components,
+ * publint and attw, TSDoc, and the registry comparison.
  * @param rootDirectory The repository root.
  * @param outputDirectory An existing, empty directory for the tarballs.
  * @param dependencies The registry, command runner, and logger.
@@ -90,12 +98,15 @@ const addProblems = (problems: Map<string, string[]>, name: string, additions: s
  * @throws
  * - No publishable packages were found under packages/.
  * - pnpm pack failed for {name}: {stderr}
+ * - pnpm-workspace.yaml has a pattern the release checks can't read: {pattern}
  */
 export const packAndCheck = async (
   rootDirectory: string,
   outputDirectory: string,
   { registry, runCommand, log }: IVerifyDependencies,
 ): Promise<IReleaseCheckResult> => {
+  log('Checking the workspaces');
+  const workspaceProblems = checkWorkspaceScripts(await findWorkspaces(rootDirectory));
   const workspacePackages = await findPublishablePackages(rootDirectory);
   if (workspacePackages.length === 0) {
     throw new Error('No publishable packages were found under packages/.');
@@ -141,6 +152,7 @@ export const packAndCheck = async (
       sha256: digest,
     })),
     problems,
+    workspaceProblems,
   };
 };
 
@@ -151,10 +163,16 @@ export const packAndCheck = async (
  * @returns The number of problems.
  */
 const reportResult = (
-  { entries, problems }: IReleaseCheckResult,
+  { entries, problems, workspaceProblems }: IReleaseCheckResult,
   log: (message: string) => void,
 ): number => {
-  let count = 0;
+  let count = workspaceProblems.length;
+  if (workspaceProblems.length > 0) {
+    log('FAIL workspaces');
+    for (const problem of workspaceProblems) {
+      log(`  - ${problem}`);
+    }
+  }
   for (const { name, version } of entries) {
     const packageProblems = problems.get(name) ?? [];
     count += packageProblems.length;

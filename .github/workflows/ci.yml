@@ -17,7 +17,7 @@ jobs:
   check:
     name: Check
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Check out the repository
         uses: actions/checkout@v7
@@ -37,9 +37,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # the end-to-end tests run in Chromium, with the system libraries it needs
-      - name: Install Chromium
-        run: pnpm --filter jg-sw exec playwright install --with-deps chromium
+      # the browser tests run in Chromium, Firefox, and WebKit, and the end-to-end tests in
+      # Chromium, each with the system libraries it needs
+      - name: Install the browsers
+        run: pnpm --filter jg-sw exec playwright install --with-deps chromium firefox webkit
 
       - name: Run every check
         run: pnpm check

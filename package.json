@@ -15,7 +15,7 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "check": "turbo run lint typecheck test:unit build test:integration test:e2e && pnpm format:check && pnpm release:verify",
+    "check": "turbo run lint typecheck build test:coverage test:browser test:e2e && pnpm format:check && pnpm release:verify",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "turbo run lint",

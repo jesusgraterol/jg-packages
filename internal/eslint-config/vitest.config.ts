@@ -17,5 +17,17 @@ export default defineConfig({
         },
       },
     ],
+    // the same coverage settings as @jg-packages/vitest-config
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      exclude: [
+        'src/**/*.test-*.ts',
+        'src/**/test-utils/**',
+        'src/**/fixtures/**',
+        'src/**/*.d.ts',
+      ],
+      reporter: ['text-summary'],
+    },
   },
 });
