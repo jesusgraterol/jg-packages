@@ -7,6 +7,7 @@ A fresh start: breaking changes in a minor version, once, because nothing depend
 ### Added
 
 - `ERRORS.SW_REGISTRATION_FAILED`, the code of a registration the browser rejects, with the browser's error as `cause`.
+- `API.md`, the full API reference, generated from the TSDoc of the version it ships with, so it can be read from `node_modules` without a browser.
 
 ### Changed
 

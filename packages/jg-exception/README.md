@@ -73,7 +73,7 @@ await expectToRejectCode(loadUser('missing'), 'USER_NOT_FOUND', 'not found');
 
 ## Documentation
 
-The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-exception/.
+The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-exception/.
 
 ## License
 

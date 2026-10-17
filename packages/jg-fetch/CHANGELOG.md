@@ -2,6 +2,10 @@
 
 ## 0.2.0
 
+### Added
+
+- `API.md`, the full API reference, generated from the TSDoc of the version it ships with, so it can be read from `node_modules` without a browser.
+
 ### Changed
 
 - An `API_ERROR` reads the envelope's `error` as `{ code, message, data }`, as `jg-api-response` 1.1.0 builds it: the `FetchException` gets that code, message, and data, and `body` keeps the whole envelope. Without an error object, the code is `API_ERROR`, the message is the default, and `data` is `null`.

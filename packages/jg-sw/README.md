@@ -159,7 +159,7 @@ The worker loads Firebase's compat SDK from `gstatic`. When no app window is vis
 
 ## Documentation
 
-The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-sw/.
+The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-sw/.
 
 ## License
 

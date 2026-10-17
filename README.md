@@ -59,7 +59,7 @@ pnpm check
 │   ├── releasing.md          # versions, the release checks, publishing, and tags
 │   └── website.md            # running the website and where its content comes from
 ├── internal/                 # private workspace packages, never published
-│   ├── api-reference/        # extracts each package's API and TSDoc with TypeDoc
+│   ├── api-reference/        # extracts each package's API with TypeDoc, and renders API.md
 │   ├── build-tools/          # clean-dist and copy-assets scripts used by package builds
 │   ├── eslint-config/        # createEslintConfig(), the shared ESLint flat configuration
 │   ├── release-checks/       # the verify, pack, publish, and tag release commands
@@ -75,6 +75,7 @@ pnpm check
 
 - Internal packages run from their TypeScript sources with Node.js type stripping, so they have no build step. Their relative imports keep the `.ts` extension.
 - Every task `turbo run` targets, in scripts, CI, and the docs, is declared in `turbo.json`.
+- Every package's build ends by writing `API.md`, its API reference rendered from its TSDoc, which ships in its tarball and is git-ignored.
 - Local coding instructions (`AGENTS.md`, `CLAUDE.md`, `CANDIDATE.md`) and `coding-agent-planning/` are git-ignored and never published.
 
 ## License

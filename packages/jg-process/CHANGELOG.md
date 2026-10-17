@@ -4,6 +4,10 @@
 
 A fresh start: breaking changes in a minor version, once, because nothing depended on 1.0.x.
 
+### Added
+
+- `API.md`, the full API reference, generated from the TSDoc of the version it ships with, so it can be read from `node_modules` without a browser.
+
 ### Changed
 
 - Errors are `Exception`s from `jg-exception` 1.1.0: the code, the data, and the cause each have their own field, nothing is encoded into the message, and `toJSON()` and `toString()` follow `jg-exception`.

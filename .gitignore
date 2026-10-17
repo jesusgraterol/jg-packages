@@ -164,3 +164,6 @@ website/src/generated/
 
 # Vitest browser mode failure screenshots
 .vitest/
+
+# the API reference every package build generates, which ships in its tarball
+packages/*/API.md

@@ -7,6 +7,7 @@ A fresh start: breaking changes in a minor version, once, because nothing depend
 ### Added
 
 - A `schema` option for `readJSONFile`, in the async and sync APIs, which validates the parsed content and types the result. Its errors propagate unchanged. `ISchema` and `IReadJSONFileOptions` are exported.
+- `API.md`, the full API reference, generated from the TSDoc of the version it ships with, so it can be read from `node_modules` without a browser.
 
 ### Changed
 

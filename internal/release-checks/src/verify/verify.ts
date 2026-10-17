@@ -2,6 +2,8 @@ import { mkdir, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 
+import { extractApiReference } from '@jg-packages/api-reference';
+
 import { checkAstroFixture } from '../checks/astro-fixture.ts';
 import { installConsumerProject } from '../checks/consumer-project.ts';
 import { checkErrorCodes } from '../checks/error-codes.ts';
@@ -120,11 +122,22 @@ export const packAndCheck = async (
     packages.push(await packPackage(workspacePackage, outputDirectory, runCommand));
   }
 
+  // each package with its API reference, which checks 5 and 6 read
+  const withReferences = [];
+  for (const packed of packages) {
+    log(`Extracting the API reference of ${packed.packedManifest.name}`);
+    withReferences.push({
+      packed,
+      reference: await extractApiReference(packed.workspacePackage.directory),
+    });
+  }
+
   const problems = new Map<string, string[]>();
-  for (const { packedManifest, files } of packages) {
+  for (const { packed, reference } of withReferences) {
+    const { packedManifest, files } = packed;
     addProblems(problems, packedManifest.name, [
       ...checkFileList(packedManifest, files),
-      ...checkReleaseDocs(packedManifest, files),
+      ...checkReleaseDocs(packedManifest, files, reference),
     ]);
   }
   log('Installing the tarballs into a consumer project');
@@ -152,11 +165,11 @@ export const packAndCheck = async (
   for (const [name, packageProblems] of await checkAstroFixture(packages, runCommand)) {
     addProblems(problems, name, packageProblems);
   }
-  for (const packed of packages) {
+  for (const { packed, reference } of withReferences) {
     log(`Linting ${packed.packedManifest.name} and its TSDoc`);
     addProblems(problems, packed.packedManifest.name, [
       ...(await checkPackagingLint(packed, runCommand)),
-      ...(await checkTsdoc(packed.workspacePackage.directory)),
+      ...checkTsdoc(reference),
     ]);
   }
   log('Comparing with the npm registry');

@@ -19,7 +19,8 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "API.md"
   ],
   "sideEffects": false,
   "engines": {
@@ -45,7 +46,7 @@
     "error-handling"
   ],
   "scripts": {
-    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json",
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
     "test": "pnpm test:unit",
     "test:coverage": "vitest run --coverage --project unit",

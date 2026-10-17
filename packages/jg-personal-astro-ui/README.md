@@ -39,7 +39,7 @@ The components style themselves with the contract's tokens only, so another them
 
 ## Documentation
 
-The token contract, every component, and how to use them in a site are in [docs/personal-astro-ui.md](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md).
+The token contract, every component, and how to use them in a site are in [docs/personal-astro-ui.md](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md). The reference of its TypeScript modules ships in the package as `API.md`.
 
 ## License
 

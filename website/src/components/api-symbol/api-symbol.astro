@@ -1,14 +1,15 @@
 ---
-import type { IApiSignature, IApiSymbol } from '@jg-packages/api-reference';
-import Badge from 'jg-personal-astro-ui/badge';
-import CodeBlock from 'jg-personal-astro-ui/code-block';
-
 import {
   formatSignature,
   parseExample,
-  renderDocText,
   splitThrowsItem,
-} from '../../utilities/api-reference/index.ts';
+  type IApiSignature,
+  type IApiSymbol,
+} from '@jg-packages/api-reference';
+import Badge from 'jg-personal-astro-ui/badge';
+import CodeBlock from 'jg-personal-astro-ui/code-block';
+
+import { renderDocText } from '../../utilities/api-reference/index.ts';
 
 interface Props {
   // the symbol's anchor, unique on the page

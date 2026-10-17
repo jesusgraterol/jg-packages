@@ -79,7 +79,7 @@ packages/jg-<name>/
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "CHANGELOG.md"],
+  "files": ["dist", "CHANGELOG.md", "API.md"],
   "sideEffects": false,
   "engines": {
     "node": ">=24"
@@ -97,7 +97,7 @@ packages/jg-<name>/
     "url": "https://github.com/jesusgraterol/jg-packages/issues"
   },
   "scripts": {
-    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json",
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
     "test": "pnpm test:unit",
     "test:coverage": "vitest run --coverage --project unit",
@@ -120,18 +120,18 @@ packages/jg-<name>/
 }
 ```
 
-| Field             | Why                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `version`         | `1.0.0` for a package with a stable API, or `0.1.0` while its API may still change.                                                                                                                                                                                                                                                                                                                                                |
-| `exports`         | One entry per subpath, `types` first and `default` last. Add `./sync`-style subpaths the same way, and nothing with a `*`.                                                                                                                                                                                                                                                                                                         |
-| `main`, `types`   | Fallbacks for tools that don't read `exports`.                                                                                                                                                                                                                                                                                                                                                                                     |
-| `files`           | Everything that ships besides `package.json`, `README.md`, and `LICENSE`, which npm always includes. `CHANGELOG.md` must be listed.                                                                                                                                                                                                                                                                                                |
-| `sideEffects`     | `false` when nothing runs at import time, which the guidelines require. List stylesheets instead when the package ships CSS.                                                                                                                                                                                                                                                                                                       |
-| `publishConfig`   | Publishes unscoped packages publicly.                                                                                                                                                                                                                                                                                                                                                                                              |
-| `repository`      | `directory` points npm and provenance at the package inside the monorepo.                                                                                                                                                                                                                                                                                                                                                          |
-| `scripts`         | `build` cleans `dist` first, so stale files never ship. Add `test:integration`, `test:browser`, `test:e2e`, and `test:bench` only when those tests exist, and keep `test` running unit, integration, browser, and end-to-end, in that order. `test:coverage` runs the unit and integration projects the package has, and `pnpm check` runs it instead of them. Drop `tsconfig.browser.json` from `typecheck` for Node.js packages. |
-| `dependencies`    | Siblings use `workspace:^`. Other runtime dependencies use caret ranges, such as `^11.1.5`. A package that throws depends on `jg-exception`.                                                                                                                                                                                                                                                                                       |
-| `devDependencies` | Internal packages use `workspace:*`; shared tools use `catalog:`.                                                                                                                                                                                                                                                                                                                                                                  |
+| Field             | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `version`         | `1.0.0` for a package with a stable API, or `0.1.0` while its API may still change.                                                                                                                                                                                                                                                                                                                                                                                             |
+| `exports`         | One entry per subpath, `types` first and `default` last. Add `./sync`-style subpaths the same way, and nothing with a `*`.                                                                                                                                                                                                                                                                                                                                                      |
+| `main`, `types`   | Fallbacks for tools that don't read `exports`.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `files`           | Everything that ships besides `package.json`, `README.md`, and `LICENSE`, which npm always includes. `CHANGELOG.md` and `API.md` must be listed.                                                                                                                                                                                                                                                                                                                                |
+| `sideEffects`     | `false` when nothing runs at import time, which the guidelines require. List stylesheets instead when the package ships CSS.                                                                                                                                                                                                                                                                                                                                                    |
+| `publishConfig`   | Publishes unscoped packages publicly.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `repository`      | `directory` points npm and provenance at the package inside the monorepo.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `scripts`         | `build` cleans `dist` first, so stale files never ship, and ends by writing `API.md` from the TSDoc. Add `test:integration`, `test:browser`, `test:e2e`, and `test:bench` only when those tests exist, and keep `test` running unit, integration, browser, and end-to-end, in that order. `test:coverage` runs the unit and integration projects the package has, and `pnpm check` runs it instead of them. Drop `tsconfig.browser.json` from `typecheck` for Node.js packages. |
+| `dependencies`    | Siblings use `workspace:^`. Other runtime dependencies use caret ranges, such as `^11.1.5`. A package that throws depends on `jg-exception`.                                                                                                                                                                                                                                                                                                                                    |
+| `devDependencies` | Internal packages use `workspace:*`; shared tools use `catalog:`.                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 Add `bin` for a command-line tool, and `peerDependencies` (with `peerDependenciesMeta` for optional ones) only for what the consumer must provide. A command must exit 0 on `--help`, because the release checks run it.
 
@@ -228,7 +228,7 @@ npm install jg-<name>
 
 ## Documentation
 
-The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-<name>/.
+The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-<name>/.
 
 ## License
 
@@ -289,7 +289,7 @@ Publish its first version by hand, following [the first publish](releasing.md#th
 ## Checklist
 
 - [ ] The name and its punctuation-free form are free on npm.
-- [ ] `package.json` has `exports` with `types` first, `files` with `CHANGELOG.md`, `sideEffects`, `engines`, `publishConfig`, and `repository.directory`.
+- [ ] `package.json` has `exports` with `types` first, `files` with `CHANGELOG.md` and `API.md`, a `build` that ends with `write-api-markdown.ts`, `sideEffects`, `engines`, `publishConfig`, and `repository.directory`.
 - [ ] The TypeScript, ESLint, and Vitest configurations match the runtime.
 - [ ] Every export has TSDoc, and every function and class an `@example`.
 - [ ] The tests sit next to their files, and each category has a script.

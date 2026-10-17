@@ -8,6 +8,7 @@ A fresh start: breaking changes in a minor version, once, because nothing depend
 
 - `ISchema<T>`, the type of the `schema` option: anything with `parse(value: unknown): T`, such as a Zod schema.
 - `INVALID_STORE_ID`, which every factory throws for a store id with anything but letters, digits, underscores, and hyphens.
+- `API.md`, the full API reference, generated from the TSDoc of the version it ships with, so it can be read from `node_modules` without a browser.
 
 ### Changed
 

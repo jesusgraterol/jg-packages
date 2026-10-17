@@ -1,5 +1,5 @@
 ---
-import type { IApiReference } from '@jg-packages/api-reference';
+import { groupSymbols, type IApiReference } from '@jg-packages/api-reference';
 import type { GetStaticPaths } from 'astro';
 import { getEntry, render } from 'astro:content';
 import Prose from 'jg-personal-astro-ui/prose';
@@ -9,7 +9,6 @@ import OnThisPage from '../../components/on-this-page/on-this-page.astro';
 import PackageHero from '../../components/package-hero/package-hero.astro';
 import BaseLayout from '../../layouts/base-layout.astro';
 import { PACKAGE_CATALOG, PACKAGES_DIRECTORY, SITE_CONFIG } from '../../site.config.ts';
-import { groupSymbols } from '../../utilities/api-reference/index.ts';
 import { loadListedPackages, type IListedPackage } from '../../utilities/package-catalog/index.ts';
 
 interface Props {

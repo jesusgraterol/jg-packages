@@ -138,9 +138,9 @@ A package with entries for different runtimes typechecks each entry's directory 
   1. the package name as the title, then a one-sentence summary
   2. `## Install`
   3. `## Usage`
-  4. `## Documentation`: a link to the package's page on the site
+  4. `## Documentation`: that the API reference ships as `API.md`, and a link to the package's page on the site
   5. `## License`
-- README links are absolute URLs, because the README is also the package's npm page. There's no hand-written API reference: the site generates it from the TSDoc.
+- README links are absolute URLs, because the README is also the package's npm page. There's no hand-written API reference: every build renders `API.md` from the TSDoc, which ships in the tarball, so an agent reads the reference of the installed version in `node_modules/<package>/API.md`, and the site shows the same reference.
 
 ## Changelogs
 

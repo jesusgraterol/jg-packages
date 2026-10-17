@@ -8,6 +8,7 @@ A fresh start: breaking changes in a minor version, once, because nothing depend
 
 - `IAPIError`, the error an envelope carries: `{ code, message, data }`.
 - `IParsedAPIError`, an envelope error as it arrives from any service, with optional, unchecked `data`.
+- `API.md`, the full API reference, generated from the TSDoc of the version it ships with, so it can be read from `node_modules` without a browser.
 
 ### Changed
 

@@ -45,7 +45,8 @@
   "files": [
     "src",
     "!src/**/*.test-*",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "API.md"
   ],
   "sideEffects": [
     "*.css"
@@ -73,6 +74,7 @@
     "theme"
   ],
   "scripts": {
+    "build": "node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
     "test": "pnpm test:unit",
     "test:coverage": "vitest run --coverage --project unit",

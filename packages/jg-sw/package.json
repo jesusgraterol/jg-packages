@@ -22,7 +22,8 @@
   "types": "./dist/runtime/index.d.ts",
   "files": [
     "dist",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "API.md"
   ],
   "sideEffects": false,
   "engines": {
@@ -49,7 +50,7 @@
     "firebase-cloud-messaging"
   ],
   "scripts": {
-    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/build-tools/src/copy-assets.ts 'build/templates/*.sw.js'",
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/build-tools/src/copy-assets.ts 'build/templates/*.sw.js' && node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
     "test": "pnpm test:unit && pnpm test:integration && pnpm test:e2e",
     "test:coverage": "vitest run --coverage --project unit --project integration",

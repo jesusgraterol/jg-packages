@@ -62,7 +62,7 @@ Every store probes its mechanism on its first call, never when it's created, so 
 
 ## Documentation
 
-The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-storage/.
+The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-storage/.
 
 ## License
 

@@ -1,11 +1,12 @@
 ---
-import type { IApiReference } from '@jg-packages/api-reference';
-
 import {
   groupSymbols,
+  toEntryPointAnchor,
   toImportSpecifier,
   toSymbolAnchor,
-} from '../../utilities/api-reference/index.ts';
+  type IApiReference,
+} from '@jg-packages/api-reference';
+
 import ApiSymbol from '../api-symbol/api-symbol.astro';
 
 interface Props {
@@ -46,7 +47,7 @@ const symbolCount = reference.entryPoints.reduce((count, { symbols }) => count +
     <div class="mt-10">
       {hasSeveralEntryPoints && (
         <h3
-          id={`api-entry-${subpath === '.' ? 'main' : subpath.replace(/^\.\//, '')}`}
+          id={toEntryPointAnchor(subpath)}
           class="scroll-mt-24 font-mono text-lg font-bold"
         >
           {specifier}

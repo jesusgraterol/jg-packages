@@ -61,7 +61,7 @@ if (isResponse<IUser>(body)) {
 
 ## Documentation
 
-The full API reference is at https://jg-packages.jesusgraterol.dev/packages/jg-api-response/.
+The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-api-response/.
 
 ## License
 
