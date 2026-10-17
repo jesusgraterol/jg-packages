@@ -11,7 +11,9 @@ import { filterItemsByQueryTokens } from './utilities.js';
  * @param options? The options to filter the items by query.
  * @returns A new array containing the items that match the query based on the provided options.
  * @example
- * filterByQuery([{ name: 'Ada' }, { name: 'Alan' }, { name: 'Grace' }], 'al', { queryProp: 'name' }); // [{ name: 'Alan' }]
+ * import { filterByQuery } from 'jg-utilities';
+ *
+ * filterByQuery([{ name: 'Ada' }, { name: 'Alan' }, { name: 'Grace' }], 'al', { queryProp: 'name' }); // => [{ name: 'Alan' }]
  */
 export const filterByQuery = <T>(
   items: T[],

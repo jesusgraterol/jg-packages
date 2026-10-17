@@ -102,6 +102,8 @@ const update = async (): Promise<void> => {
  * @returns A promise that resolves once the new worker was asked to activate, or the page started
  * reloading.
  * @example
+ * import { getServiceWorkerSnapshot, updateApp } from 'jg-sw';
+ *
  * if (getServiceWorkerSnapshot().hasWaitingWorker) {
  *   updateButton.addEventListener('click', () => updateApp());
  * }

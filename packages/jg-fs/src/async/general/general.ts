@@ -7,6 +7,8 @@ import { toPathElement, type IPathElement } from '../../shared/index.js';
  * @param path The path.
  * @returns A promise that resolves to whether the path exists.
  * @example
+ * import { pathExists } from 'jg-fs';
+ *
  * await pathExists('config.json'); // true when the file exists
  */
 export const pathExists = async (path: string): Promise<boolean> => {
@@ -23,6 +25,8 @@ export const pathExists = async (path: string): Promise<boolean> => {
  * @param path The path.
  * @returns A promise that resolves to the path's details, or `null` when it doesn't exist.
  * @example
+ * import { getPathElement } from 'jg-fs';
+ *
  * const element = await getPathElement('logo.png');
  * element?.size; // the size in bytes, or undefined when the path doesn't exist
  */

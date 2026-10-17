@@ -71,6 +71,8 @@ const generateServiceWorker = async (
  * whether the worker caches (false for development), and the directory paths are resolved from.
  * @returns A promise that resolves to the worker's source.
  * @example
+ * import { buildServiceWorker } from 'jg-sw/build';
+ *
  * const source = await buildServiceWorker(
  *   {
  *     outDir: 'dist',
@@ -107,6 +109,8 @@ export const buildServiceWorker = async (
  * whether the worker caches (false for development), and the directory paths are resolved from.
  * @returns A promise that resolves to the written file's path.
  * @example
+ * import { readServiceWorkerConfig, writeServiceWorker } from 'jg-sw/build';
+ *
  * const config = await readServiceWorkerConfig('jg-sw.config.json');
  * await writeServiceWorker(config, { environment: 'production' }); // '/app/dist/sw.js'
  * @throws

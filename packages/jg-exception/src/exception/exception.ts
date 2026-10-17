@@ -21,13 +21,26 @@ const toSerializableData = (data: IJSONValue | undefined): IJSONValue => {
 /**
  * An `Error` with a stable string code and optional JSON data, the error every jg package throws.
  * @example
- * throw new Exception('The user was not found.', { code: 'USER_NOT_FOUND', data: { id: 1 } });
+ * import { Exception } from 'jg-exception';
+ *
+ * const exception = new Exception('The user was not found.', {
+ *   code: 'USER_NOT_FOUND',
+ *   data: { id: 1 },
+ * });
+ * exception.code; // => 'USER_NOT_FOUND'
+ * exception.data; // => { id: 1 }
  * @example
- * try {
- *   await loadUser();
- * } catch (error) {
- *   throw new Exception("Couldn't load the user.", { code: 'USER_LOAD_FAILED', cause: error });
- * }
+ * import { Exception } from 'jg-exception';
+ *
+ * // the message says what failed at this step, and the cause keeps the error underneath
+ * const readSettings = (text: string): unknown => {
+ *   try {
+ *     return JSON.parse(text);
+ *   } catch (error) {
+ *     throw new Exception("Couldn't read the settings.", { code: 'SETTINGS_INVALID', cause: error });
+ *   }
+ * };
+ * readSettings('{"theme":"dark"}'); // => { theme: 'dark' }
  */
 export class Exception extends Error {
   // the stable code callers handle the error by
@@ -57,8 +70,10 @@ export class Exception extends Error {
    * @returns The name, code, message, and data, with `null` for data that is missing or can't be
    * serialized.
    * @example
-   * new Exception('Not found', { code: 'NOT_FOUND', data: { id: 1 } }).toJSON();
-   * // { name: 'Exception', code: 'NOT_FOUND', message: 'Not found', data: { id: 1 } }
+   * import { Exception } from 'jg-exception';
+   *
+   * const json = new Exception('Not found', { code: 'NOT_FOUND', data: { id: 1 } }).toJSON();
+   * json; // => { name: 'Exception', code: 'NOT_FOUND', message: 'Not found', data: { id: 1 } }
    */
   public toJSON(): IExceptionJSON {
     return {

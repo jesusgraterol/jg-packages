@@ -63,8 +63,10 @@ const __sortBigIntValues = (
  * @param direction The direction to sort the values.
  * @returns A number indicating the sort order based on the primitive type.
  * @example
- * [3, 1, 2].sort(sortPrimitives('asc')); // [1, 2, 3]
- * ['b', 'c', 'a'].sort(sortPrimitives('desc')); // ['c', 'b', 'a']
+ * import { sortPrimitives } from 'jg-utilities';
+ *
+ * [3, 1, 2].sort(sortPrimitives('asc')); // => [1, 2, 3]
+ * ['b', 'c', 'a'].sort(sortPrimitives('desc')); // => ['c', 'b', 'a']
  * @throws
  * - MIXED_OR_UNSUPPORTED_DATA_TYPES: if the values are mixed or are different to string | number | bigint
  */
@@ -92,7 +94,9 @@ export const sortPrimitives =
  * @param direction The direction to sort the values.
  * @returns A number indicating the sort order based on the primitive type.
  * @example
- * [{ age: 40 }, { age: 25 }].sort(sortRecords('age', 'asc')); // [{ age: 25 }, { age: 40 }]
+ * import { sortRecords } from 'jg-utilities';
+ *
+ * [{ age: 40 }, { age: 25 }].sort(sortRecords('age', 'asc')); // => [{ age: 25 }, { age: 40 }]
  * @throws
  * - MIXED_OR_UNSUPPORTED_DATA_TYPES: if the values are mixed or are different to string | number | bigint
  */
@@ -123,7 +127,9 @@ export const sortRecords =
  * @param direction The direction to sort the values.
  * @returns A number indicating the sort order based on the primitive type.
  * @example
- * [{ amount: '900000000000000000001' }, { amount: '5' }].sort(sortRecordsWithBigIntString('amount', 'asc')); // [{ amount: '5' }, { amount: '900000000000000000001' }]
+ * import { sortRecordsWithBigIntString } from 'jg-utilities';
+ *
+ * [{ amount: '900000000000000000001' }, { amount: '5' }].sort(sortRecordsWithBigIntString('amount', 'asc')); // => [{ amount: '5' }, { amount: '900000000000000000001' }]
  * @throws
  * - MIXED_OR_UNSUPPORTED_DATA_TYPES: if the values are mixed or are different to string | number | bigint
  */
@@ -162,7 +168,9 @@ export const sortRecordsWithBigIntString =
  * @param direction The direction to sort the values.
  * @returns A number indicating the sort order based on the date values.
  * @example
- * [{ at: '2026-10-17' }, { at: '2025-01-01' }].sort(sortRecordsWithDateValue('at', 'asc')); // [{ at: '2025-01-01' }, { at: '2026-10-17' }]
+ * import { sortRecordsWithDateValue } from 'jg-utilities';
+ *
+ * [{ at: '2026-10-17' }, { at: '2025-01-01' }].sort(sortRecordsWithDateValue('at', 'asc')); // => [{ at: '2025-01-01' }, { at: '2026-10-17' }]
  * @throws
  * - MIXED_OR_UNSUPPORTED_DATA_TYPES: if either record has a missing, null, or invalid date value
  */

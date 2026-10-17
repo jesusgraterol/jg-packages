@@ -122,6 +122,8 @@ const createWebStorageStore = <T>(
  * schema validates every stored value get reads.
  * @returns The store.
  * @example
+ * import { createLocalStore } from 'jg-storage';
+ *
  * const settings = createLocalStore<{ theme: 'light' | 'dark' }>('settings');
  * settings.set(undefined, { theme: 'dark' }); // stored under the key 'jg-storage:settings'
  * settings.get(); // { theme: 'dark' }
@@ -146,6 +148,8 @@ export const createLocalStore = <T>(id: string, options: IStoreOptions<T> = {}):
  * and schema validates every stored value get reads.
  * @returns The store.
  * @example
+ * import { createSessionStore } from 'jg-storage';
+ *
  * const wizard = createSessionStore<number>('wizard-step', { fallback: 'memory' });
  * wizard.set(undefined, 2);
  * wizard.get(); // 2

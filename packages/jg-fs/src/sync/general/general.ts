@@ -7,6 +7,8 @@ import { toPathElement, type IPathElement } from '../../shared/index.js';
  * @param path The path.
  * @returns Whether the path exists.
  * @example
+ * import { pathExists } from 'jg-fs/sync';
+ *
  * pathExists('config.json'); // true when the file exists
  */
 export const pathExists = (path: string): boolean => {
@@ -23,6 +25,8 @@ export const pathExists = (path: string): boolean => {
  * @param path The path.
  * @returns The path's details, or `null` when it doesn't exist.
  * @example
+ * import { getPathElement } from 'jg-fs/sync';
+ *
  * const element = getPathElement('logo.png');
  * element?.size; // the size in bytes, or undefined when the path doesn't exist
  */

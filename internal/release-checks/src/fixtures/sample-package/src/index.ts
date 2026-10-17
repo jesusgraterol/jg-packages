@@ -6,6 +6,8 @@ export const DEFAULT_NAME = 'world';
  * @param name Who to greet.
  * @returns The greeting.
  * @example
- * greet('Ada'); // 'Hello, Ada!'
+ * import { greet } from 'jg-release-checks-sample';
+ *
+ * greet('Ada'); // => 'Hello, Ada!'
  */
 export const greet = (name: string = DEFAULT_NAME): string => `Hello, ${name}!`;

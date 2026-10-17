@@ -87,7 +87,11 @@ describe('packAndCheck', () => {
   }, 120_000);
 
   test('fails an export without its @example, a changelog without the version, and a README without a section', async () => {
-    await editFile('src/index.ts', " * @example\n * greet('Ada'); // 'Hello, Ada!'\n", '');
+    await editFile(
+      'src/index.ts',
+      " * @example\n * import { greet } from 'jg-release-checks-sample';\n *\n * greet('Ada'); // => 'Hello, Ada!'\n",
+      '',
+    );
     await editFile('CHANGELOG.md', '## 1.0.0', '## 0.9.0');
     await editFile('README.md', '## Usage', '## Examples');
     await buildFixture();

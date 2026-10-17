@@ -17,6 +17,8 @@ const environmentGlobals = globalThis as IEnvironmentGlobals;
  * browser.
  * @returns True when the window global is defined.
  * @example
+ * import { hasWindow } from 'jg-utilities';
+ *
  * hasWindow(); // true in a browser, false in Node.js
  */
 export const hasWindow = (): boolean => typeof environmentGlobals.window !== 'undefined';
@@ -26,6 +28,8 @@ export const hasWindow = (): boolean => typeof environmentGlobals.window !== 'un
  * browser: Node.js 21 and later define a global navigator too.
  * @returns True when the navigator global is defined.
  * @example
+ * import { hasNavigator } from 'jg-utilities';
+ *
  * hasNavigator(); // true in browsers and in Node.js 21 or later
  */
 export const hasNavigator = (): boolean => typeof navigator !== 'undefined';
@@ -34,6 +38,8 @@ export const hasNavigator = (): boolean => typeof navigator !== 'undefined';
  * Checks whether the IndexedDB API exists in the current environment.
  * @returns True when the indexedDB global is defined.
  * @example
+ * import { isIndexedDbAvailable } from 'jg-utilities';
+ *
  * isIndexedDbAvailable(); // true in browsers that support IndexedDB
  */
 export const isIndexedDbAvailable = (): boolean =>
@@ -46,6 +52,8 @@ export const isIndexedDbAvailable = (): boolean =>
  * @param view? The window whose media query is read. Defaults to the global window.
  * @returns True only when the view reports a reduced-motion preference.
  * @example
+ * import { prefersReducedMotion } from 'jg-utilities';
+ *
  * prefersReducedMotion(); // true when the user asked the system to reduce motion
  */
 export const prefersReducedMotion = (

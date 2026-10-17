@@ -120,6 +120,9 @@ const register = async ({
  * @param options The worker's path and registration options, and whether to log.
  * @returns A promise that resolves to the snapshot once the registration settles.
  * @example
+ * import { hasErrorCode } from 'jg-exception';
+ * import { ERRORS, registerServiceWorker } from 'jg-sw';
+ *
  * const { registration, registrationError } = await registerServiceWorker();
  * if (hasErrorCode(registrationError, ERRORS.SW_NO_BROWSER_SUPPORT)) {
  *   // the browser has no service workers

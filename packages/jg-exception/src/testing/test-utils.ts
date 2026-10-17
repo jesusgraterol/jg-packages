@@ -13,6 +13,8 @@ import { assertError } from './utilities.js';
  * - Expected error code "{expectedCode}", but received error code "{actualCode}".
  * - Expected error message to include "{expectedMessage}", but received error message "{actualMessage}".
  * @example
+ * import { expectToThrowCode } from 'jg-exception/testing';
+ *
  * expectToThrowCode(
  *   () => {
  *     throw Object.assign(new Error('Access denied'), { code: 'ACCESS_DENIED' });
@@ -52,6 +54,8 @@ export const expectToThrowCode = (
  * - Expected error code "{expectedCode}", but received error code "{actualCode}".
  * - Expected error message to include "{expectedMessage}", but received error message "{actualMessage}".
  * @example
+ * import { expectToRejectCode } from 'jg-exception/testing';
+ *
  * await expectToRejectCode(
  *   Promise.reject(Object.assign(new Error('Access denied'), { code: 'ACCESS_DENIED' })),
  *   'ACCESS_DENIED',

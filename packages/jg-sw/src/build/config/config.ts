@@ -75,6 +75,8 @@ export const parseEnvironment = (
  * @param path The config file's path.
  * @returns A promise that resolves to the config.
  * @example
+ * import { readServiceWorkerConfig } from 'jg-sw/build';
+ *
  * const config = await readServiceWorkerConfig('jg-sw.config.json');
  * config.template; // 'base'
  * @throws

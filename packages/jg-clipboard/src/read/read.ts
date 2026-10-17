@@ -15,6 +15,8 @@ import {
  * key press handler, which Safari requires.
  * @returns A promise that resolves to the text, or `''` when the clipboard holds none.
  * @example
+ * import { readText } from 'jg-clipboard';
+ *
  * pasteButton.addEventListener('click', async () => {
  *   input.value = await readText();
  * });
@@ -68,6 +70,8 @@ const readImage = async (items: ClipboardItems): Promise<Blob | null> => {
  * @returns A promise that resolves to each kind of content, with null for the kinds the clipboard
  * doesn't hold. The image is PNG.
  * @example
+ * import { readClipboard } from 'jg-clipboard';
+ *
  * pasteButton.addEventListener('click', async () => {
  *   const { html, text, image } = await readClipboard();
  *   if (image) {

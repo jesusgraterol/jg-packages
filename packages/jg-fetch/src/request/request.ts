@@ -178,6 +178,8 @@ const runAttempt = async <T>(
  * @returns A promise that resolves to `{ data, error: null, meta }` or `{ data: null, error,
  * meta }`, where error is a FetchException.
  * @example
+ * import { request } from 'jg-fetch';
+ *
  * const { data, error } = await request<IUser>('/users/1', {
  *   baseUrl: 'https://api.example.com',
  *   parseAs: 'envelope',
@@ -187,6 +189,8 @@ const runAttempt = async <T>(
  *   error.kind; // such as 'API_ERROR' or 'TIMEOUT'
  * }
  * @example
+ * import { request } from 'jg-fetch';
+ *
  * const { data: html } = await request('https://example.com', { parseAs: 'text' }); // string | null
  */
 export function request(

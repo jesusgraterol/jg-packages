@@ -115,6 +115,10 @@ A package with entries for different runtimes typechecks each entry's directory 
 
 - Every exported function and class has a TSDoc summary and at least one `@example`. Exported types and constants have a summary.
 - Error contracts follow the `@throws` format under [Errors](#errors).
+- **Examples are code a reader can paste.** `release:verify` typechecks every one against the published tarballs, so each example:
+  - imports what it uses from the package, by its public name, such as `import { toSlug } from 'jg-utilities';`, and from Node.js or other packages the same way
+  - defines its inputs, such as `const csv = 'id,name\n1,Ada\n';`. Where an input is the reader's own, such as a button or a token getter, it's declared in the package's `examples.d.ts`, which never ships: `declare const button: HTMLButtonElement;`
+- **Results are stated with `// =>`.** In `jg-exception`, `jg-api-response`, `jg-utilities`, and `jg-bignumber`, which do no I/O, every example also runs, in en-US and UTC, and each top-level `expression; // => result` line becomes an assertion, so the stated result is checked. These examples therefore can't throw, and can't use what `examples.d.ts` declares, because it doesn't exist at runtime: define the inputs instead. `// =>` marks only deterministic results; describe anything else in a plain comment, such as `generateUUID(4); // such as '9b1deb4d-…'`. The other packages' examples, which do I/O, are typechecked only, so they describe results with plain comments.
 - The README has these sections, in order:
   1. the package name as the title, then a one-sentence summary
   2. `## Install`

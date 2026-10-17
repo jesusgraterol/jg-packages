@@ -1,8 +1,8 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { DEPENDENCY_FIELDS } from '../shared/constants.ts';
+import type { IConsumerProject } from './consumer-project.ts';
 import type { IPackageManifest, IRunCommand } from '../shared/types.ts';
 import type { IPackedPackage } from './types.ts';
 
@@ -145,47 +145,28 @@ const checkInstalledPackage = async (
 };
 
 /**
- * Check 2: installs every tarball together into a temporary ESM project, the way a consumer
- * would, then checks each package's installed manifest, imports, and commands.
+ * Check 2: with every tarball installed together into a temporary ESM project, the way a consumer
+ * would, checks each package's installed manifest, imports, and commands.
  * @param packages The packed packages.
  * @param runCommand Runs a command.
+ * @param consumer The project the tarballs are installed in.
  * @returns A promise that resolves to each package's problems, by name.
  */
 export const checkInstallAndImport = async (
   packages: IPackedPackage[],
   runCommand: IRunCommand,
+  consumer: IConsumerProject,
 ): Promise<Map<string, string[]>> => {
-  const projectDirectory = await mkdtemp(join(tmpdir(), 'jg-release-consumer-'));
-  try {
-    await writeFile(
-      join(projectDirectory, 'package.json'),
-      JSON.stringify({ name: 'release-check-consumer', private: true, type: 'module' }),
-    );
-    const install = await runCommand(
-      'npm',
-      [
-        'install',
-        '--ignore-scripts',
-        '--no-audit',
-        '--no-fund',
-        '--no-package-lock',
-        ...packages.map(({ tarballPath }) => tarballPath),
-      ],
-      { cwd: projectDirectory },
-    );
-    if (install.exitCode !== 0) {
-      const message = `couldn't be installed from its tarball: ${install.stderr.trim()}`;
-      return new Map(packages.map(({ packedManifest }) => [packedManifest.name, [message]]));
-    }
-    const problems = new Map<string, string[]>();
-    for (const packed of packages) {
-      problems.set(
-        packed.packedManifest.name,
-        await checkInstalledPackage(runCommand, projectDirectory, packed),
-      );
-    }
-    return problems;
-  } finally {
-    await rm(projectDirectory, { recursive: true, force: true });
+  const { directory, installProblem } = consumer;
+  if (installProblem !== undefined) {
+    return new Map(packages.map(({ packedManifest }) => [packedManifest.name, [installProblem]]));
   }
+  const problems = new Map<string, string[]>();
+  for (const packed of packages) {
+    problems.set(
+      packed.packedManifest.name,
+      await checkInstalledPackage(runCommand, directory, packed),
+    );
+  }
+  return problems;
 };

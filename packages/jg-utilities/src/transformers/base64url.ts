@@ -11,7 +11,9 @@ import { bytesToBinaryString } from './utilities.js';
  * @param value The string to encode.
  * @returns The base64url encoding of the string's UTF-8 bytes.
  * @example
- * encodeBase64Url('{"page":2}'); // 'eyJwYWdlIjoyfQ'
+ * import { encodeBase64Url } from 'jg-utilities';
+ *
+ * encodeBase64Url('{"page":2}'); // => 'eyJwYWdlIjoyfQ'
  */
 export const encodeBase64Url = (value: string): string =>
   btoa(bytesToBinaryString(new TextEncoder().encode(value)))
@@ -25,7 +27,9 @@ export const encodeBase64Url = (value: string): string =>
  * @param value The base64url value to decode.
  * @returns The decoded string.
  * @example
- * decodeBase64Url('eyJwYWdlIjoyfQ'); // '{"page":2}'
+ * import { decodeBase64Url } from 'jg-utilities';
+ *
+ * decodeBase64Url('eyJwYWdlIjoyfQ'); // => '{"page":2}'
  * @throws
  * - INVALID_BASE64URL: if the value isn't a string of base64url characters with a valid length.
  * - INVALID_BASE64URL: if the decoded bytes aren't valid UTF-8.

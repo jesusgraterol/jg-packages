@@ -15,6 +15,8 @@ import {
  * memory is always available.
  * @returns The store.
  * @example
+ * import { createMemoryStore } from 'jg-storage';
+ *
  * const drafts = createMemoryStore<{ text: string }>('drafts');
  * drafts.set('post-1', { text: 'Hello' });
  * drafts.get('post-1'); // { text: 'Hello' }

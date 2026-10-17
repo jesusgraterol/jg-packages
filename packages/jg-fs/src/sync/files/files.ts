@@ -43,6 +43,8 @@ import { openWithoutFollowing, readPermissionBits, syncDirectory } from './utili
  * @param path The path.
  * @returns Whether the path is a file.
  * @example
+ * import { isFile } from 'jg-fs/sync';
+ *
  * isFile('package.json'); // true
  */
 export const isFile = (path: string): boolean => getPathElement(path)?.isFile ?? false;
@@ -53,6 +55,9 @@ export const isFile = (path: string): boolean => getPathElement(path)?.isFile ??
  * @param data The content.
  * @param options Node.js's writeFile options, such as the encoding or mode.
  * @example
+ * import { writeFile } from 'jg-fs/sync';
+ *
+ * const csv = 'id,name\n1,Ada\n';
  * writeFile('out/report.csv', csv, { encoding: 'utf-8' });
  */
 export const writeFile = (
@@ -69,6 +74,8 @@ export const writeFile = (
  * @param path The file's path.
  * @param data The text.
  * @example
+ * import { writeTextFile } from 'jg-fs/sync';
+ *
  * writeTextFile('notes/today.md', '# Today');
  * @throws
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the data isn't a string
@@ -84,6 +91,8 @@ export const writeTextFile = (path: string, data: string): void => {
  * @param data The value, or its JSON text.
  * @param space The indentation for stringified values.
  * @example
+ * import { writeJSONFile } from 'jg-fs/sync';
+ *
  * writeJSONFile('config.json', { port: 8080 });
  * @throws
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the JSON content cannot be stringified or is empty
@@ -101,6 +110,9 @@ export const writeJSONFile = <T = Record<string, unknown>>(
  * @param path The file's path.
  * @param data The content.
  * @example
+ * import { writeBufferFile } from 'jg-fs/sync';
+ *
+ * const imageBuffer = Buffer.from('iVBORw0KGgo=', 'base64');
  * writeBufferFile('avatar.png', imageBuffer);
  * @throws
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the data isn't a Buffer
@@ -116,6 +128,8 @@ export const writeBufferFile = (path: string, data: Buffer): void => {
  * @param options Node.js's readFile options, such as the encoding.
  * @returns The content.
  * @example
+ * import { readFile } from 'jg-fs/sync';
+ *
  * readFile('notes.md', 'utf-8'); // a string
  * readFile('avatar.png'); // a Buffer
  * @throws
@@ -136,6 +150,8 @@ export function readFile(path: string, options: IReadFileOptions = null): string
  * @param path The file's path.
  * @returns The text.
  * @example
+ * import { readTextFile } from 'jg-fs/sync';
+ *
  * const markdown = readTextFile('README.md');
  * @throws
  * - NOT_A_FILE: if the path doesn't exist or is not a file
@@ -149,8 +165,12 @@ export const readTextFile = (path: string): string => readFile(path, { encoding:
  * @param options The schema, such as a Zod schema, whose errors propagate unchanged.
  * @returns The parsed value.
  * @example
+ * import { readJSONFile } from 'jg-fs/sync';
+ *
  * const config = readJSONFile('config.json', { schema: Config }); // Config's type
  * @example
+ * import { readJSONFile } from 'jg-fs/sync';
+ *
  * const value = readJSONFile('data.json'); // unknown
  * @throws
  * - NOT_A_FILE: if the path doesn't exist or is not a file
@@ -164,6 +184,8 @@ export const readJSONFile = <T = unknown>(path: string, options: IReadJSONFileOp
  * @param path The file's path.
  * @returns The content.
  * @example
+ * import { readBufferFile } from 'jg-fs/sync';
+ *
  * const image = readBufferFile('avatar.png');
  * @throws
  * - NOT_A_FILE: if the path doesn't exist or is not a file
@@ -175,6 +197,8 @@ export const readBufferFile = (path: string): Buffer => readFile(path, null);
  * @param srcPath The file to copy.
  * @param destPath Where to copy it.
  * @example
+ * import { copyFile } from 'jg-fs/sync';
+ *
  * copyFile('config.example.json', 'config.json');
  * @throws
  * - NOT_A_FILE: if the srcPath doesn't exist or is not a file
@@ -190,6 +214,8 @@ export const copyFile = (srcPath: string, destPath: string): void => {
  * Deletes a file.
  * @param path The file's path.
  * @example
+ * import { deleteFile } from 'jg-fs/sync';
+ *
  * deleteFile('cache.json');
  * @throws
  * - NOT_A_FILE: if the path doesn't exist or is not a file
@@ -206,6 +232,8 @@ export const deleteFile = (path: string): void => {
  * @param target The file the link points to.
  * @param path Where to create the link.
  * @example
+ * import { createFileSymLink } from 'jg-fs/sync';
+ *
  * createFileSymLink('config.production.json', 'config.json');
  * @throws
  * - NON_EXISTENT_FILE: if the target file does not exist
@@ -235,8 +263,11 @@ export const createFileSymLink = (target: string, path: string): void => {
  * @param data The content.
  * @param mode The permission bits of the written file, such as `0o600`.
  * @example
+ * import { writeFileAtomic } from 'jg-fs/sync';
+ *
+ * const state = { step: 2 };
  * writeFileAtomic('state.json', JSON.stringify(state)); // readers never see a partial file
- * writeFileAtomic('secrets.env', contents, 0o600);
+ * writeFileAtomic('secrets.env', 'TOKEN=abc\n', 0o600); // only the owner can read it
  */
 export const writeFileAtomic = (
   path: string,
@@ -281,7 +312,10 @@ export const writeFileAtomic = (
  * @param maxBytes The largest size accepted, in bytes.
  * @returns The content.
  * @example
- * const upload = readBoundedFile(join(uploadsDirectory, name), 5 * 1024 * 1024); // at most 5 MB
+ * import { join } from 'node:path';
+ * import { readBoundedFile } from 'jg-fs/sync';
+ *
+ * const upload = readBoundedFile(join('uploads', 'avatar.png'), 5 * 1024 * 1024); // at most 5 MB
  * @throws
  * - NOT_A_FILE: if the path doesn't exist, its final component is a symbolic link, or it isn't a regular file
  * - FILE_TOO_LARGE: if the file holds more than maxBytes bytes

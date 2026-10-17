@@ -23,6 +23,8 @@ const MAX_RETRY_AFTER_MS = MAX_TIMEOUT_SECONDS * 1000;
  * @param nowMs The current time, in milliseconds since the epoch. Defaults to Date.now().
  * @returns The milliseconds to wait, or null when the value is missing or invalid.
  * @example
+ * import { parseRetryAfterMs } from 'jg-fetch';
+ *
  * parseRetryAfterMs('120'); // 120000
  * parseRetryAfterMs('Wed, 21 Oct 2015 07:28:30 GMT', Date.parse('Wed, 21 Oct 2015 07:28:00 GMT')); // 30000
  * parseRetryAfterMs('soon'); // null

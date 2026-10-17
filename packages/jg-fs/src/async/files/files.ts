@@ -38,6 +38,8 @@ import { openWithoutFollowing, readPermissionBits, syncDirectory } from './utili
  * @param path The path.
  * @returns A promise that resolves to whether the path is a file.
  * @example
+ * import { isFile } from 'jg-fs';
+ *
  * await isFile('package.json'); // true
  */
 export const isFile = async (path: string): Promise<boolean> =>
@@ -50,6 +52,9 @@ export const isFile = async (path: string): Promise<boolean> =>
  * @param options Node.js's writeFile options, such as the encoding or mode.
  * @returns A promise that resolves once the file is written.
  * @example
+ * import { writeFile } from 'jg-fs';
+ *
+ * const csv = 'id,name\n1,Ada\n';
  * await writeFile('out/report.csv', csv, { encoding: 'utf-8' });
  */
 export const writeFile = async (
@@ -68,6 +73,8 @@ export const writeFile = async (
  * @param data The text.
  * @returns A promise that resolves once the file is written.
  * @example
+ * import { writeTextFile } from 'jg-fs';
+ *
  * await writeTextFile('notes/today.md', '# Today');
  * @throws
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the data isn't a string
@@ -84,6 +91,8 @@ export const writeTextFile = async (path: string, data: string): Promise<void> =
  * @param space The indentation for stringified values.
  * @returns A promise that resolves once the file is written.
  * @example
+ * import { writeJSONFile } from 'jg-fs';
+ *
  * await writeJSONFile('config.json', { port: 8080 });
  * @throws
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the JSON content cannot be stringified or is empty
@@ -102,6 +111,9 @@ export const writeJSONFile = async <T = Record<string, unknown>>(
  * @param data The content.
  * @returns A promise that resolves once the file is written.
  * @example
+ * import { writeBufferFile } from 'jg-fs';
+ *
+ * const imageBuffer = Buffer.from('iVBORw0KGgo=', 'base64');
  * await writeBufferFile('avatar.png', imageBuffer);
  * @throws
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the data isn't a Buffer
@@ -117,6 +129,8 @@ export const writeBufferFile = async (path: string, data: Buffer): Promise<void>
  * @param options Node.js's readFile options, such as the encoding.
  * @returns A promise that resolves to the content.
  * @example
+ * import { readFile } from 'jg-fs';
+ *
  * await readFile('notes.md', 'utf-8'); // a string
  * await readFile('avatar.png'); // a Buffer
  * @throws
@@ -140,6 +154,8 @@ export async function readFile(
  * @param path The file's path.
  * @returns A promise that resolves to the text.
  * @example
+ * import { readTextFile } from 'jg-fs';
+ *
  * const markdown = await readTextFile('README.md');
  * @throws
  * - NOT_A_FILE: if the path doesn't exist or is not a file
@@ -154,8 +170,12 @@ export const readTextFile = (path: string): Promise<string> =>
  * @param options The schema, such as a Zod schema, whose errors propagate unchanged.
  * @returns A promise that resolves to the parsed value.
  * @example
+ * import { readJSONFile } from 'jg-fs';
+ *
  * const config = await readJSONFile('config.json', { schema: Config }); // Config's type
  * @example
+ * import { readJSONFile } from 'jg-fs';
+ *
  * const value = await readJSONFile('data.json'); // unknown
  * @throws
  * - NOT_A_FILE: if the path doesn't exist or is not a file
@@ -171,6 +191,8 @@ export const readJSONFile = async <T = unknown>(
  * @param path The file's path.
  * @returns A promise that resolves to the content.
  * @example
+ * import { readBufferFile } from 'jg-fs';
+ *
  * const image = await readBufferFile('avatar.png');
  * @throws
  * - NOT_A_FILE: if the path doesn't exist or is not a file
@@ -183,6 +205,8 @@ export const readBufferFile = (path: string): Promise<Buffer> => readFile(path, 
  * @param destPath Where to copy it.
  * @returns A promise that resolves once the copy exists.
  * @example
+ * import { copyFile } from 'jg-fs';
+ *
  * await copyFile('config.example.json', 'config.json');
  * @throws
  * - NOT_A_FILE: if the srcPath doesn't exist or is not a file
@@ -199,6 +223,8 @@ export const copyFile = async (srcPath: string, destPath: string): Promise<void>
  * @param path The file's path.
  * @returns A promise that resolves once the file is gone.
  * @example
+ * import { deleteFile } from 'jg-fs';
+ *
  * await deleteFile('cache.json');
  * @throws
  * - NOT_A_FILE: if the path doesn't exist or is not a file
@@ -216,6 +242,8 @@ export const deleteFile = async (path: string): Promise<void> => {
  * @param path Where to create the link.
  * @returns A promise that resolves once the link exists.
  * @example
+ * import { createFileSymLink } from 'jg-fs';
+ *
  * await createFileSymLink('config.production.json', 'config.json');
  * @throws
  * - NON_EXISTENT_FILE: if the target file does not exist
@@ -246,8 +274,11 @@ export const createFileSymLink = async (target: string, path: string): Promise<v
  * @param mode The permission bits of the written file, such as `0o600`.
  * @returns A promise that resolves once the file is written and flushed.
  * @example
+ * import { writeFileAtomic } from 'jg-fs';
+ *
+ * const state = { step: 2 };
  * await writeFileAtomic('state.json', JSON.stringify(state)); // readers never see a partial file
- * await writeFileAtomic('secrets.env', contents, 0o600);
+ * await writeFileAtomic('secrets.env', 'TOKEN=abc\n', 0o600); // only the owner can read it
  */
 export const writeFileAtomic = async (
   path: string,
@@ -292,7 +323,10 @@ export const writeFileAtomic = async (
  * @param maxBytes The largest size accepted, in bytes.
  * @returns A promise that resolves to the content.
  * @example
- * const upload = await readBoundedFile(join(uploadsDirectory, name), 5 * 1024 * 1024); // at most 5 MB
+ * import { join } from 'node:path';
+ * import { readBoundedFile } from 'jg-fs';
+ *
+ * const upload = await readBoundedFile(join('uploads', 'avatar.png'), 5 * 1024 * 1024); // at most 5 MB
  * @throws
  * - NOT_A_FILE: if the path doesn't exist, its final component is a symbolic link, or it isn't a regular file
  * - FILE_TOO_LARGE: if the file holds more than maxBytes bytes

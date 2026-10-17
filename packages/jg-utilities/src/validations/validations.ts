@@ -16,9 +16,11 @@ import {
  * @param disallowWhitespaceOnly? A boolean indicating whether strings that contain only whitespace should be considered invalid. Defaults to true.
  * @returns A boolean indicating whether the value is a valid string and meets the length requirements (if provided).
  * @example
- * isStringValid('hello'); // true
- * isStringValid('   '); // false
- * isStringValid('hello', 1, 3); // false
+ * import { isStringValid } from 'jg-utilities';
+ *
+ * isStringValid('hello'); // => true
+ * isStringValid('   '); // => false
+ * isStringValid('hello', 1, 3); // => false
  */
 export const isStringValid = (
   value: unknown,
@@ -40,9 +42,11 @@ export const isStringValid = (
  * @param max? The maximum value. If not provided, it will default to Number.MAX_SAFE_INTEGER.
  * @returns A boolean indicating whether the value is a valid number and within the specified range.
  * @example
- * isNumberValid(12.5); // true
- * isNumberValid(Number.NaN); // false
- * isNumberValid(5, 10); // false
+ * import { isNumberValid } from 'jg-utilities';
+ *
+ * isNumberValid(12.5); // => true
+ * isNumberValid(Number.NaN); // => false
+ * isNumberValid(5, 10); // => false
  */
 export const isNumberValid = (
   value: unknown,
@@ -58,9 +62,11 @@ export const isNumberValid = (
  * @param max? The maximum value. If not provided, it will default to Number.MAX_SAFE_INTEGER.
  * @returns A boolean indicating whether the value is a valid integer and within the specified range.
  * @example
- * isIntegerValid(5); // true
- * isIntegerValid(5.5); // false
- * isIntegerValid(5, 1, 3); // false
+ * import { isIntegerValid } from 'jg-utilities';
+ *
+ * isIntegerValid(5); // => true
+ * isIntegerValid(5.5); // => false
+ * isIntegerValid(5, 1, 3); // => false
  */
 export const isIntegerValid = (value: unknown, min?: number, max?: number): value is number =>
   isNumberValid(value, min, max) && Number.isInteger(value);
@@ -72,8 +78,10 @@ export const isIntegerValid = (value: unknown, min?: number, max?: number): valu
  * @param value The value to be validated.
  * @returns A boolean indicating whether the value is a valid unix timestamp in milliseconds.
  * @example
- * isTimestampValid(Date.UTC(2026, 9, 17)); // true
- * isTimestampValid(-1); // false
+ * import { isTimestampValid } from 'jg-utilities';
+ *
+ * isTimestampValid(Date.UTC(2026, 9, 17)); // => true
+ * isTimestampValid(-1); // => false
  */
 export const isTimestampValid = (value: unknown): value is number =>
   isIntegerValid(value, 14400000);
@@ -83,8 +91,10 @@ export const isTimestampValid = (value: unknown): value is number =>
  * @param value The value to be validated.
  * @returns A boolean indicating whether the value is a valid numeric string.
  * @example
- * isNumeric('-12.5'); // true
- * isNumeric('1,000'); // false
+ * import { isNumeric } from 'jg-utilities';
+ *
+ * isNumeric('-12.5'); // => true
+ * isNumeric('1,000'); // => false
  */
 export const isNumeric = (value: string): boolean =>
   typeof value === 'string' && /^[-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/.test(value);
@@ -96,10 +106,12 @@ export const isNumeric = (value: string): boolean =>
  * @param allowEmpty? A boolean indicating whether empty objects are allowed. Defaults to false.
  * @returns A boolean indicating whether the value is a valid object and meets the key requirements (if provided).
  * @example
- * isObjectValid({ id: 1 }); // true
- * isObjectValid({}); // false
- * isObjectValid({}, true); // true
- * isObjectValid([]); // false
+ * import { isObjectValid } from 'jg-utilities';
+ *
+ * isObjectValid({ id: 1 }); // => true
+ * isObjectValid({}); // => false
+ * isObjectValid({}, true); // => true
+ * isObjectValid([]); // => false
  */
 export const isObjectValid = (value: unknown, allowEmpty?: boolean): value is Record<string, any> =>
   value !== null &&
@@ -113,9 +125,11 @@ export const isObjectValid = (value: unknown, allowEmpty?: boolean): value is Re
  * @param allowEmpty? A boolean indicating whether empty arrays are allowed. Defaults to false.
  * @returns A boolean indicating whether the value is a valid array and meets the element requirements (if provided).
  * @example
- * isArrayValid([1]); // true
- * isArrayValid([]); // false
- * isArrayValid([], true); // true
+ * import { isArrayValid } from 'jg-utilities';
+ *
+ * isArrayValid([1]); // => true
+ * isArrayValid([]); // => false
+ * isArrayValid([], true); // => true
  */
 export const isArrayValid = (value: unknown, allowEmpty?: boolean): value is Array<any> =>
   Array.isArray(value) && (allowEmpty || value.length > 0);
@@ -129,8 +143,10 @@ export const isArrayValid = (value: unknown, allowEmpty?: boolean): value is Arr
  * @param forbiddenExtensions? An array of forbidden email extensions. Defaults to ['.con'].
  * @returns A boolean indicating whether the value is a valid email address and does not have a forbidden extension.
  * @example
- * isEmailValid('ada@example.com'); // true
- * isEmailValid('ada@example.con'); // false
+ * import { isEmailValid } from 'jg-utilities';
+ *
+ * isEmailValid('ada@example.com'); // => true
+ * isEmailValid('ada@example.con'); // => false
  */
 export const isEmailValid = (
   value: unknown,
@@ -155,8 +171,10 @@ export const isEmailValid = (
  * @param maxLength? The maximum length of the slug. Defaults to 16.
  * @returns A boolean indicating whether the value is a valid slug.
  * @example
- * isSlugValid('jg-utilities'); // true
- * isSlugValid('JG Utils'); // false
+ * import { isSlugValid } from 'jg-utilities';
+ *
+ * isSlugValid('jg-utilities'); // => true
+ * isSlugValid('JG Utils'); // => false
  */
 export const isSlugValid = (
   value: unknown,
@@ -177,8 +195,10 @@ export const isSlugValid = (
  * @param maxLength? The maximum length of the password. Defaults to 2048.
  * @returns A boolean indicating whether the value is a valid password.
  * @example
- * isPasswordValid('Sup3r$ecret'); // true
- * isPasswordValid('password'); // false
+ * import { isPasswordValid } from 'jg-utilities';
+ *
+ * isPasswordValid('Sup3r$ecret'); // => true
+ * isPasswordValid('password'); // => false
  */
 export const isPasswordValid = (
   value: unknown,
@@ -193,7 +213,9 @@ export const isPasswordValid = (
  * @param value The value to be validated.
  * @returns A boolean indicating whether the value is a valid OTP secret.
  * @example
- * isOTPSecretValid('JBSWY3DPEHPK3PXP'); // true
+ * import { isOTPSecretValid } from 'jg-utilities';
+ *
+ * isOTPSecretValid('JBSWY3DPEHPK3PXP'); // => true
  */
 export const isOTPSecretValid = (value: unknown): value is string =>
   typeof value === 'string' && /^[0-9a-zA-Z]{16,64}$/.test(value);
@@ -203,8 +225,10 @@ export const isOTPSecretValid = (value: unknown): value is string =>
  * @param value The value to be validated.
  * @returns A boolean indicating whether the value is a valid OTP token.
  * @example
- * isOTPTokenValid('123456'); // true
- * isOTPTokenValid('12345'); // false
+ * import { isOTPTokenValid } from 'jg-utilities';
+ *
+ * isOTPTokenValid('123456'); // => true
+ * isOTPTokenValid('12345'); // => false
  */
 export const isOTPTokenValid = (value: unknown): value is string =>
   typeof value === 'string' && /^[0-9]{6}$/.test(value);
@@ -215,8 +239,10 @@ export const isOTPTokenValid = (value: unknown): value is string =>
  * @param value The value to be validated.
  * @returns A boolean indicating whether the value is a valid JWT.
  * @example
- * isJWTValid('eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl'); // true
- * isJWTValid('not-a-token'); // false
+ * import { isJWTValid } from 'jg-utilities';
+ *
+ * isJWTValid('eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl'); // => true
+ * isJWTValid('not-a-token'); // => false
  */
 export const isJWTValid = (value: unknown): value is string =>
   typeof value === 'string' &&
@@ -231,8 +257,10 @@ export const isJWTValid = (value: unknown): value is string =>
  * @param value The value to be validated.
  * @returns A boolean indicating whether the value is a valid Authorization header.
  * @example
- * isAuthorizationHeaderValid('Bearer eyJhbGciOi.payload.signature'); // true
- * isAuthorizationHeaderValid('Basic dXNlcg=='); // false
+ * import { isAuthorizationHeaderValid } from 'jg-utilities';
+ *
+ * isAuthorizationHeaderValid('Bearer eyJhbGciOi.payload.signature'); // => true
+ * isAuthorizationHeaderValid('Basic dXNlcg=='); // => false
  */
 export const isAuthorizationHeaderValid = (value: unknown): value is string =>
   typeof value === 'string' && /^Bearer [A-Za-z0-9-_.]{1,3000}$/.test(value);
@@ -242,8 +270,10 @@ export const isAuthorizationHeaderValid = (value: unknown): value is string =>
  * @param value The value to be validated.
  * @returns A boolean indicating whether the value is a valid semantic version.
  * @example
- * isSemverValid('1.2.0'); // true
- * isSemverValid('1.2'); // false
+ * import { isSemverValid } from 'jg-utilities';
+ *
+ * isSemverValid('1.2.0'); // => true
+ * isSemverValid('1.2'); // => false
  */
 export const isSemverValid = (value: unknown): value is string =>
   typeof value === 'string' && /^[0-9]{1,5}\.[0-9]{1,5}\.[0-9]{1,5}$/.test(value);
@@ -253,8 +283,10 @@ export const isSemverValid = (value: unknown): value is string =>
  * @param value The value to be validated.
  * @returns A boolean indicating whether the value is a valid URL.
  * @example
- * isURLValid('https://jg-packages.jesusgraterol.dev'); // true
- * isURLValid('not a url'); // false
+ * import { isURLValid } from 'jg-utilities';
+ *
+ * isURLValid('https://jg-packages.jesusgraterol.dev'); // => true
+ * isURLValid('not a url'); // => false
  */
 export const isURLValid = (value: unknown): value is string => {
   if (typeof value !== 'string') {
@@ -269,8 +301,10 @@ export const isURLValid = (value: unknown): value is string => {
  * @param version The UUID version to be validated against.
  * @returns A boolean indicating whether the value is a valid UUID of the specified version.
  * @example
- * isUUIDValid('0199f5e2-8f5a-7b3c-9d2e-4f1a6b8c0d7e', 7); // true
- * isUUIDValid('0199f5e2-8f5a-7b3c-9d2e-4f1a6b8c0d7e', 4); // false
+ * import { isUUIDValid } from 'jg-utilities';
+ *
+ * isUUIDValid('0199f5e2-8f5a-7b3c-9d2e-4f1a6b8c0d7e', 7); // => true
+ * isUUIDValid('0199f5e2-8f5a-7b3c-9d2e-4f1a6b8c0d7e', 4); // => false
  */
 export const isUUIDValid = (value: unknown, version: IUUIDVersion): value is string =>
   typeof value === 'string' && uuidValidate(value) && uuidVersion(value) === version;
@@ -284,9 +318,11 @@ export const isUUIDValid = (value: unknown, version: IUUIDVersion): value is str
  * @param maxBytes? The maximum size of the name in UTF-8 bytes. Defaults to 255.
  * @returns A boolean indicating whether the value is a portable file name.
  * @example
- * isFileNameValid('notes.md'); // true
- * isFileNameValid('con.txt'); // false
- * isFileNameValid('a/b.txt'); // false
+ * import { isFileNameValid } from 'jg-utilities';
+ *
+ * isFileNameValid('notes.md'); // => true
+ * isFileNameValid('con.txt'); // => false
+ * isFileNameValid('a/b.txt'); // => false
  */
 export const isFileNameValid = (
   value: unknown,

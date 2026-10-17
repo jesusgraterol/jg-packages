@@ -22,6 +22,8 @@ const NO_SUPPORT: IClipboardSupport = {
  * without a click or a permission.
  * @returns Whether the page is a secure context, and whether each function can run.
  * @example
+ * import { getClipboardSupport } from 'jg-clipboard';
+ *
  * const support = getClipboardSupport();
  * if (support.copyImage) {
  *   showCopyImageButton();

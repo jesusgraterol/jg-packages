@@ -42,7 +42,10 @@ const isParsedAPIError = (value: unknown): value is IParsedAPIError => {
  * @param error The error the request failed with, of any shape.
  * @returns The envelope, which `JSON.stringify` can always serialize when the data can.
  * @example
- * buildResponse({ id: 1 }); // { success: true, data: { id: 1 }, error: null }
+ * import { buildResponse } from 'jg-api-response';
+ * import { Exception } from 'jg-exception';
+ *
+ * buildResponse({ id: 1 }); // => { success: true, data: { id: 1 }, error: null }
  * buildResponse(undefined, new Exception('Not found', { code: 'NOT_FOUND', data: { id: 1 } }));
  * // { success: false, data: undefined, error: { code: 'NOT_FOUND', message: 'Not found', data: { id: 1 } } }
  */
@@ -59,7 +62,12 @@ export const buildResponse = <T = undefined>(data?: T, error?: unknown): IAPIRes
  * @param value The value to check, such as a parsed response body.
  * @returns Whether the value is an envelope.
  * @example
- * const body: unknown = await response.json();
+ * import { isResponse } from 'jg-api-response';
+ *
+ * type IUser = { id: number; name: string };
+ *
+ * const body: unknown = JSON.parse('{"success":true,"data":{"id":1,"name":"Ada"},"error":null}');
+ * isResponse<IUser>(body); // => true
  * if (isResponse<IUser>(body) && body.success) {
  *   body.data; // IUser | undefined
  * }

@@ -17,7 +17,9 @@ import {
  * @param value The value to be serialized. It should be an object or an array.
  * @returns A string representing the serialized JSON object.
  * @example
- * stringifyJSON({ id: 1, tags: ['a'] }); // '{"id":1,"tags":["a"]}'
+ * import { stringifyJSON } from 'jg-utilities';
+ *
+ * stringifyJSON({ id: 1, tags: ['a'] }); // => '{"id":1,"tags":["a"]}'
  * @throws
  * - UNSUPPORTED_DATA_TYPE: if the provided value is not an object or an array
  * - UNABLE_TO_SERIALIZE_JSON: if the result of JSON.stringify is not a valid string
@@ -46,7 +48,9 @@ export const stringifyJSON = <T>(value: T): string => {
  * @param value The value to be serialized. It should be an object or an array.
  * @returns A string representing the serialized JSON object with sorted keys.
  * @example
- * stringifyJSONDeterministically({ b: 1, a: { d: 2, c: 3 } }); // '{"a":{"c":3,"d":2},"b":1}'
+ * import { stringifyJSONDeterministically } from 'jg-utilities';
+ *
+ * stringifyJSONDeterministically({ b: 1, a: { d: 2, c: 3 } }); // => '{"a":{"c":3,"d":2},"b":1}'
  * @throws
  * - UNSUPPORTED_DATA_TYPE: if the provided value is not an object or an array
  * - UNABLE_TO_SERIALIZE_JSON: if the result of JSON.stringify is not a valid string
@@ -72,6 +76,8 @@ export const stringifyJSONDeterministically = <T>(value: T): string => {
  * @param value The JSON string to be deserialized.
  * @returns The deserialized object or array.
  * @example
+ * import { parseJSON } from 'jg-utilities';
+ *
  * const user = parseJSON<{ id: number }>('{"id":1}'); // { id: 1 }
  * @throws
  * - UNSUPPORTED_DATA_TYPE: if the provided value is not a non-empty string
@@ -100,7 +106,9 @@ export const parseJSON = <T>(value: string): T => {
  * @param value The value to be pruned. It should be an object, array, or primitive value.
  * @returns The pruned value, or null if the value is empty or invalid.
  * @example
- * pruneJSON({ a: 1, b: null, c: {}, d: [], e: { f: [] } }); // { a: 1 }
+ * import { pruneJSON } from 'jg-utilities';
+ *
+ * pruneJSON({ a: 1, b: null, c: {}, d: [], e: { f: [] } }); // => { a: 1 }
  */
 export const pruneJSON = <T extends IJSONValue>(value: T): T | null => {
   if (value === null || value === undefined) {

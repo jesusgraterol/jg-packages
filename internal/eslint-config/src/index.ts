@@ -24,12 +24,14 @@ export type IEslintConfigOptions = {
 // no type information, so type-aware rules can't run on them
 const ASTRO_SCRIPT_FILES = ['**/*.astro/*.ts', '**/*.astro/*.js'];
 
-// generated, installed, and test-report directories that are never linted
+// generated, installed, and test-report directories that are never linted, and the declarations
+// TSDoc examples use, which release check 8 typechecks together with the examples
 const IGNORED_PATHS = [
   '.astro/**',
   '.turbo/**',
   'coverage/**',
   'dist/**',
+  'examples.d.ts',
   'node_modules/**',
   'playwright-report/**',
   'test-results/**',

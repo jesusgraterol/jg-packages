@@ -102,10 +102,14 @@ const writeItem = (
  * @param text The text, or a promise of it.
  * @returns A promise that resolves once the text is on the clipboard.
  * @example
+ * import { copyText } from 'jg-clipboard';
+ *
  * button.addEventListener('click', () => {
  *   void copyText('npm install jg-clipboard');
  * });
  * @example
+ * import { copyText } from 'jg-clipboard';
+ *
  * // the text loads after the click
  * button.addEventListener('click', () => {
  *   void copyText(fetch('/share-link').then((response) => response.text()));
@@ -155,6 +159,8 @@ export const copyText = async (text: string | Promise<string>): Promise<void> =>
  * @param options The plain text that goes with it.
  * @returns A promise that resolves once the HTML is on the clipboard.
  * @example
+ * import { copyHtml } from 'jg-clipboard';
+ *
  * button.addEventListener('click', () => {
  *   void copyHtml('<strong>Order #42</strong> shipped', { text: 'Order #42 shipped' });
  * });
@@ -193,6 +199,8 @@ export const copyHtml = async (
  * @param image The image, or a promise of it.
  * @returns A promise that resolves once the image is on the clipboard.
  * @example
+ * import { copyImage } from 'jg-clipboard';
+ *
  * button.addEventListener('click', () => {
  *   void copyImage(fetch('/chart.png').then((response) => response.blob()));
  * });

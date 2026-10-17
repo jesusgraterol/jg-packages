@@ -3,6 +3,8 @@ import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 
 import { checkAstroFixture } from '../checks/astro-fixture.ts';
+import { installConsumerProject } from '../checks/consumer-project.ts';
+import { checkExamples } from '../checks/examples.ts';
 import { checkFileList } from '../checks/file-list.ts';
 import { checkInstallAndImport } from '../checks/install-import.ts';
 import { checkPackagingLint } from '../checks/packaging-lint.ts';
@@ -45,7 +47,7 @@ export type IReleaseCheckResult = {
  * @throws
  * - pnpm pack failed for {name}: {stderr}
  */
-const packPackage = async (
+export const packPackage = async (
   workspacePackage: IWorkspacePackage,
   outputDirectory: string,
   runCommand: IRunCommand,
@@ -89,8 +91,8 @@ const addProblems = (problems: Map<string, string[]>, name: string, additions: s
 /**
  * Checks that every workspace's tests run in `pnpm check`, then packs every publishable package
  * into a directory and runs every release check on the tarballs: the file list, the release docs,
- * a consumer install and imports, an Astro fixture build for packages with Astro components,
- * publint and attw, TSDoc, and the registry comparison.
+ * a consumer install and imports, the examples, an Astro fixture build for packages with Astro
+ * components, publint and attw, TSDoc, and the registry comparison.
  * @param rootDirectory The repository root.
  * @param outputDirectory An existing, empty directory for the tarballs.
  * @param dependencies The registry, command runner, and logger.
@@ -125,8 +127,21 @@ export const packAndCheck = async (
     ]);
   }
   log('Installing the tarballs into a consumer project');
-  for (const [name, packageProblems] of await checkInstallAndImport(packages, runCommand)) {
-    addProblems(problems, name, packageProblems);
+  const consumer = await installConsumerProject(packages, runCommand);
+  try {
+    for (const [name, packageProblems] of await checkInstallAndImport(
+      packages,
+      runCommand,
+      consumer,
+    )) {
+      addProblems(problems, name, packageProblems);
+    }
+    log('Typechecking and running the examples');
+    for (const [name, packageProblems] of await checkExamples(packages, runCommand, consumer)) {
+      addProblems(problems, name, packageProblems);
+    }
+  } finally {
+    await consumer.remove();
   }
   log('Building an Astro site from each package with Astro components');
   for (const [name, packageProblems] of await checkAstroFixture(packages, runCommand)) {

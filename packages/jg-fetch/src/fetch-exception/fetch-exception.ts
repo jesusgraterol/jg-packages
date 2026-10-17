@@ -46,6 +46,8 @@ export type IFetchExceptionInit = {
  * ERRORS codes. For an API error, code, message, and data are the envelope error's; otherwise code
  * is the kind. Its message never includes the URL or the body.
  * @example
+ * import { request } from 'jg-fetch';
+ *
  * const { data, error } = await request<IUser>('/users/1', { baseUrl, parseAs: 'envelope' });
  * if (error) {
  *   error.kind; // 'API_ERROR'

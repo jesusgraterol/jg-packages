@@ -18,6 +18,8 @@ import { getPathElement } from '../general/index.js';
  * @param path The path.
  * @returns Whether the path is a directory.
  * @example
+ * import { isDirectory } from 'jg-fs/sync';
+ *
  * isDirectory('dist'); // true
  */
 export const isDirectory = (path: string): boolean => getPathElement(path)?.isDirectory ?? false;
@@ -26,6 +28,8 @@ export const isDirectory = (path: string): boolean => getPathElement(path)?.isDi
  * Deletes a directory and everything in it. A missing directory is not an error.
  * @param path The directory's path.
  * @example
+ * import { deleteDirectory } from 'jg-fs/sync';
+ *
  * deleteDirectory('dist');
  */
 export const deleteDirectory = (path: string): void =>
@@ -37,6 +41,8 @@ export const deleteDirectory = (path: string): void =>
  * @param path The directory's path.
  * @param deleteIfExists Whether to delete an existing directory and its contents first.
  * @example
+ * import { createDirectory } from 'jg-fs/sync';
+ *
  * createDirectory('dist/assets'); // creates missing parents too
  * createDirectory('dist', true); // replaces it with an empty directory
  * @throws
@@ -60,6 +66,8 @@ export const createDirectory = (path: string, deleteIfExists?: boolean): void =>
  * @param srcPath The directory to copy.
  * @param destPath Where to copy it.
  * @example
+ * import { copyDirectory } from 'jg-fs/sync';
+ *
  * copyDirectory('templates', 'dist/templates');
  * @throws
  * - NOT_A_DIRECTORY: if the srcPath is not a directory
@@ -77,6 +85,8 @@ export const copyDirectory = (srcPath: string, destPath: string): void => {
  * @param target The directory the link points to.
  * @param path Where to create the link.
  * @example
+ * import { createDirectorySymLink } from 'jg-fs/sync';
+ *
  * createDirectorySymLink('releases/1.4.0', 'current');
  * @throws
  * - NON_EXISTENT_DIRECTORY: if the target directory doesn't exist
@@ -101,6 +111,8 @@ export const createDirectorySymLink = (target: string, path: string): void => {
  * @param recursive Whether to include the contents of subdirectories.
  * @returns The content paths.
  * @example
+ * import { readDirectory } from 'jg-fs/sync';
+ *
  * readDirectory('dist'); // ['dist/index.js', 'dist/assets']
  * readDirectory('dist', true); // includes the contents of dist/assets
  * @throws
@@ -122,6 +134,8 @@ export const readDirectory = (path: string, recursive: boolean = false): string[
  * @param options The extensions to include and how to sort.
  * @returns The grouped elements.
  * @example
+ * import { getDirectoryElements } from 'jg-fs/sync';
+ *
  * const { files } = getDirectoryElements('content', { includeExts: ['.md'], sortByKey: 'creation', sortOrder: 'desc' });
  * @throws
  * - NOT_A_DIRECTORY: if the path doesn't exist or is not a directory

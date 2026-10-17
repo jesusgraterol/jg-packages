@@ -111,6 +111,8 @@ const stopTree = async (child: ChildProcess): Promise<void> => {
  * @param options The command, its arguments, and the limits of the run.
  * @returns A promise that resolves with the exit code, the signal and the output.
  * @example
+ * import { runProcess } from 'jg-process';
+ *
  * const { exitCode, stdout } = await runProcess({ command: 'git', args: ['status', '--porcelain'], timeoutSeconds: 30 });
  * if (exitCode !== 0) {
  *   // handle the failure

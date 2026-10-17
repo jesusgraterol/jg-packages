@@ -55,6 +55,8 @@ const probeIndexedDb = async (): Promise<boolean> => {
  * schema validates every stored value get reads.
  * @returns The store.
  * @example
+ * import { createIndexedDbStore } from 'jg-storage';
+ *
  * const devices = createIndexedDbStore<{ token: string }>('devices');
  * await devices.set('phone', { token: 'abc' }); // stored under the key ['devices', 'phone']
  * await devices.get('phone'); // { token: 'abc' }

@@ -74,9 +74,11 @@ const extractMessageFrom = (error: unknown, visitedErrors: WeakSet<object>): str
  * @param error The error to extract the message from.
  * @returns The extracted message, or `DEFAULT_MESSAGE`.
  * @example
- * extractMessage(new Error('Not found')); // 'Not found'
- * extractMessage({ reason: 'Timed out' }); // 'Timed out'
- * extractMessage(undefined); // DEFAULT_MESSAGE
+ * import { DEFAULT_MESSAGE, extractMessage } from 'jg-exception';
+ *
+ * extractMessage(new Error('Not found')); // => 'Not found'
+ * extractMessage({ reason: 'Timed out' }); // => 'Timed out'
+ * extractMessage(undefined) === DEFAULT_MESSAGE; // => true
  */
 export const extractMessage = (error: unknown): string => extractMessageFrom(error, new WeakSet());
 
@@ -87,7 +89,9 @@ export const extractMessage = (error: unknown): string => extractMessageFrom(err
  * @param sensitiveValues The exact values to redact, such as tokens or passwords.
  * @returns The extracted message with the sensitive values redacted.
  * @example
- * extractRedactedMessage(new Error('Bad token abc123'), ['abc123']); // 'Bad token [redacted]'
+ * import { extractRedactedMessage } from 'jg-exception';
+ *
+ * extractRedactedMessage(new Error('Bad token abc123'), ['abc123']); // => 'Bad token [redacted]'
  */
 export const extractRedactedMessage = (error: unknown, sensitiveValues: string[]): string =>
   redactSensitiveValues(extractMessage(error), sensitiveValues);
@@ -102,8 +106,10 @@ export const extractRedactedMessage = (error: unknown, sensitiveValues: string[]
  * @param error The error to read, of any shape.
  * @returns The code, or `null` when the error has none.
  * @example
- * getErrorCode(new Exception('Not found', { code: 'NOT_FOUND' })); // 'NOT_FOUND'
- * getErrorCode(new Error('Not found')); // null
+ * import { Exception, getErrorCode } from 'jg-exception';
+ *
+ * getErrorCode(new Exception('Not found', { code: 'NOT_FOUND' })); // => 'NOT_FOUND'
+ * getErrorCode(new Error('Not found')); // => null
  */
 export const getErrorCode = (error: unknown): string | null => {
   if (typeof error !== 'object' || error === null) {
@@ -119,7 +125,9 @@ export const getErrorCode = (error: unknown): string | null => {
  * @param prefix The non-empty prefix to look for.
  * @returns Whether the code starts with the prefix; always `false` for an empty prefix.
  * @example
- * hasErrorCodePrefix(new Exception('Denied', { code: 'AUTH_EXPIRED' }), 'AUTH_'); // true
+ * import { Exception, hasErrorCodePrefix } from 'jg-exception';
+ *
+ * hasErrorCodePrefix(new Exception('Denied', { code: 'AUTH_EXPIRED' }), 'AUTH_'); // => true
  */
 export const hasErrorCodePrefix = (error: unknown, prefix: string): boolean => {
   if (prefix.length === 0) {
@@ -137,8 +145,10 @@ export const hasErrorCodePrefix = (error: unknown, prefix: string): boolean => {
  * @param code The code to look for.
  * @returns Whether the error has the code.
  * @example
- * hasErrorCode(new Exception('Not found', { code: 'NOT_FOUND' }), 'NOT_FOUND'); // true
- * hasErrorCode('NOT_FOUND', 'NOT_FOUND'); // true
+ * import { Exception, hasErrorCode } from 'jg-exception';
+ *
+ * hasErrorCode(new Exception('Not found', { code: 'NOT_FOUND' }), 'NOT_FOUND'); // => true
+ * hasErrorCode('NOT_FOUND', 'NOT_FOUND'); // => true
  */
 export const hasErrorCode = (error: unknown, code: string): boolean =>
   code.length > 0 && (typeof error === 'string' ? error : getErrorCode(error)) === code;
@@ -149,7 +159,9 @@ export const hasErrorCode = (error: unknown, code: string): boolean =>
  * @param fullMatch Whether the whole value must be the default message.
  * @returns Whether the value matches the default message.
  * @example
- * isDefaultErrorMessage(extractMessage(undefined), true); // true
+ * import { extractMessage, isDefaultErrorMessage } from 'jg-exception';
+ *
+ * isDefaultErrorMessage(extractMessage(undefined), true); // => true
  */
 export const isDefaultErrorMessage = (
   value: string,

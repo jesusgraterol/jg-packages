@@ -21,6 +21,8 @@ import { mapWithConcurrency } from './utilities.js';
  * @param path The path.
  * @returns A promise that resolves to whether the path is a directory.
  * @example
+ * import { isDirectory } from 'jg-fs';
+ *
  * await isDirectory('dist'); // true
  */
 export const isDirectory = async (path: string): Promise<boolean> =>
@@ -31,6 +33,8 @@ export const isDirectory = async (path: string): Promise<boolean> =>
  * @param path The directory's path.
  * @returns A promise that resolves once the directory is gone.
  * @example
+ * import { deleteDirectory } from 'jg-fs';
+ *
  * await deleteDirectory('dist');
  */
 export const deleteDirectory = (path: string): Promise<void> =>
@@ -43,6 +47,8 @@ export const deleteDirectory = (path: string): Promise<void> =>
  * @param deleteIfExists Whether to delete an existing directory and its contents first.
  * @returns A promise that resolves once the directory exists.
  * @example
+ * import { createDirectory } from 'jg-fs';
+ *
  * await createDirectory('dist/assets'); // creates missing parents too
  * await createDirectory('dist', true); // replaces it with an empty directory
  * @throws
@@ -67,6 +73,8 @@ export const createDirectory = async (path: string, deleteIfExists?: boolean): P
  * @param destPath Where to copy it.
  * @returns A promise that resolves once the copy is complete.
  * @example
+ * import { copyDirectory } from 'jg-fs';
+ *
  * await copyDirectory('templates', 'dist/templates');
  * @throws
  * - NOT_A_DIRECTORY: if the srcPath is not a directory
@@ -85,6 +93,8 @@ export const copyDirectory = async (srcPath: string, destPath: string): Promise<
  * @param path Where to create the link.
  * @returns A promise that resolves once the link exists.
  * @example
+ * import { createDirectorySymLink } from 'jg-fs';
+ *
  * await createDirectorySymLink('releases/1.4.0', 'current');
  * @throws
  * - NON_EXISTENT_DIRECTORY: if the target directory doesn't exist
@@ -109,6 +119,8 @@ export const createDirectorySymLink = async (target: string, path: string): Prom
  * @param recursive Whether to include the contents of subdirectories.
  * @returns A promise that resolves to the content paths.
  * @example
+ * import { readDirectory } from 'jg-fs';
+ *
  * await readDirectory('dist'); // ['dist/index.js', 'dist/assets']
  * await readDirectory('dist', true); // includes the contents of dist/assets
  * @throws
@@ -133,6 +145,8 @@ export const readDirectory = async (
  * @param options The extensions to include and how to sort.
  * @returns A promise that resolves to the grouped elements.
  * @example
+ * import { getDirectoryElements } from 'jg-fs';
+ *
  * const { files } = await getDirectoryElements('content', { includeExts: ['.md'], sortByKey: 'creation', sortOrder: 'desc' });
  * @throws
  * - NOT_A_DIRECTORY: if the path doesn't exist or is not a directory

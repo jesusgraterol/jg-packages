@@ -10,7 +10,9 @@ import type { ISubstitutionOptions } from './types.js';
  * @param value The string value to capitalize.
  * @returns A string with the first letter capitalized.
  * @example
- * capitalizeFirst('hello world'); // 'Hello world'
+ * import { capitalizeFirst } from 'jg-utilities';
+ *
+ * capitalizeFirst('hello world'); // => 'Hello world'
  */
 export const capitalizeFirst = (value: string): string =>
   value.length > 0 ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : '';
@@ -20,7 +22,9 @@ export const capitalizeFirst = (value: string): string =>
  * @param value The string value to convert.
  * @returns A string converted to Title Case.
  * @example
- * toTitleCase('the QUICK brown fox'); // 'The Quick Brown Fox'
+ * import { toTitleCase } from 'jg-utilities';
+ *
+ * toTitleCase('the QUICK brown fox'); // => 'The Quick Brown Fox'
  */
 export const toTitleCase = (value: string): string =>
   value.replace(/\w\S*/g, (text) => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase());
@@ -36,7 +40,9 @@ export const toTitleCase = (value: string): string =>
  * @param value The string value to convert.
  * @returns A string converted to a slug.
  * @example
- * toSlug('Héllo, World! 2026'); // 'hello-world-2026'
+ * import { toSlug } from 'jg-utilities';
+ *
+ * toSlug('Héllo, World! 2026'); // => 'hello-world-2026'
  * @throws
  * - UNABLE_TO_SLUGIFY_STRING: if the resulting slug is empty after processing the input string
  */
@@ -64,7 +70,9 @@ export const toSlug = (value: string): string => {
  * @param maxLength The maximum length of the string before truncation.
  * @returns A string truncated to the specified length with an ellipsis if necessary.
  * @example
- * truncateText('The quick brown fox jumps', 12); // 'The quick...'
+ * import { truncateText } from 'jg-utilities';
+ *
+ * truncateText('The quick brown fox jumps', 12); // => 'The quick...'
  */
 export const truncateText = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) {
@@ -81,7 +89,9 @@ export const truncateText = (text: string, maxLength: number): string => {
  * @param mask? An optional string to use as the mask. Defaults to '...'.
  * @returns A string with the middle masked, keeping the specified number of visible characters at the start.
  * @example
- * maskMiddle('0x1234567890abcdef', 4); // '0x12...cdef'
+ * import { maskMiddle } from 'jg-utilities';
+ *
+ * maskMiddle('0x1234567890abcdef', 4); // => '0x12...cdef'
  */
 export const maskMiddle = (text: string, visibleChars: number, mask: string = '...'): string => {
   if (text.length <= visibleChars * 2) {
@@ -97,7 +107,9 @@ export const maskMiddle = (text: string, visibleChars: number, mask: string = '.
  * @param maxLength? The optional maximum length of the normalized query string.
  * @returns The normalized query string.
  * @example
- * normalizeQuery('  Héllo   WORLD  '); // 'héllo world'
+ * import { normalizeQuery } from 'jg-utilities';
+ *
+ * normalizeQuery('  Héllo   WORLD  '); // => 'héllo world'
  */
 export const normalizeQuery = (query: string, maxLength?: number): string => {
   const normalized = query
@@ -123,9 +135,11 @@ export const normalizeQuery = (query: string, maxLength?: number): string => {
  * @param jsonIndent? The number of spaces to use for indentation in the JSON string. Defaults to 0.
  * @returns A string representation of the value.
  * @example
- * stringifyValue({ id: 1 }); // '{"id":1}'
- * stringifyValue(42); // '42'
- * stringifyValue(null); // 'null'
+ * import { stringifyValue } from 'jg-utilities';
+ *
+ * stringifyValue({ id: 1 }); // => '{"id":1}'
+ * stringifyValue(42); // => '42'
+ * stringifyValue(null); // => 'null'
  */
 export const stringifyValue = (value: unknown, jsonIndent: number = 0): string => {
   if (typeof value === 'string') {
@@ -152,7 +166,9 @@ export const stringifyValue = (value: unknown, jsonIndent: number = 0): string =
  * @param options? An optional object containing additional options for substitutions.
  * @returns A string with the placeholders replaced by their corresponding values from the substitutions object.
  * @example
- * applySubstitutions('Hi {{name}}, you have {{count}} messages.', { name: 'Ada', count: 3 }); // 'Hi Ada, you have 3 messages.'
+ * import { applySubstitutions } from 'jg-utilities';
+ *
+ * applySubstitutions('Hi {{name}}, you have {{count}} messages.', { name: 'Ada', count: 3 }); // => 'Hi Ada, you have 3 messages.'
  */
 export const applySubstitutions = (
   input: string,

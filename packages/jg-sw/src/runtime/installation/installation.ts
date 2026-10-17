@@ -58,6 +58,8 @@ export const listenForInstallation = (): void => {
  * the page doesn't already run as the installed app. Only Chromium-based browsers offer it.
  * @returns Whether the app can be installed.
  * @example
+ * import { canInstallApp } from 'jg-sw';
+ *
  * installButton.hidden = !canInstallApp();
  */
 export const canInstallApp = (): boolean =>
@@ -69,6 +71,8 @@ export const canInstallApp = (): boolean =>
  * is false afterwards until it offers another.
  * @returns A promise that resolves to 'accepted' or 'dismissed'.
  * @example
+ * import { installApp } from 'jg-sw';
+ *
  * installButton.addEventListener('click', async () => {
  *   const outcome = await installApp(); // 'accepted' or 'dismissed'
  * });

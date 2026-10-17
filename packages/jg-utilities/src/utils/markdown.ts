@@ -7,7 +7,9 @@ import { extractFenceMarker, extractHeadingName, isClosingFence } from './utilit
  * @param markdownContent The markdown-formatted content.
  * @returns The first markdown heading text found in the content, or null if none is found.
  * @example
- * extractFirstMarkdownHeadingName('Intro\n\n## Getting started\n\nText'); // 'Getting started'
+ * import { extractFirstMarkdownHeadingName } from 'jg-utilities';
+ *
+ * extractFirstMarkdownHeadingName('Intro\n\n## Getting started\n\nText'); // => 'Getting started'
  */
 export const extractFirstMarkdownHeadingName = (markdownContent: string): string | null => {
   if (!isStringValid(markdownContent)) {
@@ -45,7 +47,9 @@ export const extractFirstMarkdownHeadingName = (markdownContent: string): string
  * @param text The text containing substitution placeholders.
  * @returns An array of substitution placeholder names.
  * @example
- * extractSubstitutionPlaceholderNames('Hi {{name}}, you have {{count}} messages, {{name}}.'); // ['name', 'count']
+ * import { extractSubstitutionPlaceholderNames } from 'jg-utilities';
+ *
+ * extractSubstitutionPlaceholderNames('Hi {{name}}, you have {{count}} messages, {{name}}.'); // => ['name', 'count']
  */
 export const extractSubstitutionPlaceholderNames = (text: string): string[] => {
   // ensure the string is valid before attempting to extract the variables

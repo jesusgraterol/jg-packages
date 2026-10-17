@@ -12,6 +12,8 @@ import type { IPathElement } from './types.js';
  * @param targetPath The path to check.
  * @returns Whether the target is the root or inside it.
  * @example
+ * import { isPathWithin } from 'jg-fs';
+ *
  * isPathWithin('/data/app', '/data/app/logs/today.log'); // true
  * isPathWithin('/data/app', '/data/app/../secrets'); // false
  * isPathWithin('/data/app', '/data/application'); // false

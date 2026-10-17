@@ -57,7 +57,8 @@ packages/jg-<name>/
 ├── tsconfig.json             # editor and typecheck: src, tests, and config files
 ├── tsconfig.build.json       # emit: src without tests
 ├── tsconfig.browser.json     # universal and browser packages only
-└── vitest.config.ts
+├── vitest.config.ts
+└── examples.d.ts             # only when examples use inputs they don't define; never ships
 ```
 
 ### `package.json`
@@ -257,6 +258,7 @@ Follow [`package-guidelines.md`](package-guidelines.md):
 - One directory per module under `src/`, each with an `index.ts` that only re-exports, and `types.ts`, `constants.ts`, and `utilities.ts` as needed.
 - Errors are `Exception`s from `jg-exception`, with the codes exported as `ERRORS`.
 - Every export has TSDoc: a summary on everything, and an `@example` on functions and classes. Types and constants use a `//` comment.
+- Every example imports what it uses and defines its inputs, as [the guidelines](package-guidelines.md#documentation) describe. When an example needs an input that belongs to the reader, such as a button, declare it in `examples.d.ts` at the package root, which `release:verify` adds when it typechecks the examples, and which never ships.
 - Nothing runs at import time.
 
 ## 5. Write the tests

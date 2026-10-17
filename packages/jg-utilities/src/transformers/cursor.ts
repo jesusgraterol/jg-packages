@@ -18,7 +18,9 @@ const CURSOR_PATTERN = /^[A-Za-z0-9_-]+$/;
  * @param value The object or array to encode.
  * @returns The cursor.
  * @example
- * encodeCursor({ createdAt: '2026-10-17T08:30:00.000Z', id: 42 }); // 'eyJjcmVhdGVkQXQi...'
+ * import { encodeCursor } from 'jg-utilities';
+ *
+ * encodeCursor({ id: 42 }); // => 'eyJpZCI6NDJ9'
  * @throws
  * - UNSUPPORTED_DATA_TYPE: if the value isn't an object or an array
  * - UNABLE_TO_SERIALIZE_JSON: if the value contains data that cannot be serialized
@@ -33,7 +35,10 @@ export const encodeCursor = (value: ICursorValue): string => encodeBase64Url(str
  * @param maxLength The longest cursor accepted, in characters.
  * @returns The decoded object or array.
  * @example
- * const continuation = decodeCursor(searchParams.get('cursor') ?? '');
+ * import { decodeCursor } from 'jg-utilities';
+ *
+ * const searchParams = new URLSearchParams('?cursor=eyJpZCI6NDJ9');
+ * decodeCursor(searchParams.get('cursor') ?? ''); // => { id: 42 }
  * @throws
  * - INVALID_CURSOR: The cursor is not a valid encoded value.
  */
