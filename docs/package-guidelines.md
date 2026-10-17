@@ -43,15 +43,24 @@ Module state that a UI reads exposes `subscribe` and `getSnapshot` functions, so
 
 ## Errors
 
-Every package throws `Exception` from `jg-exception` and exports its codes as `ERRORS`, an `as const` map from code to message:
+Every package throws `Exception` from `jg-exception` and exports its codes as `ERRORS`, an `as const` map whose values are the codes themselves, so callers compare against it:
 
 ```ts
 export const ERRORS = {
-  INVALID_CURSOR: 'The cursor is not a valid encoded value.',
+  INVALID_CURSOR: 'INVALID_CURSOR',
 } as const;
+
+throw new Exception(
+  `The cursor is not a valid encoded value: ${extractMessage(error)}`,
+  ERRORS.INVALID_CURSOR,
+);
+
+if (hasErrorCode(error, ERRORS.INVALID_CURSOR)) {
+  // handle it
+}
 ```
 
-Each function documents what it throws, one `- CODE: message` line per code, with the exact message from `ERRORS`:
+The message is written where the error is thrown, so it can name the value that failed. Each function documents what it throws, one `- CODE: message` line per code, with the stable part of the message:
 
 ```ts
 /**

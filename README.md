@@ -8,6 +8,7 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 | --------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------- |
 | [`jg-exception`](packages/jg-exception)       | Extracts, encodes, and decodes error messages and codes, with a coded `Exception` class.   | `error-message-utils` |
 | [`jg-api-response`](packages/jg-api-response) | Builds and recognises the `{ success, data, error }` envelope services exchange over HTTP. | `api-response-utils`  |
+| [`jg-utils`](packages/jg-utils)               | Validations, transformers, generators, and collection, async, and environment utilities.   | `web-utils-kit`       |
 
 Each package gets a row here when it's added to `packages/`.
 

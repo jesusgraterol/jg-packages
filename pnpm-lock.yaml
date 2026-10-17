@@ -401,6 +401,37 @@ importers:
         specifier: 4.6.7
         version: 4.6.7
 
+  packages/jg-utils:
+    dependencies:
+      jg-exception:
+        specifier: workspace:^
+        version: link:../jg-exception
+      uuid:
+        specifier: ^14.0.3
+        version: 14.0.3
+    devDependencies:
+      '@jg-packages/eslint-config':
+        specifier: workspace:*
+        version: link:../../internal/eslint-config
+      '@jg-packages/tsconfig':
+        specifier: workspace:*
+        version: link:../../internal/tsconfig
+      '@jg-packages/vitest-config':
+        specifier: workspace:*
+        version: link:../../internal/vitest-config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
+      eslint:
+        specifier: 'catalog:'
+        version: 10.12.0(supports-color@7.2.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.5(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2)(yaml@2.9.1))
+
 packages:
 
   '@andrewbranch/untar.js@1.0.4':
@@ -1401,6 +1432,10 @@ packages:
 
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
+
+  uuid@14.0.3:
+    resolution: {integrity: sha512-Sc5u1VVln93y1Xnz4R+CunOZc7R9LUcTmhj7Rc7Eg3HVcf7rVn2FOoa812fe0W8p3jD7xeoGSYbfqCGGH2B6xw==}
+    hasBin: true
 
   validate-npm-package-name@5.0.1:
     resolution: {integrity: sha512-OljLrQ9SQdOUqTaQxqL5dEfZWrXExyyWsozYlAWFawPVNuD83igl7uJD2RTkNMbniIYgt8l81eCJGIdQF7avLQ==}
@@ -2452,6 +2487,8 @@ snapshots:
   uri-js@4.4.1:
     dependencies:
       punycode: 2.3.1
+
+  uuid@14.0.3: {}
 
   validate-npm-package-name@5.0.1: {}
 

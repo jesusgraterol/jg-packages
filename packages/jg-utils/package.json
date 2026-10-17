@@ -1,0 +1,67 @@
+{
+  "name": "jg-utils",
+  "version": "1.0.0",
+  "description": "Validations, transformers, generators, and collection, async, and environment utilities for browsers and Node.js.",
+  "author": "Jesus Graterol",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesusgraterol/jg-packages.git",
+    "directory": "packages/jg-utils"
+  },
+  "homepage": "https://jg-packages.jesusgraterol.dev/packages/jg-utils/",
+  "bugs": {
+    "url": "https://github.com/jesusgraterol/jg-packages/issues"
+  },
+  "keywords": [
+    "utilities",
+    "validation",
+    "transformers",
+    "random",
+    "json",
+    "date",
+    "pagination"
+  ],
+  "scripts": {
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "pnpm test:unit && pnpm test:integration",
+    "test:bench": "vitest bench --run",
+    "test:integration": "vitest run --project integration",
+    "test:unit": "vitest run --project unit",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json"
+  },
+  "dependencies": {
+    "jg-exception": "workspace:^",
+    "uuid": "^14.0.3"
+  },
+  "devDependencies": {
+    "@jg-packages/eslint-config": "workspace:*",
+    "@jg-packages/tsconfig": "workspace:*",
+    "@jg-packages/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
