@@ -432,6 +432,40 @@ importers:
         specifier: 4.6.7
         version: 4.6.7
 
+  packages/jg-fetch:
+    dependencies:
+      jg-api-response:
+        specifier: workspace:^
+        version: link:../jg-api-response
+      jg-exception:
+        specifier: workspace:^
+        version: link:../jg-exception
+      jg-utils:
+        specifier: workspace:^
+        version: link:../jg-utils
+    devDependencies:
+      '@jg-packages/eslint-config':
+        specifier: workspace:*
+        version: link:../../internal/eslint-config
+      '@jg-packages/tsconfig':
+        specifier: workspace:*
+        version: link:../../internal/tsconfig
+      '@jg-packages/vitest-config':
+        specifier: workspace:*
+        version: link:../../internal/vitest-config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
+      eslint:
+        specifier: 'catalog:'
+        version: 10.12.0(supports-color@7.2.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.5(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2)(yaml@2.9.1))
+
   packages/jg-fs:
     dependencies:
       jg-exception:
