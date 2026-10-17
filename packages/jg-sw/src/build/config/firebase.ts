@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 import { pathExists } from 'jg-fs';
 
 import {
@@ -29,8 +29,9 @@ const loadEnvironmentFile = async (
   try {
     process.loadEnvFile(path);
   } catch (error) {
-    throw new Exception(`Unable to load the environment file '${path}': ${extractMessage(error)}`, {
+    throw new Exception(`Unable to load the environment file '${path}'.`, {
       code: ERRORS.FAILED_TO_BUILD_CONFIG,
+      cause: error,
     });
   }
 };
@@ -74,8 +75,8 @@ export const readFirebaseOptions = async (
     return FirebaseConfigSchema.parse(JSON.parse(value)).options;
   } catch (error) {
     throw new Exception(
-      `Unable to read the Firebase config from the environment variable '${envKey}': ${extractMessage(error)}`,
-      { code: ERRORS.FAILED_TO_READ_FIREBASE_CONFIG },
+      `Unable to read the Firebase config from the environment variable '${envKey}'.`,
+      { code: ERRORS.FAILED_TO_READ_FIREBASE_CONFIG, cause: error },
     );
   }
 };

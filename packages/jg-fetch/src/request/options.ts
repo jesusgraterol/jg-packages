@@ -1,5 +1,3 @@
-import { extractMessage } from 'jg-exception';
-
 import {
   DEFAULT_MAX_RESPONSE_BYTES,
   DEFAULT_MAX_RETRY_AFTER_SECONDS,
@@ -336,10 +334,7 @@ export const serializeBody = (body: IRequestOptions<unknown>['body']): ISerializ
     try {
       return { value: JSON.stringify(body), isJson: true, isStream: false };
     } catch (error) {
-      throw new RequestFailure('INVALID_BODY', {
-        message: `${ERROR_MESSAGES.INVALID_BODY} ${extractMessage(error)}`,
-        cause: error,
-      });
+      throw new RequestFailure('INVALID_BODY', { cause: error });
     }
   }
   return {

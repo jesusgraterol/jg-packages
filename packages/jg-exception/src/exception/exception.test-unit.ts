@@ -43,6 +43,26 @@ describe('Exception', () => {
     );
   });
 
+  test('prints each layer of a wrapped chain once', () => {
+    const root = new Error('connect ECONNREFUSED 127.0.0.1:5432');
+    const query = new Exception("The user query couldn't run.", {
+      code: 'QUERY_FAILED',
+      cause: root,
+    });
+    const exception = new Exception("Couldn't load the user.", {
+      code: 'USER_LOAD_FAILED',
+      cause: query,
+    });
+    const message = extractMessage(exception);
+
+    expect(message).toBe(
+      "Couldn't load the user.; [CAUSE]: The user query couldn't run.; [CAUSE]: connect ECONNREFUSED 127.0.0.1:5432",
+    );
+    for (const layer of [exception.message, query.message, root.message]) {
+      expect(message.split(layer)).toHaveLength(2);
+    }
+  });
+
   test.each([
     ['false', false],
     ['zero', 0],

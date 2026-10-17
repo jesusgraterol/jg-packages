@@ -1,4 +1,4 @@
-import { Exception, extractMessage, isException } from 'jg-exception';
+import { Exception, isException } from 'jg-exception';
 
 import { BigNumber } from '../shared/constants.js';
 import { ERRORS } from '../shared/errors.js';
@@ -94,8 +94,9 @@ export const prettifyValue = (
     if (isException(error)) {
       throw error;
     }
-    throw new Exception(`The value could not be formatted: ${extractMessage(error)}`, {
+    throw new Exception('The value could not be formatted.', {
       code: ERRORS.INVALID_BIGNUMBER_FORMAT,
+      cause: error,
     });
   }
 };

@@ -213,4 +213,14 @@ describe('serializeBody', () => {
     expect(catchFailure(() => serializeBody({ id: 1n })).kind).toBe('INVALID_BODY');
     expect(catchFailure(() => serializeBody(circular)).kind).toBe('INVALID_BODY');
   });
+
+  test("keeps JSON's error as the cause, out of the message, which can name the body's keys", () => {
+    const circular: Record<string, unknown> = { secretKey: 'x' };
+    circular['self'] = circular;
+    const failure = catchFailure(() => serializeBody(circular));
+
+    expect(failure.details.message).toBeUndefined();
+    expect(failure.details.cause).toBeInstanceOf(TypeError);
+    expect(failure.message).toBe('INVALID_BODY');
+  });
 });

@@ -1,4 +1,4 @@
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
 import { ERRORS } from '../shared/errors.js';
 import type { IJSONValue } from '../shared/types.js';
@@ -47,7 +47,7 @@ export const decodeCursor = (cursor: string, maxLength: number = 2048): ICursorV
   try {
     return parseJSON<ICursorValue>(decodeBase64Url(cursor));
   } catch (error) {
-    throw new Exception(`The cursor is not a valid encoded value: ${extractMessage(error)}`, {
+    throw new Exception('The cursor is not a valid encoded value.', {
       code: ERRORS.INVALID_CURSOR,
       cause: error,
     });

@@ -1,4 +1,4 @@
-import { Exception, extractMessage, getErrorCode } from 'jg-exception';
+import { Exception, getErrorCode } from 'jg-exception';
 
 import { ERRORS } from '../shared/errors.js';
 import type { IJSONValue } from '../shared/types.js';
@@ -31,10 +31,10 @@ export const stringifyJSON = <T>(value: T): string => {
     return result;
   } catch (error) {
     if (getErrorCode(error) !== ERRORS.UNABLE_TO_SERIALIZE_JSON) {
-      throw new Exception(
-        `Failed to stringify the JSON value '${String(value)}': ${extractMessage(error)}`,
-        { code: ERRORS.UNABLE_TO_SERIALIZE_JSON },
-      );
+      throw new Exception(`Failed to stringify the JSON value '${String(value)}'.`, {
+        code: ERRORS.UNABLE_TO_SERIALIZE_JSON,
+        cause: error,
+      });
     }
     throw error;
   }
@@ -59,8 +59,8 @@ export const stringifyJSONDeterministically = <T>(value: T): string => {
   } catch (error) {
     if (getErrorCode(error) !== ERRORS.UNABLE_TO_SERIALIZE_JSON) {
       throw new Exception(
-        `Failed to stringify the JSON value deterministically '${String(value)}': ${extractMessage(error)}`,
-        { code: ERRORS.UNABLE_TO_SERIALIZE_JSON },
+        `Failed to stringify the JSON value deterministically '${String(value)}'.`,
+        { code: ERRORS.UNABLE_TO_SERIALIZE_JSON, cause: error },
       );
     }
     throw error;
@@ -86,8 +86,9 @@ export const parseJSON = <T>(value: string): T => {
     return result as T;
   } catch (error) {
     if (getErrorCode(error) !== ERRORS.UNABLE_TO_DESERIALIZE_JSON) {
-      throw new Exception(`Failed to parse the JSON value '${value}': ${extractMessage(error)}`, {
+      throw new Exception(`Failed to parse the JSON value '${value}'.`, {
         code: ERRORS.UNABLE_TO_DESERIALIZE_JSON,
+        cause: error,
       });
     }
     throw error;

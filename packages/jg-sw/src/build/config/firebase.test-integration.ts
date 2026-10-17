@@ -122,7 +122,7 @@ describe('readFirebaseOptions', () => {
     await expectToRejectCode(
       readFirebaseOptions(envKey, 'production', directory),
       ERRORS.FAILED_TO_READ_FIREBASE_CONFIG,
-      `Unable to read the Firebase config from the environment variable '${envKey}':`,
+      `Unable to read the Firebase config from the environment variable '${envKey}'.; [CAUSE]: `,
     );
   });
 

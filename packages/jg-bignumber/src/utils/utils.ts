@@ -1,4 +1,4 @@
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
 import { ERRORS } from '../shared/errors.js';
 import type {
@@ -46,12 +46,10 @@ const describeValue = (value: unknown): string => {
  * @returns The INVALID_VALUE exception.
  */
 export const buildInvalidValueException = (value: unknown, error?: unknown): Exception =>
-  new Exception(
-    error === undefined
-      ? `BigNumber could not be instantiated with: ${describeValue(value)}.`
-      : `BigNumber could not be instantiated with: ${describeValue(value)} | ${extractMessage(error)}`,
-    { code: ERRORS.INVALID_VALUE },
-  );
+  new Exception(`BigNumber could not be instantiated with: ${describeValue(value)}.`, {
+    code: ERRORS.INVALID_VALUE,
+    cause: error,
+  });
 
 /**
  * Builds the configuration used to process a value, applying the defaults: 2 decimal places,

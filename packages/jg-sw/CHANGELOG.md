@@ -12,6 +12,7 @@ A fresh start: breaking changes in a minor version, once, because nothing depend
 
 - `registrationError` in the snapshot is an `Exception` with one of the `ERRORS` codes, instead of an encoded message.
 - Errors are `Exception`s from `jg-exception` 1.1.0: the code, the data, and the cause each have their own field, nothing is encoded into the message, and `toJSON()` and `toString()` follow `jg-exception`.
+- Error messages say what failed at that step and keep the error underneath as `cause`, instead of repeating its message, so `extractMessage` prints each layer of the chain once.
 
 ## 1.0.1
 

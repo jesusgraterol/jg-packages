@@ -4,6 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { extractMessage } from 'jg-exception';
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
 
 import { DEFAULT_GRACE_PERIOD_SECONDS, ERRORS } from '../shared/index.js';
@@ -150,9 +151,20 @@ describe.skipIf(IS_WINDOWS)('runProcess', () => {
   });
 
   test('rejects with PROCESS_START_FAILED for a command that does not exist', async () => {
-    await expect(
-      runProcess({ command: 'a-command-that-does-not-exist', args: [] }),
-    ).rejects.toMatchObject({ code: ERRORS.PROCESS_START_FAILED });
+    const error: unknown = await runProcess({
+      command: 'a-command-that-does-not-exist',
+      args: [],
+    }).catch((rejection: unknown) => rejection);
+
+    expect(error).toMatchObject({
+      code: ERRORS.PROCESS_START_FAILED,
+      message: "Unable to start 'a-command-that-does-not-exist'.",
+      cause: { code: 'ENOENT' },
+    });
+    // the cause rule: the chain names each layer once
+    const message = extractMessage(error);
+    expect(message).toMatch(/^Unable to start 'a-command-that-does-not-exist'\.; \[CAUSE\]: /);
+    expect(message.split('ENOENT')).toHaveLength(2);
   });
 
   test('rejects with the reason when the signal is already aborted', async () => {

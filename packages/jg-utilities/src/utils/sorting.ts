@@ -1,4 +1,4 @@
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
 import { ERRORS } from '../shared/errors.js';
 import type { IDateValue } from '../transformers/index.js';
@@ -149,8 +149,8 @@ export const sortRecordsWithBigIntString =
         throw error;
       }
       throw new Exception(
-        `Failed to sort list of record values as they can only be stringified bigints: ${extractMessage(error)}`,
-        { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
+        'Failed to sort list of record values as they can only be stringified bigints.',
+        { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES, cause: error },
       );
     }
   };
@@ -200,8 +200,8 @@ export const sortRecordsWithDateValue =
         throw error;
       }
       throw new Exception(
-        `Failed to sort list of record values as they can only be valid date values: ${extractMessage(error)}`,
-        { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES },
+        'Failed to sort list of record values as they can only be valid date values.',
+        { code: ERRORS.MIXED_OR_UNSUPPORTED_DATA_TYPES, cause: error },
       );
     }
   };

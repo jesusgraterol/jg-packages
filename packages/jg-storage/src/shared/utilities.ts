@@ -1,4 +1,4 @@
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
 import { ERRORS } from './errors.js';
 import type { IRecordId, IStoreMechanism, IStoreOptions } from './types.js';
@@ -32,7 +32,7 @@ export const parseJSON = (data: string): unknown => {
   try {
     return JSON.parse(data);
   } catch (error) {
-    throw new Exception(`Unable to parse the JSON data: ${extractMessage(error)}`, {
+    throw new Exception('Unable to parse the JSON data.', {
       code: ERRORS.FAILED_TO_PARSE_JSON,
       cause: error,
     });
@@ -51,7 +51,7 @@ export const stringifyJSON = (value: unknown): string => {
   try {
     data = JSON.stringify(value);
   } catch (error) {
-    throw new Exception(`Unable to stringify the JSON data: ${extractMessage(error)}`, {
+    throw new Exception('Unable to stringify the JSON data.', {
       code: ERRORS.FAILED_TO_STRINGIFY_JSON,
       cause: error,
     });

@@ -1,4 +1,4 @@
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
 import {
   ERRORS,
@@ -92,8 +92,9 @@ export const installApp = async (): Promise<IInstallationPromptOutcome> => {
     updateSnapshot({}, { canInstall: false, promptOutcome: choice.outcome });
     return choice.outcome;
   } catch (error) {
-    throw new Exception(`The installation prompt failed: ${extractMessage(error)}`, {
+    throw new Exception('The installation prompt failed.', {
       code: ERRORS.UNKNOWN_INSTALLATION_PROMPT_ERROR,
+      cause: error,
     });
   }
 };

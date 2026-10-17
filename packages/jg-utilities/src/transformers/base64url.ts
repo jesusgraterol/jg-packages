@@ -1,4 +1,4 @@
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
 import { ERRORS } from '../shared/errors.js';
 
@@ -45,10 +45,10 @@ export const decodeBase64Url = (value: string): string => {
     // ignoreBOM keeps a leading U+FEFF, so strings that start with one still round-trip
     decoded = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
   } catch (error) {
-    throw new Exception(
-      `The base64url value doesn't encode valid UTF-8: ${extractMessage(error)}`,
-      { code: ERRORS.INVALID_BASE64URL },
-    );
+    throw new Exception("The base64url value doesn't encode valid UTF-8.", {
+      code: ERRORS.INVALID_BASE64URL,
+      cause: error,
+    });
   }
   if (encodeBase64Url(decoded) !== value) {
     throw new Exception('The value is not the canonical base64url encoding of its result.', {

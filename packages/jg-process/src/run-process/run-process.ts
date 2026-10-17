@@ -1,5 +1,5 @@
 import { spawn, type ChildProcess } from 'node:child_process';
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
 import { stopProcessTree } from '../process-tree/index.js';
 import {
@@ -20,7 +20,7 @@ import { IGNORED_STDIN_ERROR_CODES } from './constants.js';
  * @returns The error.
  */
 const startFailed = (command: string, cause: unknown): Exception =>
-  new Exception(`Unable to start '${command}': ${extractMessage(cause)}`, {
+  new Exception(`Unable to start '${command}'.`, {
     code: ERRORS.PROCESS_START_FAILED,
     cause,
   });

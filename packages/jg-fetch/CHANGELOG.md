@@ -7,6 +7,7 @@
 - An `API_ERROR` reads the envelope's `error` as `{ code, message, data }`, as `jg-api-response` 1.1.0 builds it: the `FetchException` gets that code, message, and data, and `body` keeps the whole envelope. Without an error object, the code is `API_ERROR`, the message is the default, and `data` is `null`.
 - An envelope whose `error` is a string is no longer an envelope, so a successful status with one reports `ENVELOPE_INVALID`.
 - `FetchException` is built on `jg-exception` 1.1.0, so `toJSON()` and `toString()` follow it, and `data` is a JSON value.
+- `INVALID_BODY` uses its default message and keeps JSON's error as `cause`, instead of adding that error's message, which can name the body's keys.
 
 ## 0.1.1
 

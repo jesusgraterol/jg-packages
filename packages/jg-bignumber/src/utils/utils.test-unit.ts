@@ -1,3 +1,4 @@
+import { extractMessage } from 'jg-exception';
 import { expectToThrowCode } from 'jg-exception/testing';
 import { describe, test, expect } from 'vitest';
 import { BigNumber } from '../shared/constants.js';
@@ -53,13 +54,18 @@ describe('buildInvalidValueException', () => {
     expect(exception.message).toBe('BigNumber could not be instantiated with: NaN.');
   });
 
-  test("includes the bignumber.js error's message", () => {
+  test("keeps the bignumber.js error as the cause, and its message out of the exception's", () => {
     const err = new Error('There has been an error while instantiating BigNumber');
+    const exception = buildInvalidValueException(iv, err);
 
-    expect(buildInvalidValueException(iv, err)).toMatchObject({
+    expect(exception).toMatchObject({
       code: ERRORS.INVALID_VALUE,
-      message: `BigNumber could not be instantiated with: NaN | ${err.message}`,
+      message: 'BigNumber could not be instantiated with: NaN.',
+      cause: err,
     });
+    expect(extractMessage(exception)).toBe(
+      `BigNumber could not be instantiated with: NaN.; [CAUSE]: ${err.message}`,
+    );
   });
 
   test("describes a value that can't be stringified as UNKNOWN", () => {
@@ -69,7 +75,7 @@ describe('buildInvalidValueException', () => {
       'BigNumber could not be instantiated with: UNKNOWN.',
     );
     expect(buildInvalidValueException(Object.create(null), err).message).toBe(
-      `BigNumber could not be instantiated with: UNKNOWN | ${err.message}`,
+      'BigNumber could not be instantiated with: UNKNOWN.',
     );
   });
 });

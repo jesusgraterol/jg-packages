@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer';
-import { Exception, extractMessage } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
 import { ERRORS } from './errors.js';
 
@@ -82,10 +82,10 @@ export const serializeJSONData = (path: string, data: unknown, space: number): s
   try {
     text = typeof data === 'string' ? data : JSON.stringify(data, undefined, space);
   } catch (error) {
-    throw new Exception(
-      `The JSON data for the file '${path}' could not be stringified: ${extractMessage(error)}`,
-      { code: ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID },
-    );
+    throw new Exception(`The JSON data for the file '${path}' could not be stringified.`, {
+      code: ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
+      cause: error,
+    });
   }
   if (typeof text !== 'string' || text === '') {
     throw new Exception(`The JSON data for the file '${path}' is empty.`, {
@@ -107,8 +107,9 @@ export const parseJSONContent = <T>(path: string, content: string): T => {
   try {
     return JSON.parse(content) as T;
   } catch (error) {
-    throw new Exception(`The JSON file '${path}' could not be parsed: ${extractMessage(error)}`, {
+    throw new Exception(`The JSON file '${path}' could not be parsed.`, {
       code: ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
+      cause: error,
     });
   }
 };
@@ -128,10 +129,10 @@ export const isNotFoundError = (error: unknown): boolean =>
  * @returns The NOT_A_FILE exception.
  */
 export const notARegularFile = (path: string, error: unknown): Exception =>
-  new Exception(
-    `The file '${path}' doesn't exist or is a symbolic link: ${extractMessage(error)}`,
-    { code: ERRORS.NOT_A_FILE },
-  );
+  new Exception(`The file '${path}' doesn't exist or is a symbolic link.`, {
+    code: ERRORS.NOT_A_FILE,
+    cause: error,
+  });
 
 /**
  * Checks whether opening a path without following links failed because it doesn't exist or its
