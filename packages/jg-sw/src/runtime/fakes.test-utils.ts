@@ -78,15 +78,25 @@ export type IFakeWindow = EventTarget & {
   matchMedia: ReturnType<typeof vi.fn>;
 };
 
+// the navigator fields that tell a device apart, as an iPhone or a desktop browser reports them
+export type IFakeDevice = {
+  userAgent?: string;
+  platform?: string;
+  maxTouchPoints?: number;
+  standalone?: boolean;
+};
+
 /**
  * Stubs window and navigator.serviceWorker for one test.
  * @param registration The registration register() resolves to.
- * @param isStandalone Whether the page runs as the installed app.
+ * @param isStandalone Whether the page runs in a standalone display.
+ * @param device The navigator fields of the device, such as its user agent.
  * @returns The fake container and window.
  */
 export const stubBrowser = (
   registration = new FakeRegistration(),
   isStandalone = false,
+  device: IFakeDevice = {},
 ): {
   container: FakeServiceWorkerContainer;
   window: IFakeWindow;
@@ -97,7 +107,7 @@ export const stubBrowser = (
     location: { reload: vi.fn() },
     matchMedia: vi.fn(() => ({ matches: isStandalone })),
   });
-  vi.stubGlobal('navigator', { serviceWorker: container });
+  vi.stubGlobal('navigator', { serviceWorker: container, ...device });
   vi.stubGlobal('window', fakeWindow);
   return { container, window: fakeWindow, registration };
 };

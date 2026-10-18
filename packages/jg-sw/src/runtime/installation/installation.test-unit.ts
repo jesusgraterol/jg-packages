@@ -1,7 +1,32 @@
 import { expectToRejectCode } from 'jg-exception/testing';
 import { describe, expect, test, vi } from 'vitest';
 
-import { createInstallPromptEvent, loadRuntime, stubBrowser } from '../fakes.test-utils.js';
+import {
+  createInstallPromptEvent,
+  type IFakeDevice,
+  loadRuntime,
+  stubBrowser,
+} from '../fakes.test-utils.js';
+
+// the navigators of the devices Moldea tells apart
+const IPHONE: IFakeDevice = {
+  userAgent:
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1',
+  platform: 'iPhone',
+  maxTouchPoints: 5,
+};
+const DESKTOP_MODE_IPAD: IFakeDevice = {
+  userAgent:
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15',
+  platform: 'MacIntel',
+  maxTouchPoints: 5,
+};
+const DESKTOP: IFakeDevice = {
+  userAgent:
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15',
+  platform: 'MacIntel',
+  maxTouchPoints: 0,
+};
 
 /**
  * Registers the worker, which starts listening for the install prompt.
@@ -99,5 +124,47 @@ describe('installation outside a browser', () => {
     await registerServiceWorker();
 
     expect(canInstallApp()).toBe(false);
+  });
+});
+
+describe('isIosBrowserTab', () => {
+  test.each([
+    ['an iPhone tab', false, IPHONE, true],
+    ['an iPhone app opened from the Home Screen', false, { ...IPHONE, standalone: true }, false],
+    ['an iPad tab that asks for desktop sites', false, DESKTOP_MODE_IPAD, true],
+    ['an installed iPad that asks for desktop sites', true, DESKTOP_MODE_IPAD, false],
+    ['a desktop browser', false, DESKTOP, false],
+  ])('isIosBrowserTab() in %s', async (_, isStandalone, device, expected) => {
+    stubBrowser(undefined, isStandalone, device);
+    const { isIosBrowserTab } = await loadRuntime();
+
+    expect(isIosBrowserTab()).toBe(expected);
+  });
+
+  test('is false outside a browser', async () => {
+    stubBrowser(undefined, false, IPHONE);
+    vi.stubGlobal('window', undefined);
+    const { isIosBrowserTab } = await loadRuntime();
+
+    expect(isIosBrowserTab()).toBe(false);
+  });
+
+  test('is false without a navigator', async () => {
+    stubBrowser(undefined, false, IPHONE);
+    vi.stubGlobal('navigator', undefined);
+    const { isIosBrowserTab } = await loadRuntime();
+
+    expect(isIosBrowserTab()).toBe(false);
+  });
+});
+
+describe('running as the installed app', () => {
+  test("counts Safari's Home Screen app, which reports navigator.standalone only", async () => {
+    stubBrowser(undefined, false, { ...IPHONE, standalone: true });
+    const { registerServiceWorker, getServiceWorkerSnapshot } = await loadRuntime();
+
+    await registerServiceWorker();
+
+    expect(getServiceWorkerSnapshot().installation.isRunningInstalledApp).toBe(true);
   });
 });

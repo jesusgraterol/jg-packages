@@ -29,4 +29,4 @@ export { registerServiceWorker } from './registration/index.js';
 export { updateApp } from './update/index.js';
 
 // installation
-export { canInstallApp, installApp } from './installation/index.js';
+export { canInstallApp, installApp, isIosBrowserTab } from './installation/index.js';
