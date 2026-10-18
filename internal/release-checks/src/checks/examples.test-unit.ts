@@ -4,6 +4,7 @@ import type { IApiReference, IApiSymbol } from '@jg-packages/api-reference';
 
 import {
   collectExamples,
+  collectRecipeBlocks,
   readExampleCode,
   readThrownError,
   toRunnableExample,
@@ -90,6 +91,53 @@ describe('collectExamples', () => {
       { label: 'toSlug', code: 'toSlug();' },
       { label: 'Exception#toJSON', code: 'x.toJSON();' },
       { label: 'toSlug in ./sync', code: 'toSlug();' },
+    ]);
+  });
+});
+
+describe('collectRecipeBlocks', () => {
+  test("lists each recipe's ts blocks with the recipe and their position in it", () => {
+    const markdown = [
+      '# jg-sample recipes',
+      '',
+      'Patterns for apps that use jg-sample.',
+      '',
+      '```ts',
+      "const beforeAnyRecipe = 'left out';",
+      '```',
+      '',
+      '## Greeting a visitor',
+      '',
+      '```ts',
+      "greet('Ada');",
+      '```',
+      '',
+      '```bash',
+      'echo left out',
+      '```',
+      '',
+      '```ts',
+      "greet('Grace');",
+      "greet('Linus');",
+      '```',
+      '',
+      '## Greeting in Markdown',
+      '',
+      '```ts',
+      'const heading = `',
+      '## Still the same block',
+      '`;',
+      '```',
+    ].join('\n');
+
+    expect(collectRecipeBlocks(markdown)).toStrictEqual([
+      { recipe: 'Greeting a visitor', position: 1, code: "greet('Ada');" },
+      { recipe: 'Greeting a visitor', position: 2, code: "greet('Grace');\ngreet('Linus');" },
+      {
+        recipe: 'Greeting in Markdown',
+        position: 1,
+        code: 'const heading = `\n## Still the same block\n`;',
+      },
     ]);
   });
 });

@@ -25,6 +25,9 @@ export const RUNNABLE_EXAMPLE_PACKAGES: ReadonlySet<string> = new Set([
 // the unshipped file where a package declares what its examples use but don't define
 const EXAMPLES_DECLARATIONS_FILE = 'examples.d.ts';
 
+// the file a package's recipes ship in
+export const RECIPES_FILE = 'RECIPES.md';
+
 // a comment that states the result of the line it ends, such as `// => 'hi-there'`
 const RESULT_COMMENT = /^\/\/\s*=>\s*(.+?)\s*$/;
 
@@ -83,6 +86,50 @@ export const collectExamples = (reference: IApiReference): IPackageExample[] => 
   }
   return [...examples.values()];
 };
+
+// a recipe in RECIPES.md: its heading, and the code of its ```ts blocks in order
+export type IRecipe = { heading: string; blocks: string[] };
+
+// one ```ts block of a recipe, with the recipe's heading and the block's position in it, from 1
+export type IRecipeBlock = { recipe: string; position: number; code: string };
+
+/**
+ * Reads the recipes of a RECIPES.md: each `## ` section, with its ```ts blocks. Headings inside a
+ * code block don't start a recipe, and blocks before the first recipe belong to none.
+ * @param markdown The file's text.
+ * @returns The recipes, in order.
+ */
+export const readRecipes = (markdown: string): IRecipe[] => {
+  const recipes: IRecipe[] = [];
+  let fence: { isTypeScript: boolean; lines: string[] } | undefined;
+  for (const line of markdown.split('\n')) {
+    if (fence !== undefined) {
+      if (/^```\s*$/.test(line)) {
+        if (fence.isTypeScript) {
+          recipes.at(-1)?.blocks.push(fence.lines.join('\n'));
+        }
+        fence = undefined;
+      } else {
+        fence.lines.push(line);
+      }
+    } else if (line.startsWith('```')) {
+      fence = { isTypeScript: /^```ts\s*$/.test(line), lines: [] };
+    } else if (line.startsWith('## ')) {
+      recipes.push({ heading: line.slice(3).trim(), blocks: [] });
+    }
+  }
+  return recipes;
+};
+
+/**
+ * Lists every ```ts block of a RECIPES.md, with the recipe it belongs to and its position there.
+ * @param markdown The file's text.
+ * @returns The blocks, in order.
+ */
+export const collectRecipeBlocks = (markdown: string): IRecipeBlock[] =>
+  readRecipes(markdown).flatMap(({ heading, blocks }) =>
+    blocks.map((code, index) => ({ recipe: heading, position: index + 1, code })),
+  );
 
 // an example rewritten so its stated results are asserted, or why that's impossible
 export type IRunnableExample = { code: string; problems: string[] };
@@ -197,8 +244,9 @@ export const readThrownError = (stderr: string): string => {
 };
 
 /**
- * Checks one package's examples in the consumer project: each typechecks, and, for a runnable
- * package, runs with its stated results asserted.
+ * Checks one package's examples and recipes in the consumer project: each example and each recipe
+ * block typechecks, and, for a runnable package, each example runs with its stated results
+ * asserted. Recipes show app code that does I/O, so they're only typechecked.
  * @param packed The package.
  * @param runCommand Runs a command.
  * @param consumerDirectory The consumer project.
@@ -213,17 +261,20 @@ const checkPackageExamples = async (
 ): Promise<string[]> => {
   const { directory: packageDirectory } = packed.workspacePackage;
   const examples = collectExamples(await extractApiReference(packageDirectory));
-  // check 6 reports a function or class without an example
-  if (examples.length === 0) {
+  const recipes = packed.files.get(RECIPES_FILE)?.toString('utf8');
+  const recipeBlocks = recipes === undefined ? [] : collectRecipeBlocks(recipes);
+  // check 6 reports a function or class without an example, and check 5 a missing recipe
+  if (examples.length === 0 && recipeBlocks.length === 0) {
     return [];
   }
   const directory = join(consumerDirectory, 'examples', packed.packedManifest.name);
   await mkdir(join(directory, 'run'), { recursive: true });
   const fileName = (index: number): string => `${String(index).padStart(3, '0')}.ts`;
   await Promise.all(
-    examples.map(({ code }, index) =>
-      writeFile(join(directory, fileName(index)), `${code}\n\nexport {};\n`),
-    ),
+    [
+      ...examples.map(({ code }, index) => [fileName(index), code] as const),
+      ...recipeBlocks.map(({ code }, index) => [`recipe-${fileName(index)}`, code] as const),
+    ].map(([file, code]) => writeFile(join(directory, file), `${code}\n\nexport {};\n`)),
   );
   const declarations = join(packageDirectory, EXAMPLES_DECLARATIONS_FILE);
   const hasDeclarations = await access(declarations).then(
@@ -243,18 +294,27 @@ const checkPackageExamples = async (
     { cwd: directory },
   );
   for (const line of typecheck.stdout.split('\n')) {
-    const diagnostic = /^(\d{3})\.ts\((\d+),(\d+)\): error (TS\d+: .*)$/.exec(line);
-    const example = examples[Number(diagnostic?.[1])];
-    if (diagnostic !== null && example !== undefined) {
-      failed.add(Number(diagnostic[1]));
+    const diagnostic = /^(recipe-)?(\d{3})\.ts\((\d+),(\d+)\): error (TS\d+: .*)$/.exec(line);
+    if (diagnostic === null) {
+      continue;
+    }
+    const [, isRecipe, index, lineNumber, , message] = diagnostic;
+    const example = isRecipe === undefined ? examples[Number(index)] : undefined;
+    const block = isRecipe === undefined ? undefined : recipeBlocks[Number(index)];
+    if (example !== undefined) {
+      failed.add(Number(index));
       problems.push(
-        `the example of ${example.label} doesn't typecheck: line ${diagnostic[2]}, ${diagnostic[4]}`,
+        `the example of ${example.label} doesn't typecheck: line ${lineNumber}, ${message}`,
+      );
+    } else if (block !== undefined) {
+      problems.push(
+        `the recipe "${block.recipe}", block ${block.position}, doesn't typecheck: line ${lineNumber}, ${message}`,
       );
     }
   }
   if (typecheck.exitCode !== 0 && problems.length === 0) {
     problems.push(
-      `its examples don't typecheck: ${firstLines(typecheck.stdout || typecheck.stderr)}`,
+      `its examples and recipes don't typecheck: ${firstLines(typecheck.stdout || typecheck.stderr)}`,
     );
   }
   if (!isRunnable) {
@@ -280,10 +340,10 @@ const checkPackageExamples = async (
 };
 
 /**
- * Check 8: every `@example` typechecks against the installed tarballs, with the package's
- * `examples.d.ts` when it has one, and the examples of packages without I/O run, in en-US and UTC,
- * with each `expression; // => result` line asserted. Packages with Astro components are skipped, because
- * their examples are Astro markup.
+ * Check 8: every `@example`, and every ```ts block of the packed RECIPES.md, typechecks against
+ * the installed tarballs, with the package's `examples.d.ts` when it has one, and the examples of
+ * packages without I/O run, in en-US and UTC, with each `expression; // => result` line asserted.
+ * Packages with Astro components are skipped, because their examples are Astro markup.
  * @param packages The packed packages.
  * @param runCommand Runs a command.
  * @param consumer The project the tarballs are installed in, which check 2 also uses.

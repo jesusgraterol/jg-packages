@@ -139,9 +139,19 @@ A package with entries for different runtimes typechecks each entry's directory 
   1. the package name as the title, then a one-sentence summary
   2. `## Install`
   3. `## Usage`
-  4. `## Documentation`: that the API reference ships as `API.md`, and a link to the package's page on the site
+  4. `## Documentation`: that the API reference ships as `API.md` and the recipes as `RECIPES.md`, with links to the package's pages on the site
   5. `## License`
 - README links are absolute URLs, because the README is also the package's npm page. There's no hand-written API reference: every build renders `API.md` from the TSDoc, which ships in the tarball, so an agent reads the reference of the installed version in `node_modules/<package>/API.md`, and the site shows the same reference.
+
+## Recipes
+
+Each package without Astro components ships a `RECIPES.md`: app-side patterns, the jobs an app does with the package that its API reference can't show, such as one error handler for every route, or a typed client for an envelope API. The site shows them on the package's recipes page.
+
+- **The format:** the title `# <name> recipes`, one sentence on what they show, then one `## <recipe>` section per recipe, with prose and at least one ` ```ts ` block. Two to four recipes; one that needs many blocks is better as two.
+- **Each block is self-contained,** like an example: it imports what it uses by its public name, and declares the reader's own inputs, in the package's `examples.d.ts` when several blocks share them.
+- **Typechecked, not run,** because recipes show app code that does I/O. `release:verify` typechecks every block against the release, so a recipe can't drift from the API. Describe results in comments: `// =>` isn't used in recipes.
+- **Framework-free:** a handler is a plain function, such as `(error: unknown) => { status: number; body: IApiResponse<null> }`, that fits Express, Hono, or anything else, so no framework's types enter the checks.
+- **When to add one:** when apps combine a capability with their own code in a way an example can't show, or when the same question about using the package comes up twice. Change a recipe in the same change as the API it shows. `RECIPES.md` ships, so a change to it needs a version bump, like any other shipped file.
 
 ## Changelogs
 

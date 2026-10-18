@@ -20,7 +20,8 @@
   "files": [
     "dist",
     "CHANGELOG.md",
-    "API.md"
+    "API.md",
+    "RECIPES.md"
   ],
   "sideEffects": false,
   "engines": {

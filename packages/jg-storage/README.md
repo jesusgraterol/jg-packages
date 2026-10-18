@@ -64,6 +64,8 @@ Every store probes its mechanism on its first call, never when it's created, so 
 
 The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-storage/.
 
+Recipes for common jobs ship as `RECIPES.md`, with every block typechecked against the release, and are at https://jg-packages.jesusgraterol.dev/packages/jg-storage/recipes/.
+
 ## License
 
 [MIT](https://github.com/jesusgraterol/jg-packages/blob/main/packages/jg-storage/LICENSE)

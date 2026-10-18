@@ -4,6 +4,7 @@
 
 ### Added
 
+- `RECIPES.md`, patterns for apps that use the package: an API exception with an HTTP status and logging flags, a client exception for the UI, keeping secrets out of a cause with `redact`, and handling an error by its code. Each block is typechecked against the release.
 - `redact` in `Exception`'s options: values replaced with `[redacted]`, as written and URL-encoded, throughout the exception: its message, its data, and every cause. Each cause becomes a copy that keeps its name, code, and plain fields without running the cause's own code, and nothing keeps the values.
 
 ## 1.1.0
