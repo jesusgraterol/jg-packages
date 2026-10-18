@@ -200,7 +200,9 @@ describe('copyFromButton', () => {
 
     await copyFromButton(button);
 
-    const guidance = getCopyGuidance(ERRORS.CLIPBOARD_PERMISSION_DENIED, 'npm install command');
+    const guidance = getCopyGuidance(ERRORS.CLIPBOARD_PERMISSION_DENIED, {
+      context: 'npm install command',
+    });
     expect(button.dataset['copyState']).toBe('error');
     expect(label.textContent).toBe('Copy failed');
     expect(status.textContent).toBe(guidance);
@@ -236,7 +238,11 @@ describe('copyFromButton', () => {
 
     await copyFromButton(button);
 
-    const guidance = getCopyGuidance(ERRORS.CLIPBOARD_WRITE_FAILED, 'as Markdown', true);
+    const guidance = getCopyGuidance(ERRORS.CLIPBOARD_WRITE_FAILED, {
+      context: 'as Markdown',
+      label: 'Copy page',
+      linked: true,
+    });
     expect(writeText).not.toHaveBeenCalled();
     expect(label.textContent).toBe('Copy failed');
     expect(status.textContent).toBe(guidance);
@@ -256,7 +262,9 @@ describe('copyFromButton', () => {
     await copyFromButton(button);
     vi.advanceTimersByTime(10_000);
 
-    expect(hint.textContent).toBe(getCopyGuidance(ERRORS.CLIPBOARD_UNSUPPORTED, 'text'));
+    expect(hint.textContent).toBe(
+      getCopyGuidance(ERRORS.CLIPBOARD_UNSUPPORTED, { context: 'text' }),
+    );
     expect(hint.hidden).toBe(false);
   });
 
@@ -268,7 +276,7 @@ describe('copyFromButton', () => {
     await copyFromButton(button);
 
     expect(writeText).not.toHaveBeenCalled();
-    expect(hint.textContent).toBe(getCopyGuidance(null, 'text'));
+    expect(hint.textContent).toBe(getCopyGuidance(null, { context: 'text' }));
   });
 
   test('clears the last outcome and its reset timer when clicked again', async () => {
@@ -283,7 +291,9 @@ describe('copyFromButton', () => {
 
     // the success's reset timer never fires over the failure
     expect(label.textContent).toBe('Copy failed');
-    expect(hint.textContent).toBe(getCopyGuidance(ERRORS.CLIPBOARD_WRITE_FAILED, 'text'));
+    expect(hint.textContent).toBe(
+      getCopyGuidance(ERRORS.CLIPBOARD_WRITE_FAILED, { context: 'text' }),
+    );
 
     fail = false;
     await copyFromButton(button);

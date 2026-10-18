@@ -111,11 +111,11 @@ export const copyFromButton = async (button: HTMLElement): Promise<void> => {
     showOutcome(button, {
       state: 'error',
       label: 'Copy failed',
-      message: getCopyGuidance(
-        getErrorCode(error),
-        button.dataset['copyContext'] ?? 'text',
-        button.dataset['copyUrl'] !== undefined,
-      ),
+      message: getCopyGuidance(getErrorCode(error), {
+        context: button.dataset['copyContext'] ?? 'text',
+        label: defaultLabels.get(button),
+        linked: button.dataset['copyUrl'] !== undefined,
+      }),
     });
     return;
   }

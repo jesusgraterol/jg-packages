@@ -144,7 +144,11 @@ describe('copy buttons', () => {
 
     const outcome = await clickAndRead(document.querySelector('button') as HTMLButtonElement);
 
-    const guidance = getCopyGuidance(ERRORS.CLIPBOARD_WRITE_FAILED, 'as Markdown', true);
+    const guidance = getCopyGuidance(ERRORS.CLIPBOARD_WRITE_FAILED, {
+      context: 'as Markdown',
+      label: 'Copy page',
+      linked: true,
+    });
     const link = document.querySelector<HTMLAnchorElement>('[data-copy-hint] a');
     expect(outcome).toStrictEqual({
       state: 'error',
@@ -202,7 +206,7 @@ describe('copy buttons', () => {
 
     const outcome = await clickAndRead(renderCodeWindow());
 
-    const guidance = getCopyGuidance(code, 'code');
+    const guidance = getCopyGuidance(code, { context: 'code' });
     expect(outcome).toStrictEqual({
       state: 'error',
       label: 'Copy failed',
