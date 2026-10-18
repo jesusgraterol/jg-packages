@@ -6,6 +6,9 @@ export type {
   IDirectoryElementsKeySort,
   IDirectoryElementsOptions,
   IDirectoryPathElements,
+  IFileLockOwner,
+  ILockBusyReason,
+  ILockJudgement,
   IPathElement,
   IReadBufferFileOptions,
   IReadFileOptions,
@@ -42,3 +45,20 @@ export {
   parseJsonContent,
   serializeJsonData,
 } from './validations.js';
+
+// locks
+export {
+  createLockOwner,
+  judgeExistingLock,
+  lockAcquisitionFailed,
+  lockBusy,
+  lockNotOwned,
+  lockReleaseFailed,
+  LOCK_OWNER_FILE,
+  LOCK_OWNER_MAX_BYTES,
+  LOCK_RECOVERY_DIRECTORY,
+  isProcessGone,
+  isSameLockOwner,
+  parseLockOwner,
+  serializeLockOwner,
+} from './locks.js';

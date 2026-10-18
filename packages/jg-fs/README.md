@@ -50,7 +50,34 @@ if (isPathWithin(uploadsDirectory, path)) {
 }
 ```
 
+Keep a job from running twice at once, across processes on one machine, with a lock:
+
+```ts
+import { acquireLock } from 'jg-fs';
+
+const lock = await acquireLock('.locks/nightly-report'); // LOCK_BUSY while another process holds it
+try {
+  await buildNightlyReport();
+} finally {
+  await lock.release();
+}
+```
+
+The lock is a directory holding an `owner.json` that names the process. When its owner's process is gone, as after a crash, the next `acquireLock` on the same host takes it over. Use it on local filesystems only: a lock is never taken over from another host.
+
 Failures throw `Exception`s from `jg-exception`, with the codes in `ERRORS`.
+
+### Removing a stuck lock
+
+A lock left in a state no process can safely take over stays busy, and `LOCK_BUSY`'s `data.reason` says why:
+
+- `held`: the owner named in `owner.json` is still running. Wait, or stop that process.
+- `other-host`: the owner runs on another host, which this host can't check.
+- `ownerless`: `owner.json` is missing or invalid, such as after a crash right after the directory was created. A lock being created or released at that moment looks the same, so try again first.
+- `recovery-in-progress`: a `recovery` directory is inside, so another process is taking the lock over, or crashed while doing so.
+- `unexpected-entries`: the directory holds something besides `owner.json`, such as a `.tmp` file left by an interrupted write.
+
+Before deleting a stuck lock's directory by hand, confirm that no process is using it: check the `pid` and `hostname` in `owner.json`, when there is one. Then delete the whole directory.
 
 ## Documentation
 

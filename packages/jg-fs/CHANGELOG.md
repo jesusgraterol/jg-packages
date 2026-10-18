@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0
+
+### Added
+
+- `acquireLock(path)`, in both entries, which acquires a lock only one process at a time can hold: a directory, created with mode `0o700`, holding an `owner.json` that names the process. A lock whose owner on this host has exited is taken over, under a recovery claim. Any other existing lock throws `LOCK_BUSY`, whose `data.reason` is `held`, `other-host`, `ownerless`, `recovery-in-progress`, or `unexpected-entries`. Its `release()` removes it only while `owner.json` still names the caller and nothing else is inside, and is idempotent.
+- `IFileLock` and `IFileLockOwner`, and the codes `LOCK_BUSY`, `LOCK_NOT_OWNED`, `LOCK_RELEASE_FAILED`, and `LOCK_ACQUISITION_FAILED`.
+- A README section on removing a stuck lock.
+
 ## 1.2.0
 
 ### Added
