@@ -1,0 +1,104 @@
+---
+import { ArrowLeft } from '@lucide/astro';
+import type { GetStaticPaths } from 'astro';
+import { getEntry, render } from 'astro:content';
+import Breadcrumb from 'jg-personal-astro-ui/breadcrumb';
+import Button from 'jg-personal-astro-ui/button';
+import HeroBackdrop from 'jg-personal-astro-ui/hero-backdrop';
+import Prose from 'jg-personal-astro-ui/prose';
+
+import OnThisPage from '../../../../components/on-this-page/on-this-page.astro';
+import PackageIcon from '../../../../components/package-icon/package-icon.astro';
+import BaseLayout from '../../../../layouts/base-layout.astro';
+import { PACKAGE_CATALOG, PACKAGES_DIRECTORY, SITE_CONFIG } from '../../../../site.config.ts';
+import {
+  loadListedPackages,
+  type IListedPackage,
+} from '../../../../utilities/package-catalog/index.ts';
+
+interface Props {
+  package: IListedPackage;
+}
+
+export const getStaticPaths = (async () =>
+  (await loadListedPackages(PACKAGE_CATALOG, PACKAGES_DIRECTORY)).map((listedPackage) => ({
+    params: { name: listedPackage.name },
+    props: { package: listedPackage },
+  }))) satisfies GetStaticPaths;
+
+const { package: listedPackage } = Astro.props;
+const packagePath = `/packages/${listedPackage.name}/`;
+const recipes = await getEntry('packageRecipes', listedPackage.name);
+if (recipes === undefined) {
+  throw new Error(`${listedPackage.name} has no recipes entry`);
+}
+const { Content, headings } = await render(recipes);
+// each recipe is a level-two section
+const contents = headings
+  .filter(({ depth }) => depth === 2)
+  .map(({ slug, text }) => ({ href: `#${slug}`, label: text }));
+// the sentence under the title says what the recipes show, which describes the page too
+const summary = recipes.body?.split('\n\n')[0]?.trim() ?? listedPackage.description;
+---
+
+<BaseLayout
+  canonicalPath={`${packagePath}recipes/`}
+  description={summary}
+  title={`${listedPackage.name} recipes | ${SITE_CONFIG.name}`}
+>
+  <header class="relative isolate overflow-hidden border-b border-border">
+    <HeroBackdrop class="opacity-70" />
+    <div class="jg-container pt-8 pb-12 sm:pt-10 sm:pb-16">
+      <Breadcrumb
+        items={[
+          { name: SITE_CONFIG.name, href: '/' },
+          { name: listedPackage.name, href: packagePath },
+          { name: 'Recipes', href: `${packagePath}recipes/` },
+        ]}
+      />
+      <div class="mt-10 flex items-center gap-4 sm:gap-5">
+        <PackageIcon
+          icon={listedPackage.icon}
+          size="header"
+        />
+        <div class="min-w-0">
+          <p class="eyebrow">Recipes</p>
+          <h1 class="mt-2 font-mono text-[clamp(2rem,6vw,3.5rem)] leading-none font-bold tracking-tight wrap-anywhere">
+            {listedPackage.name}
+          </h1>
+        </div>
+      </div>
+      <Button
+        href={packagePath}
+        class="mt-8"
+        size="sm"
+        variant="outline"
+      >
+        <ArrowLeft
+          class="size-4"
+          aria-hidden="true"
+        />
+        Back to {listedPackage.name}
+      </Button>
+    </div>
+  </header>
+  <div class="jg-container grid gap-10 py-10 sm:py-14 lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-14">
+    <div class="min-w-0 lg:max-w-[48rem]">
+      <div class="lg:hidden">
+        <OnThisPage
+          items={contents}
+          variant="disclosure"
+        />
+      </div>
+      <Prose class="mt-8 lg:mt-0">
+        <Content />
+      </Prose>
+    </div>
+    <aside class="hidden lg:block">
+      <OnThisPage
+        items={contents}
+        variant="sidebar"
+      />
+    </aside>
+  </div>
+</BaseLayout>

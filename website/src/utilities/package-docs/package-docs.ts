@@ -44,26 +44,41 @@ export const selectReadmeSections = (markdown: string): string => {
 };
 
 /**
- * Loads every listed package's README for its page, keeping the sections the page shows as prose
- * and rendering them with the site's Markdown settings, code highlighting included.
- * @param options The packages directory and the packages to load.
+ * Keeps a RECIPES.md without its title, which the recipes page shows in its header: the summary,
+ * then the recipes.
+ * @param markdown The RECIPES.md.
+ * @returns The Markdown to render.
+ */
+export const selectRecipes = (markdown: string): string =>
+  `${markdown.replace(/^#\s.*(?:\n|$)/, '').trim()}\n`;
+
+/**
+ * Loads one Markdown file of every listed package, keeping what its page shows as prose and
+ * rendering it with the site's Markdown settings, code windows included. A listed package without
+ * the file fails the build.
+ * @param options The packages directory, the packages to load, the file, and what to keep of it.
  * @returns The content loader.
  */
-export const packageReadmeLoader = ({
+export const packageMarkdownLoader = ({
   packagesDirectory,
   packageNames,
+  fileName,
+  select,
 }: {
   packagesDirectory: string;
   packageNames: readonly string[];
+  // the file in each package's directory, such as README.md
+  fileName: string;
+  select: (markdown: string) => string;
 }): Loader => ({
-  name: 'package-readme-loader',
+  name: `package-markdown-loader:${fileName}`,
   load: async (context) => {
     const { store, watcher } = context;
     store.clear();
     for (const name of packageNames) {
-      const path = join(packagesDirectory, name, 'README.md');
+      const path = join(packagesDirectory, name, fileName);
       const markdown = await readFile(path, 'utf8');
-      const body = selectReadmeSections(markdown);
+      const body = select(markdown);
       store.set({
         id: name,
         data: { name },

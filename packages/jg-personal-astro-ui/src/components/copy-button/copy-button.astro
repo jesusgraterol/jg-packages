@@ -1,119 +1,15 @@
 ---
-import { Check, Copy, TriangleAlert } from '@lucide/astro';
+import { renderCopyButton, type ICopyButtonOptions } from './copy-button-markup.ts';
 
-interface Props {
-  class?: string | undefined;
-  // what the button copies, added to its accessible name only, such as "install command"
-  context?: string | undefined;
-  label?: string | undefined;
-  // copies the text of the element with this id; otherwise text is required
-  sourceId?: string | undefined;
-  text?: string | undefined;
-  // 'surface' on the page's surfaces, 'terminal' on dark terminal panels
-  tone?: 'surface' | 'terminal' | undefined;
-}
-
-const {
-  class: className,
-  context = 'text',
-  label = 'Copy',
-  sourceId,
-  text,
-  tone = 'surface',
-} = Astro.props;
+// what the button copies (text, an element's text by sourceId, or its code window's code), its
+// context for screen readers and guidance, its label, and its tone
+type Props = ICopyButtonOptions;
 ---
 
-<span class:list={['relative inline-flex shrink-0 items-center', className]}>
-  <button
-    type="button"
-    class:list={[
-      'inline-flex min-h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold transition-colors',
-      tone === 'terminal'
-        ? 'text-terminal-foreground/80 hover:bg-terminal-foreground/10 hover:text-terminal-foreground focus-visible:outline-terminal-accent'
-        : 'text-muted hover:bg-secondary hover:text-foreground',
-    ]}
-    data-copy-button
-    data-copy-context={context}
-    data-copy-source={sourceId}
-    data-copy-text={text}
-  >
-    <Copy
-      class="size-3.5 [[data-copy-state]_&]:hidden"
-      aria-hidden="true"
-    />
-    <Check
-      class="hidden size-3.5 [[data-copy-state=success]_&]:block"
-      aria-hidden="true"
-    />
-    <TriangleAlert
-      class="hidden size-3.5 [[data-copy-state=error]_&]:block"
-      aria-hidden="true"
-    />
-    <span data-copy-label>{label}</span>
-    <span class="sr-only">{` ${context}`}</span>
-  </button>
-  <span
-    class="sr-only"
-    data-copy-status
-    aria-live="polite"
-  ></span>
-  <span
-    class="absolute top-full right-0 z-20 mt-1.5 w-60 rounded-lg border border-border bg-surface p-2.5 text-xs leading-5 font-medium text-foreground shadow-raised"
-    data-copy-hint
-    hidden
-  ></span>
-</span>
+<Fragment set:html={renderCopyButton(Astro.props)} />
 
 <script>
-  // how long the copied state shows before the button resets
-  const RESET_DELAY_MS = 2_000;
+  import { registerCopyButtons } from './copy-behavior.ts';
 
-  document.querySelectorAll<HTMLButtonElement>('[data-copy-button]').forEach((button) => {
-    const wrapper = button.parentElement;
-    const label = button.querySelector<HTMLElement>('[data-copy-label]');
-    const status = wrapper?.querySelector<HTMLElement>('[data-copy-status]');
-    const hint = wrapper?.querySelector<HTMLElement>('[data-copy-hint]');
-    const defaultLabel = label?.textContent ?? 'Copy';
-    let resetTimer: number | undefined;
-
-    button.addEventListener('click', () => {
-      window.clearTimeout(resetTimer);
-      if (hint) hint.hidden = true;
-      const sourceId = button.dataset['copySource'];
-      const text =
-        sourceId === undefined
-          ? button.dataset['copyText']
-          : (document.getElementById(sourceId)?.textContent ?? undefined);
-
-      // the clipboard call starts inside the click, before anything awaits, so browsers allow it
-      const write =
-        text !== undefined && navigator.clipboard !== undefined
-          ? navigator.clipboard.writeText(text)
-          : Promise.reject(new Error('Clipboard writing is unavailable.'));
-
-      write.then(
-        () => {
-          button.dataset['copyState'] = 'success';
-          if (label) label.textContent = 'Copied';
-          if (status) status.textContent = 'Copied to the clipboard.';
-          resetTimer = window.setTimeout(() => {
-            delete button.dataset['copyState'];
-            if (label) label.textContent = defaultLabel;
-            if (status) status.textContent = '';
-          }, RESET_DELAY_MS);
-        },
-        () => {
-          // the guidance stays until the next attempt, so there's time to read and follow it
-          const guidance = `Copying failed. Select the ${button.dataset['copyContext'] ?? 'text'} and copy it manually.`;
-          button.dataset['copyState'] = 'error';
-          if (label) label.textContent = 'Copy failed';
-          if (status) status.textContent = guidance;
-          if (hint) {
-            hint.textContent = guidance;
-            hint.hidden = false;
-          }
-        },
-      );
-    });
-  });
+  registerCopyButtons();
 </script>

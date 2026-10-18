@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+### Added
+
+- `RECIPES.md`, patterns for apps that use the package: summing money without rounding errors, and a percentage change for a dashboard. Each block is typechecked against the release.
+
 ## 1.1.0
 
 A fresh start: breaking changes in a minor version, once, because nothing depended on 1.0.x.

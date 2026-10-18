@@ -3,6 +3,7 @@ import { GitBranch } from '@lucide/astro';
 import BrandLogo from 'jg-personal-astro-ui/brand-logo';
 import Button from 'jg-personal-astro-ui/button';
 import DocumentHead from 'jg-personal-astro-ui/document-head';
+import NavigationProgress from 'jg-personal-astro-ui/navigation-progress';
 import SiteFooter from 'jg-personal-astro-ui/site-footer';
 import SiteHeader from 'jg-personal-astro-ui/site-header';
 import SkipLink from 'jg-personal-astro-ui/skip-link';
@@ -35,9 +36,19 @@ const footerColumns = [
   {
     title: 'Repository',
     links: [
-      { href: SITE_CONFIG.repositoryUrl, label: 'Source', external: true },
-      { href: `${SITE_CONFIG.repositoryUrl}/releases`, label: 'Releases', external: true },
-      { href: `${SITE_CONFIG.repositoryUrl}/issues`, label: 'Issues', external: true },
+      { href: SITE_CONFIG.repositoryUrl, label: 'Source', external: true, externalIcon: false },
+      {
+        href: `${SITE_CONFIG.repositoryUrl}/releases`,
+        label: 'Releases',
+        external: true,
+        externalIcon: false,
+      },
+      {
+        href: `${SITE_CONFIG.repositoryUrl}/issues`,
+        label: 'Issues',
+        external: true,
+        externalIcon: false,
+      },
     ],
   },
 ];
@@ -63,6 +74,7 @@ const footerColumns = [
   </head>
   <body>
     <SkipLink />
+    <NavigationProgress />
     <SiteHeader
       currentPath={Astro.url.pathname}
       homeLabel={`${SITE_CONFIG.name} home`}
@@ -81,6 +93,7 @@ const footerColumns = [
         <Button
           href={SITE_CONFIG.repositoryUrl}
           external
+          externalIcon={false}
           size="icon"
           variant="ghost"
           title="Source repository"
@@ -97,6 +110,7 @@ const footerColumns = [
         <Button
           href={SITE_CONFIG.repositoryUrl}
           external
+          externalIcon={false}
           size="sm"
           variant="outline"
         >

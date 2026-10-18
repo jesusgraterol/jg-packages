@@ -93,27 +93,36 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
 export const PACKAGES_DIRECTORY = resolve(process.cwd(), '..', 'packages');
 
 export const SITE_CONFIG = {
+  // how a project sets its agent up to use the packages, through jg-skills, which owns both
+  // destinations; docs/website.md has the launch order that keeps these links live
+  agentSetup: {
+    installCommand: 'npx skills add jesusgraterol/jg-skills --skill jg-packages -y',
+    policyUrl:
+      'https://github.com/jesusgraterol/jg-skills/blob/main/skills/jg-packages/assets/agents-section.md',
+    skillUrl: 'https://jg-skills.jesusgraterol.dev/skills/jg-packages/',
+  },
   author: {
     name: 'Jesus Graterol',
     twitterHandle: '@jesus__graterol',
     url: 'https://jesusgraterol.dev/',
   },
   defaultDescription:
-    'Small, focused TypeScript packages for errors, HTTP requests, storage, service workers, files, and processes, with docs for people and agents.',
+    'Small, tested TypeScript packages for coding agents to build on: errors, HTTP requests, storage, files, and processes, with docs inside each one.',
   language: 'en',
   license: 'MIT',
-  name: 'JG Packages',
+  name: 'jg-packages',
   navigation: [
     { href: '/#packages', label: 'Packages' },
-    { href: '/#principles', label: 'Principles' },
-    { href: '/#agents', label: 'For agents' },
+    { href: '/#why', label: 'Why' },
+    { href: '/#setup', label: 'Agent setup' },
+    { href: '/#agents', label: 'Agent docs' },
   ],
   npmUrl: 'https://www.npmjs.com/package/',
   // the author's other sites, which share this site's foundation
   relatedSites: [
     { href: 'https://jesusgraterol.dev/', label: 'jesusgraterol.dev' },
     { href: 'https://agenticcoding.jesusgraterol.dev/', label: 'Agentic Coding' },
-    { href: 'https://jg-skills.jesusgraterol.dev/', label: 'JG Skills' },
+    { href: 'https://jg-skills.jesusgraterol.dev/', label: 'jg-skills' },
   ],
   repositoryUrl: 'https://github.com/jesusgraterol/jg-packages',
   storageKeys: {

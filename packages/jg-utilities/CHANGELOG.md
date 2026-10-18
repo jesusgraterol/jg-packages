@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.1
+
+### Added
+
+- `RECIPES.md`, patterns for apps that use the package: paginating with cursors, stable cache keys from JSON, and validating input at the edge. Each block is typechecked against the release.
+
+### Fixed
+
+- The `INVALID_AUTHORIZATION_HEADER` and `INVALID_EMAIL_ADDRESS` messages no longer repeat the header or the address they rejected, which could carry a credential or personal data into logs and API responses. The codes are unchanged.
+
 ## 1.1.0
 
 A fresh start: breaking changes in a minor version, once, because nothing depended on 1.0.x.

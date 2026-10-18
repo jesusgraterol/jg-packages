@@ -17,9 +17,13 @@ let workDirectory: string;
 let rootDirectory: string;
 let packageDirectory: string;
 
-// replaces text in the fixture copy's source
-const editSource = async (search: string, replacement: string): Promise<void> => {
-  const file = join(packageDirectory, 'src', 'index.ts');
+// replaces text in a file of the fixture copy, its source by default
+const editSource = async (
+  search: string,
+  replacement: string,
+  path: string = join('src', 'index.ts'),
+): Promise<void> => {
+  const file = join(packageDirectory, path);
   const text = await readFile(file, 'utf8');
   expect(text).toContain(search);
   await writeFile(file, text.replace(search, replacement));
@@ -92,6 +96,16 @@ describe('checkExamples', () => {
 
     expect(await checkFixtureExamples()).toStrictEqual([
       "the example of greet doesn't typecheck: line 3, TS2304: Cannot find name 'visitor'.",
+    ]);
+  }, 180_000);
+
+  test("fails a recipe block that doesn't typecheck, naming the recipe and the block", async () => {
+    await editSource('visitor.name ?? DEFAULT_NAME', 'visitor.nickname', 'RECIPES.md');
+
+    expect(await checkFixtureExamples()).toStrictEqual([
+      expect.stringMatching(
+        /^the recipe "Greeting a visitor", block 1, doesn't typecheck: line 5, TS2339: Property 'nickname' does not exist/,
+      ),
     ]);
   }, 180_000);
 

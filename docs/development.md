@@ -39,15 +39,16 @@ How to set up the repository, run its checks, and change its dependencies.
 
 Run these from the repository root.
 
-| Command             | What it does                                                                                                                                          |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm check`        | Lint, typecheck, build, the unit and integration tests with coverage, the browser and end-to-end tests, the format check, then `pnpm release:verify`. |
-| `pnpm build`        | Builds every package in dependency order.                                                                                                             |
-| `pnpm lint`         | Runs ESLint in every package.                                                                                                                         |
-| `pnpm typecheck`    | Typechecks every package against each runtime it targets.                                                                                             |
-| `pnpm test`         | Runs every package's unit, integration, and end-to-end tests.                                                                                         |
-| `pnpm format`       | Formats the whole repository with Prettier.                                                                                                           |
-| `pnpm format:check` | Fails when a file isn't formatted.                                                                                                                    |
+| Command             | What it does                                                                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm check`        | Lint, typecheck, build, the unit and integration tests with coverage, the browser and end-to-end tests, the format check, then `pnpm release:verify`.  |
+| `pnpm build`        | Builds every package in dependency order.                                                                                                              |
+| `pnpm dev`          | Serves the website at `http://localhost:4321/`, after building the packages it shows, and reloads it as you edit; [`website.md`](website.md) has more. |
+| `pnpm lint`         | Runs ESLint in every package.                                                                                                                          |
+| `pnpm typecheck`    | Typechecks every package against each runtime it targets.                                                                                              |
+| `pnpm test`         | Runs every package's unit, integration, and end-to-end tests.                                                                                          |
+| `pnpm format`       | Formats the whole repository with Prettier.                                                                                                            |
+| `pnpm format:check` | Fails when a file isn't formatted.                                                                                                                     |
 
 To work on one package, filter by its name, or run its scripts from its directory:
 

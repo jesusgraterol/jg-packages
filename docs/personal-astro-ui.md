@@ -4,24 +4,31 @@ The Astro components, Tailwind CSS token contract, and theme that Jesus Graterol
 
 ## Setting up a site
 
-Install it with its peers:
+Install it with its peers, and Astro's Markdown processor, at the version your `astro` depends on, for the code windows in Markdown:
 
 ```bash
-npm install jg-personal-astro-ui astro tailwindcss @tailwindcss/vite
+npm install jg-personal-astro-ui astro tailwindcss @tailwindcss/vite @astrojs/markdown-satteri
 ```
 
-Add the Tailwind CSS Vite plugin, and the package's syntax theme for Markdown code, in `astro.config.ts`:
+Add the Tailwind CSS Vite plugin, the package's syntax theme for Markdown code, and `codeWindowPlugin`, which puts every Markdown code block in a code window, in `astro.config.ts`:
 
 ```ts
+import { satteri } from '@astrojs/markdown-satteri';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
+import { codeWindowPlugin } from 'jg-personal-astro-ui/code-window-plugin';
 import { SYNTAX_THEME } from 'jg-personal-astro-ui/syntax-theme';
 
 export default defineConfig({
-  markdown: { shikiConfig: { theme: SYNTAX_THEME } },
+  markdown: {
+    shikiConfig: { theme: SYNTAX_THEME },
+    processor: satteri({ hastPlugins: [codeWindowPlugin] }),
+  },
   vite: { plugins: [tailwindcss()] },
 });
 ```
+
+`codeWindowPlugin` is a hast plugin for Sätteri, the processor Astro uses by default, not a rehype plugin: Astro runs rehype plugins only on its older `unified` processor.
 
 Import the stylesheets in the site's global stylesheet, in this order:
 
@@ -32,13 +39,13 @@ Import the stylesheets in the site's global stylesheet, in this order:
 @import 'jg-personal-astro-ui/styles/prose.css';
 ```
 
-Then render `DocumentHead` and `ThemeInitScript` in every page's `<head>`, so the theme applies before the first paint. `website/src/layouts/base-layout.astro` is a complete layout.
+Then render `DocumentHead` and `ThemeInitScript` in every page's `<head>`, so the theme applies before the first paint, and render Markdown inside `prose`, which loads what makes the code windows' copy buttons work. `website/src/layouts/base-layout.astro` is a complete layout.
 
 ## The token contract
 
-`contract.css` maps `--jg-*` custom properties to Tailwind CSS theme values, so components use utilities such as `bg-surface` and `text-muted`. It also defines the `dark` variant, which follows the `.dark` class the theme script sets on `<html>`, and the shared classes `eyebrow`, `display-title`, `section-title`, `lede`, `jg-container`, `jg-container-prose`, `jg-section-space`, `jg-grid-lines`, and `jg-code`.
+`contract.css` maps `--jg-*` custom properties to Tailwind CSS theme values, so components use utilities such as `bg-surface` and `text-muted`. It also defines the `dark` variant, which follows the `.dark` class the theme script sets on `<html>`, and the shared classes `eyebrow`, `display-title`, `section-title`, `lede`, `jg-container`, `jg-container-prose`, `jg-section-space`, `jg-hero-backdrop`, `jg-code`, and the code window's `jg-code-window`, `jg-code-window-header`, `jg-code-window-dots`, and `jg-code-window-caption`.
 
-`theme.css` gives every property its value, in a light palette on `:root` and a dark one on `.dark`, with the system preference deciding until the theme script runs. Components use only the contract, so a site can replace `theme.css` with its own, as long as it defines every property.
+`theme.css` gives every property its value, in a light palette on `:root` and a dark one on `.dark`, with the system preference deciding until the theme script runs. Code windows stay dark in both themes, so it also gives `.jg-code-window` the dark palette's `--jg-syntax-*` values. Components use only the contract, so a site can replace `theme.css` with its own, as long as it defines every property and the code window's syntax colours.
 
 | Properties                                                          | Tailwind CSS utilities                                  | What they're for                                                      |
 | ------------------------------------------------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------- |
@@ -70,30 +77,51 @@ Each component is its own subpath, such as `jg-personal-astro-ui/button`. Most t
 | `theme-init-script`    | The inline script that applies the stored or system theme before the first paint                        |
 | `skip-link`            | A "Skip to main content" link that shows on focus                                                       |
 | `site-header`          | The sticky header: brand, navigation, actions, and a menu on narrow screens                             |
-| `site-footer`          | The footer: brand, about text, link columns, and notes                                                  |
+| `site-footer`          | The footer: brand, about text, link columns, and notes, in one row on wide screens however many columns |
 | `theme-control`        | The light and dark switch, which stores the choice                                                      |
 | `brand-logo`           | The site's name beside the mark the site supplies                                                       |
 | `container`, `section` | The page and reading columns, and a home page section with its eyebrow, title, and lede                 |
-| `grid-lines`           | The faint grid behind heroes                                                                            |
+| `hero-backdrop`        | The jg sites' hero backdrop: a faint dot lattice under a soft accent glow                               |
+| `navigation-progress`  | The page-loading bar along the top of the viewport, shown when the next page is slow to arrive          |
 | `breadcrumb`           | A trail of links, ending at the current page                                                            |
-| `button`, `text-link`  | Pill buttons and links, with variants and sizes, and the new-tab notice on external links               |
+| `button`, `text-link`  | Pill buttons and links, with variants and sizes, and an arrow and the new-tab notice on external links  |
 | `badge`                | A small label, with status variants                                                                     |
 | `link-card`            | A card whose whole area is one link, with icon, meta, and footer slots                                  |
 | `prose`                | Rendered Markdown in the shared reading style                                                           |
-| `code-block`           | Highlighted code with a caption and a copy button                                                       |
+| `code-block`           | A code window: highlighted code on the dark terminal surface, with window dots, a caption, and copying  |
 | `code-diff`            | Two versions of code as a diff: unified on narrow screens, side by side on wide ones                    |
-| `copy-button`          | A button that copies text, and shows how to copy by hand when the browser refuses                       |
+| `copy-button`          | A button that copies with `jg-clipboard`, and says what to do when the browser refuses, for each reason |
 | `tabs`                 | ARIA tabs, with arrow keys, Home and End, and an optional remembered choice                             |
 | `package-manager-tabs` | An install command for npm and pnpm in a terminal panel, with the choice remembered across the site     |
 
-Only `theme-control`, `copy-button`, `tabs`, and the header's menu run JavaScript in the browser, besides the theme script.
+Only `theme-control`, the copy buttons, `tabs`, the header's menu, and `navigation-progress` run JavaScript in the browser, besides the theme script. Copy buttons come from `copy-button`, `code-block`, and the code windows in Markdown, which `prose` makes work; one click listener on the document serves them all, however many there are.
+
+External links show an arrow after their text. On a `button`, `externalIcon={false}` hides it, and so does `externalIcon: false` on a `site-footer` link; the jg-packages site does that on the links to its own repository.
+
+## Navigation
+
+Every page the package's components build crossfades into the next, and prerenders when the pointer rests on its link, without JavaScript:
+
+- `contract.css` turns on cross-document view transitions with `@view-transition { navigation: auto; }`, with a 180 ms crossfade, and turns them off under `prefers-reduced-motion: reduce`.
+- `site-header` carries `view-transition-name: jg-site-header`, so the header stays still while the page under it changes. The footer moves with the page, because its position differs from page to page.
+- `document-head` adds a `<script type="speculationrules">`, JSON the browser reads rather than code it runs. It prerenders same-site pages with `moderate` eagerness, which waits for the pointer to rest on a link, and never links to `.md`, `.txt`, `.xml` or `.png` files.
+
+Chromium supports both, Safari only the transitions, and Firefox neither; where a browser doesn't, pages load as they always did.
+
+`navigation-progress` covers the pages that are slow to arrive. A site's layout renders it once, and its script listens for clicks on the document:
+
+- **When it shows:** 150 ms after a primary-button click, without modifier keys, on a link to another page of the same site in the same tab: no `target` but `_self`, no `download`, and more than a jump within the current page. A click a script already handled doesn't count. Prerendered and fast pages arrive first, so the bar never flashes on them.
+- **When it hides:** the next page replaces it, a page restored from the back/forward cache hides it, and so does a 15-second stall, such as a link that downloaded a file.
+- **Its look:** a 4 px bar in `--jg-foreground` on `--jg-background`, whose indicator sweeps across once a second. Under `prefers-reduced-motion: reduce` it's a still bar a third wide.
+- **What it can't see:** the back and forward buttons, a typed URL, and a form submission load pages without a click it catches; the browser's own loading indicator covers them.
 
 ## Modules
 
-| Subpath                                 | What it exports                                                                                         |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `jg-personal-astro-ui/syntax-theme`     | `SYNTAX_THEME`, the Shiki theme that colours code with the `--jg-syntax-*` properties                   |
-| `jg-personal-astro-ui/theme-preference` | Reading, writing, and resolving the stored theme preference, and the events the theme script listens to |
+| Subpath                                   | What it exports                                                                                         |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `jg-personal-astro-ui/code-window-plugin` | `codeWindowPlugin`, the Sätteri hast plugin that puts Markdown code blocks in code windows              |
+| `jg-personal-astro-ui/syntax-theme`       | `SYNTAX_THEME`, the Shiki theme that colours code with the `--jg-syntax-*` properties                   |
+| `jg-personal-astro-ui/theme-preference`   | Reading, writing, and resolving the stored theme preference, and the events the theme script listens to |
 
 ## Releasing it
 

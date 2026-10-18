@@ -153,21 +153,26 @@
     padding-block: var(--jg-section-space);
   }
 
-  /* the faint grid behind heroes, fading out towards the bottom */
-  .jg-grid-lines {
+  /*
+   * The jg sites' hero backdrop: a faint dot lattice under a soft accent glow, fading towards the
+   * bottom. The glow sits behind the hero's right column on wide screens.
+   */
+  .jg-hero-backdrop {
     background-image:
-      linear-gradient(
-        to right,
-        color-mix(in oklab, var(--jg-border) 60%, transparent) 1px,
-        transparent 1px
+      radial-gradient(
+        ellipse 55% 60% at 80% 35%,
+        color-mix(in oklab, var(--jg-accent) 16%, transparent),
+        transparent 70%
       ),
-      linear-gradient(
-        to bottom,
-        color-mix(in oklab, var(--jg-border) 60%, transparent) 1px,
-        transparent 1px
+      radial-gradient(
+        circle,
+        color-mix(in oklab, var(--jg-border) 85%, transparent) 1px,
+        transparent 1.5px
       );
-    background-size: 3rem 3rem;
-    mask-image: linear-gradient(to bottom, black, transparent 92%);
+    background-size:
+      100% 100%,
+      1.25rem 1.25rem;
+    mask-image: linear-gradient(to bottom, black 45%, transparent 95%);
   }
 
   /* Shiki writes each token's colour as a --jg-syntax-* variable, so code follows the theme */
@@ -175,9 +180,134 @@
     background: transparent;
     color: var(--jg-syntax-foreground);
   }
+
+  /*
+   * The code window: highlighted code on the dark terminal surface in both themes, under a header
+   * of window dots, a caption, and a copy button. The theme gives .jg-code-window its dark syntax
+   * colours.
+   */
+  .jg-code-window {
+    min-width: 0;
+    border: 1px solid var(--jg-border-strong);
+    border-radius: calc(var(--jg-radius) * 1.75);
+    background: var(--jg-terminal);
+    box-shadow: var(--jg-shadow-raised);
+    color: var(--jg-terminal-foreground);
+  }
+
+  .jg-code-window-header {
+    display: flex;
+    min-height: 2.5rem;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--jg-terminal-foreground) 12%, transparent);
+    padding: 0.25rem 0.375rem 0.25rem 1rem;
+  }
+
+  .jg-code-window-dots {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.375rem;
+  }
+
+  .jg-code-window-dots > span {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--jg-terminal-foreground) 22%, transparent);
+  }
+
+  .jg-code-window-caption {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    color: color-mix(in oklab, var(--jg-terminal-foreground) 70%, transparent);
+    font-family: var(--jg-font-mono);
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .jg-code-window pre {
+    margin: 0;
+    overflow-x: auto;
+    background: transparent;
+    padding: 0.875rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.5rem;
+  }
+
+  .jg-code-window pre:focus-visible {
+    outline: 2px solid var(--jg-terminal-accent);
+    outline-offset: -2px;
+  }
+
+  @media (min-width: 40rem) {
+    .jg-code-window pre {
+      font-size: 0.875rem;
+    }
+  }
+
+  /*
+   * The page-loading bar: a thin track along the top of the viewport whose indicator sweeps across
+   * while the next page loads. A still bar a third wide replaces the sweep under reduced motion.
+   */
+  .jg-navigation-progress {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 999;
+    height: 0.25rem;
+    overflow: hidden;
+    background: var(--jg-background);
+    pointer-events: none;
+  }
+
+  .jg-navigation-progress-indicator {
+    width: 100%;
+    height: 100%;
+    background: var(--jg-foreground);
+    transform-origin: left;
+    animation: jg-progress 1s infinite ease-in-out;
+    animation-delay: -200ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .jg-navigation-progress-indicator {
+      width: 33.333%;
+      animation: none;
+    }
+  }
+}
+
+@keyframes jg-progress {
+  0% {
+    transform: translateX(0) scaleX(0);
+  }
+
+  40% {
+    transform: translateX(0) scaleX(0.4);
+  }
+
+  100% {
+    transform: translateX(100%) scaleX(0.5);
+  }
+}
+
+/* pages crossfade into each other where the browser supports cross-document view transitions */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+
   *,
   *::before,
   *::after {

@@ -23,6 +23,19 @@ const README = [
 
 const CHANGELOG = '# Changelog\n\n## 1.2.0\n\n### Added\n\n- Something.\n\n## 1.1.0\n';
 
+const RECIPES = [
+  '# jg-sample recipes',
+  '',
+  'Patterns for apps that use jg-sample.',
+  '',
+  '## Greeting a visitor',
+  '',
+  '```ts',
+  "import { greet } from 'jg-sample';",
+  '```',
+  '',
+].join('\n');
+
 // the sample package's API reference, and the API.md a build writes from it
 const REFERENCE: IApiReference = { packageName: 'jg-sample', version: '1.2.0', entryPoints: [] };
 const API_MARKDOWN = renderApiMarkdown(REFERENCE);
@@ -33,12 +46,15 @@ const toFiles = (
   changelog: string | undefined,
   // null leaves API.md out
   apiMarkdown: string | null = API_MARKDOWN,
+  // null leaves RECIPES.md out
+  recipes: string | null = RECIPES,
 ): Map<string, Buffer> =>
   new Map(
     [
       ['README.md', readme],
       ['CHANGELOG.md', changelog],
       ['API.md', apiMarkdown ?? undefined],
+      ['RECIPES.md', recipes ?? undefined],
     ].flatMap(([path, text]) => (text === undefined ? [] : [[path!, Buffer.from(text)] as const])),
   );
 
@@ -76,11 +92,12 @@ describe('checkReleaseDocs', () => {
 
   test('reports missing documents', () => {
     expect(
-      checkReleaseDocs(MANIFEST, toFiles(undefined, undefined, null), REFERENCE),
+      checkReleaseDocs(MANIFEST, toFiles(undefined, undefined, null, null), REFERENCE),
     ).toStrictEqual([
       "doesn't ship a CHANGELOG.md",
       "doesn't ship a README.md",
       "doesn't ship an API.md",
+      "doesn't ship a RECIPES.md",
     ]);
   });
 
@@ -102,5 +119,49 @@ describe('checkReleaseDocs', () => {
     expect(
       checkReleaseDocs(MANIFEST, toFiles(README, CHANGELOG, outdated), REFERENCE),
     ).toStrictEqual(['API.md differs from a fresh render of the TSDoc; build the package again']);
+  });
+
+  test('reports a RECIPES.md without its title, or without recipes', () => {
+    const untitled = RECIPES.replace('# jg-sample recipes', '# Recipes');
+    const empty = '# jg-sample recipes\n\nPatterns for apps that use jg-sample.\n';
+
+    expect(
+      checkReleaseDocs(MANIFEST, toFiles(README, CHANGELOG, API_MARKDOWN, untitled), REFERENCE),
+    ).toStrictEqual(["RECIPES.md doesn't start with the title `# jg-sample recipes`"]);
+    expect(
+      checkReleaseDocs(MANIFEST, toFiles(README, CHANGELOG, API_MARKDOWN, empty), REFERENCE),
+    ).toStrictEqual(['RECIPES.md has no recipes: give each one a `## ` section']);
+  });
+
+  test('reports a recipe without a ts block, counting neither other languages nor headings in code', () => {
+    const recipes = [
+      RECIPES,
+      '## Greeting from a shell',
+      '',
+      '```bash',
+      'echo hello',
+      '```',
+      '',
+      '## Greeting in Markdown',
+      '',
+      '```ts',
+      'const heading = `',
+      '## Not a recipe',
+      '`;',
+      '```',
+      '',
+    ].join('\n');
+
+    expect(
+      checkReleaseDocs(MANIFEST, toFiles(README, CHANGELOG, API_MARKDOWN, recipes), REFERENCE),
+    ).toStrictEqual(['the recipe "Greeting from a shell" in RECIPES.md has no ```ts block']);
+  });
+
+  test('asks no recipes of a package with Astro components', () => {
+    const manifest = { ...MANIFEST, exports: { './button': './src/button/button.astro' } };
+
+    expect(
+      checkReleaseDocs(manifest, toFiles(README, CHANGELOG, API_MARKDOWN, null), REFERENCE),
+    ).toStrictEqual([]);
   });
 });

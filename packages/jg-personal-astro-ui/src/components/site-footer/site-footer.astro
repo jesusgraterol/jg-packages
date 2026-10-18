@@ -1,7 +1,17 @@
 ---
+import NewTabMarker from '../new-tab-marker/new-tab-marker.astro';
+
+// a footer link. An external one opens in a new tab with an arrow, unless externalIcon is false
+interface IFooterLink {
+  external?: boolean | undefined;
+  externalIcon?: boolean | undefined;
+  href: string;
+  label: string;
+}
+
 // a column of footer links
 interface IFooterColumn {
-  links: readonly { href: string; label: string; external?: boolean | undefined }[];
+  links: readonly IFooterLink[];
   title: string;
 }
 
@@ -11,14 +21,12 @@ interface Props {
   notes?: readonly string[] | undefined;
 }
 
-// spoken after an external link's text, so screen reader users know it opens a new tab
-const NEW_TAB_NOTICE = ' (opens in a new tab)';
-
 const { columns, notes = [] } = Astro.props;
 ---
 
 <footer class="border-t border-border py-12 sm:py-16">
-  <div class="jg-container grid gap-10 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto] lg:gap-16">
+  {/* on wide screens, the brand and every column share one row, whatever the number of columns */}
+  <div class="jg-container grid gap-10 sm:grid-cols-2 lg:auto-cols-max lg:grid-flow-col lg:grid-cols-[minmax(0,1fr)] lg:gap-16">
     <div class="max-w-md">
       <slot name="brand" />
       <div class="mt-4 text-sm leading-6 text-muted">
@@ -31,7 +39,7 @@ const { columns, notes = [] } = Astro.props;
         aria-label={title}
       >
         <p class="mb-2 font-mono text-xs font-bold text-muted uppercase">{title}</p>
-        {links.map(({ external = false, href, label }) => (
+        {links.map(({ external = false, externalIcon = true, href, label }) => (
           <a
             href={href}
             class="w-fit underline-offset-4 hover:underline"
@@ -39,7 +47,7 @@ const { columns, notes = [] } = Astro.props;
             rel={external ? 'noreferrer' : undefined}
           >
             {label}
-            {external && <span class="sr-only">{NEW_TAB_NOTICE}</span>}
+            {external && <NewTabMarker icon={externalIcon} />}
           </a>
         ))}
       </nav>

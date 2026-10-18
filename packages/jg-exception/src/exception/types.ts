@@ -10,6 +10,11 @@ export type IExceptionOptions = {
 
   // the error underneath, kept as the native `cause`
   cause?: unknown;
+
+  // values to replace with `[redacted]`, as written and URL-encoded, such as a token the cause may
+  // hold. They're redacted from the message, the data, and every cause, which becomes a copy that
+  // keeps its name, code, and plain fields without running the cause's own code. Nothing keeps them
+  redact?: readonly string[] | undefined;
 };
 
 // an Exception as `toJSON` returns it, ready to log or send

@@ -18,6 +18,7 @@
       "style": "./src/styles/prose.css",
       "default": "./src/styles/prose.css"
     },
+    "./code-window-plugin": "./src/code-window-plugin/index.ts",
     "./syntax-theme": "./src/syntax-theme/index.ts",
     "./theme-preference": "./src/theme-preference/index.ts",
     "./badge": "./src/components/badge/badge.astro",
@@ -29,8 +30,9 @@
     "./container": "./src/components/container/container.astro",
     "./copy-button": "./src/components/copy-button/copy-button.astro",
     "./document-head": "./src/components/document-head/document-head.astro",
-    "./grid-lines": "./src/components/grid-lines/grid-lines.astro",
+    "./hero-backdrop": "./src/components/hero-backdrop/hero-backdrop.astro",
     "./link-card": "./src/components/link-card/link-card.astro",
+    "./navigation-progress": "./src/components/navigation-progress/navigation-progress.astro",
     "./package-manager-tabs": "./src/components/package-manager-tabs/package-manager-tabs.astro",
     "./prose": "./src/components/prose/prose.astro",
     "./section": "./src/components/section/section.astro",
@@ -76,7 +78,8 @@
   "scripts": {
     "build": "node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
-    "test": "pnpm test:unit",
+    "test": "pnpm test:unit && pnpm test:browser",
+    "test:browser": "vitest run --project browser",
     "test:coverage": "vitest run --coverage --project unit",
     "test:unit": "vitest run --project unit",
     "typecheck": "astro check"
@@ -90,6 +93,8 @@
     "@fontsource-variable/ubuntu-sans-mono": "^5.3.0",
     "@lucide/astro": "^1.58.0",
     "diff": "^9.0.0",
+    "jg-clipboard": "workspace:^",
+    "jg-exception": "workspace:^",
     "shiki": "^4.5.0"
   },
   "devDependencies": {

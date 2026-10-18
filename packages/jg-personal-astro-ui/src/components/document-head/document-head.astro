@@ -1,4 +1,6 @@
 ---
+import { SPECULATION_RULES } from './speculation-rules.ts';
+
 // the image social cards show for the page
 interface IOpenGraphImage {
   alt: string;
@@ -208,4 +210,9 @@ const serializedStructuredData =
     set:html={serializedStructuredData}
   />
 )}
+<script
+  is:inline
+  type="speculationrules"
+  set:html={JSON.stringify(SPECULATION_RULES)}
+/>
 <slot />

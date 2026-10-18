@@ -5,6 +5,8 @@ import {
 } from '@jg-packages/api-reference';
 
 import type { IPackageManifest } from '../shared/types.ts';
+import { classifyExports } from './astro-fixture.ts';
+import { readRecipes, RECIPES_FILE } from './examples.ts';
 
 // the README's second-level sections, in the order the package guidelines require
 const REQUIRED_SECTIONS = ['Install', 'Usage', 'Documentation', 'License'];
@@ -55,9 +57,32 @@ const checkReadme = (name: string, readme: string): string[] => {
 };
 
 /**
+ * Checks RECIPES.md's title, and that it has recipes, each with a ```ts block.
+ * @param name The package name, which the title names.
+ * @param markdown The file's text.
+ * @returns One problem per missing part.
+ */
+const checkRecipes = (name: string, markdown: string): string[] => {
+  const problems: string[] = [];
+  if (markdown.split('\n')[0]?.trim() !== `# ${name} recipes`) {
+    problems.push(`${RECIPES_FILE} doesn't start with the title \`# ${name} recipes\``);
+  }
+  const recipes = readRecipes(markdown);
+  if (recipes.length === 0) {
+    problems.push(`${RECIPES_FILE} has no recipes: give each one a \`## \` section`);
+  }
+  for (const { heading } of recipes.filter(({ blocks }) => blocks.length === 0)) {
+    problems.push(`the recipe "${heading}" in ${RECIPES_FILE} has no \`\`\`ts block`);
+  }
+  return problems;
+};
+
+/**
  * Check 5: the docs a release depends on ship with it. The changelog has a section for the
- * version, the README has the guidelines' title, summary, and sections, and API.md is the
- * package's API reference as a fresh render of its TSDoc gives it.
+ * version, the README has the guidelines' title, summary, and sections, API.md is the package's
+ * API reference as a fresh render of its TSDoc gives it, and RECIPES.md has its title and recipes,
+ * each with a ```ts block. Packages with Astro components have no recipes, because their usage is
+ * Astro markup.
  * @param manifest The packed manifest.
  * @param files The tarball's files.
  * @param reference The package's API reference, which check 6 also reads.
@@ -88,6 +113,14 @@ export const checkReleaseDocs = (
     problems.push(
       `${API_MARKDOWN_FILE} differs from a fresh render of the TSDoc; build the package again`,
     );
+  }
+  if (classifyExports(manifest.name, manifest.exports).components.length === 0) {
+    const recipes = files.get(RECIPES_FILE)?.toString('utf8');
+    if (recipes === undefined) {
+      problems.push(`doesn't ship a ${RECIPES_FILE}`);
+    } else {
+      problems.push(...checkRecipes(manifest.name, recipes));
+    }
   }
   return problems;
 };

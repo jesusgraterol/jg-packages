@@ -6,6 +6,8 @@ import {
   type ThemedToken,
 } from 'shiki';
 
+import { escapeHtml } from '../html/index.ts';
+
 // the theme every highlighted block uses: each token's colour is a --jg-syntax-* variable
 export const SYNTAX_THEME = createCssVariablesTheme({
   name: 'jg-syntax',
@@ -90,18 +92,6 @@ export const highlightToLines = async (code: string, language: string): Promise<
     lang: toSupportedLanguage(language) as BundledLanguage,
     theme: SYNTAX_THEME,
   });
-
-/**
- * Escapes text for HTML.
- * @param text The text.
- * @returns The escaped text.
- */
-export const escapeHtml = (text: string): string =>
-  text
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;');
 
 /**
  * Renders one highlighted line's tokens as HTML spans.

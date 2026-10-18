@@ -55,11 +55,10 @@ String(error); // 'Exception [USER_NOT_FOUND]: The user was not found.'
 Extract a readable message from anything a `catch` block receives: strings, errors with their causes, ZodErrors, and objects with a `message`, `error`, or `reason`:
 
 ```ts
-import { extractMessage, extractRedactedMessage } from 'jg-exception';
+import { extractMessage } from 'jg-exception';
 
 extractMessage(new Error('Request failed', { cause: new Error('Timed out') }));
 // 'Request failed; [CAUSE]: Timed out'
-extractRedactedMessage(error, [apiKey]); // the message with the key replaced by [redacted]
 ```
 
 Assert error codes in tests with any test runner:
@@ -71,9 +70,39 @@ expectToThrowCode(() => parseCursor('%%'), 'INVALID_CURSOR');
 await expectToRejectCode(loadUser('missing'), 'USER_NOT_FOUND', 'not found');
 ```
 
+### Keeping secrets out of an error
+
+The error underneath can hold a secret in its message, stack, or fields, such as the token a request was sent with, and logs, `console.log`, and error trackers print the whole chain. When you wrap it, pass that value as `redact`. It's replaced by `[redacted]` throughout the new exception: its message and data, and each cause's message, stack, and fields, all the way down:
+
+```ts
+try {
+  await verifyToken(token);
+} catch (error) {
+  throw new Exception("Couldn't verify the token.", {
+    code: 'TOKEN_INVALID',
+    cause: error,
+    redact: [token],
+  });
+}
+```
+
+- **Pass whole secrets.** Each value is matched as written and URL-encoded, so a token in a request URL is found too. A fragment as short as `at` would also rewrite names and every stack frame. A value transformed another way, such as base64-encoded or hashed, isn't found, so pass each form a cause may hold.
+- **What it costs:** each cause becomes a copy that keeps its name, code, message, stack, and plain fields, redacted, and leaves out fields holding objects, such as an HTTP client's `config`. The copy runs none of the cause's own code, such as a custom inspect hook, which could hold a value no redaction reaches. So `instanceof` the cause's original class no longer holds: read its `name` and `code` instead. An Exception cause stays an Exception, so `isException`, `hasErrorCode`, and `toJSON()` work on it.
+- The values are used while the exception is built, and kept nowhere.
+
+To log an error you caught, without rethrowing it, `extractRedactedMessage` gives its message, causes included, with the values redacted:
+
+```ts
+import { extractRedactedMessage } from 'jg-exception';
+
+extractRedactedMessage(error, [apiKey]); // the message with the key replaced by [redacted]
+```
+
 ## Documentation
 
 The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-exception/.
+
+Recipes for common jobs ship as `RECIPES.md`, with every block typechecked against the release, and are at https://jg-packages.jesusgraterol.dev/packages/jg-exception/recipes/.
 
 ## License
 

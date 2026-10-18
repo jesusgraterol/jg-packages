@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+### Added
+
+- `RECIPES.md`, patterns for apps that use the package: a typed client for an envelope API, a fresh auth header on every request, and retrying only what's safe to retry. Each block is typechecked against the release.
+
 ## 0.2.0
 
 ### Added

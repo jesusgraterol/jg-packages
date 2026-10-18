@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+### Added
+
+- `RECIPES.md`, patterns for apps that use the package: a copy button that explains a refusal, and a paste button for text or an image. Each block is typechecked against the release.
+
 ## 0.1.0
 
 The first release.

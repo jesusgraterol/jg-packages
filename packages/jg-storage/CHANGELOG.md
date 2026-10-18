@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+### Added
+
+- `RECIPES.md`, patterns for apps that use the package: typed settings with a schema, and a store that falls back to memory. Each block is typechecked against the release.
+
 ## 1.1.0
 
 A fresh start: breaking changes in a minor version, once, because nothing depended on 1.0.x.

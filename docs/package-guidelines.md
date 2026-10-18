@@ -66,9 +66,10 @@ if (hasErrorCode(error, ERRORS.INVALID_CURSOR)) {
 - **`UNKNOWN_ERROR_CODE`** (`'UNKNOWN_ERROR'`) is the code for an error that has none, such as when `jg-api-response` sends a plain `Error` to a client. Don't throw it yourself; give every error you throw its own code.
 - **`data` is an `IJsonValue`**, context that helps whoever handles or debugs the error, such as the id that wasn't found. A `BigInt`, a `Date`, or a class instance is a type error. Object values may be `undefined`, so `{ email }` works when `email` is optional. An interface has no index signature, so pass an interface-typed value as `{ ...value }`, or declare its type with `type`. Never put secrets in it: it reaches clients.
 - **The cause rule:** a message says what failed at this step, and `cause` holds the error underneath. Never write `extractMessage(cause)` into a message: `extractMessage` already joins the chain as `message; [CAUSE]: cause message`, so an embedded cause prints twice, and the layers can no longer be told apart.
+- **`redact`:** when a cause may hold a value that logs mustn't, such as a token, a password, or a one-time code, pass it as `redact` where you wrap the cause. The exception's message, data, and whole cause chain are redacted as it's built, so nothing downstream has to remember to. [jg-exception's README](../packages/jg-exception/README.md#keeping-secrets-out-of-an-error) says what it costs.
 - **`toJSON()`** returns `{ name, code, message, data }`, which `JSON.stringify` and `jg-api-response` use. Data that can't be serialized at runtime, such as an object that refers back to itself, becomes `null` there, as do `NaN` and `Infinity`, as in any JSON.
 
-The message is written where the error is thrown, so it can name the value that failed. Each function documents what it throws, one `- CODE: message` line per code, with the stable part of the message:
+The message is written where the error is thrown, so it can name the value that failed, except a credential or personal data, such as an authorization header, a token, or an email address: say what's wrong with it instead, because messages reach logs and clients. Each function documents what it throws, one `- CODE: message` line per code, with the stable part of the message:
 
 ```ts
 /**
@@ -138,9 +139,19 @@ A package with entries for different runtimes typechecks each entry's directory 
   1. the package name as the title, then a one-sentence summary
   2. `## Install`
   3. `## Usage`
-  4. `## Documentation`: that the API reference ships as `API.md`, and a link to the package's page on the site
+  4. `## Documentation`: that the API reference ships as `API.md` and the recipes as `RECIPES.md`, with links to the package's pages on the site
   5. `## License`
 - README links are absolute URLs, because the README is also the package's npm page. There's no hand-written API reference: every build renders `API.md` from the TSDoc, which ships in the tarball, so an agent reads the reference of the installed version in `node_modules/<package>/API.md`, and the site shows the same reference.
+
+## Recipes
+
+Each package without Astro components ships a `RECIPES.md`: app-side patterns, the jobs an app does with the package that its API reference can't show, such as one error handler for every route, or a typed client for an envelope API. The site shows them on the package's recipes page.
+
+- **The format:** the title `# <name> recipes`, one sentence on what they show, then one `## <recipe>` section per recipe, with prose and at least one ` ```ts ` block. Two to four recipes; one that needs many blocks is better as two.
+- **Each block is self-contained,** like an example: it imports what it uses by its public name, and declares the reader's own inputs, in the package's `examples.d.ts` when several blocks share them.
+- **Typechecked, not run,** because recipes show app code that does I/O. `release:verify` typechecks every block against the release, so a recipe can't drift from the API. Describe results in comments: `// =>` isn't used in recipes.
+- **Framework-free:** a handler is a plain function, such as `(error: unknown) => { status: number; body: IApiResponse<null> }`, that fits Express, Hono, or anything else, so no framework's types enter the checks.
+- **When to add one:** when apps combine a capability with their own code in a way an example can't show, or when the same question about using the package comes up twice. Change a recipe in the same change as the API it shows. `RECIPES.md` ships, so a change to it needs a version bump, like any other shipped file.
 
 ## Changelogs
 
@@ -164,3 +175,16 @@ A package with entries for different runtimes typechecks each entry's directory 
 ## Keeping the docs current
 
 A change to a process, script, check, or convention updates the doc that describes it in the same pull request.
+
+## Keeping jg-skills in sync
+
+[jg-skills](https://github.com/jesusgraterol/jg-skills) connects projects to these packages in two parts: the `jg-packages` skill, which tells an agent which package fits a task, and its policy asset, the `## jg-packages` section projects add to their `AGENTS.md`. Each package's docs own its API, the policy asset owns the policy, and the skill owns which package fits which task. Nothing syncs them automatically, so a change here checks them by hand.
+
+Whenever a listed package is added, renamed or removed, or changes a capability, a runtime, an entry point, a cross-package contract, where its docs live, or a version jg-skills names:
+
+1. Check what in jg-skills refers to it: `skills/jg-packages/SKILL.md`, with its package map and the version bullet that names the versions it was written for; the policy asset, `skills/jg-packages/assets/agents-section.md`; the coding-instructions candidate's skill index; and the jg-skills site's descriptions.
+2. Record the jg-skills change that matches, in the pull request or the release notes, or say why none is needed. An internal change that leaves the guidance accurate needs no edit.
+3. Remove any recommendation of something removed or renamed. Advance the skill's version bullet only after reviewing the guidance it covers.
+4. Make the jg-skills change with that repository's own checks, in `docs/skill-guidelines.md`, and its protected-instructions handoff, which never edits the canonical instructions directly.
+
+When the access or the authorization to change jg-skills is missing, report the exact work left to do there instead of calling it done.

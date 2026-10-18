@@ -11,6 +11,7 @@ const ICONS: readonly IPackageIcon[] = ['braces', 'calculator', 'cloud-off', 'cp
  * Builds a catalog entry.
  * @param order The order.
  * @param description The description.
+ * @param icon The icon.
  * @returns The entry.
  */
 const entry = (

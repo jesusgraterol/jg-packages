@@ -52,6 +52,7 @@ packages/jg-<name>/
 ├── CHANGELOG.md
 ├── LICENSE                   # a copy of the repository's LICENSE
 ├── README.md
+├── RECIPES.md                # app-side patterns; a package with Astro components has none
 ├── eslint.config.js
 ├── package.json
 ├── tsconfig.json             # editor and typecheck: src, tests, and config files
@@ -79,7 +80,7 @@ packages/jg-<name>/
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "CHANGELOG.md", "API.md"],
+  "files": ["dist", "CHANGELOG.md", "API.md", "RECIPES.md"],
   "sideEffects": false,
   "engines": {
     "node": ">=24"
@@ -125,7 +126,7 @@ packages/jg-<name>/
 | `version`         | `1.0.0` for a package with a stable API, or `0.1.0` while its API may still change.                                                                                                                                                                                                                                                                                                                                                                                             |
 | `exports`         | One entry per subpath, `types` first and `default` last. Add `./sync`-style subpaths the same way, and nothing with a `*`.                                                                                                                                                                                                                                                                                                                                                      |
 | `main`, `types`   | Fallbacks for tools that don't read `exports`.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `files`           | Everything that ships besides `package.json`, `README.md`, and `LICENSE`, which npm always includes. `CHANGELOG.md` and `API.md` must be listed.                                                                                                                                                                                                                                                                                                                                |
+| `files`           | Everything that ships besides `package.json`, `README.md`, and `LICENSE`, which npm always includes. `CHANGELOG.md`, `API.md`, and `RECIPES.md` must be listed.                                                                                                                                                                                                                                                                                                                 |
 | `sideEffects`     | `false` when nothing runs at import time, which the guidelines require. List stylesheets instead when the package ships CSS.                                                                                                                                                                                                                                                                                                                                                    |
 | `publishConfig`   | Publishes unscoped packages publicly.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `repository`      | `directory` points npm and provenance at the package inside the monorepo.                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -230,12 +231,39 @@ npm install jg-<name>
 
 The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-<name>/.
 
+Recipes for common jobs ship as `RECIPES.md`, with every block typechecked against the release, and are at https://jg-packages.jesusgraterol.dev/packages/jg-<name>/recipes/.
+
 ## License
 
 [MIT](https://github.com/jesusgraterol/jg-packages/blob/main/packages/jg-<name>/LICENSE)
 ````
 
 Every link is absolute, because the README is also the package's npm page.
+
+### `RECIPES.md`
+
+Two to four recipes, as [the guidelines](package-guidelines.md#recipes) describe. A package with Astro components has none.
+
+````markdown
+# jg-<name> recipes
+
+<One sentence on what the recipes show.>
+
+## <A job an app does with the package>
+
+<When you'd use it, in a sentence or two.>
+
+```ts
+import { <what it uses> } from 'jg-<name>';
+
+// <the reader's own input, such as a request or a button>
+declare const <input>: <its type>;
+
+<the app code>
+```
+
+<What matters about it, such as a failure mode or a tradeoff, when there's something to say.>
+````
 
 ### `CHANGELOG.md`
 
@@ -289,10 +317,12 @@ Publish its first version by hand, following [the first publish](releasing.md#th
 ## Checklist
 
 - [ ] The name and its punctuation-free form are free on npm.
-- [ ] `package.json` has `exports` with `types` first, `files` with `CHANGELOG.md` and `API.md`, a `build` that ends with `write-api-markdown.ts`, `sideEffects`, `engines`, `publishConfig`, and `repository.directory`.
+- [ ] `package.json` has `exports` with `types` first, `files` with `CHANGELOG.md`, `API.md`, and `RECIPES.md`, a `build` that ends with `write-api-markdown.ts`, `sideEffects`, `engines`, `publishConfig`, and `repository.directory`.
 - [ ] The TypeScript, ESLint, and Vitest configurations match the runtime.
 - [ ] Every export has TSDoc, and every function and class an `@example`.
 - [ ] The tests sit next to their files, and each category has a script.
 - [ ] The README has its sections in order, and the changelog has a section for the version.
+- [ ] `RECIPES.md` has two to four recipes, each with a ` ```ts ` block that typechecks, unless the package has Astro components.
 - [ ] The package is listed on the website with its own icon, or marked unlisted.
+- [ ] jg-skills is checked for the new package, as [Keeping jg-skills in sync](package-guidelines.md#keeping-jg-skills-in-sync) describes.
 - [ ] `pnpm check` and `pnpm release:verify` pass.

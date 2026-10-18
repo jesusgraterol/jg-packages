@@ -37,6 +37,19 @@ import ThemeInitScript from 'jg-personal-astro-ui/theme-init-script';
 
 The components style themselves with the contract's tokens only, so another theme can replace `theme.css` by defining every `--jg-*` property.
 
+Put the code blocks of the site's Markdown in the same code windows as `code-block`, with a copy button each, through Astro's Markdown processor, and render the Markdown inside `prose`:
+
+```ts
+// astro.config.ts
+import { satteri } from '@astrojs/markdown-satteri';
+import { defineConfig } from 'astro/config';
+import { codeWindowPlugin } from 'jg-personal-astro-ui/code-window-plugin';
+
+export default defineConfig({
+  markdown: { processor: satteri({ hastPlugins: [codeWindowPlugin] }) },
+});
+```
+
 ## Documentation
 
 The token contract, every component, and how to use them in a site are in [docs/personal-astro-ui.md](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md). The reference of its TypeScript modules ships in the package as `API.md`.

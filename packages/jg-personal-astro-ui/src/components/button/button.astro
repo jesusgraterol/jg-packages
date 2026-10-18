@@ -1,6 +1,8 @@
 ---
 import type { HTMLAttributes } from 'astro/types';
 
+import NewTabMarker from '../new-tab-marker/new-tab-marker.astro';
+
 // the look of each variant
 const VARIANT_CLASSES = {
   default:
@@ -22,13 +24,12 @@ const SIZE_CLASSES = {
   touch: 'size-11 justify-center',
 } as const;
 
-// spoken after an external link's text, so screen reader users know it opens a new tab
-const NEW_TAB_NOTICE = ' (opens in a new tab)';
-
 type Props = {
   class?: string | undefined;
-  // opens the link in a new tab, with the new-tab notice and no referrer
+  // opens the link in a new tab, with an arrow icon, the new-tab notice, and no referrer
   external?: boolean | undefined;
+  // shows the arrow on an external link. Defaults to true
+  externalIcon?: boolean | undefined;
   // renders a link instead of a button, which takes the same global and ARIA attributes
   href?: string | undefined;
   size?: keyof typeof SIZE_CLASSES | undefined;
@@ -38,6 +39,7 @@ type Props = {
 const {
   class: className,
   external = false,
+  externalIcon = true,
   href,
   size = 'default',
   type = 'button',
@@ -69,6 +71,6 @@ const classes = [
     {...attributes}
   >
     <slot />
-    {external && <span class="sr-only">{NEW_TAB_NOTICE}</span>}
+    {external && <NewTabMarker icon={externalIcon} />}
   </a>
 )}

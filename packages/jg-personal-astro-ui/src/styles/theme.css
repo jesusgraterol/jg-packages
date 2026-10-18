@@ -89,8 +89,11 @@
 
   --jg-shadow-surface: 0 0 transparent;
   --jg-shadow-raised: 0 0 transparent;
+}
 
-  /* code colours, after GitHub's dark theme */
+/* code colours after GitHub's dark theme, in the dark palette and in code windows, which stay dark */
+.dark,
+.jg-code-window {
   --jg-syntax-foreground: oklch(93% 0.012 250);
   --jg-syntax-token-keyword: oklch(72% 0.17 25);
   --jg-syntax-token-string: oklch(85% 0.08 245);
