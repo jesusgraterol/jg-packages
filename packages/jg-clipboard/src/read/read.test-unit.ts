@@ -99,6 +99,61 @@ describe('readClipboard', () => {
     await expect(readClipboard()).rejects.toMatchObject({ code: ERRORS.CLIPBOARD_INVALID_IMAGE });
   });
 
+  test('keeps the text and HTML copied with an image it cannot convert or load', async () => {
+    const { clipboard } = installFakeBrowser();
+    vi.stubGlobal('createImageBitmap', () => Promise.reject(domError('InvalidStateError')));
+    clipboard.read
+      .mockResolvedValueOnce([
+        new FakeClipboardItem({
+          'text/plain': 'A1\tB1',
+          'text/html': '<table><tr><td>A1</td><td>B1</td></tr></table>',
+          'image/tiff': new Blob(['tiff'], { type: 'image/tiff' }),
+        }),
+      ])
+      .mockResolvedValueOnce([
+        new FakeClipboardItem({ 'text/html': '<b>x</b>' }),
+        Object.assign(new FakeClipboardItem({ 'image/png': new Blob(['png']) }), {
+          getType: () => Promise.reject(domError('NotFoundError')),
+        }),
+      ]);
+
+    await expect(readClipboard()).resolves.toStrictEqual({
+      text: 'A1\tB1',
+      html: '<table><tr><td>A1</td><td>B1</td></tr></table>',
+      image: null,
+    });
+    await expect(readClipboard()).resolves.toStrictEqual({
+      text: null,
+      html: '<b>x</b>',
+      image: null,
+    });
+  });
+
+  test('throws for an image it cannot read when nothing else was copied with it', async () => {
+    const { clipboard } = installFakeBrowser();
+    const cause = domError('NotFoundError');
+    vi.stubGlobal('createImageBitmap', () => Promise.reject(domError('InvalidStateError')));
+    clipboard.read
+      .mockResolvedValueOnce([
+        new FakeClipboardItem({
+          'text/plain': '',
+          'image/gif': new Blob(['gif'], { type: 'image/gif' }),
+        }),
+      ])
+      .mockResolvedValueOnce([
+        Object.assign(new FakeClipboardItem({ 'image/png': new Blob(['png']) }), {
+          getType: () => Promise.reject(cause),
+        }),
+      ]);
+
+    // empty text counts as nothing to paste
+    await expect(readClipboard()).rejects.toMatchObject({ code: ERRORS.CLIPBOARD_INVALID_IMAGE });
+    await expect(readClipboard()).rejects.toMatchObject({
+      code: ERRORS.CLIPBOARD_READ_FAILED,
+      cause,
+    });
+  });
+
   test('reports an item that fails to give its content as CLIPBOARD_READ_FAILED', async () => {
     const { clipboard } = installFakeBrowser();
     const cause = domError('NotFoundError');

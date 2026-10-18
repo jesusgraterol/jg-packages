@@ -104,4 +104,4 @@ pasteButton.addEventListener('click', async () => {
 });
 ```
 
-Safari and Firefox show a paste prompt on every read, and Chromium asks for the clipboard-read permission once, so read only when the person clicks. Which content wins when the clipboard holds both depends on the app: copied spreadsheet cells can come with a picture of the cells, so a field for tables would check `text` first. `CLIPBOARD_INVALID_IMAGE` means the clipboard held an image the browser can't decode, and `readClipboard` then fails as a whole, even when there was text too.
+Safari and Firefox show a paste prompt on every read, and Chromium asks for the clipboard-read permission once, so read only when the person clicks. Which content wins when the clipboard holds both depends on the app: copied spreadsheet cells can come with a picture of the cells, so a field for tables would check `text` first. `CLIPBOARD_INVALID_IMAGE` means the clipboard held only an image the browser can't decode. When text or HTML came with it, `readClipboard` returns them with `image: null` instead, so the paste falls through to the text.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+### Changed
+
+- `readClipboard` returns the text and HTML when the clipboard's image can't be read, with `image: null`, instead of failing as a whole. It still throws `CLIPBOARD_INVALID_IMAGE`, or `CLIPBOARD_READ_FAILED`, when the image is all the clipboard holds.
+
 ## 0.1.1
 
 ### Added
