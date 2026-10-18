@@ -36,7 +36,9 @@ export const VERIFY_BUILD_ERROR_MESSAGES = {
 // version, which their own checks require
 export const REQUIRED_BUILD_PATHS = [
   '404.html',
-  'favicon.svg',
+  'favicon.ico',
+  'favicons/192x192.png',
+  'favicons/32x32.png',
   'index.html',
   'llms-full.txt',
   'llms.txt',
