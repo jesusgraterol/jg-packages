@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, configure, render, screen, waitFor } from '@testing-library/react';
 import { createElement } from 'react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
@@ -13,6 +13,10 @@ afterEach(() => {
   // Vitest runs without globals here, so Testing Library can't unmount on its own
   cleanup();
 });
+
+// queries wait for the restore, which opens a new IndexedDB database first: a cold Firefox in CI
+// can take more than Testing Library's default second to do that
+configure({ asyncUtilTimeout: 5_000 });
 
 /**
  * Creates a persister on a database no other test uses.
