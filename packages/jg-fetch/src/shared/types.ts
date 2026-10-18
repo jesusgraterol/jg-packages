@@ -87,8 +87,9 @@ export type IRequestOptions<T> = {
   headers?: IHeadersInit | ((context: IAttemptContext) => IHeadersInit | Promise<IHeadersInit>);
 
   // the body. Plain objects and arrays are sent as JSON, with Content-Type: application/json
-  // unless the headers set one; anything else, such as FormData, a string, or a Blob, is sent as
-  // it is
+  // unless the headers set one. A string, Blob, ArrayBuffer or view of one, FormData,
+  // URLSearchParams, or ReadableStream is sent as it is. Any other value, such as a Map, a Date,
+  // or a number, is an INVALID_BODY error, sent nowhere
   body?: RequestInit['body'] | Record<string, unknown> | readonly unknown[];
 
   // how a successful response is read. Defaults to 'json'

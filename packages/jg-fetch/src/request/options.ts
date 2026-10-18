@@ -321,12 +321,28 @@ const isJsonBody = (body: unknown): boolean => {
 };
 
 /**
- * Prepares the body for fetch: plain objects and arrays become JSON, and anything else passes
- * through.
+ * Checks whether a body is one fetch sends as it is: a string, a Blob, an ArrayBuffer or a view
+ * of one, FormData, URLSearchParams, or a ReadableStream. fetch would turn anything else into
+ * text, such as a Map into "[object Map]".
+ * @param body The body.
+ * @returns Whether fetch sends it as it is.
+ */
+const isSendableBody = (body: unknown): boolean =>
+  typeof body === 'string' ||
+  (typeof Blob !== 'undefined' && body instanceof Blob) ||
+  body instanceof ArrayBuffer ||
+  ArrayBuffer.isView(body) ||
+  (typeof FormData !== 'undefined' && body instanceof FormData) ||
+  body instanceof URLSearchParams ||
+  (typeof ReadableStream !== 'undefined' && body instanceof ReadableStream);
+
+/**
+ * Prepares the body for fetch: plain objects and arrays become JSON, and the bodies fetch sends as
+ * they are pass through.
  * @param body The body.
  * @returns The serialized body.
  * @throws
- * - INVALID_BODY: The request body could not be serialized.
+ * - INVALID_BODY: The request body could not be serialized, or fetch can't send it as it is.
  */
 export const serializeBody = (body: IRequestOptions<unknown>['body']): ISerializedBody => {
   if (body === undefined || body === null) {
@@ -338,6 +354,9 @@ export const serializeBody = (body: IRequestOptions<unknown>['body']): ISerializ
     } catch (error) {
       throw new RequestFailure('INVALID_BODY', { cause: error });
     }
+  }
+  if (!isSendableBody(body)) {
+    throw new RequestFailure('INVALID_BODY');
   }
   return {
     value: body as RequestInit['body'],

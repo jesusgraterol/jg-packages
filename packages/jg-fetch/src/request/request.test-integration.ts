@@ -117,6 +117,28 @@ describe('successful requests', () => {
     expect(form.data?.body).toContain('Ada');
   });
 
+  test('reports a body fetch would turn into text as INVALID_BODY, without sending it', async () => {
+    const path = uniquePath('unsendable');
+    let received = 0;
+    server.route(path, (_request, response) => {
+      received += 1;
+      sendJson(response, 200, { ok: true });
+    });
+    const url = `${server.origin}${path}`;
+
+    const results = await Promise.all([
+      request(url, { method: 'POST', body: Symbol('body') as never }),
+      request(url, { method: 'POST', body: new Map([['a', 1]]) as never }),
+    ]);
+
+    for (const { data, error, meta } of results) {
+      expect(data).toBeNull();
+      expect(error).toMatchObject({ kind: 'INVALID_BODY', attempts: 0 });
+      expect(meta.status).toBeNull();
+    }
+    expect(received).toBe(0);
+  });
+
   test('builds the headers again for every attempt', async () => {
     const path = uniquePath('token');
     server.route(path, (request, response, attempt) => {
