@@ -35,6 +35,15 @@ const server = startProcess({ command: 'node', args: ['server.js'], cwd: 'apps/a
 process.once('SIGINT', () => void stopProcessTree(server));
 ```
 
+Reserve a free port before handing it to a server, keeping the preferred one when it's free:
+
+```ts
+import { reservePort } from 'jg-process';
+
+const reservation = await reservePort({ preferredPort: 3000 }); // 3000, or another free port
+await reservation.release(); // right before the server binds it
+```
+
 ## Documentation
 
 The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-process/.
