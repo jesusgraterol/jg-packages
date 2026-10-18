@@ -2,11 +2,11 @@
 
 Where the marks, fonts, and icons the website and `jg-personal-astro-ui` use come from, and the terms they're used under.
 
-## JG mark
+## jg/ mark
 
-`website/public/favicon.svg` is an unchanged copy of the `JG/` monogram from jesusgraterol.dev's `public/favicon.svg`, which jg-skills uses too. `website/src/components/brand-mark/brand-mark.astro` redraws the same monogram with the theme's terminal tokens, so it's a dark tile in both themes. Don't alter its letterforms or the accent slash.
+`jg-personal-astro-ui`'s `jg-mark.svg` is the lowercase `jg/` mark every jg site shares. Its letters are the outlines of `j`, `g`, and `/` in Ubuntu Sans Mono at weight 700, extracted once from Fontsource's `@fontsource-variable/ubuntu-sans-mono` files and drawn as paths, so they render the same everywhere without the font. Three letters drawn as paths are a document made with the font, not a version of it, which the [Ubuntu Font Licence 1.0](https://ubuntu.com/legal/font-licence) leaves unrestricted. `jg-mark.astro` draws the same paths inline. Don't alter its letterforms, its colors, or the accent slash.
 
-`website/public/og/jg-packages.png`, the open-graph image, draws the same monogram, and is set in Ubuntu Sans.
+The website's `public/favicon.svg` is written from `jg-mark.svg`, and `public/og/jg-packages.png`, the open-graph image, draws it beside text set in Ubuntu Sans. `pnpm --filter @jg-packages/website assets:generate` regenerates both.
 
 ## Fonts
 
