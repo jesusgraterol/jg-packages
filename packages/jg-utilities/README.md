@@ -13,22 +13,41 @@ npm install jg-utilities
 Validate input before using it:
 
 ```ts
-import { isEmailValid, isIntegerValid, isStringValid } from 'jg-utilities';
+import { isBigIntStringValid, isEmailValid, isIntegerValid, isStringValid } from 'jg-utilities';
 
 isStringValid(name, 1, 100); // a non-blank string of 1 to 100 characters
 isIntegerValid(page, 1); // an integer of at least 1
 isEmailValid(email); // a valid address without a forbidden extension
+isBigIntStringValid(id, 1n); // a positive integer string that fits PostgreSQL's BIGINT
 ```
 
 Format values for people:
 
 ```ts
-import { prettifyDate, prettifyFileSize, prettifyNumber, toSlug } from 'jg-utilities';
+import {
+  escapeHtml,
+  pluralize,
+  prettifyDate,
+  prettifyFileSize,
+  prettifyNumber,
+  toSlug,
+} from 'jg-utilities';
 
 prettifyNumber(1234567.891); // '1,234,567.89'
+prettifyNumber(-5, { prefix: '$' }); // '-$5'
 prettifyFileSize(1536); // '1.50 kB'
 prettifyDate(createdAt, 'date-medium'); // 'October 17, 2026'
 toSlug('Héllo, World! 2026'); // 'hello-world-2026'
+`${count} ${pluralize(count, 'file')}`; // '1 file', '3 files'
+escapeHtml(name); // safe to put into HTML, such as an email's body
+```
+
+Send someone back where they were after signing in, only within the site and never back to the sign-in page:
+
+```ts
+import { resolveSafeInternalPath } from 'jg-utilities';
+
+const returnTo = resolveSafeInternalPath(searchParams.get('returnTo'), ['/sign-in']) ?? '/';
 ```
 
 Generate secure random values, IDs, and timestamps:

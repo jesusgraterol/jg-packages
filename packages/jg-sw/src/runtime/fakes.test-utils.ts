@@ -103,6 +103,35 @@ export const stubBrowser = (
 };
 
 /**
+ * Stubs the document with the entry module a Vite build adds to the page.
+ * @param entrySource The entry module's src attribute, or null for a page without one.
+ */
+export const stubDocument = (entrySource: string | null = '/assets/index-old.js'): void => {
+  vi.stubGlobal('document', {
+    querySelector: vi.fn((selector: string) =>
+      selector === 'script[type="module"][src]' && entrySource !== null
+        ? { getAttribute: (name: string) => (name === 'src' ? entrySource : null) }
+        : null,
+    ),
+  });
+};
+
+/**
+ * Sets whether the browser reports being online, on the navigator stubBrowser stubbed.
+ * @param isOnline Whether it's online.
+ */
+export const stubOnline = (isOnline: boolean): void => {
+  Object.assign(navigator, { onLine: isOnline });
+};
+
+/**
+ * Builds the event Vite fires when a chunk of the build fails to load.
+ * @returns The event, which can be canceled as Vite's is.
+ */
+export const createPreloadErrorEvent = (): Event =>
+  new Event('vite:preloadError', { cancelable: true });
+
+/**
  * Builds the beforeinstallprompt event Chromium fires.
  * @param outcome The user's answer to the prompt.
  * @returns The event and its prompt method.

@@ -59,6 +59,8 @@ await request('/orders', {
 await request('/avatar', { baseUrl, method: 'PUT', body: formData }); // the browser sets the multipart type
 ```
 
+A string, `Blob`, `ArrayBuffer` or view of one, `FormData`, `URLSearchParams`, or `ReadableStream` is sent as it is. Any other body, such as a `Map`, a `Date`, or a number, fails with `INVALID_BODY` before the request is sent, because `fetch` would turn it into text such as `[object Map]`.
+
 Read other kinds of responses with `parseAs`: `'json'` (the default), `'envelope'`, `'text'`, `'bytes'`, `'blob'`, `'response'` for the unread `Response`, or `'none'`. The data's type follows it.
 
 ### Timeouts and retries

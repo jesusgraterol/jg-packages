@@ -59,6 +59,12 @@
         height: 48px;
       }
 
+      .mark svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
       .domain {
         color: #697371;
         font-family: ui-monospace, monospace;
@@ -142,33 +148,11 @@
     >
       <div class="topbar">
         <div class="brand">
-          <svg
+          <!-- generate-open-graph.ts fills in the jg/ mark from jg-personal-astro-ui -->
+          <span
             class="mark"
-            viewBox="0 0 64 64"
-            aria-hidden="true"
-          >
-            <rect
-              x="2"
-              y="2"
-              width="60"
-              height="60"
-              rx="12"
-              fill="#111827"
-            />
-            <!-- keep the tspans adjacent: whitespace between them renders as a gap -->
-            <!-- prettier-ignore -->
-            <text
-              x="32"
-              y="42"
-              text-anchor="middle"
-              font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace"
-              font-size="28"
-              font-weight="800"
-              letter-spacing="-2"
-            >
-              <tspan fill="#f8fafc">JG</tspan><tspan fill="#6ee7b7">/</tspan>
-            </text>
-          </svg>
+            data-mark
+          ></span>
           <span>jg-packages</span>
         </div>
         <span class="domain">jg-packages.jesusgraterol.dev</span>

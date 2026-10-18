@@ -96,7 +96,7 @@ describe('collectExamples', () => {
 });
 
 describe('collectRecipeBlocks', () => {
-  test("lists each recipe's ts blocks with the recipe and their position in it", () => {
+  test("lists each recipe's ts and tsx blocks with the recipe and their position in it", () => {
     const markdown = [
       '# jg-sample recipes',
       '',
@@ -128,15 +128,33 @@ describe('collectRecipeBlocks', () => {
       '## Still the same block',
       '`;',
       '```',
+      '',
+      '## Greeting in a component',
+      '',
+      '```tsx',
+      "export const Greeting = () => <p>{greet('Ada')}</p>;",
+      '```',
     ].join('\n');
 
     expect(collectRecipeBlocks(markdown)).toStrictEqual([
-      { recipe: 'Greeting a visitor', position: 1, code: "greet('Ada');" },
-      { recipe: 'Greeting a visitor', position: 2, code: "greet('Grace');\ngreet('Linus');" },
+      { recipe: 'Greeting a visitor', position: 1, code: "greet('Ada');", isJsx: false },
+      {
+        recipe: 'Greeting a visitor',
+        position: 2,
+        code: "greet('Grace');\ngreet('Linus');",
+        isJsx: false,
+      },
       {
         recipe: 'Greeting in Markdown',
         position: 1,
         code: 'const heading = `\n## Still the same block\n`;',
+        isJsx: false,
+      },
+      {
+        recipe: 'Greeting in a component',
+        position: 1,
+        code: "export const Greeting = () => <p>{greet('Ada')}</p>;",
+        isJsx: true,
       },
     ]);
   });

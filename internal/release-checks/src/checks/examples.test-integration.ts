@@ -109,6 +109,20 @@ describe('checkExamples', () => {
     ]);
   }, 180_000);
 
+  test('typechecks a ```tsx block too, with its own file name', async () => {
+    const recipes = join(packageDirectory, 'RECIPES.md');
+    await writeFile(
+      recipes,
+      `${await readFile(recipes, 'utf8')}\n## Greeting in a component\n\n\`\`\`tsx\nexport const count: number = 'one';\n\`\`\`\n`,
+    );
+
+    expect(await checkFixtureExamples()).toStrictEqual([
+      expect.stringMatching(
+        /^the recipe "Greeting in a component", block 1, doesn't typecheck: line 1, TS2322: Type 'string' is not assignable to type 'number'/,
+      ),
+    ]);
+  }, 180_000);
+
   test('fails a result stated inside a block', async () => {
     await editSource(
       " * greet('Ada'); // => 'Hello, Ada!'\n",

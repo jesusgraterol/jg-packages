@@ -217,12 +217,15 @@ describe('serializeBody', () => {
     });
   });
 
-  test('passes every other body through untouched', () => {
+  test('passes the bodies fetch sends as they are through untouched', () => {
     const formData = new FormData();
     const blob = new Blob(['x']);
+    const file = new File(['x'], 'x.txt');
     const params = new URLSearchParams({ a: '1' });
     const bytes = new Uint8Array([1, 2]);
-    for (const body of [formData, blob, params, bytes, 'text']) {
+    const view = new DataView(new ArrayBuffer(2));
+    const buffer = new ArrayBuffer(2);
+    for (const body of [formData, blob, file, params, bytes, view, buffer, 'text', '']) {
       expect(serializeBody(body)).toStrictEqual({ value: body, isJson: false, isStream: false });
     }
     expect(serializeBody(undefined)).toStrictEqual({
@@ -244,6 +247,24 @@ describe('serializeBody', () => {
 
     expect(catchFailure(() => serializeBody({ id: 1n })).kind).toBe('INVALID_BODY');
     expect(catchFailure(() => serializeBody(circular)).kind).toBe('INVALID_BODY');
+  });
+
+  test.each([
+    ['a Symbol', Symbol('body')],
+    ['a Map', new Map([['a', 1]])],
+    ['a Set', new Set([1])],
+    ['a Date', new Date(0)],
+    ['a function', (): string => 'source'],
+    ['a number', 42],
+    ['a boolean', true],
+    ['a bigint', 1n],
+    ['a class instance', new (class Order {})()],
+  ])('reports %s, which fetch would turn into text, as INVALID_BODY', (_name, body) => {
+    const failure = catchFailure(() => serializeBody(body as never));
+
+    expect(failure.kind).toBe('INVALID_BODY');
+    expect(failure.details.cause).toBeUndefined();
+    expect(failure.message).toBe('INVALID_BODY');
   });
 
   test("keeps JSON's error as the cause, out of the message, which can name the body's keys", () => {

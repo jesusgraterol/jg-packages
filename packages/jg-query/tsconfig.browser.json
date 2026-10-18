@@ -1,0 +1,9 @@
+{
+  "extends": "@jg-packages/tsconfig/browser.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "react-jsx"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test-*.ts"]
+}

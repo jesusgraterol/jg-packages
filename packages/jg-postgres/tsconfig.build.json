@@ -1,0 +1,5 @@
+{
+  "extends": ["@jg-packages/tsconfig/node.json", "@jg-packages/tsconfig/library.json"],
+  "include": ["src"],
+  "exclude": ["src/**/*.test-*.ts", "src/test-utils"]
+}

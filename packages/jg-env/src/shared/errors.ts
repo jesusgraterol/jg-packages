@@ -1,0 +1,6 @@
+// the codes for every error thrown by the package
+export const ERRORS = {
+  ENV_VARIABLE_MISSING: 'ENV_VARIABLE_MISSING',
+  ENV_VARIABLE_INVALID: 'ENV_VARIABLE_INVALID',
+  ENV_SECRET_FILE_UNREADABLE: 'ENV_SECRET_FILE_UNREADABLE',
+} as const;

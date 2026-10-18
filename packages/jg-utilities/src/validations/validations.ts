@@ -341,3 +341,40 @@ export const isFileNameValid = (
     !WINDOWS_RESERVED_FILE_NAME.test(value)
   );
 };
+
+// the bounds of a signed 64-bit integer, which PostgreSQL's BIGINT holds
+const INT64_MIN = -9_223_372_036_854_775_808n;
+const INT64_MAX = 9_223_372_036_854_775_807n;
+
+/**
+ * Verifies that a value is an integer written in plain decimal digits, as PostgreSQL returns a
+ * BIGINT, and that it fits a range: a signed 64-bit integer by default. Leading zeros, a plus
+ * sign, `-0`, decimals, exponents, and padding are rejected, so one number has one spelling.
+ * @param value The value to be validated.
+ * @param min? The smallest value allowed. Defaults to -9223372036854775808.
+ * @param max? The largest value allowed. Defaults to 9223372036854775807.
+ * @returns A boolean indicating whether the value is such a string, within the range.
+ * @example
+ * import { isBigIntStringValid } from 'jg-utilities';
+ *
+ * isBigIntStringValid('9223372036854775807'); // => true
+ * isBigIntStringValid('9223372036854775808'); // => false
+ * isBigIntStringValid('007'); // => false
+ * isBigIntStringValid('5', 1n); // => true
+ */
+export const isBigIntStringValid = (
+  value: unknown,
+  min: bigint = INT64_MIN,
+  max: bigint = INT64_MAX,
+): value is string => {
+  if (typeof value !== 'string' || !/^(?:0|-?[1-9]\d*)$/.test(value)) {
+    return false;
+  }
+  // without leading zeros, a value longer than both bounds is outside them, so a huge string is
+  // rejected before it's parsed
+  if (value.length > Math.max(String(min).length, String(max).length)) {
+    return false;
+  }
+  const integer = BigInt(value);
+  return integer >= min && integer <= max;
+};

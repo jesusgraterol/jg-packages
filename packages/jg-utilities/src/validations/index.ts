@@ -21,4 +21,5 @@ export {
   isTimestampValid,
   isUrlValid,
   isUuidValid,
+  isBigIntStringValid,
 } from './validations.js';

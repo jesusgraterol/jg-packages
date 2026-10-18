@@ -9,7 +9,11 @@ catalog:
   '@eslint/js': 10.0.1
   '@playwright/test': 1.64.1
   '@tailwindcss/vite': 4.3.3
+  '@testing-library/dom': 10.4.2
+  '@testing-library/react': 16.3.3
   '@types/node': 24.19.2
+  '@types/react': 19.2.14
+  '@types/react-dom': 19.2.3
   '@vitest/browser-playwright': 5.0.5
   '@vitest/coverage-v8': 5.0.5
   astro: 7.4.0
@@ -18,7 +22,18 @@ catalog:
   fast-check: 4.10.2
   globals: 17.13.0
   playwright: 1.64.1
+  react: 19.2.4
+  react-dom: 19.2.4
   tailwindcss: 4.3.3
+  testcontainers: 12.2.1
   typescript: 6.0.3
   typescript-eslint: 8.71.2
   vitest: 5.0.5
+
+# install scripts the dependencies ask for, each declined: Testcontainers works without them
+# (cpu-features and ssh2 build optional native speedups for SSH, which a local Docker socket never
+# uses, and protobufjs only checks its version)
+allowBuilds:
+  cpu-features: false
+  protobufjs: false
+  ssh2: false

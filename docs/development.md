@@ -6,6 +6,7 @@ How to set up the repository, run its checks, and change its dependencies.
 
 - Node.js 24 or later. CI checks the latest LTS release and also runs the package tests on Node.js 24.0.0, the lowest version the packages support.
 - pnpm. The root `package.json` pins it with `packageManager`, and pnpm switches itself to that version the first time you run it in the repository.
+- Docker, running, for the integration tests of `jg-postgres` and `jg-redis`: they start their own PostgreSQL and Redis containers with [Testcontainers](https://node.testcontainers.org/), the same images the apps run, and stop them when they finish. Nothing else needs to be set up, and no other database is touched. GitHub's runners have Docker.
 
 ## Setup
 
@@ -17,7 +18,7 @@ How to set up the repository, run its checks, and change its dependencies.
    pnpm install
    ```
 
-   The install should finish without warnings about ignored build scripts.
+   The install should finish without warnings about ignored build scripts. `allowBuilds` in `pnpm-workspace.yaml` lists every install script a dependency asks for, each declined unless the package needs it to work.
 
 2. Install the browsers Playwright runs the browser and end-to-end tests in: Chromium, Firefox, and WebKit:
 

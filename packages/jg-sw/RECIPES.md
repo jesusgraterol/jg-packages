@@ -73,9 +73,10 @@ Each build makes a new worker, which installs next to the running one and waits,
 ```ts
 import { getServiceWorkerSnapshot, subscribeToServiceWorker, updateApp } from 'jg-sw';
 
-// shows the button only while a new version waits
+// shows the button only while a new version waits, or a chunk of a replaced build failed to load
 const showUpdateState = (): void => {
-  updateButton.hidden = !getServiceWorkerSnapshot().hasWaitingWorker;
+  const { hasWaitingWorker, preloadErrorDetected } = getServiceWorkerSnapshot();
+  updateButton.hidden = !(hasWaitingWorker || preloadErrorDetected);
 };
 subscribeToServiceWorker(showUpdateState);
 
@@ -106,3 +107,5 @@ document.addEventListener('visibilitychange', () => {
 ```
 
 When the check finds a new version, the snapshot changes once it has installed, and the button from the previous block appears.
+
+A deployment also replaces the build's chunks, so a page that stayed open on the old version can fail to load one, such as when the person opens a route for the first time. `preloadErrorDetected` turns true then, and the same button loads the new version. jg-sw handles only a failure while online, on a page with the build's entry module; one while offline stays Vite's error, for the app's error handling, because reloading wouldn't help.

@@ -1,5 +1,6 @@
 ---
 import {
+  Atom,
   Braces,
   Calculator,
   Clipboard,
@@ -8,8 +9,12 @@ import {
   Database,
   FolderOpen,
   Globe,
+  KeyRound,
   OctagonAlert,
+  RefreshCw,
+  Table2,
   Wrench,
+  Zap,
 } from '@lucide/astro';
 
 import type { IPackageIcon } from '../../utilities/package-catalog/index.ts';
@@ -22,6 +27,7 @@ interface Props {
 
 // the Lucide component behind each icon key
 const LUCIDE_ICONS = {
+  atom: Atom,
   braces: Braces,
   calculator: Calculator,
   clipboard: Clipboard,
@@ -30,8 +36,12 @@ const LUCIDE_ICONS = {
   database: Database,
   'folder-open': FolderOpen,
   globe: Globe,
+  'key-round': KeyRound,
   'octagon-alert': OctagonAlert,
+  'refresh-cw': RefreshCw,
+  'table-2': Table2,
   wrench: Wrench,
+  zap: Zap,
 } as const satisfies Record<IPackageIcon, typeof Braces>;
 
 // the tile's classes and the glyph's size inside it

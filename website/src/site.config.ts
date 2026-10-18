@@ -87,6 +87,46 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['browser'],
     order: 10,
   },
+  'jg-env': {
+    title: 'Environment',
+    description:
+      'Strict environment variable readers for process.env or import.meta.env, plus secret files, with errors that name the key and never the value.',
+    icon: 'key-round',
+    runtimes: ['universal'],
+    order: 11,
+  },
+  'jg-postgres': {
+    title: 'PostgreSQL',
+    description:
+      'node-postgres helpers: transactions that report an unknown commit, advisory locks, SQLSTATE checks, cursor pages, and ordered lists.',
+    icon: 'table-2',
+    runtimes: ['node'],
+    order: 12,
+  },
+  'jg-redis': {
+    title: 'Redis',
+    description:
+      'A read-through cache that keeps working when Redis fails, and fail-closed one-time claims and single-use values, on node-redis.',
+    icon: 'zap',
+    runtimes: ['node'],
+    order: 13,
+  },
+  'jg-react': {
+    title: 'React hooks',
+    description:
+      'React hooks for online status, page visibility, Tailwind CSS breakpoints, and scroll thresholds, each safe in a server render.',
+    icon: 'atom',
+    runtimes: ['browser'],
+    order: 14,
+  },
+  'jg-query': {
+    title: 'Server data',
+    description:
+      'TanStack Query with safe defaults, opt-in IndexedDB persistence, and a sign-out clear that waits for the cache to finish restoring.',
+    icon: 'refresh-cw',
+    runtimes: ['browser'],
+    order: 15,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/

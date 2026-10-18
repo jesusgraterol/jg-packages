@@ -182,3 +182,42 @@ export const applySubstitutions = (
       ? stringifyValue(substitutions[key], options.jsonIndent)
       : match,
   );
+
+/**
+ * Escapes text for HTML, so it shows as written instead of becoming markup, such as a name in an
+ * email template or a Telegram message. It's safe in element content and quoted attribute values,
+ * not in a URL, a script, or a style.
+ * @param text The text.
+ * @returns The escaped text.
+ * @example
+ * import { escapeHtml } from 'jg-utilities';
+ *
+ * escapeHtml('<b>"Tom" & Jerry\'s</b>'); // => '&lt;b&gt;&quot;Tom&quot; &amp; Jerry&#39;s&lt;/b&gt;'
+ */
+export const escapeHtml = (text: string): string =>
+  // the ampersand goes first, so the entities added after it aren't escaped again
+  text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+
+/**
+ * Picks the singular or plural form of a word for a count, such as "1 file" and "3 files".
+ * @param count The count.
+ * @param singular The word for exactly one.
+ * @param plural The word for any other count. Defaults to the singular with an "s".
+ * @returns The word alone, so other words can sit between it and the count.
+ * @example
+ * import { pluralize } from 'jg-utilities';
+ *
+ * pluralize(1, 'file'); // => 'file'
+ * pluralize(0, 'file'); // => 'files'
+ * pluralize(2, 'entry', 'entries'); // => 'entries'
+ */
+export const pluralize = (
+  count: number,
+  singular: string,
+  plural: string = `${singular}s`,
+): string => (count === 1 ? singular : plural);

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2
+
+### Fixed
+
+- A body that isn't a plain object, an array, or one `fetch` sends as it is (a string, `Blob`, `ArrayBuffer` or view of one, `FormData`, `URLSearchParams`, or `ReadableStream`) fails with `INVALID_BODY` before the request is sent. Before, `fetch` sent a `Map` as `[object Map]`, a function as its source, and a number as its digits, and a `Symbol` failed as `INVALID_OPTIONS`.
+
 ## 0.2.1
 
 ### Added

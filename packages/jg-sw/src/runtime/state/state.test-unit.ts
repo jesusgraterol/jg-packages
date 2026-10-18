@@ -21,6 +21,7 @@ describe('getServiceWorkerSnapshot', () => {
       worker: undefined,
       registrationError: undefined,
       hasWaitingWorker: false,
+      preloadErrorDetected: false,
       installation: {
         canInstall: false,
         isAppInstalled: undefined,

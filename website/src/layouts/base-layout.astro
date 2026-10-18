@@ -3,6 +3,7 @@ import { GitBranch } from '@lucide/astro';
 import BrandLogo from 'jg-personal-astro-ui/brand-logo';
 import Button from 'jg-personal-astro-ui/button';
 import DocumentHead from 'jg-personal-astro-ui/document-head';
+import JgMark from 'jg-personal-astro-ui/jg-mark';
 import NavigationProgress from 'jg-personal-astro-ui/navigation-progress';
 import SearchDialog from 'jg-personal-astro-ui/search-dialog';
 import SiteFooter from 'jg-personal-astro-ui/site-footer';
@@ -12,7 +13,6 @@ import TextLink from 'jg-personal-astro-ui/text-link';
 import ThemeControl from 'jg-personal-astro-ui/theme-control';
 import ThemeInitScript from 'jg-personal-astro-ui/theme-init-script';
 
-import BrandMark from '../components/brand-mark/brand-mark.astro';
 import { SITE_CONFIG } from '../site.config.ts';
 import '../styles/global.css';
 
@@ -113,7 +113,7 @@ const footerColumns = [
         slot="brand"
         name={SITE_CONFIG.name}
       >
-        <BrandMark
+        <JgMark
           slot="mark"
           class="size-8 shrink-0"
         />
@@ -171,7 +171,7 @@ const footerColumns = [
         slot="brand"
         name={SITE_CONFIG.name}
       >
-        <BrandMark
+        <JgMark
           slot="mark"
           class="size-8 shrink-0"
         />

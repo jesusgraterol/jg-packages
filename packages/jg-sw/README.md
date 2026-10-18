@@ -29,14 +29,16 @@ import { useSyncExternalStore } from 'react';
 import { getServiceWorkerSnapshot, installApp, subscribeToServiceWorker, updateApp } from 'jg-sw';
 
 export const AppBanner = () => {
-  const { hasWaitingWorker, installation } = useSyncExternalStore(
+  const { hasWaitingWorker, preloadErrorDetected, installation } = useSyncExternalStore(
     subscribeToServiceWorker,
     getServiceWorkerSnapshot,
     getServiceWorkerSnapshot,
   );
   return (
     <>
-      {hasWaitingWorker && <button onClick={() => void updateApp()}>Update</button>}
+      {(hasWaitingWorker || preloadErrorDetected) && (
+        <button onClick={() => void updateApp()}>Update</button>
+      )}
       {installation.canInstall && <button onClick={() => void installApp()}>Install</button>}
     </>
   );
@@ -50,6 +52,8 @@ Without React, `subscribeToServiceWorker(listener)` calls the listener on every 
 - When a new version waits, it asks it to activate and reloads once it controls the page.
 - Otherwise it checks for one, waits up to `UPDATE_INSTALL_TIMEOUT_SECONDS` (30) for it to install, then activates it the same way.
 - When nothing new is found, the installation fails, or the time runs out, it reloads the page as it is.
+
+`preloadErrorDetected` turns true when a chunk of a Vite build fails to load while the browser is online and the page has the build's entry module: the chunk most likely went away with a newer deployment. jg-sw then prevents the `vite:preloadError` event's default, so Vite doesn't throw, and the app offers `updateApp()`, which loads the new version. A failure while offline, or on a page without an entry module, is left to Vite, so the app's own error handling shows it. Call `registerServiceWorker()` as the app starts, so it hears the first failure.
 
 `installApp()` shows the browser's install prompt and resolves to `'accepted'` or `'dismissed'`. Only Chromium-based browsers offer it, so check `canInstallApp()` or `installation.canInstall` first.
 

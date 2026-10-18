@@ -161,6 +161,11 @@ Every package has one icon, set as `icon` in its catalog entry. It leads the pac
 | `jg-fs`           | `FolderOpen`   | Files and directories.          |
 | `jg-process`      | `Cpu`          | Child processes.                |
 | `jg-clipboard`    | `Clipboard`    | Copying and pasting.            |
+| `jg-env`          | `KeyRound`     | Configuration and secrets.      |
+| `jg-postgres`     | `Table2`       | Tables in a database.           |
+| `jg-redis`        | `Zap`          | A fast in-memory store.         |
+| `jg-react`        | `Atom`         | React hooks.                    |
+| `jg-query`        | `RefreshCw`    | Server data kept fresh.         |
 
 To add one, confirm the icon exists as `website/node_modules/@lucide/astro/src/icons/<name>.ts`, add its key to `IPackageIcon` in `website/src/utilities/package-catalog/types.ts`, map it to its component in `website/src/components/package-icon/package-icon.astro`, set the package's `icon`, and add its row here.
 

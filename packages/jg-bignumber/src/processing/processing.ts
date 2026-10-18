@@ -71,7 +71,8 @@ export const processValue = <T extends Partial<IConfig>>(
 
 /**
  * Processes a value and formats it for people, with group separators, a prefix, and a suffix.
- * Trailing zeros are dropped, unless `format.minimumDecimalPlaces` keeps them.
+ * Trailing zeros are dropped, unless `format.minimumDecimalPlaces` keeps them. The sign goes before
+ * the prefix, as in `-$5`.
  * @param value The value.
  * @param config How the value is processed and formatted.
  * @returns The formatted value.
@@ -81,6 +82,7 @@ export const processValue = <T extends Partial<IConfig>>(
  * prettifyValue(1234567.891); // => '1,234,567.89'
  * prettifyValue(1234.5, { format: { prefix: '$' } }); // => '$1,234.5'
  * prettifyValue(1234.5, { format: { prefix: '$', minimumDecimalPlaces: 2 } }); // => '$1,234.50'
+ * prettifyValue(-5, { format: { prefix: '$' } }); // => '-$5'
  * @throws
  * - INVALID_VALUE: if the value isn't a finite number or BigNumber throws an error
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason
@@ -95,14 +97,18 @@ export const prettifyValue = (
 ): string => {
   try {
     const { decimalPlaces } = buildConfig(config.processing);
+    const bigNumber = processValue(value, { ...config.processing, type: 'bignumber' });
+    const { prefix, ...format } = buildFormatConfig(config.format);
     // the value is already rounded to decimalPlaces, so the maximum only checks the minimum
-    return processValue(value, {
-      ...config.processing,
-      type: 'bignumber',
-    }).toFormat(
-      [config.format?.minimumDecimalPlaces, decimalPlaces],
-      buildFormatConfig(config.format),
-    );
+    const formatted = bigNumber.toFormat([config.format?.minimumDecimalPlaces, decimalPlaces], {
+      ...format,
+      prefix: '',
+    });
+    // bignumber.js writes the sign after the prefix, as in $-5, so it's moved before it. A zero
+    // rounded from a negative value is written without one
+    const sign = bigNumber.isNegative() ? format.negativeSign : format.positiveSign;
+    const writtenSign = sign !== '' && formatted.startsWith(sign) ? sign : '';
+    return `${writtenSign}${prefix}${formatted.slice(writtenSign.length)}`;
   } catch (error) {
     if (isException(error)) {
       throw error;

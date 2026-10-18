@@ -12,6 +12,9 @@ export {
   isDefaultErrorMessage,
 } from './error-handler/index.js';
 
+// field redaction
+export { redactFields } from './redact-fields/index.js';
+
 // exception
 export {
   type IExceptionJson,

@@ -92,6 +92,7 @@ export type ISchema<T> = {
 - A Zod schema satisfies it, and so does any validator with that method. Each package declares the type itself instead of importing it from another package.
 - The data's type comes from the schema. Without one, it's `unknown`, unless the caller passes a type argument.
 - The schema's own error, such as a `ZodError`, propagates unchanged from a function that throws. A function that never throws, such as jg-fetch's `request`, returns its own error code with the schema's error as `cause`.
+- A function that reads secrets, such as jg-env's readers, throws its own code instead, without the schema's error as `cause`: a schema's error can quote the value it rejected, and a cause can't be redacted reliably when the secret is one field of a larger value.
 - Each package that takes a schema has a contract test that runs a real Zod schema, for the valid case and the failing one.
 
 ## What to test

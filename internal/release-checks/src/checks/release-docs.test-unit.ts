@@ -154,7 +154,9 @@ describe('checkReleaseDocs', () => {
 
     expect(
       checkReleaseDocs(MANIFEST, toFiles(README, CHANGELOG, API_MARKDOWN, recipes), REFERENCE),
-    ).toStrictEqual(['the recipe "Greeting from a shell" in RECIPES.md has no ```ts block']);
+    ).toStrictEqual([
+      'the recipe "Greeting from a shell" in RECIPES.md has no ```ts or ```tsx block',
+    ]);
   });
 
   test('asks no recipes of a package with Astro components', () => {
