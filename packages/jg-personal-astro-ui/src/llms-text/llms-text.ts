@@ -28,7 +28,8 @@ export const normalizeDescription = (description: string): string =>
 /**
  * Writes an llms.txt in the llmstxt.org format: the site's name as the title, its summary as a
  * blockquote, optional details, then one `##` section per group of links. Each link's label is
- * escaped, and its description kept to one line.
+ * escaped, and its description kept to one line. A section can carry a Markdown body instead of
+ * links, such as an install command in a code block, written as it is.
  * @param options The name, the summary, the details, and the sections.
  * @returns The file's text.
  * @example
@@ -62,15 +63,17 @@ export const buildLlmsText = ({
     `# ${name}`,
     `> ${summary}`,
     ...details,
-    ...sections.map(({ heading, links }) =>
+    ...sections.map((section) =>
       [
-        `## ${heading}`,
-        links
-          .map(
-            ({ description, title, url }) =>
-              `- [${escapeMarkdownLabel(title)}](${url}): ${normalizeDescription(description)}`,
-          )
-          .join('\n'),
+        `## ${section.heading}`,
+        'body' in section
+          ? section.body.trim()
+          : section.links
+              .map(
+                ({ description, title, url }) =>
+                  `- [${escapeMarkdownLabel(title)}](${url}): ${normalizeDescription(description)}`,
+              )
+              .join('\n'),
       ].join('\n\n'),
     ),
   ].join('\n\n')}\n`;

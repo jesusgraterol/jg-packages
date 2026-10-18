@@ -19,6 +19,10 @@ export type ICodeWindowHeaderOptions = {
  * index, so search excerpts show the code alone.
  * @param options The caption, and whether to show the copy button.
  * @returns The header's HTML.
+ * @example
+ * import { renderCodeWindowHeader } from 'jg-personal-astro-ui/code-window';
+ *
+ * const header = renderCodeWindowHeader({ caption: 'ts' });
  */
 export const renderCodeWindowHeader = ({
   caption,

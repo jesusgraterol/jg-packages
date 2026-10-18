@@ -1,6 +1,6 @@
 {
   "name": "jg-personal-astro-ui",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Jesus Graterol's Astro components, Tailwind token contract, and theme, shared by his personal websites.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -18,8 +18,10 @@
       "style": "./src/styles/prose.css",
       "default": "./src/styles/prose.css"
     },
+    "./code-window": "./src/code-window/index.ts",
     "./code-window-plugin": "./src/code-window-plugin/index.ts",
     "./llms-text": "./src/llms-text/index.ts",
+    "./new-tab-marker-markup": "./src/new-tab-marker-markup/index.ts",
     "./seo": "./src/seo/index.ts",
     "./syntax-theme": "./src/syntax-theme/index.ts",
     "./theme-preference": "./src/theme-preference/index.ts",
@@ -44,6 +46,7 @@
     "./kbd": "./src/components/kbd/kbd.astro",
     "./link-card": "./src/components/link-card/link-card.astro",
     "./navigation-progress": "./src/components/navigation-progress/navigation-progress.astro",
+    "./new-tab-marker": "./src/components/new-tab-marker/new-tab-marker.astro",
     "./package-manager-tabs": "./src/components/package-manager-tabs/package-manager-tabs.astro",
     "./page-header": "./src/components/page-header/page-header.astro",
     "./prose": "./src/components/prose/prose.astro",

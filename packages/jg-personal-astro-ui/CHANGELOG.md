@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- An always-dark surface for panels that stay dark in both themes, such as a contact band: `--jg-inverse`, `--jg-inverse-foreground`, and `--jg-inverse-accent`, as the `bg-inverse`, `text-inverse-foreground`, and `text-inverse-accent` utilities.
+- `document-head` describes more kinds of page:
+  - `openGraphType`, `'website'` by default, or `'article'` or `'profile'`
+  - `article`, for the `article:*` tags of an article
+  - `profile`, for the `profile:*` tags of a person's profile
+- `./new-tab-marker`, the arrow and screen-reader notice that end a link opening a new tab. Its arrow now carries `data-new-tab-marker`.
+- `./new-tab-marker-markup` and `./code-window`, which render the marker's and a code window's header markup, for sites whose build checks allow only the markup Markdown produces.
+- `llms-text` sections can carry a Markdown `body`, such as an install command in a code block, instead of links.
+
+### Changed
+
+- `document-head`'s `favicon` is now `icons`, a list that takes favicons and home screen icons with their sizes.
+- `document-head`'s `markdownUrl` is now `alternate`, which takes the version's media type, such as `text/plain`, and a title.
+
 ## 0.2.0
 
 ### Added

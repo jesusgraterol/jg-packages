@@ -8,6 +8,31 @@ import {
 } from './llms-text.ts';
 
 describe('buildLlmsText', () => {
+  test('writes a section with a Markdown body as it is, after its heading', () => {
+    expect(
+      buildLlmsText({
+        name: 'jg-skills',
+        sections: [
+          { heading: 'Install', body: '\n```bash\nnpx skills add jesusgraterol/jg-skills\n```\n' },
+          {
+            heading: 'Skills',
+            links: [{ description: 'Plans a change.', title: 'jg-plan', url: '/skills/jg-plan/' }],
+          },
+        ],
+        summary: 'Skills for coding agents.',
+      }),
+    ).toBe(
+      [
+        '# jg-skills',
+        '> Skills for coding agents.',
+        '## Install',
+        '```bash\nnpx skills add jesusgraterol/jg-skills\n```',
+        '## Skills',
+        '- [jg-plan](/skills/jg-plan/): Plans a change.',
+      ].join('\n\n') + '\n',
+    );
+  });
+
   test('writes the title, the summary, the details, and each section of links', () => {
     expect(
       buildLlmsText({

@@ -75,13 +75,17 @@ const footerColumns = [
 <html lang={SITE_CONFIG.language}>
   <head>
     <DocumentHead
+      alternate={
+        markdownPath === undefined
+          ? undefined
+          : { href: toSiteUrl(markdownPath), type: 'text/markdown' }
+      }
       author={SITE_CONFIG.author.name}
       canonicalUrl={canonicalUrl}
       description={description}
-      favicon={{ href: '/favicon.svg', type: 'image/svg+xml' }}
+      icons={[{ href: '/favicon.svg', rel: 'icon', type: 'image/svg+xml' }]}
       llmsTextUrl={toSiteUrl('/llms.txt')}
       locale={openGraph.locale}
-      markdownUrl={markdownPath === undefined ? undefined : toSiteUrl(markdownPath)}
       noIndex={noIndex}
       openGraphImage={{
         alt: openGraph.imageAlt,

@@ -28,6 +28,9 @@
   --color-terminal: var(--jg-terminal);
   --color-terminal-foreground: var(--jg-terminal-foreground);
   --color-terminal-accent: var(--jg-terminal-accent);
+  --color-inverse: var(--jg-inverse);
+  --color-inverse-foreground: var(--jg-inverse-foreground);
+  --color-inverse-accent: var(--jg-inverse-accent);
   --color-focus: var(--jg-focus);
   --color-code: var(--jg-code);
   --color-success: var(--jg-success);
