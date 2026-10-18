@@ -16,6 +16,7 @@ import { getVisibilitySnapshot, subscribeToVisibility } from './document-visibil
 import { useOnlineStatus } from './online-status/index.js';
 import { useResendCooldown } from './resend-cooldown/index.js';
 import { ERRORS } from './shared/index.js';
+import { useAppliedTheme, useResolvedTheme } from './theme/index.js';
 import { getOnlineSnapshot, subscribeToOnlineStatus } from './online-status/utilities.js';
 import { useIsWindowScrolledPast } from './window-scroll/index.js';
 import { getScrollY, subscribeToScroll } from './window-scroll/utilities.js';
@@ -80,6 +81,25 @@ describe('in a server render', () => {
     };
 
     expect(renderToString(createElement(Probe))).toBe('<p>[false,0]</p>');
+  });
+
+  test('the theme hooks give dark for dark and light otherwise, without touching a document', () => {
+    const Probe = () =>
+      createElement(
+        'p',
+        null,
+        JSON.stringify([
+          useResolvedTheme('light'),
+          useResolvedTheme('dark'),
+          useResolvedTheme('system'),
+          useAppliedTheme('dark'),
+          useAppliedTheme('system'),
+        ]),
+      );
+
+    expect(renderToString(createElement(Probe))).toBe(
+      '<p>[&quot;light&quot;,&quot;dark&quot;,&quot;light&quot;,&quot;dark&quot;,&quot;light&quot;]</p>',
+    );
   });
 
   test.each([[0], [-1], [1.5], [Number.NaN]])(

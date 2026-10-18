@@ -81,3 +81,37 @@ export const AppHeader = () => {
 ```
 
 `useBreakpoint` is `undefined` in a server render, so `isBreakpointAtLeast` is false there, and the page renders the phone layout first, then the wider one once it hydrates.
+
+## A theme that applies before the first paint
+
+Use this in a server-rendered React app that offers light, dark, and system themes. React applies the theme only once it runs, so without a script in `<head>` the page shows the default theme first, then flashes to the user's. `createThemeInitScript` builds that script from where the preference is stored, and `useAppliedTheme` takes over once React runs:
+
+```tsx
+import { createThemeInitScript, type IThemePreference, useAppliedTheme } from 'jg-react';
+
+// the localStorage key the app keeps the user's preferences under, as jg-storage's
+// createLocalStore('preferences') writes it, with the theme in its `theme` field
+const PREFERENCES_KEY = 'jg-storage:preferences';
+
+// built once: the same options always give the same script, so a hash-based CSP works too
+const THEME_SCRIPT = createThemeInitScript({ storageKey: PREFERENCES_KEY, field: 'theme' });
+
+// rendered at the top of the server's <head>, with the request's CSP nonce
+export const ThemeScript = ({ nonce }: { nonce: string }) => (
+  <script
+    nonce={nonce}
+    dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }}
+  />
+);
+
+// reads the user's preference, such as from the app's settings store
+declare function usePreferredTheme(): IThemePreference;
+
+// keeps <html>'s class in step with the preference, and with the system while it's `system`
+export const ThemeController = () => {
+  useAppliedTheme(usePreferredTheme());
+  return null;
+};
+```
+
+The script falls back to the system theme when nothing is stored, the value isn't a preference, or storage can't be read, and never throws. Give your stylesheet a `color-scheme` per class, such as `:root.light { color-scheme: light; }` and `:root.dark { color-scheme: dark; }`, so form controls and scrollbars follow the theme. When the preference changes, `useAppliedTheme` swaps the class before the browser paints, with transitions off for two frames, so colors switch at once instead of animating.

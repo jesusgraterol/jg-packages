@@ -9,6 +9,12 @@ export type {
   IUseResendCooldownOptions,
   IUseResendCooldownResult,
 } from './resend-cooldown/index.js';
+export type {
+  IAppliedThemeOptions,
+  IResolvedTheme,
+  IThemeInitScriptOptions,
+  IThemePreference,
+} from './theme/index.js';
 
 // error codes
 export { ERRORS } from './shared/index.js';
@@ -26,3 +32,12 @@ export { useIsWindowScrolledPast } from './window-scroll/index.js';
 // forms
 export { useFormChanges } from './form-changes/index.js';
 export { useResendCooldown } from './resend-cooldown/index.js';
+
+// theme
+export {
+  createThemeInitScript,
+  resolveThemePreference,
+  THEME_PREFERENCES,
+  useAppliedTheme,
+  useResolvedTheme,
+} from './theme/index.js';

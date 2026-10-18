@@ -10,6 +10,7 @@ import { useDocumentVisibility } from './document-visibility/index.js';
 import { useFormChanges } from './form-changes/index.js';
 import { useOnlineStatus } from './online-status/index.js';
 import { type IUseResendCooldownOptions, useResendCooldown } from './resend-cooldown/index.js';
+import { type IThemePreference, useAppliedTheme } from './theme/index.js';
 import { useIsWindowScrolledPast } from './window-scroll/index.js';
 
 afterEach(() => {
@@ -460,5 +461,97 @@ describe('useResendCooldown', () => {
     const afterDeadline = hydrate(html, props);
     expect(afterDeadline.onRecoverableError).not.toHaveBeenCalled();
     expect(afterDeadline.text).toBe('Resend');
+  });
+});
+
+describe('useAppliedTheme', () => {
+  /**
+   * Stubs the system's dark color scheme query with one the test controls.
+   * @param matches Whether the system starts dark.
+   * @returns The function that changes the system's color scheme.
+   */
+  const stubSystemScheme = (matches: boolean): ((isDark: boolean) => void) => {
+    const query = Object.assign(new EventTarget(), {
+      matches,
+      media: '(prefers-color-scheme: dark)',
+    });
+    vi.spyOn(window, 'matchMedia').mockReturnValue(query as unknown as MediaQueryList);
+    return (isDark) => {
+      query.matches = isDark;
+      query.dispatchEvent(new Event('change'));
+    };
+  };
+
+  afterEach(() => {
+    document.documentElement.classList.remove('light', 'dark');
+  });
+
+  test('applies the theme class to <html>, replacing the other one', () => {
+    stubSystemScheme(false);
+    const { result, rerender } = renderHook(
+      ({ preference }: { preference: IThemePreference }) => useAppliedTheme(preference),
+      { initialProps: { preference: 'dark' } },
+    );
+    expect(result.current).toBe('dark');
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+
+    rerender({ preference: 'light' });
+    expect(result.current).toBe('light');
+    expect(document.documentElement.classList.contains('light')).toBe(true);
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+  });
+
+  test("follows the system's color scheme only while the preference is system", () => {
+    const setSystemDark = stubSystemScheme(false);
+    const { result, rerender } = renderHook(
+      ({ preference }: { preference: IThemePreference }) => useAppliedTheme(preference),
+      { initialProps: { preference: 'system' } },
+    );
+    expect(result.current).toBe('light');
+
+    act(() => {
+      setSystemDark(true);
+    });
+    expect(result.current).toBe('dark');
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+
+    rerender({ preference: 'light' });
+    act(() => {
+      setSystemDark(false);
+      setSystemDark(true);
+    });
+    expect(result.current).toBe('light');
+    expect(document.documentElement.classList.contains('light')).toBe(true);
+  });
+
+  test('turns transitions off while the class changes, and back on after two frames', async () => {
+    stubSystemScheme(false);
+    document.documentElement.classList.add('light');
+    const transitionStyles = () =>
+      [...document.head.querySelectorAll('style')].filter((style) =>
+        style.textContent.includes('transition:none!important'),
+      );
+    // an earlier test's theme change removes its style only after two animation frames
+    await expect.poll(() => transitionStyles().length).toBe(0);
+    const { rerender } = renderHook(
+      ({ preference }: { preference: IThemePreference }) => useAppliedTheme(preference),
+      { initialProps: { preference: 'light' } },
+    );
+    expect(transitionStyles()).toHaveLength(0);
+
+    rerender({ preference: 'dark' });
+    expect(transitionStyles()).toHaveLength(1);
+
+    await expect.poll(() => transitionStyles().length).toBe(0);
+  });
+
+  test('leaves transitions alone when asked to', () => {
+    stubSystemScheme(false);
+    const appendChild = vi.spyOn(document.head, 'appendChild');
+
+    renderHook(() => useAppliedTheme('dark', { disableTransitionsOnChange: false }));
+
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    expect(appendChild).not.toHaveBeenCalled();
   });
 });
