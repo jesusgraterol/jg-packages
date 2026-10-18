@@ -1,0 +1,76 @@
+---
+import { Search } from '@lucide/astro';
+
+import Dialog from '../dialog/dialog.astro';
+import Kbd from '../kbd/kbd.astro';
+
+interface Props {
+  class?: string | undefined;
+  // the dialog's id, which its trigger and any other data-dialog-open element name. Defaults to
+  // 'search'
+  id?: string | undefined;
+  // where the site serves Pagefind's script. Defaults to '/pagefind/pagefind.js'
+  pagefindPath?: string | undefined;
+}
+
+const { class: className, id = 'search', pagefindPath = '/pagefind/pagefind.js' } = Astro.props;
+---
+
+{/* the trigger: a button that names the shortcut, which opens the dialog too */}
+<button
+  type="button"
+  class:list={[
+    'inline-flex min-h-9 items-center gap-2 rounded-full border border-border-strong px-3 text-sm text-muted transition-colors hover:bg-secondary hover:text-foreground',
+    className,
+  ]}
+  data-dialog-open={id}
+>
+  <Search
+    class="size-4"
+    aria-hidden="true"
+  />
+  <span>Search</span>
+  <Kbd class="hidden sm:inline-flex">/</Kbd>
+</button>
+
+<Dialog
+  id={id}
+  title="Search"
+>
+  <div
+    data-search-dialog
+    data-pagefind-path={pagefindPath}
+  >
+    <label
+      class="sr-only"
+      for={`${id}-input`}
+    >
+      Search the site
+    </label>
+    <input
+      id={`${id}-input`}
+      type="search"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="Search the packages"
+      autofocus
+      class="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
+      data-search-input
+    />
+    <p
+      class="mt-3 text-xs text-muted empty:hidden"
+      aria-live="polite"
+      data-search-status
+    ></p>
+    <ul
+      class="mt-2 grid gap-1"
+      data-search-results
+    ></ul>
+  </div>
+</Dialog>
+
+<script>
+  import { registerSearchDialogs } from './search-behavior.ts';
+
+  registerSearchDialogs();
+</script>
