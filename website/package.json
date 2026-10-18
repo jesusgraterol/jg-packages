@@ -46,7 +46,7 @@
     "jg-clipboard": "workspace:*",
     "jg-env": "workspace:*",
     "jg-postgres": "workspace:*",
-    "jg-query": "workspace:*",
+    "jg-tanstack-query": "workspace:*",
     "jg-react": "workspace:*",
     "jg-redis": "workspace:*",
     "jg-exception": "workspace:*",

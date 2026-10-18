@@ -16,7 +16,7 @@ import { shouldPersistMutation, shouldPersistQuery } from './utilities.js';
  * @returns The provider.
  * @example
  * import { createElement } from 'react';
- * import { createIndexedDbPersister, createQueryClient, PersistedQueryProvider } from 'jg-query';
+ * import { createIndexedDbPersister, createQueryClient, PersistedQueryProvider } from 'jg-tanstack-query';
  *
  * declare const App: () => null;
  *

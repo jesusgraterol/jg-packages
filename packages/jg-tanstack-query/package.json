@@ -1,5 +1,5 @@
 {
-  "name": "jg-query",
+  "name": "jg-tanstack-query",
   "version": "0.1.0",
   "description": "TanStack Query for React apps: a client with safe defaults, opt-in IndexedDB persistence, and a sign-out clear that waits for restore.",
   "author": "Jesus Graterol",
@@ -29,9 +29,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jesusgraterol/jg-packages.git",
-    "directory": "packages/jg-query"
+    "directory": "packages/jg-tanstack-query"
   },
-  "homepage": "https://jg-packages.jesusgraterol.dev/packages/jg-query/",
+  "homepage": "https://jg-packages.jesusgraterol.dev/packages/jg-tanstack-query/",
   "bugs": {
     "url": "https://github.com/jesusgraterol/jg-packages/issues"
   },

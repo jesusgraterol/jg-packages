@@ -16,7 +16,7 @@ export const isIndexedDbAvailable = (): boolean => typeof indexedDB !== 'undefin
  * @param options The database, the store, and the key.
  * @returns The persister.
  * @example
- * import { createIndexedDbPersister } from 'jg-query';
+ * import { createIndexedDbPersister } from 'jg-tanstack-query';
  *
  * export const persister = createIndexedDbPersister({
  *   databaseName: 'app-query-cache',

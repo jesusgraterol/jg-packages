@@ -119,7 +119,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['browser'],
     order: 14,
   },
-  'jg-query': {
+  'jg-tanstack-query': {
     title: 'Server data',
     description:
       'TanStack Query with safe defaults, opt-in IndexedDB persistence, and a sign-out clear that waits for the cache to finish restoring.',

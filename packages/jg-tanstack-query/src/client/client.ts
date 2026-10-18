@@ -15,7 +15,7 @@ const CLEARS = new WeakMap<QueryClient, Promise<void>>();
  * @param options How long unused data stays in memory.
  * @returns The client.
  * @example
- * import { createQueryClient } from 'jg-query';
+ * import { createQueryClient } from 'jg-tanstack-query';
  *
  * export const queryClient = createQueryClient();
  */
@@ -37,7 +37,7 @@ export const createQueryClient = ({
  * @param persister The client's persister.
  * @returns A promise that resolves once the persisted copy is removed too.
  * @example
- * import { clearQueryCache, createIndexedDbPersister, createQueryClient } from 'jg-query';
+ * import { clearQueryCache, createIndexedDbPersister, createQueryClient } from 'jg-tanstack-query';
  *
  * const queryClient = createQueryClient();
  * const persister = createIndexedDbPersister({
