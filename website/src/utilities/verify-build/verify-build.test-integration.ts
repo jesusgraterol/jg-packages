@@ -16,6 +16,9 @@ const BUILD_DIRECTORY = resolve(import.meta.dirname, '..', '..', '..', 'dist');
 const PACKAGE_PAGE = 'packages/jg-fetch/index.html';
 const RECIPES_PAGE = 'packages/jg-fetch/recipes/index.html';
 const STRUCTURED_DATA = /<script type="application\/ld\+json">[^<]+<\/script>/u;
+// the home page, and each listed package's page and recipes page
+const PUBLIC_PAGE_COUNT = 1 + 2 * Object.keys(PACKAGE_CATALOG).length;
+const INDEXED_PAGE_COUNT = `"page_count":${String(PUBLIC_PAGE_COUNT)}`;
 
 // breaks one copy of the build
 type IBuildMutation = (buildDirectory: string) => Promise<void>;
@@ -84,6 +87,43 @@ describe('verifyBuild', () => {
       'a missing llms.txt',
       'Missing build path: llms.txt',
       (build) => rm(resolveInBuild(build, 'llms.txt')),
+    ],
+    [
+      'a missing search index',
+      'Missing build path: pagefind/pagefind.js',
+      (build) => rm(resolveInBuild(build, 'pagefind/pagefind.js')),
+    ],
+    [
+      'a search index without one of the pages',
+      `The search index does not hold every public page: ${String(PUBLIC_PAGE_COUNT - 1)} of ${String(PUBLIC_PAGE_COUNT)}`,
+      (build) =>
+        replaceText(
+          build,
+          'pagefind/pagefind-entry.json',
+          INDEXED_PAGE_COUNT,
+          `"page_count":${String(PUBLIC_PAGE_COUNT - 1)}`,
+        ),
+    ],
+    [
+      'a search index that holds the 404 page too',
+      `The search index does not hold every public page: ${String(PUBLIC_PAGE_COUNT + 1)} of ${String(PUBLIC_PAGE_COUNT)}`,
+      (build) =>
+        replaceText(
+          build,
+          'pagefind/pagefind-entry.json',
+          INDEXED_PAGE_COUNT,
+          `"page_count":${String(PUBLIC_PAGE_COUNT + 1)}`,
+        ),
+    ],
+    [
+      'a search index whose entry is not JSON',
+      "The search index does not hold every public page: pagefind-entry.json isn't JSON",
+      (build) => writeFile(resolveInBuild(build, 'pagefind/pagefind-entry.json'), '{"version":'),
+    ],
+    [
+      'a search index without its languages',
+      `The search index does not hold every public page: 0 of ${String(PUBLIC_PAGE_COUNT)}`,
+      (build) => writeFile(resolveInBuild(build, 'pagefind/pagefind-entry.json'), '{}'),
     ],
     [
       'a missing open-graph image',

@@ -6,7 +6,9 @@ describe('renderCodeWindowHeader', () => {
   test('renders the dots, the caption, and a copy button for the code', () => {
     const html = renderCodeWindowHeader({ caption: 'vite.config.ts' });
 
-    expect(html.startsWith('<figcaption class="jg-code-window-header">')).toBe(true);
+    expect(html.startsWith('<figcaption class="jg-code-window-header" data-pagefind-ignore>')).toBe(
+      true,
+    );
     expect(html).toContain(
       '<span class="jg-code-window-dots" aria-hidden="true"><span></span><span></span><span></span></span>',
     );

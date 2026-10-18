@@ -140,8 +140,34 @@ const showUnavailable = (dialog: HTMLElement): void => {
 };
 
 /**
- * Makes the page's search dialogs work: the shortcut opens one, with its field focused, and
- * typing searches with Pagefind once the visitor pauses. A newer search replaces an older one's
+ * Closes a search dialog when Escape is pressed in its field, which would otherwise only clear the
+ * field, as a search field does, and leave the dialog open.
+ * @param event The key press.
+ * @returns Whether it closed a dialog.
+ */
+const closeOnEscape = (event: KeyboardEvent): boolean => {
+  const target = event.target as Partial<HTMLElement> | null;
+  if (
+    event.key !== 'Escape' ||
+    event.defaultPrevented ||
+    typeof target?.closest !== 'function' ||
+    target.matches?.('[data-search-input]') !== true
+  ) {
+    return false;
+  }
+  const dialog = target.closest('dialog');
+  if (dialog?.open !== true) {
+    return false;
+  }
+  event.preventDefault();
+  dialog.close();
+  return true;
+};
+
+/**
+ * Makes the page's search dialogs work: the shortcut opens one, with its field focused, Escape in
+ * its field closes it, even with text in the field, and typing searches with Pagefind once the
+ * visitor pauses. A newer search replaces an older one's
  * results, even when the older one answers last. One key listener and one input listener on the
  * document serve them all; the attribute set on the root element keeps a second call from adding
  * second listeners.
@@ -161,6 +187,9 @@ export const registerSearchDialogs = (
   const latestQueries = new WeakMap<HTMLElement, string>();
 
   root.addEventListener('keydown', (event) => {
+    if (closeOnEscape(event)) {
+      return;
+    }
     // the dialog element that holds the page's search
     const dialog = root.querySelector('[data-search-dialog]')?.closest('dialog');
     if (dialog === null || dialog === undefined || dialog.open || !isSearchShortcut(event)) {

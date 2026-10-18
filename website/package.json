@@ -10,13 +10,14 @@
   },
   "scripts": {
     "assets:generate": "node scripts/generate-open-graph.ts",
-    "build": "astro build && node scripts/verify-build.ts",
+    "build": "astro build && pagefind --site dist && node scripts/verify-build.ts",
     "dev": "astro dev",
     "generate": "node scripts/generate-api-reference.ts",
     "lint": "astro sync && eslint .",
     "preview": "astro preview",
-    "test": "pnpm test:unit && pnpm test:integration",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:e2e",
     "test:coverage": "vitest run --coverage --project unit --project integration",
+    "test:e2e": "playwright test",
     "test:integration": "vitest run --project integration",
     "test:unit": "vitest run --project unit",
     "typecheck": "astro check"
@@ -32,9 +33,11 @@
   },
   "devDependencies": {
     "@astrojs/check": "catalog:",
+    "@axe-core/playwright": "4.13.0",
     "@jg-packages/api-reference": "workspace:*",
     "@jg-packages/eslint-config": "workspace:*",
     "@jg-packages/vitest-config": "workspace:*",
+    "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
@@ -48,6 +51,7 @@
     "jg-storage": "workspace:*",
     "jg-sw": "workspace:*",
     "jg-utilities": "workspace:*",
+    "pagefind": "1.5.2",
     "playwright": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

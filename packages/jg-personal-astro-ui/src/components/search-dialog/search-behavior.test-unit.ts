@@ -109,10 +109,14 @@ const createSearchDialog = ({
     focus: vi.fn(),
     matches: (selector: string) => selector === '[data-search-input]',
     value: '',
-    closest: (selector: string) => (selector === '[data-search-dialog]' ? container : null),
+    closest: (selector: string) =>
+      ({ '[data-search-dialog]': container, dialog })[selector] ?? null,
   };
   const dialog = {
     open,
+    close: vi.fn(() => {
+      dialog.open = false;
+    }),
     showModal: vi.fn(() => {
       dialog.open = true;
     }),
@@ -313,6 +317,35 @@ describe('registerSearchDialogs', () => {
     expect(open.dialog.showModal).not.toHaveBeenCalled();
     expect(other.dialog.showModal).not.toHaveBeenCalled();
     expect(orphan.dialog.showModal).not.toHaveBeenCalled();
+  });
+
+  test('closes the dialog on Escape in its field, which would otherwise only clear it', () => {
+    const parts = createSearchDialog({ open: true });
+    const { root, fire } = createDocument(parts);
+    registerSearchDialogs(root, vi.fn());
+    const preventDefault = vi.fn();
+
+    fire('keydown', createKeyPress('Escape', { target: parts.input, preventDefault }));
+
+    expect(parts.dialog.close).toHaveBeenCalledOnce();
+    expect(preventDefault).toHaveBeenCalledOnce();
+    // a closed dialog, a handled key, other targets, and other keys are left alone
+    fire('keydown', createKeyPress('Escape', { target: parts.input }));
+    parts.dialog.open = true;
+    fire('keydown', createKeyPress('Escape', { target: parts.input, defaultPrevented: true }));
+    fire(
+      'keydown',
+      createKeyPress('Escape', { target: { closest: () => null, matches: () => false } }),
+    );
+    fire('keydown', createKeyPress('Escape', { target: { matches: () => true } }));
+    fire('keydown', createKeyPress('Enter', { target: parts.input }));
+    expect(parts.dialog.close).toHaveBeenCalledOnce();
+    // a field outside a dialog
+    fire(
+      'keydown',
+      createKeyPress('Escape', { target: { closest: () => null, matches: () => true } }),
+    );
+    expect(parts.dialog.close).toHaveBeenCalledOnce();
   });
 
   test('searches once the visitor pauses, loading Pagefind from its path once', async () => {

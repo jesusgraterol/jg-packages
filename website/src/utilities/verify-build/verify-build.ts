@@ -369,6 +369,45 @@ const checkLinks = (
 };
 
 /**
+ * Checks that Pagefind indexed every public page, which it does only for pages whose main content
+ * carries data-pagefind-body, so the 404 page stays out.
+ * @param buildDirectory The build.
+ * @param publicPageCount The number of HTML pages besides the 404 page.
+ * @returns A promise that resolves once the index holds them all.
+ * @throws
+ * - The search index does not hold every public page: pagefind-entry.json isn't JSON
+ * - The search index does not hold every public page: {count} of {total}
+ */
+const checkSearchIndex = async (buildDirectory: string, publicPageCount: number): Promise<void> => {
+  const serialized = await readFile(
+    resolve(buildDirectory, 'pagefind/pagefind-entry.json'),
+    'utf8',
+  );
+  let entry: unknown;
+  try {
+    entry = JSON.parse(serialized);
+  } catch (error) {
+    throw new Error(`${MESSAGES.IncompleteSearchIndex}: pagefind-entry.json isn't JSON`, {
+      cause: error,
+    });
+  }
+  const languages = isRecord(entry) && isRecord(entry['languages']) ? entry['languages'] : {};
+  const indexedPageCount = Object.values(languages).reduce<number>(
+    (total, language) =>
+      total +
+      (isRecord(language) && typeof language['page_count'] === 'number'
+        ? language['page_count']
+        : 0),
+    0,
+  );
+  if (indexedPageCount !== publicPageCount) {
+    throw new Error(
+      `${MESSAGES.IncompleteSearchIndex}: ${String(indexedPageCount)} of ${String(publicPageCount)}`,
+    );
+  }
+};
+
+/**
  * Checks the files for agents and crawlers: robots.txt names the sitemap, llms.txt follows its
  * structure and its links reach the build, and llms-full.txt holds every package and its recipes.
  * @param buildDirectory The build.
@@ -457,8 +496,8 @@ const checkForbiddenNames = async (
 
 /**
  * Verifies a build of the site: the required files and every listed package's pages, safe markup
- * and unique IDs, every public page's head, structured data and links, the 404 page, the files for
- * agents and crawlers, and no package the site never mentions.
+ * and unique IDs, every public page's head, structured data and links, the 404 page, the search
+ * index, the files for agents and crawlers, and no package the site never mentions.
  * @param buildDirectory The build. Defaults to the website's dist directory.
  * @param packageNames The packages that must each have their pages. Defaults to the catalog's.
  * @returns A promise that resolves when the build passes every check.
@@ -473,6 +512,7 @@ const checkForbiddenNames = async (
  * - The 404 page must stay out of search indexes
  * - The 404 page must not name a canonical URL
  * - Page description is not 70 to 160 characters long in 404.html
+ * - The search index does not hold every public page: {count} of {total}
  * - the agent-file failures of checkAgentFiles
  * - The build names a package the site never mentions in {file}: {name}
  */
@@ -556,6 +596,7 @@ export const verifyBuild = async (
     throw new Error(`${MESSAGES.PageDescriptionOutOfRange} in 404.html`);
   }
 
+  await checkSearchIndex(buildDirectory, htmlFiles.length - 1);
   await checkAgentFiles(buildDirectory, buildFiles, packageNames);
   await checkForbiddenNames(buildDirectory, buildFiles);
 };

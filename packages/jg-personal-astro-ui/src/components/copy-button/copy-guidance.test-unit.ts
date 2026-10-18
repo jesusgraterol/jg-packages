@@ -28,6 +28,28 @@ describe('getCopyGuidance', () => {
     expect(getCopyGuidance(code, 'code')).toBe(guidance);
   });
 
+  test.each([
+    [
+      ERRORS.CLIPBOARD_PERMISSION_DENIED,
+      'Your browser blocked copying. Open the link below and copy the text there.',
+    ],
+    [
+      ERRORS.CLIPBOARD_NO_USER_GESTURE,
+      'Your browser only copies right after a click. Click Copy again, or open the link below and copy the text there.',
+    ],
+    [
+      ERRORS.CLIPBOARD_NOT_FOCUSED,
+      'Copying needs this tab to be in focus. Click the page, then click Copy again.',
+    ],
+    [
+      ERRORS.CLIPBOARD_UNSUPPORTED,
+      "This browser can't copy from this page. Open the link below and copy the text there.",
+    ],
+    [null, 'Copying failed. Open the link below and copy the text there.'],
+  ])('guides %s to the link, for text behind one', (code, guidance) => {
+    expect(getCopyGuidance(code, 'as Markdown', true)).toBe(guidance);
+  });
+
   test('names what the button copies', () => {
     expect(getCopyGuidance(ERRORS.CLIPBOARD_PERMISSION_DENIED, 'npm install command')).toBe(
       'Your browser blocked copying. Select the npm install command and copy it manually.',

@@ -91,6 +91,18 @@ describe('search dialog', () => {
     expect(document.activeElement).toBe(start);
   });
 
+  test('closes on one Escape with text in its field, giving focus back', async () => {
+    const { dialog, input, start } = renderSearch();
+    start.focus();
+    await userEvent.keyboard('/');
+    await userEvent.type(input, 'fetch');
+
+    await userEvent.keyboard('{Escape}');
+
+    await expect.poll(() => dialog.open).toBe(false);
+    expect(document.activeElement).toBe(start);
+  });
+
   test('says when nothing matches', async () => {
     const { input, status } = renderSearch();
     await userEvent.keyboard('/');

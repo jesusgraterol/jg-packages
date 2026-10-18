@@ -9,6 +9,7 @@ export const VERIFY_BUILD_ERROR_MESSAGES = {
   ForbiddenPackageName: 'The build names a package the site never mentions',
   IncompleteLlmsFullText: 'llms-full.txt is missing a package or its recipes',
   IncompletePackageItemList: 'Home page item list does not list every package',
+  IncompleteSearchIndex: 'The search index does not hold every public page',
   InvalidLlmsTextStructure: 'llms.txt does not follow the required structure',
   InvalidStructuredData: 'Invalid structured data',
   InvalidStructuredDataGraph: 'Structured data graph is invalid',
@@ -39,6 +40,8 @@ export const REQUIRED_BUILD_PATHS = [
   'index.html',
   'llms-full.txt',
   'llms.txt',
+  'pagefind/pagefind-entry.json',
+  'pagefind/pagefind.js',
   'robots.txt',
   'sitemap-index.xml',
 ] as const;

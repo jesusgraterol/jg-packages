@@ -78,7 +78,7 @@
     "@jg-packages/eslint-config": "workspace:*",
     "@jg-packages/tsconfig": "workspace:*",
     "@jg-packages/vitest-config": "workspace:*",
-    "@playwright/test": "1.64.1",
+    "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",

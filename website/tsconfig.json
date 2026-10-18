@@ -13,6 +13,6 @@
     "types": ["node"],
     "verbatimModuleSyntax": true
   },
-  "include": [".astro/types.d.ts", "src", "scripts", "*.config.ts"],
+  "include": [".astro/types.d.ts", "src", "scripts", "e2e", "*.config.ts"],
   "exclude": ["dist"]
 }

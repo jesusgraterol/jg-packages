@@ -15,7 +15,8 @@ export type ICodeWindowHeaderOptions = {
 /**
  * Renders a code window's header as HTML: the window dots, the caption, and a copy button. The
  * window is a `figure` with the `jg-code-window` class and a `data-code-window` attribute, holding
- * the header and the highlighted `pre`; contract.css styles it.
+ * the header and the highlighted `pre`; contract.css styles it. The header stays out of a Pagefind
+ * index, so search excerpts show the code alone.
  * @param options The caption, and whether to show the copy button.
  * @returns The header's HTML.
  */
@@ -25,7 +26,7 @@ export const renderCodeWindowHeader = ({
   copySource,
 }: ICodeWindowHeaderOptions): string =>
   [
-    '<figcaption class="jg-code-window-header">',
+    '<figcaption class="jg-code-window-header" data-pagefind-ignore>',
     '<span class="jg-code-window-dots" aria-hidden="true"><span></span><span></span><span></span></span>',
     `<span class="jg-code-window-caption">${escapeHtml(caption)}</span>`,
     copy

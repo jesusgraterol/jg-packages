@@ -4,6 +4,7 @@ import BrandLogo from 'jg-personal-astro-ui/brand-logo';
 import Button from 'jg-personal-astro-ui/button';
 import DocumentHead from 'jg-personal-astro-ui/document-head';
 import NavigationProgress from 'jg-personal-astro-ui/navigation-progress';
+import SearchDialog from 'jg-personal-astro-ui/search-dialog';
 import SiteFooter from 'jg-personal-astro-ui/site-footer';
 import SiteHeader from 'jg-personal-astro-ui/site-header';
 import SkipLink from 'jg-personal-astro-ui/skip-link';
@@ -22,7 +23,7 @@ interface Props {
   description: string;
   // the path of the page's Markdown version, offered to agents as an alternate
   markdownPath?: string | undefined;
-  // keeps the page out of search indexes, such as the 404 page
+  // keeps the page out of search indexes and the site's own search, such as the 404 page
   noIndex?: boolean | undefined;
   // the page's JSON-LD, from buildStructuredData
   structuredData?: Record<string, unknown> | undefined;
@@ -117,6 +118,7 @@ const footerColumns = [
           class="size-8 shrink-0"
         />
       </BrandLogo>
+      <SearchDialog slot="search" />
       <Fragment slot="actions">
         <Button
           href={SITE_CONFIG.repositoryUrl}
@@ -154,7 +156,11 @@ const footerColumns = [
         />
       </Fragment>
     </SiteHeader>
-    <main id="main-content">
+    {/* Pagefind indexes the main content of every page but a noindex one */}
+    <main
+      id="main-content"
+      data-pagefind-body={noIndex ? undefined : ''}
+    >
       <slot />
     </main>
     <SiteFooter

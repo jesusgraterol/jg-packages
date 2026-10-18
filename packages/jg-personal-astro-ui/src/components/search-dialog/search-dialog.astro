@@ -20,17 +20,25 @@ const { class: className, id = 'search', pagefindPath = '/pagefind/pagefind.js' 
 <button
   type="button"
   class:list={[
-    'inline-flex min-h-9 items-center gap-2 rounded-full border border-border-strong px-3 text-sm text-muted transition-colors hover:bg-secondary hover:text-foreground',
+    'inline-flex min-h-9 items-center justify-center gap-2 rounded-full border border-border-strong px-3 text-sm text-muted transition-colors hover:bg-secondary hover:text-foreground max-sm:size-10 max-sm:px-0',
     className,
   ]}
   data-dialog-open={id}
+  aria-keyshortcuts="/ Control+K Meta+K"
 >
   <Search
     class="size-4"
     aria-hidden="true"
   />
-  <span>Search</span>
-  <Kbd class="hidden sm:inline-flex">/</Kbd>
+  {/* below 640 px the button is just the icon, still named Search */}
+  <span class="max-sm:sr-only">Search</span>
+  {/* aria-keyshortcuts names the shortcut, so the key stays out of the button's name */}
+  <span
+    class="hidden sm:inline-flex"
+    aria-hidden="true"
+  >
+    <Kbd>/</Kbd>
+  </span>
 </button>
 
 <Dialog

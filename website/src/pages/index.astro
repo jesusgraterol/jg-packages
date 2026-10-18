@@ -62,7 +62,10 @@ const structuredData = buildStructuredData({
     <div class="jg-container grid items-center gap-12 pt-14 pb-16 sm:pt-20 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14">
       <div>
         <p class="eyebrow">{HOME_HERO.eyebrow}</p>
-        <h1 class="display-title mt-6">
+        <h1
+          class="display-title mt-6"
+          data-pagefind-meta={`title:${SITE_CONFIG.name}`}
+        >
           {HOME_HERO.titleStart}
           <span class="block text-accent">{HOME_HERO.titleEnd}</span>
         </h1>
