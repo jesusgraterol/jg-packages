@@ -2,7 +2,7 @@ import { expectToThrowCode } from 'jg-exception/testing';
 import { describe, expect, test } from 'vitest';
 
 import { ERRORS } from '../shared/errors.js';
-import { fromScaledInteger, toScaledInteger } from './scaled-integers.js';
+import { applyBasisPoints, fromScaledInteger, toScaledInteger } from './scaled-integers.js';
 
 // Moldea's microcents: 1 dollar is 100,000,000 microcents
 const MICROCENTS = 8;
@@ -149,4 +149,56 @@ describe('fromScaledInteger', () => {
   test.each([-1, 0.5, 101])('rejects %o as the number of decimals', (decimals) => {
     expectToThrowCode(() => fromScaledInteger(1n, decimals), ERRORS.INVALID_DECIMAL_PLACES);
   });
+});
+
+describe('applyBasisPoints', () => {
+  // Moldea's calculateCommission cases
+  test.each([
+    [0n, 0, 0n],
+    [100_000_000n, 500, 5_000_000n],
+    [100_000_000n, 10_000, 100_000_000n],
+    [123_000_000n, 1500, 18_450_000n],
+    [1n, 1, 0n],
+    [10_001n, 1, 1n],
+  ])('applyBasisPoints(%s, %d) -> %s', (value, basisPoints, expected) => {
+    expect(applyBasisPoints(value, basisPoints)).toBe(expected);
+  });
+
+  test('rounds down, never up, just below a whole unit', () => {
+    expect(applyBasisPoints(9_999n, 1)).toBe(0n);
+    expect(applyBasisPoints(19_999n, 1)).toBe(1n);
+    expect(applyBasisPoints(3n, 3_333)).toBe(0n);
+  });
+
+  test('applies a rate above 100%, and stays exact beyond the safe integer range', () => {
+    expect(applyBasisPoints(100n, 25_000)).toBe(250n);
+    expect(applyBasisPoints(2n ** 80n, 5_000)).toBe(2n ** 79n);
+    expect(applyBasisPoints(1_000n, Number.MAX_SAFE_INTEGER)).toBe(900_719_925_474_099n);
+  });
+
+  test('throws NEGATIVE_VALUE_NOT_ALLOWED for a negative value', () => {
+    expectToThrowCode(() => applyBasisPoints(-1n, 500), ERRORS.NEGATIVE_VALUE_NOT_ALLOWED);
+  });
+
+  test.each([[-1], [1.5], [Number.NaN], [Number.POSITIVE_INFINITY], [2 ** 53]])(
+    'applyBasisPoints(1n, %d) -> throws INVALID_VALUE',
+    (basisPoints) => {
+      expectToThrowCode(
+        () => applyBasisPoints(1n, basisPoints),
+        ERRORS.INVALID_VALUE,
+        'basis points',
+      );
+    },
+  );
+
+  test.each([[1], ['1'], [null]])(
+    'applyBasisPoints(%o, 500) -> throws INVALID_VALUE for a value that is not a bigint',
+    (value) => {
+      expectToThrowCode(
+        () => applyBasisPoints(value as unknown as bigint, 500),
+        ERRORS.INVALID_VALUE,
+        'bigint',
+      );
+    },
+  );
 });
