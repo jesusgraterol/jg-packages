@@ -93,6 +93,42 @@ const outcome = await withSessionLock(
 
 `listByCursor` lists a page of rows after a cursor, and `buildCursorPage` turns a page listed with one extra row into `{ items, nextCursor }`. `moveUp` and `moveDown` swap a row's sort order with its neighbor's, in their own transaction under the list's lock, and `lockOrderedList` takes the same lock for an append. Every table and column name is quoted.
 
+### A record store
+
+`jg-postgres/record-store` keeps small JSON records, such as counters or a feature's settings, one row each in a `record_store` table, which the app creates:
+
+```sql
+CREATE TABLE IF NOT EXISTS record_store (
+  id    varchar(512),
+  value jsonb        NOT NULL,
+
+  CONSTRAINT pk_rs__id PRIMARY KEY (id),
+  CONSTRAINT chk_rs__id_non_empty CHECK (id <> ''),
+  CONSTRAINT chk_rs__value_object CHECK (jsonb_typeof(value) = 'object')
+);
+```
+
+```ts
+import { createPostgres } from 'jg-postgres';
+import { createRecordStore } from 'jg-postgres/record-store';
+import { z } from 'zod';
+
+declare const postgres: ReturnType<typeof createPostgres>;
+
+const counters = createRecordStore({
+  postgres,
+  id: 'admin:unread-counts',
+  defaults: { notifications: 0, reports: 0 },
+  schema: z.object({ notifications: z.number(), reports: z.number() }),
+});
+
+await counters.incrementNumber('notifications', 1); // atomic, so concurrent increments all count
+await counters.setNumber('reports', 0); // leaves the other fields as they are
+await counters.get(); // { notifications: 1, reports: 0 }, checked with the schema
+```
+
+The defaults fill every missing or null field when the record is read, and are the only keys a write keeps. Every method takes an optional transaction's client, to run in that transaction without committing it.
+
 ### Errors
 
 | Code                          | When                                                                |

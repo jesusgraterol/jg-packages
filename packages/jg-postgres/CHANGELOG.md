@@ -9,3 +9,4 @@
 - Advisory locks: `createAdvisoryLockKey`, `lockTransaction`, and `withSessionLock`.
 - Cursor pages, with `listByCursor` and `buildCursorPage`, and ordered lists, with `moveUp`, `moveDown`, and `lockOrderedList`, every name quoted with `quoteIdentifier`.
 - `POSTGRES_BIGINT_MIN` and `POSTGRES_BIGINT_MAX`.
+- `jg-postgres/record-store`'s `createRecordStore`, which keeps a JSON record, with defaults and a schema, in a `record_store` table the README describes: `get`, `set`, and atomic `incrementNumber` and `setNumber`, each optionally in a caller's transaction.
