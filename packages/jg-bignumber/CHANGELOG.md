@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+
+- `prettifyValue` keeps trailing zeros up to `format.minimumDecimalPlaces`, such as `$1,234.50` for a price, through the new `IPrettifyFormat` type. A minimum past `decimalPlaces` throws `INVALID_BIGNUMBER_FORMAT`.
+
+### Fixed
+
+- `adjustByPercentage` returns 0 for a value of 0, instead of throwing `NEGATIVE_VALUE_NOT_ALLOWED`, which it still throws for a negative value.
+
 ## 1.1.1
 
 ### Added

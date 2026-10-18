@@ -7,7 +7,13 @@ Patterns for apps that add up money and report how a metric changed, with exact 
 Use this for a cart, an invoice, or any total of prices. JavaScript numbers are binary fractions, so `0.1 + 0.2` is `0.30000000000000004`, and each addition can add an error. Keep amounts as decimal strings from the API or the database, do the arithmetic with jg-bignumber, and round where the invoice rounds:
 
 ```ts
-import { calculateSum, getBigNumber, processValue, type IBigNumber } from 'jg-bignumber';
+import {
+  calculateSum,
+  getBigNumber,
+  prettifyValue,
+  processValue,
+  type IBigNumber,
+} from 'jg-bignumber';
 
 // a line of an invoice, with its price as a decimal string, as an API or a PostgreSQL numeric
 // column sends it, so it never passes through a float
@@ -36,10 +42,10 @@ const calculateInvoiceTotals = (lines: IInvoiceLine[], taxRate: string): IInvoic
 
 const { total } = calculateInvoiceTotals(invoice.lines, invoice.taxRate);
 
-// toFixed and toFormat keep the cents, such as '1234.50' and '1,234.50', where a number or
-// prettifyValue drops the trailing zero
+// toFixed keeps the cents, such as '1234.50', where a number drops the trailing zero, and
+// minimumDecimalPlaces does the same for the formatted total, such as '$1,234.50'
 const totalForApi = total.toFixed(2);
-totalCell.textContent = `$${total.toFormat(2)}`;
+totalCell.textContent = prettifyValue(total, { format: { prefix: '$', minimumDecimalPlaces: 2 } });
 ```
 
 Every jg-bignumber calculation, and `processValue`, rounds its result, so call one where the invoice rounds, and do the steps in between with BigNumber methods, such as `times` and `dividedBy`, which don't. `{ type: 'bignumber' }` returns a BigNumber instead of a number, so the next step starts from the decimal value. Results round to 2 decimal places with `ROUND_HALF_UP`: pass `roundingMode: 'ROUND_HALF_EVEN'` where an accounting rule asks for banker's rounding, or `decimalPlaces: 0` for a currency without cents. A string that isn't a number, such as `''` from an empty form field, throws `INVALID_VALUE`, so check input with `isNumber` before it reaches the math.
