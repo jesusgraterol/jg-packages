@@ -32,7 +32,7 @@ gh api --method PUT repos/jesusgraterol/jg-packages/pages -f build_type=workflow
 
 ## Markdown for agents
 
-Each page's Markdown version is a static file, `index.md`, beside its `index.html`. Two Cloudflare Transform Rules let an agent get it from the page's own URL by sending `Accept: text/markdown`, while browsers keep getting HTML. Create them in the `jesusgraterol.dev` zone under **Rules**, each with **Custom filter expression** and **Edit expression**:
+Each page's Markdown version is a static file, `index.md`, beside its `index.html`. Two Cloudflare Transform Rules let an agent get it from the page's own URL by sending `Accept: text/markdown`, while browsers keep getting HTML. Create each in the `jesusgraterol.dev` zone from **Rules** > **Overview** > **Create rule**, choosing **Custom filter expression** and pasting the expression into the **Expression Editor**:
 
 1. **The rewrite.** Create a **URL Rewrite Rule**:
    - Name: `jg-packages Markdown`.
@@ -52,7 +52,7 @@ Each page's Markdown version is a static file, `index.md`, beside its `index.htm
      http.host eq "jg-packages.jesusgraterol.dev" and ends_with(raw.http.request.uri.path, "/")
      ```
 
-   - Header: **Add**, `Vary`, `Accept`. **Add**, not **Set**: GitHub Pages already sends `Vary: Accept-Encoding`, which must stay.
+   - Under **Modify response header**: **Add static**, with **Header name** `Vary` and **Value** `Accept`. **Add static**, not **Set static**: GitHub Pages already sends `Vary: Accept-Encoding`, which must stay.
 
 The rewrite only changes the path Cloudflare asks GitHub Pages for, so the visitor's URL stays the page's. Cloudflare doesn't cache HTML by default; a cache rule that later caches pages must add `Accept` to its cache key.
 
@@ -60,7 +60,7 @@ The rewrite only changes the path Cloudflare asks GitHub Pages for, so the visit
 
 - Name: `jg-packages Markdown type`.
 - Expression: `http.host eq "jg-packages.jesusgraterol.dev" and ends_with(http.request.uri.path, ".md")`. It reads the rewritten path, so it covers the rewritten responses and every `index.md`.
-- Header: **Set**, `Content-Type`, `text/markdown; charset=utf-8`.
+- Under **Modify response header**: **Set static**, with **Header name** `Content-Type` and **Value** `text/markdown; charset=utf-8`.
 
 ## Checks
 
