@@ -14,6 +14,11 @@
 - `brand-logo` takes a `tagline`, a second line under the name.
 - `./icon-tile`, the primary square that holds an icon in the jg sites' cards and page headers, in `card` and `header` sizes.
 - `./agentic-coding-mark` and `./agentic-coding-mark.svg`, the Agentic Coding mark in fixed colors, so the sites that show it draw it from one file.
+- `site-header`'s items take `external`, which opens another site in a new tab with the arrow and notice, and `match: 'prefix'`, which marks an item current on the pages under it. `trackSections` marks the item of the section the reader is in with `aria-current="location"`.
+- `link-card` takes `external`, which opens another site in a new tab with an up-right arrow in the corner, and a `kicker` slot above the title, such as for a badge.
+- `button` has an `inverse` variant, a light pill for the inverse surface, and takes link attributes such as `download` when it has an `href`.
+- `badge` has a `neutral` variant, a status `dot`, and `mono={false}` for a label in the page font.
+- `link-card`, `text-link`, `card`, `badge`, and `prose` pass other attributes, such as `title` and `data-*`, to their root element.
 - `./new-tab-marker`, the arrow and screen-reader notice that end a link opening a new tab. Its arrow now carries `data-new-tab-marker`.
 - `./new-tab-marker-markup` and `./code-window`, which render the marker's and a code window's header markup, for sites whose build checks allow only the markup Markdown produces.
 - `llms-text` sections can carry a Markdown `body`, such as an install command in a code block, instead of links.

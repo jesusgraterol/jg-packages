@@ -1,28 +1,29 @@
 ---
-// the look of each variant
-const VARIANT_CLASSES = {
-  default: 'border-primary bg-primary text-primary-foreground',
-  secondary: 'border-transparent bg-secondary text-foreground',
-  success: 'border-success/35 bg-success/10 text-success',
-  warning: 'border-warning/40 bg-warning/10 text-warning',
-  danger: 'border-danger/35 bg-danger/10 text-danger',
-  outline: 'border-border-strong text-muted',
-} as const;
+import type { HTMLAttributes } from 'astro/types';
 
-interface Props {
+import { BADGE_DOT_CLASSES, buildBadgeClasses, type IBadgeVariant } from './badge-classes.ts';
+
+type Props = {
   class?: string | undefined;
-  variant?: keyof typeof VARIANT_CLASSES | undefined;
-}
+  // a status dot before the label, in its colour
+  dot?: boolean | undefined;
+  // sets the label in the mono font. Defaults to true
+  mono?: boolean | undefined;
+  variant?: IBadgeVariant | undefined;
+} & Omit<HTMLAttributes<'span'>, 'class'>;
 
-const { class: className, variant = 'secondary' } = Astro.props;
+const { class: className, dot = false, mono, variant, ...attributes } = Astro.props;
 ---
 
 <span
-  class:list={[
-    'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-xs leading-5 font-semibold whitespace-nowrap',
-    VARIANT_CLASSES[variant],
-    className,
-  ]}
+  class:list={[buildBadgeClasses(variant, mono), className]}
+  {...attributes}
 >
+  {dot && (
+    <span
+      class={BADGE_DOT_CLASSES}
+      aria-hidden="true"
+    ></span>
+  )}
   <slot />
 </span>

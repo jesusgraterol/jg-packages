@@ -1,14 +1,16 @@
 ---
+import type { HTMLAttributes } from 'astro/types';
+
 import NewTabMarker from '../new-tab-marker/new-tab-marker.astro';
 
-interface Props {
+type Props = {
   class?: string | undefined;
   // opens the link in a new tab, with an arrow icon, the new-tab notice, and no referrer
   external?: boolean | undefined;
   href: string;
-}
+} & Omit<HTMLAttributes<'a'>, 'class' | 'href' | 'rel' | 'target'>;
 
-const { class: className, external = false, href } = Astro.props;
+const { class: className, external = false, href, ...attributes } = Astro.props;
 // trimmed, so the line breaks around the text in the page's markup never space out the arrow
 const content = (await Astro.slots.render('default')).trim();
 ---
@@ -21,6 +23,7 @@ const content = (await Astro.slots.render('default')).trim();
   ]}
   target={external ? '_blank' : undefined}
   rel={external ? 'noreferrer' : undefined}
+  {...attributes}
 >
   <Fragment set:html={content} />
   {external && <NewTabMarker />}

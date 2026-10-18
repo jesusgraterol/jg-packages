@@ -1,11 +1,8 @@
 ---
 import { Menu, X } from '@lucide/astro';
 
-// one link of the primary navigation
-interface INavigationItem {
-  href: string;
-  label: string;
-}
+import NewTabMarker from '../new-tab-marker/new-tab-marker.astro';
+import { findItemSectionId, isCurrentItem, type INavigationItem } from './navigation-items.ts';
 
 interface Props {
   // the current page's path, which marks its item with aria-current
@@ -13,16 +10,29 @@ interface Props {
   // the home link's accessible name, such as "jg-packages home"
   homeLabel: string;
   items: readonly INavigationItem[];
+  // marks the item of the section the reader is in with aria-current="location", for items that
+  // link to sections of the same page, such as #about
+  trackSections?: boolean | undefined;
 }
 
-const { currentPath, homeLabel, items } = Astro.props;
-const isCurrent = (href: string): boolean => currentPath !== undefined && href === currentPath;
+const { currentPath, homeLabel, items, trackSections = false } = Astro.props;
+// each item's link attributes, the same in both navigations
+const links = items.map((item) => ({
+  ...item,
+  ariaCurrent: isCurrentItem(item, currentPath) ? ('page' as const) : undefined,
+  rel: item.external === true ? 'noreferrer' : undefined,
+  sectionId: trackSections ? findItemSectionId(item, currentPath) : undefined,
+  target: item.external === true ? '_blank' : undefined,
+}));
 const hasActions = Astro.slots.has('actions');
 const hasMobileActions = Astro.slots.has('mobile-actions');
 ---
 
 {/* named, so it stays still while the page under it crossfades to the next */}
-<header class="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md [view-transition-name:jg-site-header]">
+<header
+  class="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md [view-transition-name:jg-site-header]"
+  data-track-sections={trackSections ? '' : undefined}
+>
   <div class="jg-container flex min-h-16 items-center justify-between gap-4">
     <a
       href="/"
@@ -37,13 +47,17 @@ const hasMobileActions = Astro.slots.has('mobile-actions');
         class="hidden items-center gap-1 md:flex"
         aria-label="Primary navigation"
       >
-        {items.map(({ href, label }) => (
+        {links.map(({ ariaCurrent, external, href, label, rel, sectionId, target }) => (
           <a
             href={href}
-            class="rounded-full px-3 py-2 text-sm font-medium text-muted no-underline transition-colors hover:bg-secondary hover:text-foreground aria-[current=page]:text-foreground"
-            aria-current={isCurrent(href) ? 'page' : undefined}
+            class="rounded-full px-3 py-2 text-sm font-medium text-muted no-underline transition-colors hover:bg-secondary hover:text-foreground aria-[current=location]:text-foreground aria-[current=page]:text-foreground"
+            aria-current={ariaCurrent}
+            target={target}
+            rel={rel}
+            data-section-link={sectionId}
           >
             {label}
+            {external === true && <NewTabMarker />}
           </a>
         ))}
       </nav>
@@ -77,13 +91,17 @@ const hasMobileActions = Astro.slots.has('mobile-actions');
             class="grid gap-1"
             aria-label="Mobile navigation"
           >
-            {items.map(({ href, label }) => (
+            {links.map(({ ariaCurrent, external, href, label, rel, sectionId, target }) => (
               <a
                 href={href}
-                class="rounded-md px-3 py-2.5 text-sm font-semibold no-underline hover:bg-secondary aria-[current=page]:bg-secondary"
-                aria-current={isCurrent(href) ? 'page' : undefined}
+                class="rounded-md px-3 py-2.5 text-sm font-semibold no-underline hover:bg-secondary aria-[current=location]:bg-secondary aria-[current=page]:bg-secondary"
+                aria-current={ariaCurrent}
+                target={target}
+                rel={rel}
+                data-section-link={sectionId}
               >
                 {label}
+                {external === true && <NewTabMarker />}
               </a>
             ))}
           </nav>
@@ -99,6 +117,13 @@ const hasMobileActions = Astro.slots.has('mobile-actions');
 </header>
 
 <script>
+  import { registerSectionTracking } from './section-tracking-behavior.ts';
+
+  // follows the reader's section when the site asked for it
+  document
+    .querySelectorAll<HTMLElement>('header[data-track-sections]')
+    .forEach((header) => registerSectionTracking(header));
+
   // closes the mobile menu once a link inside it is chosen, on Escape, which returns focus to the
   // menu button, and on a click outside it
   document.querySelectorAll<HTMLDetailsElement>('[data-site-menu]').forEach((menu) => {

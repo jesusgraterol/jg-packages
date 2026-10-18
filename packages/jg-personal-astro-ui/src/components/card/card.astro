@@ -1,16 +1,19 @@
 ---
-interface Props {
+import type { HTMLAttributes } from 'astro/types';
+
+type Props = {
   // the element: a div, an article for a self-contained item, or a list item
   as?: 'article' | 'div' | 'li' | 'section' | undefined;
   class?: string | undefined;
-}
+} & Omit<HTMLAttributes<'div'>, 'class'>;
 
-const { as: Element = 'div', class: className } = Astro.props;
+const { as: Element = 'div', class: className, ...attributes } = Astro.props;
 ---
 
 {/* a raised surface for one item, as on the home page's benefits and setup steps */}
 <Element
   class:list={['min-w-0 rounded-xl border border-border bg-surface p-5 shadow-surface', className]}
+  {...attributes}
 >
   <slot />
 </Element>
