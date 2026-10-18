@@ -3,7 +3,8 @@ import { FILE_SIZE_THRESHOLD, FILE_SIZE_UNITS } from './constants.js';
 import { buildNumberFormatConfig, formatLargeFileSize } from './utilities.js';
 
 /**
- * Formats a numeric value based on the user's default language.
+ * Formats a numeric value based on the user's default language. A negative value's sign goes
+ * before the prefix, as in `-$5`.
  * @param value The number to be formatted.
  * @param configuration? An optional configuration object.
  * @returns A string representing the formatted number.
@@ -12,17 +13,24 @@ import { buildNumberFormatConfig, formatLargeFileSize } from './utilities.js';
  *
  * prettifyNumber(1234567.891); // => '1,234,567.89'
  * prettifyNumber(19.5, { minimumFractionDigits: 2, prefix: '$' }); // => '$19.50'
+ * prettifyNumber(-5, { prefix: '$' }); // => '-$5'
  */
 export const prettifyNumber = (
   value: number,
   configuration?: Partial<INumberFormatConfig>,
 ): string => {
   const config = buildNumberFormatConfig(configuration);
-  const prettifiedValue = value.toLocaleString(undefined, {
+  const parts = new Intl.NumberFormat(undefined, {
     minimumFractionDigits: config.minimumFractionDigits,
     maximumFractionDigits: config.maximumFractionDigits,
-  });
-  return `${config.prefix}${prettifiedValue}${config.suffix}`;
+  }).formatToParts(value);
+  // the language's own minus sign, moved before the prefix
+  const sign = parts.find(({ type }) => type === 'minusSign')?.value ?? '';
+  const digits = parts
+    .filter(({ type }) => type !== 'minusSign')
+    .map((part) => part.value)
+    .join('');
+  return `${sign}${config.prefix}${digits}${config.suffix}`;
 };
 
 /**

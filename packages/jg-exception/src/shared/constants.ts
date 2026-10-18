@@ -4,3 +4,6 @@ export const DEFAULT_MESSAGE =
 
 // the code given to an error that has none, such as when it's sent in an API envelope
 export const UNKNOWN_ERROR_CODE = 'UNKNOWN_ERROR';
+
+// what each redacted value is replaced with
+export const REDACTED_VALUE = '[redacted]';

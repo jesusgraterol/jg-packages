@@ -26,6 +26,7 @@ export {
   isSemverValid,
   isUrlValid,
   isUuidValid,
+  isBigIntStringValid,
 } from './validations/index.js';
 
 // transformers
@@ -55,6 +56,8 @@ export {
   normalizeQuery,
   stringifyValue,
   applySubstitutions,
+  escapeHtml,
+  pluralize,
   toMS,
   encodeBase64Url,
   decodeBase64Url,
@@ -100,6 +103,7 @@ export {
   omitProps,
   isEqual,
   filterByQuery,
+  resolveSafeInternalPath,
   delay,
   retryAsyncFunction,
   waitUntil,

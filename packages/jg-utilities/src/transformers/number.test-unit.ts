@@ -17,6 +17,10 @@ describe('prettifyNumber', () => {
     [1000.583, { prefix: '$' }, '$1,000.58'],
     [2654.69642236, { maximumFractionDigits: 8, suffix: ' BTC' }, '2,654.69642236 BTC'],
     [1000, { minimumFractionDigits: 2 }, '1,000.00'],
+    [-5, { prefix: '$' }, '-$5'],
+    [-1234.5, { prefix: '$', minimumFractionDigits: 2 }, '-$1,234.50'],
+    [-0.5, { prefix: 'USD ', suffix: ' net' }, '-USD 0.5 net'],
+    [-0, { prefix: '$' }, '-$0'],
   ])('prettifyNumber(%d, %o) -> %s', (a, b, expected) => {
     expect(prettifyNumber(a, b)).toBe(expected);
   });

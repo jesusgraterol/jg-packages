@@ -1,11 +1,8 @@
-import { DEFAULT_MESSAGE } from '../shared/constants.js';
+import { DEFAULT_MESSAGE, REDACTED_VALUE } from '../shared/constants.js';
 
 /*
  * message redaction helpers
  */
-
-// what each redacted value is replaced with
-const REDACTION_REPLACEMENT = '[redacted]';
 
 // an index range holding sensitive message content
 type IMessageRange = {
@@ -97,7 +94,7 @@ export const redactSensitiveValues = (message: string, sensitiveValues: string[]
   sensitiveRanges.forEach((sensitiveRange) => {
     redactedMessageParts.push(
       message.slice(nextMessageIndex, sensitiveRange.start),
-      REDACTION_REPLACEMENT,
+      REDACTED_VALUE,
     );
     nextMessageIndex = sensitiveRange.end;
   });

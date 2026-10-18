@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.0
+
+### Added
+
+- `redactFields(value, keys)`, a copy of a value, such as a request body headed for an error report, with the values of the named fields replaced by `[redacted]` at any depth. Keys match case-insensitively, and the original is never changed.
+- A recipe for redacting a request in an error report.
+
 ## 1.2.0
 
 ### Added

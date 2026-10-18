@@ -42,8 +42,10 @@ export {
 export {
   applySubstitutions,
   capitalizeFirst,
+  escapeHtml,
   maskMiddle,
   normalizeQuery,
+  pluralize,
   stringifyValue,
   toSlug,
   toTitleCase,

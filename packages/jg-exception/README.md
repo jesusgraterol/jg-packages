@@ -98,6 +98,14 @@ import { extractRedactedMessage } from 'jg-exception';
 extractRedactedMessage(error, [apiKey]); // the message with the key replaced by [redacted]
 ```
 
+When what you report carries the client's data, such as the body of the request that failed, the secrets are in fields you know by name. `redactFields` copies it with those fields' values replaced by `[redacted]`, at any depth and whatever their case:
+
+```ts
+import { redactFields } from 'jg-exception';
+
+redactFields(request.body, ['password', 'token']); // { email: '…', password: '[redacted]' }
+```
+
 ## Documentation
 
 The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-exception/.

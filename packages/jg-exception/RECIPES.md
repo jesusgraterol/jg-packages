@@ -260,6 +260,35 @@ export const signOut = async (refreshToken: string): Promise<void> => {
 
 Only the message is redacted, so log that string and nothing else: passing `error` itself to the logger or the error tracker would send its stack and fields as they are. To track the failure, wrap it in an Exception with `redact`, and send that.
 
+## Redacting a request in an error report
+
+Use `redactFields` when an error report carries the request that failed, such as its body, so the error tracker shows what the client sent. The body is the client's, so you don't know its secrets' values, as `redact` needs, but you know the fields that hold them: a password, a token, or personal data such as an email address. The copy replaces their values wherever they are, in nested objects and arrays too, and matches the names whatever their case:
+
+```ts
+import { redactFields } from 'jg-exception';
+
+// the fields that hold credentials or personal data in the API's requests
+const SENSITIVE_FIELDS = ['email', 'googleIdToken', 'password', 'token'];
+
+// sends an error to the error tracker with what to show beside it, such as Sentry's
+// captureException
+declare function captureError(error: unknown, context: { extra: Record<string, unknown> }): void;
+
+export const reportRequestError = (
+  error: unknown,
+  request: { method: string; path: string; body: unknown },
+): void => {
+  captureError(error, {
+    extra: {
+      request: `${request.method} ${request.path}`,
+      body: redactFields(request.body, SENSITIVE_FIELDS),
+    },
+  });
+};
+```
+
+Only the fields you name are redacted, so add one whenever a request gains a sensitive field. A class instance in the body, such as a `Date`, is kept as it is rather than walked, and the request's own body is never changed, so the handler that runs after the report still sees what the client sent.
+
 ## Handling an error by its code
 
 Branch on codes, never on messages: a message can be reworded in any release, and a code is stable. `hasErrorCode` and `getErrorCode` read a string `code` from any error, so the same check works on an Exception, a Node.js system error, and a database driver's error.

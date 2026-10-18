@@ -7,8 +7,10 @@ import { expectToThrowCode } from 'jg-exception/testing';
 import {
   applySubstitutions,
   capitalizeFirst,
+  escapeHtml,
   maskMiddle,
   normalizeQuery,
+  pluralize,
   stringifyValue,
   toSlug,
   toTitleCase,
@@ -295,5 +297,29 @@ describe('applySubstitutions', () => {
     expect(applySubstitutions('Value: {{value}}.', { value: circularValue })).toBe(
       'Value: [object Object].',
     );
+  });
+});
+
+describe('escapeHtml', () => {
+  test.each([
+    ['<b>"Tom" & Jerry\'s</b>', '&lt;b&gt;&quot;Tom&quot; &amp; Jerry&#39;s&lt;/b&gt;'],
+    ['plain text', 'plain text'],
+    ['&amp;', '&amp;amp;'],
+    ['', ''],
+  ])('escapeHtml(%s) -> %s', (text, expected) => {
+    expect(escapeHtml(text)).toBe(expected);
+  });
+});
+
+describe('pluralize', () => {
+  test.each([
+    [1, 'file', undefined, 'file'],
+    [0, 'file', undefined, 'files'],
+    [2, 'file', undefined, 'files'],
+    [-1, 'file', undefined, 'files'],
+    [1, 'entry', 'entries', 'entry'],
+    [3, 'entry', 'entries', 'entries'],
+  ])('pluralize(%d, %s, %s) -> %s', (count, singular, plural, expected) => {
+    expect(pluralize(count, singular, plural)).toBe(expected);
   });
 });

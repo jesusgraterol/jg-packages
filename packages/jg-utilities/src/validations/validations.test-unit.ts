@@ -7,6 +7,7 @@ import { MAX_EMAIL_LENGTH } from './constants.js';
 import {
   isArrayValid,
   isAuthorizationHeaderValid,
+  isBigIntStringValid,
   isEmailValid,
   isFileNameValid,
   isIntegerValid,
@@ -818,5 +819,44 @@ describe('isFileNameValid', () => {
     ['ééé', 4, false],
   ])('isFileNameValid(%s, %d) -> %s', (value, maxBytes, expected) => {
     expect(isFileNameValid(value, maxBytes)).toBe(expected);
+  });
+});
+
+describe('isBigIntStringValid', () => {
+  test.each([
+    ['0', true],
+    ['42', true],
+    ['-42', true],
+    ['9223372036854775807', true],
+    ['-9223372036854775808', true],
+    ['9223372036854775808', false],
+    ['-9223372036854775809', false],
+    ['007', false],
+    ['-0', false],
+    ['+5', false],
+    ['1.0', false],
+    ['1e3', false],
+    [' 5', false],
+    ['', false],
+    [5, false],
+    [5n, false],
+    [null, false],
+  ])('isBigIntStringValid(%o) -> %o', (value, expected) => {
+    expect(isBigIntStringValid(value)).toBe(expected);
+  });
+
+  test.each([
+    ['1', 1n, undefined, true],
+    ['0', 1n, undefined, false],
+    ['100', 1n, 100n, true],
+    ['101', 1n, 100n, false],
+    ['-1000', -100n, 5n, false],
+    ['-99', -100n, 5n, true],
+    ['99', -100n, 5n, false],
+    ['9'.repeat(1_000_000), undefined, undefined, false],
+    [`-${'9'.repeat(1_000_000)}`, undefined, undefined, false],
+    ['1'.repeat(30), 0n, 10n ** 40n, true],
+  ])('isBigIntStringValid(%s, %s, %s) -> %o', (value, min, max, expected) => {
+    expect(isBigIntStringValid(value, min, max)).toBe(expected);
   });
 });

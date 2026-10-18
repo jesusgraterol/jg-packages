@@ -38,6 +38,9 @@ export {
 // filtering utilities
 export { filterByQuery } from './filtering.js';
 
+// navigation utilities
+export { resolveSafeInternalPath } from './internal-path.js';
+
 // generators
 export {
   generateDateId,
