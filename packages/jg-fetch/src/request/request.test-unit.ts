@@ -139,6 +139,18 @@ describe('request', () => {
     expect(error).toMatchObject({ kind: 'INVALID_OPTIONS', cause });
   });
 
+  test('reports init the platform refuses to build a Request from as INVALID_OPTIONS, with its error as the cause', async () => {
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+
+    // only a browser starting a navigation may build a request in navigate mode
+    const { error } = await request(URL_WITH_TOKEN, { init: { mode: 'navigate' } });
+
+    expect(error?.kind).toBe('INVALID_OPTIONS');
+    expect(error?.cause).toBeInstanceOf(TypeError);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   test('reads a response without a body as empty bytes', async () => {
     vi.stubGlobal('fetch', () => Promise.resolve(new Response(null, { status: 200 })));
 

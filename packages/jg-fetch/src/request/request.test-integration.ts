@@ -246,6 +246,29 @@ describe('envelopes', () => {
     });
   });
 
+  test.each(['bytes', 'blob'] as const)(
+    'reports a failed status read as %s as HTTP_ERROR with its body as text',
+    async (parseAs) => {
+      const path = uniquePath(`gone-${parseAs}`);
+      server.route(path, (_request, response) => {
+        response.writeHead(410, { 'Content-Type': 'text/plain' }).end('Gone for good');
+      });
+
+      const { data, error } = await request(`${server.origin}${path}`, {
+        parseAs,
+        retryDelaysSeconds: [],
+      });
+
+      expect(data).toBeNull();
+      expect(error).toMatchObject({
+        kind: 'HTTP_ERROR',
+        code: 'HTTP_ERROR',
+        status: 410,
+        body: 'Gone for good',
+      });
+    },
+  );
+
   test('reports a failed status whose JSON is not an envelope as HTTP_ERROR', async () => {
     const path = uniquePath('not-envelope-error');
     server.route(path, (_request, response) => {
