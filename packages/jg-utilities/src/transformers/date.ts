@@ -32,6 +32,35 @@ export const toDate = (value: IDateValue): Date => {
   return new Date(value);
 };
 
+// an ISO 8601 timestamp of a year from 0000 to 9999, whose first ten characters are its date
+const FOUR_DIGIT_YEAR_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T/;
+
+/**
+ * Gives the UTC calendar date of an instant, as `YYYY-MM-DD`, such as the day a UTC report or
+ * analytics period counts it in. The instant must fall in the years 0000 to 9999.
+ * @param value? The instant: a Date, a millisecond epoch, or a date string. Defaults to now.
+ * @returns The UTC date, such as `2026-10-17`.
+ * @example
+ * import { toUtcDate } from 'jg-utilities';
+ *
+ * toUtcDate('2026-10-17T23:30:00.000-05:00'); // => '2026-10-18'
+ * toUtcDate(0); // => '1970-01-01'
+ * toUtcDate(); // today's UTC date
+ * @throws
+ * - INVALID_DATE: The value is not a valid date in the years 0000 to 9999.
+ */
+export const toUtcDate = (value?: IDateValue): string => {
+  const date = value === undefined ? new Date() : toDate(value);
+  const timestamp = Number.isNaN(date.getTime()) ? '' : date.toISOString();
+  if (!FOUR_DIGIT_YEAR_TIMESTAMP.test(timestamp)) {
+    throw new Exception('The value is not a valid date in the years 0000 to 9999.', {
+      code: ERRORS.INVALID_DATE,
+      data: { value: String(value) },
+    });
+  }
+  return timestamp.slice(0, 10);
+};
+
 /**
  * Formats a date instance based on a template. The output is always en-US, whatever the runtime's
  * locale, and hours have no leading zero.

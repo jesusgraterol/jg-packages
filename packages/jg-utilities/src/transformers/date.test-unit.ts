@@ -6,7 +6,7 @@ import { expectToThrowCode } from 'jg-exception/testing';
 
 import type { IDateTemplate, ITimeString } from './types.js';
 import { DATE_LOCALE, DATE_TEMPLATES_WITH_TIME } from './constants.js';
-import { createTimestamp, prettifyDate, prettifyTime, toDate, toMS } from './date.js';
+import { createTimestamp, prettifyDate, prettifyTime, toDate, toMS, toUtcDate } from './date.js';
 
 describe('toDate', () => {
   test.each(<Array<[number | string | Date]>>[
@@ -249,5 +249,42 @@ describe('createTimestamp', () => {
 
   test.each([['not a date'], [Number.NaN]])('createTimestamp(%o) -> throws', (value) => {
     expect(() => createTimestamp(value)).toThrow(RangeError);
+  });
+});
+
+describe('toUtcDate', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test.each([
+    ['2026-10-17T23:30:00.000-05:00', '2026-10-18'],
+    ['2026-10-18T00:30:00.000+05:00', '2026-10-17'],
+    ['2026-10-17T00:00:00.000Z', '2026-10-17'],
+    ['2026-10-17T23:59:59.999Z', '2026-10-17'],
+    [0, '1970-01-01'],
+    [-1, '1969-12-31'],
+    [Date.UTC(2028, 1, 29, 12), '2028-02-29'],
+    [new Date('0000-01-01T00:00:00.000Z'), '0000-01-01'],
+    [new Date('9999-12-31T23:59:59.999Z'), '9999-12-31'],
+  ])('toUtcDate(%o) -> %s', (value, expected) => {
+    expect(toUtcDate(value)).toBe(expected);
+  });
+
+  test("uses the current time's UTC date by default", () => {
+    vi.useFakeTimers({ now: Date.parse('2026-10-17T23:59:59.000Z') });
+
+    expect(toUtcDate()).toBe('2026-10-17');
+  });
+
+  test.each([
+    ['not a date'],
+    [Number.NaN],
+    [Number.POSITIVE_INFINITY],
+    [new Date(Number.NaN)],
+    [Date.parse('0000-01-01T00:00:00.000Z') - 1],
+    [Date.parse('9999-12-31T23:59:59.999Z') + 1],
+  ])('toUtcDate(%o) -> throws INVALID_DATE', (value) => {
+    expectToThrowCode(() => toUtcDate(value), ERRORS.INVALID_DATE);
   });
 });

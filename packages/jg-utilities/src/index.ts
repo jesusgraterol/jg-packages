@@ -43,6 +43,7 @@ export {
   prettifyNumber,
   prettifyPercentage,
   toDate,
+  toUtcDate,
   createTimestamp,
   prettifyDate,
   prettifyTime,
@@ -52,6 +53,7 @@ export {
   toTitleCase,
   toSlug,
   truncateText,
+  truncateToUtf8Bytes,
   maskMiddle,
   normalizeQuery,
   stringifyValue,
@@ -79,9 +81,12 @@ export {
 // utilities
 export type {
   IDelayOptions,
+  IEventBus,
+  IEventBusOptions,
   IFilterByQueryOptions,
   IRetryAsyncFunctionOptions,
   ISortDirection,
+  IUtcDateRange,
   IWaitUntilOptions,
 } from './utils/index.js';
 
@@ -93,6 +98,8 @@ export {
   generateRandomInteger,
   generateSequence,
   generateDateId,
+  getTrailingUtcDateRange,
+  generateUtcDateSequence,
   sortPrimitives,
   sortRecords,
   sortRecordsWithBigIntString,
@@ -107,6 +114,7 @@ export {
   delay,
   retryAsyncFunction,
   waitUntil,
+  createEventBus,
   hasWindow,
   hasNavigator,
   isIndexedDbAvailable,

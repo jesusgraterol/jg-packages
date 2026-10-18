@@ -82,6 +82,64 @@ export const truncateText = (text: string, maxLength: number): string => {
 };
 
 /**
+ * Gives the number of bytes a code point takes in UTF-8: 4 for a surrogate pair, and up to 3 for a
+ * single UTF-16 code unit. A lone surrogate counts as 3, the size of the U+FFFD that `TextEncoder`
+ * writes for it.
+ * @param codePoint The code point, as the string iterating a string gives.
+ * @returns From 1 to 4.
+ */
+const getUtf8ByteLength = (codePoint: string): number => {
+  if (codePoint.length === 2) {
+    return 4;
+  }
+  const codeUnit = codePoint.charCodeAt(0);
+  if (codeUnit < 0x80) {
+    return 1;
+  }
+  return codeUnit < 0x800 ? 2 : 3;
+};
+
+/**
+ * Shortens a string to the longest prefix of whole code points that fits a number of UTF-8 bytes,
+ * such as a push notification's body under the provider's payload limit. A character made of
+ * several code points, such as an emoji with a skin tone, can lose its last ones, but a code point
+ * is never split.
+ * @param text The string.
+ * @param maxBytes The most bytes the result may take in UTF-8, a non-negative safe integer.
+ * @returns The string itself when it fits, otherwise its longest prefix that does.
+ * @example
+ * import { truncateToUtf8Bytes } from 'jg-utilities';
+ *
+ * truncateToUtf8Bytes('Hello, world', 5); // => 'Hello'
+ * truncateToUtf8Bytes('café au lait', 4); // => 'caf'
+ * truncateToUtf8Bytes('café au lait', 5); // => 'café'
+ * @throws
+ * - INVALID_BYTE_LIMIT: The byte limit must be a non-negative safe integer.
+ */
+export const truncateToUtf8Bytes = (text: string, maxBytes: number): string => {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 0) {
+    throw new Exception('The byte limit must be a non-negative safe integer.', {
+      code: ERRORS.INVALID_BYTE_LIMIT,
+      data: { maxBytes: String(maxBytes) },
+    });
+  }
+  // a UTF-16 code unit never takes more than 3 bytes, so a string this short always fits
+  if (text.length * 3 <= maxBytes) {
+    return text;
+  }
+  let byteLength = 0;
+  let end = 0;
+  for (const codePoint of text) {
+    byteLength += getUtf8ByteLength(codePoint);
+    if (byteLength > maxBytes) {
+      return text.slice(0, end);
+    }
+    end += codePoint.length;
+  }
+  return text;
+};
+
+/**
  * Masks the middle of a string, keeping a specified number of visible characters at the start and
  * end.
  * @param text The string value to mask.

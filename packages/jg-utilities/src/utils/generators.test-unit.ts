@@ -1,13 +1,20 @@
 // @vitest-environment node
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
+import { expectToThrowCode } from 'jg-exception/testing';
+
+import { ERRORS } from '../shared/errors.js';
+
 import {
   generateDateId,
   generateRandomFloat,
   generateRandomInteger,
   generateRandomString,
   generateSequence,
+  generateUtcDateSequence,
+  getTrailingUtcDateRange,
 } from './generators.js';
+import type { IUtcDateRange } from './types.js';
 
 /**
  * Replaces crypto.getRandomValues with one that returns the given 32-bit values in order, then
@@ -154,4 +161,106 @@ describe('Generators', () => {
       expect(generateDateId()).toBe('2025_03_09');
     });
   });
+});
+
+describe('getTrailingUtcDateRange', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test.each([
+    [1, '2026-10-17T08:30:00.000Z', { fromDate: '2026-10-17', toDate: '2026-10-17' }],
+    [7, '2026-10-17T08:30:00.000Z', { fromDate: '2026-10-11', toDate: '2026-10-17' }],
+    [3, '2028-03-01T00:00:00.000Z', { fromDate: '2028-02-28', toDate: '2028-03-01' }],
+    [2, '2027-01-01T05:00:00.000+08:00', { fromDate: '2026-12-30', toDate: '2026-12-31' }],
+    [731, '2026-10-17T00:00:00.000Z', { fromDate: '2024-10-17', toDate: '2026-10-17' }],
+    [1, '0000-01-01T00:00:00.000Z', { fromDate: '0000-01-01', toDate: '0000-01-01' }],
+  ])('getTrailingUtcDateRange(%d, %s) -> %o', (dayCount, value, expected) => {
+    expect(getTrailingUtcDateRange(dayCount, value)).toStrictEqual(expected);
+  });
+
+  test('ends on the current UTC date by default', () => {
+    vi.useFakeTimers({ now: Date.parse('2026-10-17T23:59:59.000Z') });
+
+    expect(getTrailingUtcDateRange(2)).toStrictEqual({
+      fromDate: '2026-10-16',
+      toDate: '2026-10-17',
+    });
+  });
+
+  test.each([[0], [-1], [1.5], [Number.NaN], [Number.POSITIVE_INFINITY], [2 ** 53]])(
+    'getTrailingUtcDateRange(%d) -> throws INVALID_DAY_COUNT',
+    (dayCount) => {
+      expectToThrowCode(
+        () => getTrailingUtcDateRange(dayCount, '2026-10-17T00:00:00.000Z'),
+        ERRORS.INVALID_DAY_COUNT,
+      );
+    },
+  );
+
+  test('throws INVALID_DAY_COUNT for a range that would start before the year 0000', () => {
+    expectToThrowCode(
+      () => getTrailingUtcDateRange(2, '0000-01-01T00:00:00.000Z'),
+      ERRORS.INVALID_DAY_COUNT,
+    );
+  });
+
+  test.each([['not a date'], [Number.NaN]])(
+    'getTrailingUtcDateRange(7, %o) -> throws INVALID_DATE',
+    (value) => {
+      expectToThrowCode(() => getTrailingUtcDateRange(7, value), ERRORS.INVALID_DATE);
+    },
+  );
+});
+
+describe('generateUtcDateSequence', () => {
+  test('lists every date of a range, across a leap day and a year', () => {
+    expect(generateUtcDateSequence({ fromDate: '2028-02-28', toDate: '2028-03-01' })).toStrictEqual(
+      ['2028-02-28', '2028-02-29', '2028-03-01'],
+    );
+    expect(generateUtcDateSequence({ fromDate: '2026-12-31', toDate: '2027-01-01' })).toStrictEqual(
+      ['2026-12-31', '2027-01-01'],
+    );
+  });
+
+  test('gives one date for a range of one day', () => {
+    expect(generateUtcDateSequence({ fromDate: '2026-10-17', toDate: '2026-10-17' })).toStrictEqual(
+      ['2026-10-17'],
+    );
+  });
+
+  test('lists 731 consecutive dates for a two-year range, the one a trailing range gives', () => {
+    const dates = generateUtcDateSequence(getTrailingUtcDateRange(731, '2026-10-17T00:00:00.000Z'));
+
+    expect(dates).toHaveLength(731);
+    expect(dates[0]).toBe('2024-10-17');
+    expect(dates.at(-1)).toBe('2026-10-17');
+    expect(new Set(dates).size).toBe(731);
+  });
+
+  test.each([
+    ['a reversed range', { fromDate: '2026-10-18', toDate: '2026-10-17' }],
+    ['a day that does not exist', { fromDate: '2026-02-30', toDate: '2026-03-01' }],
+    ['a month that does not exist', { fromDate: '2026-01-01', toDate: '2026-13-01' }],
+    ['a timestamp', { fromDate: '2026-10-17T00:00:00Z', toDate: '2026-10-18' }],
+    ['a date without padding', { fromDate: '2026-1-1', toDate: '2026-01-02' }],
+    ['an empty date', { fromDate: '', toDate: '2026-01-02' }],
+    ['a missing date', { fromDate: '2026-01-01' }],
+    ['a number', { fromDate: 20_260_101, toDate: '2026-01-02' }],
+  ])('throws INVALID_DATE_RANGE for %s', (_, range) => {
+    expectToThrowCode(
+      () => generateUtcDateSequence(range as unknown as IUtcDateRange),
+      ERRORS.INVALID_DATE_RANGE,
+    );
+  });
+
+  test.each([[null], [undefined], ['2026-01-01']])(
+    'throws INVALID_DATE_RANGE for a range that is %o',
+    (range) => {
+      expectToThrowCode(
+        () => generateUtcDateSequence(range as unknown as IUtcDateRange),
+        ERRORS.INVALID_DATE_RANGE,
+      );
+    },
+  );
 });
