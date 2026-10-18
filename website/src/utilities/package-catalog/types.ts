@@ -4,6 +4,7 @@ export type IRuntime = 'universal' | 'browser' | 'node';
 // the Lucide icon that stands for what a package is for, named as Lucide names its `lucide-<name>`
 // class. docs/website.md explains how one is chosen
 export type IPackageIcon =
+  | 'atom'
   | 'braces'
   | 'calculator'
   | 'clipboard'

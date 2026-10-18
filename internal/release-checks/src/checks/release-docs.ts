@@ -57,7 +57,7 @@ const checkReadme = (name: string, readme: string): string[] => {
 };
 
 /**
- * Checks RECIPES.md's title, and that it has recipes, each with a ```ts block.
+ * Checks RECIPES.md's title, and that it has recipes, each with a ```ts or ```tsx block.
  * @param name The package name, which the title names.
  * @param markdown The file's text.
  * @returns One problem per missing part.
@@ -72,7 +72,7 @@ const checkRecipes = (name: string, markdown: string): string[] => {
     problems.push(`${RECIPES_FILE} has no recipes: give each one a \`## \` section`);
   }
   for (const { heading } of recipes.filter(({ blocks }) => blocks.length === 0)) {
-    problems.push(`the recipe "${heading}" in ${RECIPES_FILE} has no \`\`\`ts block`);
+    problems.push(`the recipe "${heading}" in ${RECIPES_FILE} has no \`\`\`ts or \`\`\`tsx block`);
   }
   return problems;
 };
@@ -81,7 +81,7 @@ const checkRecipes = (name: string, markdown: string): string[] => {
  * Check 5: the docs a release depends on ship with it. The changelog has a section for the
  * version, the README has the guidelines' title, summary, and sections, API.md is the package's
  * API reference as a fresh render of its TSDoc gives it, and RECIPES.md has its title and recipes,
- * each with a ```ts block. Packages with Astro components have no recipes, because their usage is
+ * each with a ```ts or ```tsx block. Packages with Astro components have no recipes, because their usage is
  * Astro markup.
  * @param manifest The packed manifest.
  * @param files The tarball's files.

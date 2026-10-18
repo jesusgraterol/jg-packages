@@ -111,6 +111,14 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['node'],
     order: 13,
   },
+  'jg-react': {
+    title: 'React hooks',
+    description:
+      'React hooks for online status, page visibility, Tailwind CSS breakpoints, and scroll thresholds, each safe in a server render.',
+    icon: 'atom',
+    runtimes: ['browser'],
+    order: 14,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/

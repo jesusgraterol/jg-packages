@@ -87,33 +87,39 @@ export const collectExamples = (reference: IApiReference): IPackageExample[] => 
   return [...examples.values()];
 };
 
-// a recipe in RECIPES.md: its heading, and the code of its ```ts blocks in order
-export type IRecipe = { heading: string; blocks: string[] };
+// a ```ts or ```tsx block of a recipe: its code, and whether it holds JSX
+export type IRecipeCode = { code: string; isJsx: boolean };
 
-// one ```ts block of a recipe, with the recipe's heading and the block's position in it, from 1
-export type IRecipeBlock = { recipe: string; position: number; code: string };
+// a recipe in RECIPES.md: its heading, and its ```ts and ```tsx blocks in order
+export type IRecipe = { heading: string; blocks: IRecipeCode[] };
+
+// one block of a recipe, with the recipe's heading and the block's position in it, from 1
+export type IRecipeBlock = IRecipeCode & { recipe: string; position: number };
 
 /**
- * Reads the recipes of a RECIPES.md: each `## ` section, with its ```ts blocks. Headings inside a
+ * Reads the recipes of a RECIPES.md: each `## ` section, with its ```ts and ```tsx blocks, the
+ * latter for a package with a React peer, whose recipes render components. Headings inside a
  * code block don't start a recipe, and blocks before the first recipe belong to none.
  * @param markdown The file's text.
  * @returns The recipes, in order.
  */
 export const readRecipes = (markdown: string): IRecipe[] => {
   const recipes: IRecipe[] = [];
-  let fence: { isTypeScript: boolean; lines: string[] } | undefined;
+  let fence: { language: string; lines: string[] } | undefined;
   for (const line of markdown.split('\n')) {
     if (fence !== undefined) {
       if (/^```\s*$/.test(line)) {
-        if (fence.isTypeScript) {
-          recipes.at(-1)?.blocks.push(fence.lines.join('\n'));
+        if (fence.language === 'ts' || fence.language === 'tsx') {
+          recipes
+            .at(-1)
+            ?.blocks.push({ code: fence.lines.join('\n'), isJsx: fence.language === 'tsx' });
         }
         fence = undefined;
       } else {
         fence.lines.push(line);
       }
     } else if (line.startsWith('```')) {
-      fence = { isTypeScript: /^```ts\s*$/.test(line), lines: [] };
+      fence = { language: line.slice(3).trim(), lines: [] };
     } else if (line.startsWith('## ')) {
       recipes.push({ heading: line.slice(3).trim(), blocks: [] });
     }
@@ -122,13 +128,14 @@ export const readRecipes = (markdown: string): IRecipe[] => {
 };
 
 /**
- * Lists every ```ts block of a RECIPES.md, with the recipe it belongs to and its position there.
+ * Lists every ```ts and ```tsx block of a RECIPES.md, with the recipe it belongs to and its
+ * position there.
  * @param markdown The file's text.
  * @returns The blocks, in order.
  */
 export const collectRecipeBlocks = (markdown: string): IRecipeBlock[] =>
   readRecipes(markdown).flatMap(({ heading, blocks }) =>
-    blocks.map((code, index) => ({ recipe: heading, position: index + 1, code })),
+    blocks.map((block, index) => ({ ...block, recipe: heading, position: index + 1 })),
   );
 
 // an example rewritten so its stated results are asserted, or why that's impossible
@@ -195,7 +202,8 @@ export const toRunnableExample = (code: string): IRunnableExample => {
 
 /**
  * Builds the compiler options the examples are typechecked with: the repository's strict settings,
- * without the unused-name rules examples don't need, and with Node.js and DOM globals.
+ * without the unused-name rules examples don't need, with Node.js and DOM globals, and with React's
+ * JSX transform for ```tsx recipes.
  * @returns A promise that resolves to the tsconfig.json content.
  */
 const buildExamplesTsconfig = async (): Promise<string> => {
@@ -209,10 +217,11 @@ const buildExamplesTsconfig = async (): Promise<string> => {
       noUnusedParameters: false,
       noEmit: true,
       lib: ['es2023', 'dom', 'dom.iterable'],
+      jsx: 'react-jsx',
       types: ['node'],
       typeRoots: [dirname(dirname(require.resolve('@types/node/package.json')))],
     },
-    include: ['*.ts'],
+    include: ['*.ts', '*.tsx'],
   });
 };
 
@@ -273,7 +282,9 @@ const checkPackageExamples = async (
   await Promise.all(
     [
       ...examples.map(({ code }, index) => [fileName(index), code] as const),
-      ...recipeBlocks.map(({ code }, index) => [`recipe-${fileName(index)}`, code] as const),
+      ...recipeBlocks.map(
+        ({ code, isJsx }, index) => [`recipe-${fileName(index)}${isJsx ? 'x' : ''}`, code] as const,
+      ),
     ].map(([file, code]) => writeFile(join(directory, file), `${code}\n\nexport {};\n`)),
   );
   const declarations = join(packageDirectory, EXAMPLES_DECLARATIONS_FILE);
@@ -294,7 +305,7 @@ const checkPackageExamples = async (
     { cwd: directory },
   );
   for (const line of typecheck.stdout.split('\n')) {
-    const diagnostic = /^(recipe-)?(\d{3})\.ts\((\d+),(\d+)\): error (TS\d+: .*)$/.exec(line);
+    const diagnostic = /^(recipe-)?(\d{3})\.tsx?\((\d+),(\d+)\): error (TS\d+: .*)$/.exec(line);
     if (diagnostic === null) {
       continue;
     }

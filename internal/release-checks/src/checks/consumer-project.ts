@@ -17,7 +17,26 @@ export type IConsumerProject = {
 };
 
 /**
- * Installs every tarball together into a temporary ESM project, which checks 2 and 8 share.
+ * Lists the React types a package with a React peer was tested with, so its JSX recipes and its
+ * hooks typecheck in the consumer project, as they do in an app that has React. npm installs the
+ * peers themselves, but types aren't peers.
+ * @param packages The packed packages.
+ * @returns The type packages, as `name@version`, without repeats.
+ */
+export const listPeerTypePackages = (packages: IPackedPackage[]): string[] => [
+  ...new Set(
+    packages.flatMap(({ packedManifest }) => {
+      const version = packedManifest.devDependencies?.['@types/react'];
+      return packedManifest.peerDependencies?.['react'] === undefined || version === undefined
+        ? []
+        : [`@types/react@${version}`];
+    }),
+  ),
+];
+
+/**
+ * Installs every tarball together into a temporary ESM project, which checks 2 and 8 share, with
+ * the React types a package with a React peer was tested with.
  * @param packages The packed packages.
  * @param runCommand Runs a command.
  * @returns A promise that resolves to the project.
@@ -42,6 +61,7 @@ export const installConsumerProject = async (
         '--no-fund',
         '--no-package-lock',
         ...packages.map(({ tarballPath }) => tarballPath),
+        ...listPeerTypePackages(packages),
       ],
       { cwd: directory },
     );

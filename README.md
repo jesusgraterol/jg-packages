@@ -19,6 +19,7 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 | [`jg-env`](packages/jg-env)                   | Reads environment variables strictly from any source, and secrets from files, with errors that name the key and never the value.      |
 | [`jg-postgres`](packages/jg-postgres)         | node-postgres helpers: safe transactions, advisory locks, SQLSTATE checks, cursor pages, and ordered lists.                           |
 | [`jg-redis`](packages/jg-redis)               | A read-through cache that survives Redis failing, and fail-closed one-time claims, on node-redis.                                     |
+| [`jg-react`](packages/jg-react)               | React hooks for online status, page visibility, Tailwind CSS breakpoints, and scroll thresholds.                                      |
 
 [`jg-personal-astro-ui`](packages/jg-personal-astro-ui) is also published from `packages/`: the Astro components and theme Jesus Graterol's own sites share. It isn't meant for general use, so the website doesn't list it.
 
