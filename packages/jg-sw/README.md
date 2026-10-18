@@ -135,6 +135,7 @@ await writeServiceWorker(config, { environment: 'production' }); // '/app/dist/s
 - The page activates a waiting worker by posting `{ type: 'JG_SW_SKIP_WAITING' }` to it.
 - `activate` deletes the older caches in its own namespace, keeps every other cache, then claims its clients.
 - It answers same-origin `GET` requests from the current version's cache, then from the network, and caches successful responses unless they're opaque, partial, marked `Vary: *`, marked `Cache-Control: no-store` or `private`, or of an excluded MIME type. A failed cache write never replaces a valid response.
+- When a navigation is in neither its cache nor the network's reach, such as offline, it answers with the `navigationFallback` page when one is set, and otherwise with a `408` network error. A `4xx` or `5xx` from the server is passed through as it is.
 
 ### Firebase Cloud Messaging
 
