@@ -134,11 +134,20 @@ describe('withSessionLock', () => {
 
     const outcome = withSessionLock(postgres, key, async (lock) => {
       releaseSpy = vi.spyOn(lock.client, 'release');
+      // added after withSessionLock's own listener, so it runs once that one has seen the end
+      let hasEnded = false;
+      lock.client.on('end', () => {
+        hasEnded = true;
+      });
       const [row] = (await lock.client.query<{ pid: number }>('SELECT pg_backend_pid() AS pid;'))
         .rows;
       await postgres.query('SELECT pg_terminate_backend($1);', [row?.pid]);
+      // both signs of the loss reach the lock: the error, which it reports, and the connection's
+      // end, which carries no error and can come later
       await vi.waitFor(() => {
         expect(lock.isActive()).toBe(false);
+        expect(onError).toHaveBeenCalled();
+        expect(hasEnded).toBe(true);
       });
       lock.assertActive();
     });

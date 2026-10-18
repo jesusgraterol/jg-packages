@@ -1,6 +1,6 @@
 {
   "name": "jg-tanstack-query",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TanStack Query for React apps: a client with safe defaults, opt-in IndexedDB persistence, and a sign-out clear that waits for restore.",
   "author": "Jesus Graterol",
   "license": "MIT",
