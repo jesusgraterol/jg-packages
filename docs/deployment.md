@@ -32,7 +32,7 @@ gh api --method PUT repos/jesusgraterol/jg-packages/pages -f build_type=workflow
 
 ## Markdown for agents
 
-Each page's Markdown version is a static file, `index.md`, beside its `index.html`. Two Cloudflare Transform Rules let an agent get it from the page's own URL by sending `Accept: text/markdown`, while browsers keep getting HTML. Create each in the `jesusgraterol.dev` zone from **Rules** > **Overview** > **Create rule**, choosing **Custom filter expression** and pasting the expression into the **Expression Editor**:
+Each page's Markdown version is a static file, `index.md`, beside its `index.html`. Two Cloudflare Transform Rules let an agent get it from the page's own URL by sending `Accept: text/markdown`, while browsers keep getting HTML. Create each in the `jesusgraterol.dev` zone from **Rules** > **Overview**, with the **Create rule** button of its rule type's box. Choose **Custom filter expression**, select **Edit expression**, and paste the expression into the box:
 
 1. **The rewrite.** Create a **URL Rewrite Rule**:
    - Name: `jg-packages Markdown`.
