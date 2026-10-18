@@ -44,6 +44,7 @@
     "jg-api-response": "workspace:*",
     "jg-bignumber": "workspace:*",
     "jg-clipboard": "workspace:*",
+    "jg-env": "workspace:*",
     "jg-exception": "workspace:*",
     "jg-fetch": "workspace:*",
     "jg-fs": "workspace:*",

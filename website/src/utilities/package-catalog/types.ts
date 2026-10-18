@@ -12,6 +12,7 @@ export type IPackageIcon =
   | 'database'
   | 'folder-open'
   | 'globe'
+  | 'key-round'
   | 'octagon-alert'
   | 'wrench';
 

@@ -87,6 +87,14 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['browser'],
     order: 10,
   },
+  'jg-env': {
+    title: 'Environment',
+    description:
+      'Strict environment variable readers for process.env or import.meta.env, plus secret files, with errors that name the key and never the value.',
+    icon: 'key-round',
+    runtimes: ['universal'],
+    order: 11,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/
