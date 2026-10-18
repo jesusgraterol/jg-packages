@@ -1,8 +1,13 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { DESCRIPTION_LENGTH, UNLISTED_PACKAGES } from './constants.ts';
-import type { IListedPackage, IPackageCatalogEntry, IWorkspaceManifest } from './types.ts';
+import { DESCRIPTION_LENGTH, RUNTIMES, UNLISTED_PACKAGES } from './constants.ts';
+import type {
+  IListedPackage,
+  IPackageCatalogEntry,
+  IRuntime,
+  IWorkspaceManifest,
+} from './types.ts';
 
 /**
  * Lists the problems between the catalog and the workspace's packages: every published package
@@ -104,3 +109,27 @@ export const loadListedPackages = async (
     .map(({ name, version }) => ({ ...(catalog[name] as IPackageCatalogEntry), name, version }))
     .sort((first, second) => first.order - second.order);
 };
+
+// the packages of one runtime, as the home page groups them, with the runtime's heading and summary
+export type IRuntimeGroup = {
+  heading: string;
+  packages: IListedPackage[];
+  runtime: IRuntime;
+  summary: string;
+};
+
+/**
+ * Groups the packages by their first runtime, in the order RUNTIMES lists the runtimes, leaving out
+ * runtimes without packages.
+ * @param packages The listed packages, in catalog order.
+ * @returns The groups.
+ */
+export const groupPackagesByRuntime = (packages: readonly IListedPackage[]): IRuntimeGroup[] =>
+  (Object.keys(RUNTIMES) as IRuntime[])
+    .map((runtime) => ({
+      heading: RUNTIMES[runtime].heading,
+      packages: packages.filter(({ runtimes }) => runtimes[0] === runtime),
+      runtime,
+      summary: RUNTIMES[runtime].summary,
+    }))
+    .filter((group) => group.packages.length > 0);

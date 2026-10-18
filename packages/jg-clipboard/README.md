@@ -45,7 +45,7 @@ await copyHtml('<strong>Order #42</strong> shipped', { text: 'Order #42 shipped'
 await copyImage(fetch('/chart.jpg').then((response) => response.blob()));
 ```
 
-Read from a paste button. `readClipboard` reads the text, HTML, and image with one call, so the person pasting sees one prompt at most:
+Read from a paste button. `readClipboard` reads the text, HTML, and image with one call, so the person pasting sees one prompt at most. An image the browser can't read comes back as `null` when text or HTML was copied with it, so the text still pastes:
 
 ```ts
 import { readClipboard, readText } from 'jg-clipboard';
@@ -75,7 +75,7 @@ Every failure is an `Exception` with one of these codes, and the browser's error
 | `CLIPBOARD_NOT_FOCUSED`       | The browser refused because the page doesn't have focus                                                                                            |
 | `CLIPBOARD_NO_USER_GESTURE`   | The browser refused because the call didn't follow a click or a key press                                                                          |
 | `CLIPBOARD_PERMISSION_DENIED` | The browser refused for any other reason, such as a denied or dismissed permission; `data.permission` holds the Permissions API's state, or `null` |
-| `CLIPBOARD_INVALID_IMAGE`     | The image can't be decoded, so it can't be copied as PNG                                                                                           |
+| `CLIPBOARD_INVALID_IMAGE`     | The image can't be decoded as PNG: an image to copy, or one `readClipboard` read without text or HTML beside it                                    |
 | `CLIPBOARD_WRITE_FAILED`      | A copy failed otherwise, such as content whose promise rejected                                                                                    |
 | `CLIPBOARD_READ_FAILED`       | A read failed otherwise                                                                                                                            |
 

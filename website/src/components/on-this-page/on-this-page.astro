@@ -20,6 +20,7 @@ const { items, variant } = Astro.props;
   <nav
     aria-label="On this page"
     class="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-2 pb-8"
+    data-pagefind-ignore
   >
     <p class="eyebrow">On this page</p>
     <ul class="mt-4 grid gap-1 border-l border-border text-sm">
@@ -50,7 +51,10 @@ const { items, variant } = Astro.props;
     </ul>
   </nav>
 ) : (
-  <details class="group rounded-xl border border-border bg-surface">
+  <details
+    class="group rounded-xl border border-border bg-surface"
+    data-pagefind-ignore
+  >
     <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold marker:content-none [&::-webkit-details-marker]:hidden">
       On this page
       <span

@@ -52,7 +52,7 @@ export default defineConfig({
 
 ## Documentation
 
-The token contract, every component, and how to use them in a site are in [docs/personal-astro-ui.md](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md). The reference of its TypeScript modules ships in the package as `API.md`.
+The token contract, every component, and how to use them in a site are in [docs/personal-astro-ui.md](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md). The reference of its TypeScript modules, such as `./seo` for a page's JSON-LD and `./llms-text` for llms.txt, ships in the package as `API.md`.
 
 ## License
 

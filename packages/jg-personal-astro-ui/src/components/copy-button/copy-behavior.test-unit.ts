@@ -14,34 +14,44 @@ import { getCopyGuidance } from './copy-guidance.ts';
  * stubbed. The browser test runs the same behavior on real markup in Chromium, Firefox, and WebKit.
  */
 
-// the parts of a copy button the fakes record
+// the parts of a copy button the fakes record: a hint for a button with a URL holds the guidance in
+// its own element, above the link
 type IFakeParts = {
   label: { textContent: string };
   status: { textContent: string };
-  hint: { textContent: string; hidden: boolean };
+  hint: {
+    textContent: string;
+    hidden: boolean;
+    querySelector: () => { textContent: string } | null;
+  };
+  hintText: { textContent: string } | null;
 };
 
 /**
  * Builds a fake copy button with its label, status, and hint, inside a code window or not.
  * @param options Its data attributes, its code window's code, the text of the elements it can
- * name, and whether it has its label and wrapper.
+ * name, its label, and whether it has its label and wrapper.
  * @returns The button and its parts.
  */
 const createButton = ({
   dataset = {},
   windowCode,
   elements = {},
+  label = 'Copy',
   bare = false,
 }: {
   dataset?: Record<string, string>;
   windowCode?: string | null;
   elements?: Record<string, string | null>;
+  label?: string;
   bare?: boolean;
 } = {}): { button: HTMLElement } & IFakeParts => {
+  const hintText = dataset['copyUrl'] === undefined ? null : { textContent: '' };
   const parts: IFakeParts = {
-    label: { textContent: 'Copy' },
+    label: { textContent: label },
     status: { textContent: '' },
-    hint: { textContent: '', hidden: true },
+    hint: { textContent: '', hidden: true, querySelector: () => hintText },
+    hintText,
   };
   const wrapper = {
     querySelector: (selector: string) =>
@@ -71,6 +81,18 @@ const stubClipboard = (writeText: (text: string) => Promise<void>): void => {
   vi.stubGlobal('isSecureContext', true);
   vi.stubGlobal('navigator', { clipboard: { writeText } });
 };
+
+/**
+ * Stubs fetch with one answer for every request.
+ * @param answer The response's status and text, or the error the request fails with.
+ * @returns The stub, which records the requests.
+ */
+const stubFetch = (answer: { status: number; text: string } | Error) =>
+  vi.fn<(url: string) => Promise<Response>>(() =>
+    answer instanceof Error
+      ? Promise.reject(answer)
+      : Promise.resolve(new Response(answer.text, { status: answer.status })),
+  );
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -106,6 +128,37 @@ describe('readCopyText', () => {
         createButton({ dataset: { copySource: 'empty' }, elements: { empty: null } }).button,
       ),
     ).toBeUndefined();
+  });
+
+  test('reads the text at its URL, after its own text', async () => {
+    const fetch = stubFetch({ status: 200, text: '# jg-fs\n' });
+    vi.stubGlobal('fetch', fetch);
+
+    expect(
+      readCopyText(createButton({ dataset: { copyText: 'own', copyUrl: '/index.md' } }).button),
+    ).toBe('own');
+    await expect(
+      readCopyText(
+        createButton({ dataset: { copyUrl: '/packages/jg-fs/index.md', copySource: 'command' } })
+          .button,
+      ),
+    ).resolves.toBe('# jg-fs\n');
+    expect(fetch).toHaveBeenCalledExactlyOnceWith('/packages/jg-fs/index.md');
+  });
+
+  test('rejects when the text at its URL fails to load', async () => {
+    vi.stubGlobal('fetch', stubFetch({ status: 404, text: 'Not found' }));
+    await expect(
+      readCopyText(createButton({ dataset: { copyUrl: '/missing.md' } }).button),
+    ).rejects.toThrow(
+      "The text to copy couldn't be loaded from /missing.md: the server answered 404.",
+    );
+
+    const failure = new TypeError('Failed to fetch');
+    vi.stubGlobal('fetch', stubFetch(failure));
+    await expect(
+      readCopyText(createButton({ dataset: { copyUrl: '/index.md' } }).button),
+    ).rejects.toBe(failure);
   });
 
   test("reads its code window's code, or nothing outside one", () => {
@@ -147,11 +200,59 @@ describe('copyFromButton', () => {
 
     await copyFromButton(button);
 
-    const guidance = getCopyGuidance(ERRORS.CLIPBOARD_PERMISSION_DENIED, 'npm install command');
+    const guidance = getCopyGuidance(ERRORS.CLIPBOARD_PERMISSION_DENIED, {
+      context: 'npm install command',
+    });
     expect(button.dataset['copyState']).toBe('error');
     expect(label.textContent).toBe('Copy failed');
     expect(status.textContent).toBe(guidance);
-    expect(hint).toStrictEqual({ textContent: guidance, hidden: false });
+    expect(hint.textContent).toBe(guidance);
+    expect(hint.hidden).toBe(false);
+  });
+
+  test('copies the text at its URL, and resets to its own label', async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    stubClipboard(writeText);
+    vi.stubGlobal('fetch', stubFetch({ status: 200, text: '# jg-fs\n\nFile system helpers.\n' }));
+    const { button, label } = createButton({
+      dataset: { copyUrl: '/packages/jg-fs/index.md', copyContext: 'as Markdown' },
+      label: 'Copy page',
+    });
+
+    await copyFromButton(button);
+
+    expect(writeText).toHaveBeenCalledWith('# jg-fs\n\nFile system helpers.\n');
+    expect(label.textContent).toBe('Copied');
+    vi.advanceTimersByTime(2_000);
+    expect(label.textContent).toBe('Copy page');
+  });
+
+  test('guides to the link when the text at its URL fails to load', async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    stubClipboard(writeText);
+    vi.stubGlobal('fetch', stubFetch({ status: 500, text: 'Server error' }));
+    const { button, label, status, hint, hintText } = createButton({
+      dataset: { copyUrl: '/packages/jg-fs/index.md', copyContext: 'as Markdown' },
+      label: 'Copy page',
+    });
+
+    await copyFromButton(button);
+
+    const guidance = getCopyGuidance(ERRORS.CLIPBOARD_WRITE_FAILED, {
+      context: 'as Markdown',
+      label: 'Copy page',
+      linked: true,
+    });
+    expect(writeText).not.toHaveBeenCalled();
+    expect(label.textContent).toBe('Copy failed');
+    expect(status.textContent).toBe(guidance);
+    // the guidance goes above the link, which stays in the hint
+    expect(hintText?.textContent).toBe(guidance);
+    expect(hint.textContent).toBe('');
+    expect(hint.hidden).toBe(false);
+
+    await copyFromButton(button);
+    expect(label.textContent).toBe('Copy failed');
   });
 
   test('guides a browser without the clipboard, and keeps the guidance until the next click', async () => {
@@ -161,7 +262,9 @@ describe('copyFromButton', () => {
     await copyFromButton(button);
     vi.advanceTimersByTime(10_000);
 
-    expect(hint.textContent).toBe(getCopyGuidance(ERRORS.CLIPBOARD_UNSUPPORTED, 'text'));
+    expect(hint.textContent).toBe(
+      getCopyGuidance(ERRORS.CLIPBOARD_UNSUPPORTED, { context: 'text' }),
+    );
     expect(hint.hidden).toBe(false);
   });
 
@@ -173,7 +276,7 @@ describe('copyFromButton', () => {
     await copyFromButton(button);
 
     expect(writeText).not.toHaveBeenCalled();
-    expect(hint.textContent).toBe(getCopyGuidance(null, 'text'));
+    expect(hint.textContent).toBe(getCopyGuidance(null, { context: 'text' }));
   });
 
   test('clears the last outcome and its reset timer when clicked again', async () => {
@@ -188,12 +291,15 @@ describe('copyFromButton', () => {
 
     // the success's reset timer never fires over the failure
     expect(label.textContent).toBe('Copy failed');
-    expect(hint.textContent).toBe(getCopyGuidance(ERRORS.CLIPBOARD_WRITE_FAILED, 'text'));
+    expect(hint.textContent).toBe(
+      getCopyGuidance(ERRORS.CLIPBOARD_WRITE_FAILED, { context: 'text' }),
+    );
 
     fail = false;
     await copyFromButton(button);
     expect(label.textContent).toBe('Copied');
-    expect(hint).toStrictEqual({ textContent: '', hidden: true });
+    expect(hint.textContent).toBe('');
+    expect(hint.hidden).toBe(true);
   });
 
   test('shows only the latest click, whichever copy settles last', async () => {

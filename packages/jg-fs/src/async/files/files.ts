@@ -6,7 +6,6 @@ import {
   mkdir,
   open,
   readFile as readFileNode,
-  rename,
   rm,
   symlink,
   unlink,
@@ -31,7 +30,13 @@ import {
 } from '../../shared/index.js';
 import { getPathElement } from '../general/index.js';
 
-import { openWithoutFollowing, readPermissionBits, syncDirectory } from './utilities.js';
+import {
+  openWithoutFollowing,
+  readPermissionBits,
+  renameReplacing,
+  resolveWriteTarget,
+  syncDirectory,
+} from './utilities.js';
 
 /**
  * Checks whether a path exists and is a regular file.
@@ -85,7 +90,9 @@ export const writeTextFile = async (path: string, data: string): Promise<void> =
 };
 
 /**
- * Writes a JSON file. A string is written as given; anything else is stringified.
+ * Writes a JSON file atomically, as writeFileAtomic does, so a crash or a full disk never leaves a
+ * truncated file that won't parse. A symbolic link at the path keeps pointing at the file, whose
+ * target is replaced. A string is written as given; anything else is stringified.
  * @param path The file's path.
  * @param data The value, or its JSON text.
  * @param space The indentation for stringified values.
@@ -102,7 +109,8 @@ export const writeJsonFile = async <T = Record<string, unknown>>(
   data: T | string,
   space: number = 2,
 ): Promise<void> => {
-  await writeFile(path, serializeJsonData(path, data, space), { encoding: 'utf-8' });
+  const content = serializeJsonData(path, data, space);
+  await writeFileAtomic(await resolveWriteTarget(path), content);
 };
 
 /**
@@ -165,9 +173,11 @@ export const readTextFile = (path: string): Promise<string> =>
 
 /**
  * Reads and parses a JSON file, and validates it with the schema when there is one. Without a
- * schema, the value is `unknown`, or the type you pass.
+ * schema, the value is `unknown`, or the type you pass. With `maxBytes`, it reads the file as
+ * readBoundedFile does, for a file whose size isn't yours to decide.
  * @param path The file's path.
- * @param options The schema, such as a Zod schema, whose errors propagate unchanged.
+ * @param options The schema, such as a Zod schema, whose errors propagate unchanged, and the
+ * largest file accepted, in bytes.
  * @returns A promise that resolves to the parsed value.
  * @example
  * import { readJsonFile } from 'jg-fs';
@@ -179,12 +189,20 @@ export const readTextFile = (path: string): Promise<string> =>
  * const value = await readJsonFile('data.json'); // unknown
  * @throws
  * - NOT_A_FILE: if the path doesn't exist or is not a file
+ * - FILE_TOO_LARGE: if the file holds more than maxBytes bytes
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the file's JSON content cannot be parsed
  */
 export const readJsonFile = async <T = unknown>(
   path: string,
   options: IReadJsonFileOptions<T> = {},
-): Promise<T> => parseJsonContent(path, await readTextFile(path), options.schema);
+): Promise<T> =>
+  parseJsonContent(
+    path,
+    options.maxBytes === undefined
+      ? await readTextFile(path)
+      : (await readBoundedFile(path, options.maxBytes)).toString('utf-8'),
+    options.schema,
+  );
 
 /**
  * Reads a binary file. An empty file reads as an empty Buffer.
@@ -268,7 +286,9 @@ export const createFileSymLink = async (target: string, path: string): Promise<v
  * to disk and renamed over the path; on POSIX, the directory is flushed too. An explicit mode wins;
  * without one, a replaced file keeps its permission bits and a new file gets the platform default.
  * The temporary file is never more widely readable than the final mode. When writing fails before
- * the rename, the temporary file is removed and the destination is untouched.
+ * the rename, the temporary file is removed and the destination is untouched. While Windows refuses
+ * the rename because another process, such as an antivirus scanner, holds the file, it tries again
+ * for about 4 seconds. A symbolic link at the path is replaced by the file.
  * @param path The file's path.
  * @param data The content.
  * @param mode The permission bits of the written file, such as `0o600`.
@@ -302,7 +322,7 @@ export const writeFileAtomic = async (
     } finally {
       await handle.close();
     }
-    await rename(tempPath, path);
+    await renameReplacing(tempPath, path);
     isRenamed = true;
   } finally {
     if (!isRenamed) {

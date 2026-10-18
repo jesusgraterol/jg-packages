@@ -51,6 +51,9 @@ export type IDeployOptions = {
 
   // makes the new worker's install fail, by precaching a file the server no longer has
   failInstall?: boolean;
+
+  // precaches the app's page and answers offline navigations with it
+  navigationFallback?: boolean;
 };
 
 // the fixture app's server
@@ -60,6 +63,9 @@ export type IFixtureServer = {
   // builds the app's files and its worker for a version, and serves them from now on. Each
   // worker gets a random cache name, so the browser always finds a new worker after a deploy
   deploy: (version: string, options?: IDeployOptions) => Promise<void>;
+
+  // drops every connection while offline, as an unreachable server would
+  setOffline: (offline: boolean) => void;
   close: () => Promise<void>;
 };
 
@@ -98,8 +104,13 @@ export const startFixtureServer = async (): Promise<IFixtureServer> => {
   const appDirectory = await mkdtemp(join(tmpdir(), 'jg-sw-e2e-'));
   const outDir = join(appDirectory, 'dist');
   let installDelayMs = 0;
+  let offline = false;
 
   const server: Server = createServer((request, response) => {
+    if (offline) {
+      request.socket.destroy();
+      return;
+    }
     const path = new URL(request.url ?? '/', 'http://localhost').pathname;
     const handle = async (): Promise<boolean> => {
       if (path === '/' || path === '/index.html') {
@@ -155,6 +166,9 @@ export const startFixtureServer = async (): Promise<IFixtureServer> => {
     origin: `http://127.0.0.1:${port}`,
     deploy: async (version, options = {}) => {
       const includeToPrecache = ['/version.txt'];
+      if (options.navigationFallback === true) {
+        includeToPrecache.push('/');
+      }
       await rm(outDir, { recursive: true, force: true });
       await mkdir(outDir, { recursive: true });
       await writeFile(join(outDir, 'version.txt'), version);
@@ -175,6 +189,7 @@ export const startFixtureServer = async (): Promise<IFixtureServer> => {
           includeToPrecache,
           excludeFilesFromPrecache: [],
           excludeMIMETypesFromCache: [],
+          ...(options.navigationFallback === true ? { navigationFallback: '/' } : {}),
         },
         { cwd: appDirectory },
       );
@@ -182,6 +197,9 @@ export const startFixtureServer = async (): Promise<IFixtureServer> => {
       if (options.failInstall === true) {
         await rm(join(outDir, 'broken.txt'));
       }
+    },
+    setOffline: (isOffline) => {
+      offline = isOffline;
     },
     close: async () => {
       server.closeAllConnections();

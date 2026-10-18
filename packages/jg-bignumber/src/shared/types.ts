@@ -43,6 +43,13 @@ export type IBigNumberValue = BigNumber.Value;
  */
 export type IBigNumberFormat = Required<BigNumber.Format>;
 
+/*
+ * The format prettifyValue takes: any of bignumber.js's toFormat settings, and the fewest decimals
+ * it shows, padded with trailing zeros, such as 2 for '$1,234.50'. minimumDecimalPlaces defaults
+ * to 0, and can't exceed the processing's decimalPlaces.
+ */
+export type IPrettifyFormat = Partial<IBigNumberFormat> & { minimumDecimalPlaces?: number };
+
 // the type a processed value is returned as
 export type IType = 'string' | 'number' | 'bignumber';
 

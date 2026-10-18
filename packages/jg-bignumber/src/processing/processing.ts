@@ -4,10 +4,10 @@ import { BigNumber } from '../shared/constants.js';
 import { ERRORS } from '../shared/errors.js';
 import type {
   IBigNumber,
-  IBigNumberFormat,
   IBigNumberValue,
   IConfig,
   IOutput,
+  IPrettifyFormat,
 } from '../shared/types.js';
 import {
   buildConfig,
@@ -71,6 +71,7 @@ export const processValue = <T extends Partial<IConfig>>(
 
 /**
  * Processes a value and formats it for people, with group separators, a prefix, and a suffix.
+ * Trailing zeros are dropped, unless `format.minimumDecimalPlaces` keeps them.
  * @param value The value.
  * @param config How the value is processed and formatted.
  * @returns The formatted value.
@@ -78,23 +79,30 @@ export const processValue = <T extends Partial<IConfig>>(
  * import { prettifyValue } from 'jg-bignumber';
  *
  * prettifyValue(1234567.891); // => '1,234,567.89'
- * prettifyValue(1234.5, { processing: { decimalPlaces: 2 }, format: { prefix: '$' } }); // => '$1,234.5'
+ * prettifyValue(1234.5, { format: { prefix: '$' } }); // => '$1,234.5'
+ * prettifyValue(1234.5, { format: { prefix: '$', minimumDecimalPlaces: 2 } }); // => '$1,234.50'
  * @throws
  * - INVALID_VALUE: if the value isn't a finite number or BigNumber throws an error
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason
  * - INVALID_ROUNDING_MODE: if the rounding mode name is not supported
  * - INVALID_TYPE: if the processing type is not supported
- * - INVALID_BIGNUMBER_FORMAT: if any of the format properties are invalid
+ * - INVALID_BIGNUMBER_FORMAT: if any of the format properties are invalid, or minimumDecimalPlaces
+ * exceeds decimalPlaces
  */
 export const prettifyValue = (
   value: IBigNumberValue,
-  config: { processing?: Partial<IConfig>; format?: Partial<IBigNumberFormat> } = {},
+  config: { processing?: Partial<IConfig>; format?: IPrettifyFormat } = {},
 ): string => {
   try {
+    const { decimalPlaces } = buildConfig(config.processing);
+    // the value is already rounded to decimalPlaces, so the maximum only checks the minimum
     return processValue(value, {
       ...config.processing,
       type: 'bignumber',
-    }).toFormat(buildFormatConfig(config.format));
+    }).toFormat(
+      [config.format?.minimumDecimalPlaces, decimalPlaces],
+      buildFormatConfig(config.format),
+    );
   } catch (error) {
     if (isException(error)) {
       throw error;

@@ -1,5 +1,5 @@
 ---
-import { groupSymbols, type IApiReference } from '@jg-packages/api-reference';
+import { groupSymbols } from '@jg-packages/api-reference';
 import type { GetStaticPaths } from 'astro';
 import { getEntry, render } from 'astro:content';
 import Prose from 'jg-personal-astro-ui/prose';
@@ -9,7 +9,10 @@ import OnThisPage from '../../components/on-this-page/on-this-page.astro';
 import PackageHero from '../../components/package-hero/package-hero.astro';
 import BaseLayout from '../../layouts/base-layout.astro';
 import { PACKAGE_CATALOG, PACKAGES_DIRECTORY, SITE_CONFIG } from '../../site.config.ts';
+import { toMarkdownPath } from '../../utilities/markdown-pages/index.ts';
 import { loadListedPackages, type IListedPackage } from '../../utilities/package-catalog/index.ts';
+import { buildStructuredData } from 'jg-personal-astro-ui/seo';
+import { loadApiReference } from '../../utilities/site-markdown/index.ts';
 
 interface Props {
   package: IListedPackage;
@@ -21,24 +24,33 @@ export const getStaticPaths = (async () =>
     props: { package: listedPackage },
   }))) satisfies GetStaticPaths;
 
-// every package's API reference, written by the generate task
-const API_REFERENCES = import.meta.glob<IApiReference>('../../generated/api/*.json', {
-  eager: true,
-  import: 'default',
-});
-
 const { package: listedPackage } = Astro.props;
-const reference = API_REFERENCES[`../../generated/api/${listedPackage.name}.json`];
-if (reference === undefined) {
-  throw new Error(
-    `${listedPackage.name} has no API reference. Run the site's tasks through Turborepo, such as pnpm turbo run build --filter=@jg-packages/website, so generate runs first.`,
-  );
-}
+const reference = loadApiReference(listedPackage.name);
 const readme = await getEntry('packageReadmes', listedPackage.name);
 if (readme === undefined) {
   throw new Error(`${listedPackage.name} has no README entry`);
 }
 const { Content, headings } = await render(readme);
+const pagePath = `/packages/${listedPackage.name}/`;
+const title = `${listedPackage.name}: ${listedPackage.title} | ${SITE_CONFIG.name}`;
+const structuredData = buildStructuredData({
+  breadcrumbs: [
+    { name: SITE_CONFIG.name, path: '/' },
+    { name: listedPackage.name, path: pagePath },
+  ],
+  canonicalUrl: new URL(pagePath, SITE_CONFIG.url).toString(),
+  description: listedPackage.description,
+  site: SITE_CONFIG,
+  sourceCode: {
+    codeRepository: `${SITE_CONFIG.repositoryUrl}/tree/main/packages/${listedPackage.name}`,
+    license: `${SITE_CONFIG.repositoryUrl}/blob/main/packages/${listedPackage.name}/LICENSE`,
+    name: listedPackage.name,
+    programmingLanguage: 'TypeScript',
+    version: listedPackage.version,
+  },
+  title,
+  type: 'webpage',
+});
 const contents = [
   ...headings
     .filter(({ depth }) => depth === 2)
@@ -60,9 +72,11 @@ const contents = [
 ---
 
 <BaseLayout
-  canonicalPath={`/packages/${listedPackage.name}/`}
+  canonicalPath={pagePath}
   description={listedPackage.description}
-  title={`${listedPackage.name}: ${listedPackage.title} | ${SITE_CONFIG.name}`}
+  markdownPath={toMarkdownPath(pagePath)}
+  structuredData={structuredData}
+  title={title}
 >
   <PackageHero package={listedPackage} />
   <div class="jg-container grid gap-10 py-10 sm:py-14 lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-14">

@@ -284,6 +284,43 @@ describe('Value Procesors', () => {
       ).toThrow(expect.objectContaining({ code: ERRORS.INVALID_BIGNUMBER_FORMAT, cause }));
     });
 
+    test('keeps trailing zeros up to minimumDecimalPlaces, and drops them by default', () => {
+      expect(prettifyValue(1234.5, { format: { prefix: '$' } })).toBe('$1,234.5');
+      expect(prettifyValue(1234.5, { format: { prefix: '$', minimumDecimalPlaces: 2 } })).toBe(
+        '$1,234.50',
+      );
+      expect(prettifyValue(1234, { format: { minimumDecimalPlaces: 2 } })).toBe('1,234.00');
+      expect(prettifyValue(-0.5, { format: { minimumDecimalPlaces: 1 } })).toBe('-0.5');
+      // the minimum never cuts decimals the value has, up to decimalPlaces
+      expect(
+        prettifyValue(0.0012, {
+          processing: { decimalPlaces: 4 },
+          format: { minimumDecimalPlaces: 2 },
+        }),
+      ).toBe('0.0012');
+      expect(
+        prettifyValue(12.3456, {
+          processing: { decimalPlaces: 0 },
+          format: { minimumDecimalPlaces: 0 },
+        }),
+      ).toBe('12');
+    });
+
+    test('throws INVALID_BIGNUMBER_FORMAT for a minimumDecimalPlaces past decimalPlaces or invalid', () => {
+      expectToThrowCode(
+        () => prettifyValue(1, { format: { minimumDecimalPlaces: 3 } }),
+        ERRORS.INVALID_BIGNUMBER_FORMAT,
+      );
+      expectToThrowCode(
+        () => prettifyValue(1, { format: { minimumDecimalPlaces: -1 } }),
+        ERRORS.INVALID_BIGNUMBER_FORMAT,
+      );
+      expectToThrowCode(
+        () => prettifyValue(1, { format: { minimumDecimalPlaces: 1.5 } }),
+        ERRORS.INVALID_BIGNUMBER_FORMAT,
+      );
+    });
+
     test('passes an invalid processing setting through with its own code', () => {
       expectToThrowCode(
         () => prettifyValue(1, { processing: { decimalPlaces: -1 } }),
@@ -661,9 +698,15 @@ describe('Percentage Calculations', () => {
       expect(adjustByPercentage(100, -150)).toBe(0);
     });
 
-    test('throws if the value is less than or equal to 0', () => {
-      expectToThrowCode(() => adjustByPercentage(0, 100), ERRORS.NEGATIVE_VALUE_NOT_ALLOWED);
+    test('keeps 0 at 0, whatever the percentage', () => {
+      expect(adjustByPercentage(0, 100)).toBe(0);
+      expect(adjustByPercentage(0, -50)).toBe(0);
+      expect(adjustByPercentage('0', 0, { type: 'string' })).toBe('0');
+    });
+
+    test('throws if the value is negative', () => {
       expectToThrowCode(() => adjustByPercentage(-10, 100), ERRORS.NEGATIVE_VALUE_NOT_ALLOWED);
+      expectToThrowCode(() => adjustByPercentage(-0.01, 0), ERRORS.NEGATIVE_VALUE_NOT_ALLOWED);
     });
 
     test('can increase values by percentage', () => {

@@ -1,4 +1,5 @@
 ---
+import { serializeStructuredData } from '../../seo/index.ts';
 import { SPECULATION_RULES } from './speculation-rules.ts';
 
 // the image social cards show for the page
@@ -53,9 +54,7 @@ const {
   twitterCreator,
 } = Astro.props;
 const serializedStructuredData =
-  structuredData === undefined
-    ? undefined
-    : JSON.stringify(structuredData).replaceAll('<', '\\u003c');
+  structuredData === undefined ? undefined : serializeStructuredData(structuredData);
 ---
 
 <meta charset="UTF-8" />

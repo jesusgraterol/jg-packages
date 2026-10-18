@@ -1,0 +1,48 @@
+---
+import { Info, Lightbulb, OctagonAlert, TriangleAlert } from '@lucide/astro';
+
+// each variant's colours and icon
+const VARIANTS = {
+  note: { classes: 'border-border-strong bg-surface', icon: Info, iconClass: 'text-muted' },
+  tip: { classes: 'border-accent/40 bg-accent/5', icon: Lightbulb, iconClass: 'text-accent' },
+  warning: {
+    classes: 'border-warning/40 bg-warning/10',
+    icon: TriangleAlert,
+    iconClass: 'text-warning',
+  },
+  danger: {
+    classes: 'border-danger/35 bg-danger/10',
+    icon: OctagonAlert,
+    iconClass: 'text-danger',
+  },
+} as const;
+
+interface Props {
+  class?: string | undefined;
+  // 'note' when the callout is a note in the sense of ARIA's note role, an aside to the main text;
+  // without it the callout is plain content
+  role?: 'note' | undefined;
+  title?: string | undefined;
+  variant?: keyof typeof VARIANTS | undefined;
+}
+
+const { class: className, role, title, variant = 'note' } = Astro.props;
+const { classes, icon: Icon, iconClass } = VARIANTS[variant];
+---
+
+{/* a boxed aside with its variant's icon, an optional title, and the slot's text */}
+<div
+  class:list={['flex gap-3 rounded-xl border p-4 text-sm leading-6', classes, className]}
+  role={role}
+>
+  <Icon
+    class:list={['mt-0.5 size-4 shrink-0', iconClass]}
+    aria-hidden="true"
+  />
+  <div class="min-w-0">
+    {title !== undefined && <p class="font-semibold text-foreground">{title}</p>}
+    <div class="text-muted [&_a]:text-foreground [&_a]:underline">
+      <slot />
+    </div>
+  </div>
+</div>

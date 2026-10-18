@@ -68,14 +68,15 @@ Create `jg-sw.config.json` next to your app's `package.json`:
 }
 ```
 
-| Field                       | What it does                                                                                                                                                   |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `outDir`                    | The directory the app's build is written to. The worker is written there as `sw.js`.                                                                           |
-| `template`                  | `base` caches the app. `firebase-fcm` also shows Firebase Cloud Messaging notifications.                                                                       |
-| `cacheNamePrefix`           | The namespace of the worker's caches, in lowercase words separated by hyphens, such as `my-app`. Each build caches under `<cacheNamePrefix>--<10 characters>`. |
-| `includeToPrecache`         | The files and directories, relative to `outDir`, cached when the worker installs. Directories are read recursively, and `/` stands for the app's root page.    |
-| `excludeFilesFromPrecache`  | File names left out of precaching, wherever they are.                                                                                                          |
-| `excludeMIMETypesFromCache` | MIME types whose responses are never cached.                                                                                                                   |
+| Field                       | What it does                                                                                                                                                                                                                             |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `outDir`                    | The directory the app's build is written to. The worker is written there as `sw.js`.                                                                                                                                                     |
+| `template`                  | `base` caches the app. `firebase-fcm` also shows Firebase Cloud Messaging notifications.                                                                                                                                                 |
+| `cacheNamePrefix`           | The namespace of the worker's caches, in lowercase words separated by hyphens, such as `my-app`. Each build caches under `<cacheNamePrefix>--<10 characters>`.                                                                           |
+| `includeToPrecache`         | The files and directories, relative to `outDir`, cached when the worker installs. Directories are read recursively, and `/` stands for the app's root page.                                                                              |
+| `excludeFilesFromPrecache`  | File names left out of precaching, wherever they are.                                                                                                                                                                                    |
+| `excludeMIMETypesFromCache` | MIME types whose responses are never cached.                                                                                                                                                                                             |
+| `navigationFallback`        | Optional. A precached page, such as `/index.html`, that answers a navigation the worker can't serve offline, so a single-page app's routes still open. The build fails with `NAVIGATION_FALLBACK_NOT_PRECACHED` when it isn't precached. |
 
 This config precaches the hashed files under `dist/assets`, but not `/` or `index.html`. Nothing is precached unless it's listed: add `/` and `/index.html` to precache the app's shell.
 
@@ -134,6 +135,7 @@ await writeServiceWorker(config, { environment: 'production' }); // '/app/dist/s
 - The page activates a waiting worker by posting `{ type: 'JG_SW_SKIP_WAITING' }` to it.
 - `activate` deletes the older caches in its own namespace, keeps every other cache, then claims its clients.
 - It answers same-origin `GET` requests from the current version's cache, then from the network, and caches successful responses unless they're opaque, partial, marked `Vary: *`, marked `Cache-Control: no-store` or `private`, or of an excluded MIME type. A failed cache write never replaces a valid response.
+- When a navigation is in neither its cache nor the network's reach, such as offline, it answers with the `navigationFallback` page when one is set, and otherwise with a `408` network error. A `4xx` or `5xx` from the server is passed through as it is.
 
 ### Firebase Cloud Messaging
 

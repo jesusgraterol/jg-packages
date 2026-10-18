@@ -77,7 +77,7 @@ Each package's `vitest.config.ts` calls `createVitestConfig()` from `@jg-package
 - **Timeouts.** Tests and hooks fail after 30 seconds, which catches one that hangs without failing a working test on a CI runner several times slower than your machine. A test that needs longer, such as one that packs and installs tarballs, passes its own timeout as the last argument of `test` or the hook.
 - **Browser tests** run the same file in headless Chromium, Firefox, and WebKit through Vitest's Playwright provider, for behavior that needs a real browser, such as storage or the clipboard. They can't use Node.js modules.
 
-End-to-end tests run in Chromium, Firefox, and WebKit with Playwright instead of Vitest, from the package's `playwright.config.ts`, against its built `dist`. Helpers they share, such as a fixture server, go in `.test-utils.ts` files, which never ship either.
+End-to-end tests run with Playwright instead of Vitest, from the workspace's `playwright.config.ts`, against its build: jg-sw's in Chromium, Firefox, and WebKit, and the website's, in `website/e2e/`, in Chromium against `astro preview` (see [its suite](website.md#end-to-end-tests)). Helpers they share, such as a fixture server, go in `.test-utils.ts` files, which never ship either.
 
 When you add or change integration tests, run them three times with retries off, so a flaky test shows up. Do the same for end-to-end tests:
 

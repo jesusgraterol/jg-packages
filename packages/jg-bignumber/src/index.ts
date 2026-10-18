@@ -8,6 +8,7 @@ export type {
   IBigNumberValue,
   IConfig,
   IOutput,
+  IPrettifyFormat,
   IType,
 } from './shared/types.js';
 

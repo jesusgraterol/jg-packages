@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+
+- `navigationFallback` in the config: a precached page, such as `/index.html`, that answers a navigation the worker can neither find in its cache nor fetch, so a single-page app's routes, such as `/settings`, open offline. Without it, the worker behaves as before.
+- `ERRORS.NAVIGATION_FALLBACK_NOT_PRECACHED`, which the build throws when the fallback isn't one of the precached paths.
+
 ## 1.1.1
 
 ### Added

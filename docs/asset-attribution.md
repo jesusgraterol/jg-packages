@@ -6,6 +6,8 @@ Where the marks, fonts, and icons the website and `jg-personal-astro-ui` use com
 
 `website/public/favicon.svg` is an unchanged copy of the `JG/` monogram from jesusgraterol.dev's `public/favicon.svg`, which jg-skills uses too. `website/src/components/brand-mark/brand-mark.astro` redraws the same monogram with the theme's terminal tokens, so it's a dark tile in both themes. Don't alter its letterforms or the accent slash.
 
+`website/public/og/jg-packages.png`, the open-graph image, draws the same monogram, and is set in Ubuntu Sans.
+
 ## Fonts
 
 `jg-personal-astro-ui` depends on [Ubuntu Sans and Ubuntu Sans Mono](https://design.ubuntu.com/font), Copyright 2011, 2022, 2023 Canonical Ltd., through Fontsource's `@fontsource-variable/ubuntu-sans` and `@fontsource-variable/ubuntu-sans-mono`. `theme.css` imports them, so sites bundle the font files from those packages unchanged.

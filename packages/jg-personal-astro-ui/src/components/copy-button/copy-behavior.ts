@@ -12,16 +12,39 @@ const resetTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
 // each button's latest click, so an earlier copy that settles late never shows over it
 const latestAttempts = new WeakMap<HTMLElement, object>();
 
+// each button's own label, which shows again once its outcome resets
+const defaultLabels = new WeakMap<HTMLElement, string | null>();
+
 /**
- * Reads the text a copy button copies: its own text, the text of the element it names, or the code
- * of the code window it's in.
- * @param button The copy button.
- * @returns The text, or undefined when there's nothing to copy.
+ * Fetches the text a copy button copies from a URL.
+ * @param url The URL, such as a page's Markdown version.
+ * @returns A promise that resolves to the response's text, and rejects when the request fails or
+ * the response isn't a success.
  */
-export const readCopyText = (button: HTMLElement): string | undefined => {
-  const { copySource, copyText: text } = button.dataset;
+const fetchCopyText = async (url: string): Promise<string> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(
+      `The text to copy couldn't be loaded from ${url}: the server answered ${String(response.status)}.`,
+    );
+  }
+  return response.text();
+};
+
+/**
+ * Reads the text a copy button copies: its own text, the text at its URL, the text of the element it
+ * names, or the code of the code window it's in.
+ * @param button The copy button.
+ * @returns The text, a promise of the text at the button's URL, or undefined when there's nothing
+ * to copy.
+ */
+export const readCopyText = (button: HTMLElement): string | Promise<string> | undefined => {
+  const { copySource, copyText: text, copyUrl: url } = button.dataset;
   if (text !== undefined) {
     return text;
+  }
+  if (url !== undefined) {
+    return fetchCopyText(url);
   }
   const source =
     copySource === undefined
@@ -32,7 +55,7 @@ export const readCopyText = (button: HTMLElement): string | undefined => {
 
 /**
  * Shows a copy's outcome on its button: the label, the message screen readers announce, and, after
- * a failure, the guidance under the button.
+ * a failure, the guidance under the button, above the link to the button's URL when it has one.
  * @param button The copy button.
  * @param outcome The state to show, with its label and message, or undefined to reset the button.
  */
@@ -49,11 +72,17 @@ const showOutcome = (
   } else {
     button.dataset['copyState'] = outcome.state;
   }
-  if (label) label.textContent = outcome?.label ?? 'Copy';
+  if (label) {
+    // read before the first outcome replaces it
+    const defaultLabel = defaultLabels.get(button) ?? label.textContent;
+    defaultLabels.set(button, defaultLabel);
+    label.textContent = outcome?.label ?? defaultLabel;
+  }
   if (status) status.textContent = outcome?.message ?? '';
   if (hint) {
     // the guidance stays until the next attempt, so there's time to read and follow it
-    hint.textContent = outcome?.state === 'error' ? outcome.message : '';
+    (hint.querySelector('[data-copy-hint-text]') ?? hint).textContent =
+      outcome?.state === 'error' ? outcome.message : '';
     hint.hidden = outcome?.state !== 'error';
   }
 };
@@ -82,7 +111,11 @@ export const copyFromButton = async (button: HTMLElement): Promise<void> => {
     showOutcome(button, {
       state: 'error',
       label: 'Copy failed',
-      message: getCopyGuidance(getErrorCode(error), button.dataset['copyContext'] ?? 'text'),
+      message: getCopyGuidance(getErrorCode(error), {
+        context: button.dataset['copyContext'] ?? 'text',
+        label: defaultLabels.get(button),
+        linked: button.dataset['copyUrl'] !== undefined,
+      }),
     });
     return;
   }

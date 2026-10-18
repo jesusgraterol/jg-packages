@@ -50,6 +50,7 @@ type IWorkerRuntimeOptions = {
   caching?: boolean;
   claimClients?: () => Promise<void>;
   excludeMimeTypes?: string[];
+  navigationFallback?: string;
   networkResponse?: Response;
   precacheAssets?: string[];
 };
@@ -66,6 +67,7 @@ const baseInput = (input: Partial<IRenderServiceWorkerInput> = {}): IRenderServi
   precacheAssets: [],
   excludeMIMETypes: [],
   caching: true,
+  navigationFallback: null,
   ...input,
 });
 
@@ -252,6 +254,7 @@ const createWorkerRuntime = async (options: IWorkerRuntimeOptions = {}) => {
         caching: options.caching ?? true,
         precacheAssets: options.precacheAssets ?? [],
         excludeMIMETypes: options.excludeMimeTypes ?? [],
+        navigationFallback: options.navigationFallback ?? null,
       }),
     ),
   ).runInNewContext({
@@ -426,7 +429,14 @@ describe('renderServiceWorker', () => {
     expect(readConstant(source, 'EXCLUDE_MIME_TYPES')).toStrictEqual([]);
     expect(readConstant(source, 'SKIP_WAITING_MESSAGE_TYPE')).toBe(SKIP_WAITING_MESSAGE_TYPE);
     expect(readConstant(source, 'CACHING')).toBe(true);
+    expect(readConstant(source, 'NAVIGATION_FALLBACK')).toBeNull();
     expect(source).not.toContain('FIREBASE');
+  });
+
+  test('writes the navigation fallback into the worker', async () => {
+    const source = await renderServiceWorker(baseInput({ navigationFallback: '/index.html' }));
+
+    expect(readConstant(source, 'NAVIGATION_FALLBACK')).toBe('/index.html');
   });
 
   test('can build a base template with precache assets and excluded MIME types', async () => {
@@ -811,6 +821,64 @@ describe('Base template fetch interception', () => {
     const response = await requireResponsePromise(pendingFetch.responsePromise);
     expect(response.status).toBe(408);
     expect(runtime.cacheStorage.cachePut).not.toHaveBeenCalled();
+  });
+});
+
+describe('Base template navigation fallback', () => {
+  /**
+   * Builds a navigation request, which a Request can't be constructed as.
+   * @param path The page's path.
+   * @returns The request.
+   */
+  const navigation = (path: string): Request =>
+    ({
+      url: `https://example.com${path}`,
+      method: 'GET',
+      mode: 'navigate',
+      headers: new Headers(),
+    }) as Request;
+
+  /**
+   * Builds a worker whose network fails, with the fallback page cached.
+   * @param navigationFallback The worker's navigation fallback, if any.
+   * @returns The worker runtime.
+   */
+  const createOfflineRuntime = async (navigationFallback?: string) => {
+    const cacheStorage = createCacheStorage();
+    cacheStorage.seedCache('test-app--version-a', {
+      '/index.html': new Response('the app', { headers: { 'Content-Type': 'text/html' } }),
+    });
+    const runtime = await createWorkerRuntime({
+      cacheStorage,
+      ...(navigationFallback === undefined ? {} : { navigationFallback }),
+    });
+    runtime.fetchRequest.mockRejectedValue(new TypeError('Failed to fetch'));
+    return runtime;
+  };
+
+  test('answers a navigation the network fails with the cached fallback page', async () => {
+    const runtime = await createOfflineRuntime('/index.html');
+    const pendingFetch = dispatchFetch(getFetchListener(runtime), navigation('/settings'));
+
+    const response = await requireResponsePromise(pendingFetch.responsePromise);
+    expect(await response.text()).toBe('the app');
+  });
+
+  test('keeps the 408 for other requests, without a fallback, and when it is not cached', async () => {
+    const withFallback = await createOfflineRuntime('/index.html');
+    const asset = dispatchFetch(
+      getFetchListener(withFallback),
+      new Request('https://example.com/app.js'),
+    );
+    expect((await requireResponsePromise(asset.responsePromise)).status).toBe(408);
+
+    const withoutFallback = await createOfflineRuntime();
+    const page = dispatchFetch(getFetchListener(withoutFallback), navigation('/settings'));
+    expect((await requireResponsePromise(page.responsePromise)).status).toBe(408);
+
+    const uncached = await createOfflineRuntime('/shell.html');
+    const shell = dispatchFetch(getFetchListener(uncached), navigation('/settings'));
+    expect((await requireResponsePromise(shell.responsePromise)).status).toBe(408);
   });
 });
 

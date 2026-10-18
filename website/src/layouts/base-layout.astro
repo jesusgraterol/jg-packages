@@ -4,6 +4,7 @@ import BrandLogo from 'jg-personal-astro-ui/brand-logo';
 import Button from 'jg-personal-astro-ui/button';
 import DocumentHead from 'jg-personal-astro-ui/document-head';
 import NavigationProgress from 'jg-personal-astro-ui/navigation-progress';
+import SearchDialog from 'jg-personal-astro-ui/search-dialog';
 import SiteFooter from 'jg-personal-astro-ui/site-footer';
 import SiteHeader from 'jg-personal-astro-ui/site-header';
 import SkipLink from 'jg-personal-astro-ui/skip-link';
@@ -16,14 +17,30 @@ import { SITE_CONFIG } from '../site.config.ts';
 import '../styles/global.css';
 
 interface Props {
-  // the page's path, such as '/packages/jg-fetch/', which its canonical URL builds on
-  canonicalPath: string;
+  // the page's path, such as '/packages/jg-fetch/', which its canonical URL builds on; a noindex
+  // page has none
+  canonicalPath?: string | undefined;
   description: string;
+  // the path of the page's Markdown version, offered to agents as an alternate
+  markdownPath?: string | undefined;
+  // keeps the page out of search indexes and the site's own search, such as the 404 page
+  noIndex?: boolean | undefined;
+  // the page's JSON-LD, from buildStructuredData
+  structuredData?: Record<string, unknown> | undefined;
   title: string;
 }
 
-const { canonicalPath, description, title } = Astro.props;
-const canonicalUrl = new URL(canonicalPath, SITE_CONFIG.url).toString();
+const {
+  canonicalPath,
+  description,
+  markdownPath,
+  noIndex = false,
+  structuredData,
+  title,
+} = Astro.props;
+const toSiteUrl = (path: string): string => new URL(path, SITE_CONFIG.url).toString();
+const canonicalUrl = canonicalPath === undefined || noIndex ? undefined : toSiteUrl(canonicalPath);
+const { openGraph } = SITE_CONFIG;
 const footerColumns = [
   {
     title: 'Site',
@@ -62,7 +79,19 @@ const footerColumns = [
       canonicalUrl={canonicalUrl}
       description={description}
       favicon={{ href: '/favicon.svg', type: 'image/svg+xml' }}
+      llmsTextUrl={toSiteUrl('/llms.txt')}
+      locale={openGraph.locale}
+      markdownUrl={markdownPath === undefined ? undefined : toSiteUrl(markdownPath)}
+      noIndex={noIndex}
+      openGraphImage={{
+        alt: openGraph.imageAlt,
+        height: openGraph.height,
+        type: openGraph.imageType,
+        url: toSiteUrl(openGraph.image),
+        width: openGraph.width,
+      }}
       siteName={SITE_CONFIG.name}
+      structuredData={structuredData}
       themeColors={SITE_CONFIG.themeColors}
       title={title}
       twitterCreator={SITE_CONFIG.author.twitterHandle}
@@ -89,6 +118,7 @@ const footerColumns = [
           class="size-8 shrink-0"
         />
       </BrandLogo>
+      <SearchDialog slot="search" />
       <Fragment slot="actions">
         <Button
           href={SITE_CONFIG.repositoryUrl}
@@ -126,7 +156,11 @@ const footerColumns = [
         />
       </Fragment>
     </SiteHeader>
-    <main id="main-content">
+    {/* Pagefind indexes the main content of every page but a noindex one */}
+    <main
+      id="main-content"
+      data-pagefind-body={noIndex ? undefined : ''}
+    >
       <slot />
     </main>
     <SiteFooter

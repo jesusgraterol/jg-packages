@@ -104,6 +104,62 @@ describe('copy buttons', () => {
     expect(writeText).toHaveBeenCalledWith('npm install jg-clipboard');
   });
 
+  test('copy the text at their URL, and show their own label again', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const markdown = '# jg-clipboard\n\nCopy and read the clipboard.\n';
+    const fetch = vi.spyOn(window, 'fetch').mockResolvedValue(new Response(markdown));
+    // the clipboard reads the item it's given, as browsers do
+    const write = vi.spyOn(navigator.clipboard, 'write').mockImplementation(async ([item]) => {
+      await item?.getType('text/plain');
+    });
+    document.body.innerHTML = renderCopyButton({
+      context: 'as Markdown',
+      label: 'Copy page',
+      tone: 'outline',
+      url: '/packages/jg-clipboard/index.md',
+    });
+    const button = document.querySelector('button') as HTMLButtonElement;
+
+    const outcome = await clickAndRead(button);
+
+    const item = write.mock.calls[0]?.[0][0];
+    expect(await (await item?.getType('text/plain'))?.text()).toBe(markdown);
+    expect(fetch).toHaveBeenCalledWith('/packages/jg-clipboard/index.md');
+    expect(outcome.label).toBe('Copied');
+    vi.advanceTimersByTime(2_000);
+    expect(button.textContent).toBe('Copy page as Markdown');
+    vi.useRealTimers();
+  });
+
+  test('link to the text at their URL when it fails to load', async () => {
+    vi.spyOn(window, 'fetch').mockResolvedValue(new Response('Server error', { status: 500 }));
+    vi.spyOn(navigator.clipboard, 'write').mockImplementation(async ([item]) => {
+      await item?.getType('text/plain');
+    });
+    document.body.innerHTML = renderCopyButton({
+      context: 'as Markdown',
+      label: 'Copy page',
+      url: '/packages/jg-clipboard/index.md',
+    });
+
+    const outcome = await clickAndRead(document.querySelector('button') as HTMLButtonElement);
+
+    const guidance = getCopyGuidance(ERRORS.CLIPBOARD_WRITE_FAILED, {
+      context: 'as Markdown',
+      label: 'Copy page',
+      linked: true,
+    });
+    const link = document.querySelector<HTMLAnchorElement>('[data-copy-hint] a');
+    expect(outcome).toStrictEqual({
+      state: 'error',
+      label: 'Copy failed',
+      status: guidance,
+      hint: `${guidance}/packages/jg-clipboard/index.md`,
+    });
+    expect(link?.getAttribute('href')).toBe('/packages/jg-clipboard/index.md');
+    expect(link?.checkVisibility()).toBe(true);
+  });
+
   test.each([
     [
       ERRORS.CLIPBOARD_PERMISSION_DENIED,
@@ -150,7 +206,7 @@ describe('copy buttons', () => {
 
     const outcome = await clickAndRead(renderCodeWindow());
 
-    const guidance = getCopyGuidance(code, 'code');
+    const guidance = getCopyGuidance(code, { context: 'code' });
     expect(outcome).toStrictEqual({
       state: 'error',
       label: 'Copy failed',

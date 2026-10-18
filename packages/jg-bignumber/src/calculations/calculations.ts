@@ -191,7 +191,7 @@ export const calculatePercentageChange = <T extends Partial<IConfig>>(
 
 /**
  * Changes a value by a percentage: a positive percentage increases it, and a negative one
- * decreases it, to 0 at most.
+ * decreases it, to 0 at most. A value of 0 stays 0.
  * @param value The value to change.
  * @param percentage The percentage to change it by.
  * @param config How the result is processed.
@@ -206,7 +206,7 @@ export const calculatePercentageChange = <T extends Partial<IConfig>>(
  * - INVALID_DECIMAL_PLACES: if the number of decimal places is invalid for any reason
  * - INVALID_ROUNDING_MODE: if the rounding mode name is not supported
  * - INVALID_TYPE: if the processing type is not supported
- * - NEGATIVE_VALUE_NOT_ALLOWED: if the value is not positive
+ * - NEGATIVE_VALUE_NOT_ALLOWED: if the value is negative
  */
 export const adjustByPercentage = <T extends Partial<IConfig>>(
   value: IBigNumberValue,
@@ -215,7 +215,7 @@ export const adjustByPercentage = <T extends Partial<IConfig>>(
 ): IOutput<T> => {
   const valueBN = getBigNumber(value);
   const percentageBN = getBigNumber(percentage);
-  validatePositiveValue(valueBN);
+  validatePositiveValue(valueBN, true);
 
   let adjusted: IBigNumber;
   if (percentageBN.isGreaterThan(0)) {

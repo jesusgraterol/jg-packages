@@ -63,6 +63,8 @@ describe('parseServiceWorkerConfig', () => {
       'invalid excludeMIMETypesFromCache',
       { ...buildBaseConfig(), excludeMIMETypesFromCache: undefined },
     ],
+    ['relative navigationFallback', { ...buildBaseConfig(), navigationFallback: 'index.html' }],
+    ['non-string navigationFallback', { ...buildBaseConfig(), navigationFallback: true }],
   ])('parseServiceWorkerConfig(%s) -> FAILED_TO_READ_BASE_CONFIG', (_description, config) => {
     expectToThrowCode(
       () => parseServiceWorkerConfig(config, 'jg-sw.config.json'),
@@ -84,6 +86,12 @@ describe('parseServiceWorkerConfig', () => {
 
   test('can read a valid base config', () => {
     const baseConfig = buildBaseConfig();
+
+    expect(parseServiceWorkerConfig(baseConfig)).toStrictEqual(baseConfig);
+  });
+
+  test('accepts a navigation fallback', () => {
+    const baseConfig = { ...buildBaseConfig(), navigationFallback: '/index.html' };
 
     expect(parseServiceWorkerConfig(baseConfig)).toStrictEqual(baseConfig);
   });

@@ -13,7 +13,7 @@ npm install jg-fs
 The root entry is async, and `jg-fs/sync` has the same functions, synchronous:
 
 ```ts
-import { readJsonFile, writeFileAtomic, writeTextFile } from 'jg-fs';
+import { readJsonFile, writeFileAtomic, writeJsonFile, writeTextFile } from 'jg-fs';
 import { readTextFile } from 'jg-fs/sync';
 import { z } from 'zod';
 
@@ -21,7 +21,9 @@ const Config = z.object({ port: z.number() });
 
 await writeTextFile('notes/today.md', '# Today'); // creates notes/ when it's missing
 const config = await readJsonFile('config.json', { schema: Config }); // validated, and typed by the schema
-await writeFileAtomic('state.json', JSON.stringify(state)); // readers never see a partial file
+await writeJsonFile('config.json', { ...config, port: 3000 }); // atomic: readers never see a partial file
+await writeFileAtomic('state.txt', 'step 2'); // any content, atomically
+const upload = await readJsonFile('uploads/import.json', { maxBytes: 1_048_576 }); // FILE_TOO_LARGE past 1 MB
 
 const readme = readTextFile('README.md');
 ```

@@ -23,6 +23,14 @@ const BaseConfigShape = {
 
   // the MIME types whose responses the worker never caches, such as 'application/json'
   excludeMIMETypesFromCache: z.array(z.string()),
+
+  // the precached page that answers a navigation the worker can neither find in its cache nor
+  // fetch, such as '/index.html' for a single-page app offline. Without it, such a navigation gets
+  // the worker's network error
+  navigationFallback: z
+    .string()
+    .startsWith('/', 'The navigation fallback must be a path such as /index.html.')
+    .optional(),
 };
 
 // the config of a worker that caches the app

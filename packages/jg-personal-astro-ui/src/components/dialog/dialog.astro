@@ -1,0 +1,57 @@
+---
+import { X } from '@lucide/astro';
+
+interface Props {
+  class?: string | undefined;
+  // the dialog's id, which its triggers name in data-dialog-open
+  id: string;
+  // the dialog's heading, and its accessible name
+  title: string;
+}
+
+const { class: className, id, title } = Astro.props;
+const titleId = `${id}-title`;
+---
+
+{/*
+ * a modal dialog: any element with data-dialog-open set to its id opens it. Escape, the close
+ * button, and a click outside close it, and focus returns to what opened it
+ */}
+<dialog
+  id={id}
+  aria-labelledby={titleId}
+  class:list={[
+    'm-auto max-h-[min(85vh,44rem)] w-[min(40rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-border-strong bg-background p-0 text-foreground shadow-raised backdrop:bg-foreground/40 open:flex',
+    className,
+  ]}
+  data-dialog
+>
+  <div class="flex items-center justify-between gap-4 border-b border-border py-2 pr-2 pl-5">
+    <h2
+      id={titleId}
+      class="text-base font-semibold tracking-tight"
+    >
+      {title}
+    </h2>
+    <button
+      type="button"
+      class="inline-flex size-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-secondary hover:text-foreground"
+      data-dialog-close
+    >
+      <X
+        class="size-4"
+        aria-hidden="true"
+      />
+      <span class="sr-only">Close</span>
+    </button>
+  </div>
+  <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+    <slot />
+  </div>
+</dialog>
+
+<script>
+  import { registerDialogs } from './dialog-behavior.ts';
+
+  registerDialogs();
+</script>

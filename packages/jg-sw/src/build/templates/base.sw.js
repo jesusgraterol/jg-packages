@@ -21,6 +21,9 @@ const PRECACHE_ASSETS = [];
 // the list of MIME Types that won't be cached when the app sends HTTP GET requests
 const EXCLUDE_MIME_TYPES = [];
 
+// the precached page that answers a navigation the network can't serve, or null for none
+const NAVIGATION_FALLBACK = null;
+
 // the Cache-Control directives that keep a response out of the cache
 const UNCACHEABLE_CACHE_CONTROL_DIRECTIVES = ['no-store', 'private'];
 
@@ -157,6 +160,13 @@ const cacheFirst = async (request, event) => {
   try {
     responseFromNetwork = await fetch(request);
   } catch {
+    // a page the app routes on the client, such as /settings, opens through the fallback page
+    if (NAVIGATION_FALLBACK !== null && request.mode === 'navigate') {
+      const fallback = await cache.match(NAVIGATION_FALLBACK);
+      if (fallback) {
+        return fallback;
+      }
+    }
     return new Response('Network error happened', {
       status: 408,
       headers: { 'Content-Type': 'text/plain' },

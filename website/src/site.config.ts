@@ -118,6 +118,15 @@ export const SITE_CONFIG = {
     { href: '/#agents', label: 'Agent docs' },
   ],
   npmUrl: 'https://www.npmjs.com/package/',
+  // the image social cards show for every page, written by scripts/generate-open-graph.ts
+  openGraph: {
+    height: 630,
+    image: '/og/jg-packages.png',
+    imageAlt: 'jg-packages: tested TypeScript packages for coding agents',
+    imageType: 'image/png',
+    locale: 'en_US',
+    width: 1200,
+  },
   // the author's other sites, which share this site's foundation
   relatedSites: [
     { href: 'https://jesusgraterol.dev/', label: 'jesusgraterol.dev' },

@@ -13,6 +13,8 @@ export type {
 // catalog
 export {
   findCatalogProblems,
+  groupPackagesByRuntime,
   loadListedPackages,
   readWorkspaceManifests,
+  type IRuntimeGroup,
 } from './package-catalog.ts';

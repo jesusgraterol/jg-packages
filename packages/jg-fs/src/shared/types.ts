@@ -75,4 +75,8 @@ export type ISchema<T> = {
 export type IReadJsonFileOptions<T> = {
   // validates the parsed content, such as a Zod schema. Its errors propagate unchanged
   schema?: ISchema<T>;
+
+  // the largest file accepted, in bytes, for a file whose size isn't yours to decide, such as one
+  // a user uploaded. With it, the file is read as readBoundedFile reads it
+  maxBytes?: number;
 };

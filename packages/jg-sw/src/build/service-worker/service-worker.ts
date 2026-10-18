@@ -1,4 +1,5 @@
 import { join, resolve } from 'node:path';
+import { Exception } from 'jg-exception';
 import { writeTextFile } from 'jg-fs';
 import { generateRandomString } from 'jg-utilities';
 
@@ -14,6 +15,7 @@ import {
   CACHE_NAME_CHARACTERS,
   CACHE_NAME_LENGTH,
   CACHE_NAME_SEPARATOR,
+  ERRORS,
   type IBuildServiceWorkerOptions,
 } from '../shared/index.js';
 import { renderServiceWorker } from '../worker/index.js';
@@ -33,19 +35,29 @@ const generateServiceWorker = async (
   const cwd = options.cwd ?? process.cwd();
   const caching = options.caching ?? true;
   const outDir = resolve(cwd, validConfig.outDir);
+  const precacheAssets = caching
+    ? await buildPrecacheAssetPaths(
+        outDir,
+        validConfig.includeToPrecache,
+        validConfig.excludeFilesFromPrecache,
+      )
+    : [];
+  const navigationFallback = validConfig.navigationFallback ?? null;
+  // offline, only a precached page can answer
+  if (caching && navigationFallback !== null && !precacheAssets.includes(navigationFallback)) {
+    throw new Exception(
+      `The navigation fallback '${navigationFallback}' isn't precached. Add it to includeToPrecache.`,
+      { code: ERRORS.NAVIGATION_FALLBACK_NOT_PRECACHED, data: { navigationFallback } },
+    );
+  }
   const source = await renderServiceWorker({
     template: validConfig.template,
     cacheNamePrefix: validConfig.cacheNamePrefix,
     cacheName: `${validConfig.cacheNamePrefix}${CACHE_NAME_SEPARATOR}${generateRandomString(CACHE_NAME_LENGTH, CACHE_NAME_CHARACTERS)}`,
-    precacheAssets: caching
-      ? await buildPrecacheAssetPaths(
-          outDir,
-          validConfig.includeToPrecache,
-          validConfig.excludeFilesFromPrecache,
-        )
-      : [],
+    precacheAssets,
     excludeMIMETypes: validConfig.excludeMIMETypesFromCache,
     caching,
+    navigationFallback,
     ...(validConfig.template === 'firebase-fcm'
       ? {
           firebase: {
@@ -90,6 +102,7 @@ const generateServiceWorker = async (
  * - INVALID_FIREBASE_SDK_VERSION: The Firebase SDK version must be a version such as 12.4.0.
  * - INVALID_ENVIRONMENT: The environment isn't supported, or the firebase-fcm template needs one.
  * - NOT_A_PATH_ELEMENT: An asset to precache is outside outDir, or isn't a file or a directory.
+ * - NAVIGATION_FALLBACK_NOT_PRECACHED: The navigation fallback isn't one of the precached paths.
  * - FAILED_TO_BUILD_CONFIG: Unable to load the environment file.
  * - INVALID_FIREBASE_CONFIG: The environment variable that holds the Firebase config is missing or
  *   empty.
@@ -119,6 +132,7 @@ export const buildServiceWorker = async (
  * - INVALID_FIREBASE_SDK_VERSION: The Firebase SDK version must be a version such as 12.4.0.
  * - INVALID_ENVIRONMENT: The environment isn't supported, or the firebase-fcm template needs one.
  * - NOT_A_PATH_ELEMENT: An asset to precache is outside outDir, or isn't a file or a directory.
+ * - NAVIGATION_FALLBACK_NOT_PRECACHED: The navigation fallback isn't one of the precached paths.
  * - FAILED_TO_BUILD_CONFIG: Unable to load the environment file.
  * - INVALID_FIREBASE_CONFIG: The environment variable that holds the Firebase config is missing or
  *   empty.

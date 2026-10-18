@@ -66,9 +66,11 @@ const readImage = async (items: ClipboardItems): Promise<Blob | null> => {
 
 /**
  * Reads the clipboard's text, HTML, and image with one `read()` call, so the person pasting sees
- * one prompt at most. Call it from a click or key press handler, which Safari requires.
+ * one prompt at most. Call it from a click or key press handler, which Safari requires. An image
+ * the browser can't read never hides the text or HTML copied with it, such as the picture of
+ * spreadsheet cells that comes with their text: the image is then null.
  * @returns A promise that resolves to each kind of content, with null for the kinds the clipboard
- * doesn't hold. The image is PNG.
+ * doesn't hold or the image it can't read. The image is PNG.
  * @example
  * import { readClipboard } from 'jg-clipboard';
  *
@@ -83,8 +85,8 @@ const readImage = async (items: ClipboardItems): Promise<Blob | null> => {
  * - CLIPBOARD_NOT_FOCUSED: The page must have focus to use the clipboard.
  * - CLIPBOARD_NO_USER_GESTURE: The browser only allows this right after a click or a key press.
  * - CLIPBOARD_PERMISSION_DENIED: The permission to use the clipboard was denied.
- * - CLIPBOARD_INVALID_IMAGE: The image couldn't be decoded, so it can't be copied as PNG.
- * - CLIPBOARD_READ_FAILED: The clipboard couldn't be read.
+ * - CLIPBOARD_INVALID_IMAGE: The clipboard holds only an image, which couldn't be decoded as PNG.
+ * - CLIPBOARD_READ_FAILED: The clipboard couldn't be read, or holds only an image it couldn't read.
  */
 export const readClipboard = async (): Promise<IClipboardContent> => {
   const clipboard = getSecureClipboard();
@@ -102,9 +104,19 @@ export const readClipboard = async (): Promise<IClipboardContent> => {
     const [text, html, image] = await Promise.all([
       readType(items, 'text/plain'),
       readType(items, 'text/html'),
-      readImage(items),
+      // a failed image is kept as its error, so the text copied with it can still be pasted
+      readImage(items).then(
+        (png) => ({ png }),
+        (failure: unknown) => ({ failure }),
+      ),
     ]);
-    return { text, html, image };
+    if (!('failure' in image)) {
+      return { text, html, image: image.png };
+    }
+    if (!text && !html) {
+      throw image.failure;
+    }
+    return { text, html, image: null };
   } catch (error) {
     throw isException(error)
       ? error

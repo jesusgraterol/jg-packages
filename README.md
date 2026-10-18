@@ -42,6 +42,7 @@ pnpm check
 | create a package                                  | [`docs/creating-a-package.md`](docs/creating-a-package.md) |
 | release a version, or publish a new package       | [`docs/releasing.md`](docs/releasing.md)                   |
 | work on the website                               | [`docs/website.md`](docs/website.md)                       |
+| deploy the website, or change its domain or rules | [`docs/deployment.md`](docs/deployment.md)                 |
 | use or change the shared Astro components         | [`docs/personal-astro-ui.md`](docs/personal-astro-ui.md)   |
 | check where a font, icon, or mark comes from      | [`docs/asset-attribution.md`](docs/asset-attribution.md)   |
 
@@ -49,15 +50,16 @@ pnpm check
 
 ```text
 .
-├── .github/workflows/ci.yml  # the check, floor, publish, and tag jobs
+├── .github/workflows/ci.yml  # the check, floor, deploy, publish, and tag jobs
 ├── docs/
 │   ├── asset-attribution.md  # where the website's mark, fonts, and icons come from
 │   ├── creating-a-package.md # every step from a package's name to its first release
+│   ├── deployment.md         # GitHub Pages, the domain, and the Cloudflare rules for Markdown
 │   ├── development.md        # setup, commands, dependencies, branches, troubleshooting
 │   ├── package-guidelines.md # conventions every package follows
 │   ├── personal-astro-ui.md  # the shared Astro components and their token contract
 │   ├── releasing.md          # versions, the release checks, publishing, and tags
-│   └── website.md            # running the website and where its content comes from
+│   └── website.md            # the website: its content, pages, search, checks, and tests
 ├── internal/                 # private workspace packages, never published
 │   ├── api-reference/        # extracts each package's API with TypeDoc, and renders API.md
 │   ├── build-tools/          # clean-dist and copy-assets scripts used by package builds

@@ -1,0 +1,20 @@
+---
+import { insertWordBreaks } from './word-breaks.ts';
+
+interface Props {
+  class?: string | undefined;
+  // the code, such as a path or an export's name
+  code: string;
+}
+
+const { class: className, code } = Astro.props;
+---
+
+{/* breaks only after / _ . and -, so a long name wraps at its separators */}
+<code
+  class:list={[
+    'rounded-md border border-border bg-secondary px-1.5 py-0.5 font-mono text-[0.875em] text-foreground',
+    className,
+  ]}
+  set:html={insertWordBreaks(code)}
+/>

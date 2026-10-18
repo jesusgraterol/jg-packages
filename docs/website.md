@@ -12,7 +12,11 @@ pnpm turbo run build --filter=@jg-packages/website
 pnpm --filter @jg-packages/website preview
 ```
 
+Pushes to `main` deploy the site to GitHub Pages, behind Cloudflare; [`deployment.md`](deployment.md) covers the pipeline, the domain, and the rules that serve Markdown to agents.
+
 `pnpm dev` runs the site's `dev` task through Turborepo. It serves the site at `http://localhost:4321/` and reloads when a README or a component changes. Running `astro dev` or `astro build` directly skips `generate`, and the package pages then fail with "has no API reference".
+
+`build` runs `astro build`, then Pagefind, which writes the [search](#search) index to `dist/pagefind/`, then `verify-build` on the result, so a build that breaks one of [its checks](#build-checks) fails. The site's integration tests run `verify-build` against copies of that build, each broken in one way, and its [end-to-end suite](#end-to-end-tests) runs the build in Chromium, so `pnpm check` builds the site before them.
 
 ## Where the content comes from
 
@@ -33,6 +37,9 @@ The build fails when the catalog and `packages/` disagree: every published packa
 | `/packages/<name>/`         | The package's header, with its install command and a "Recipes" button, its README, its API reference, and a table of contents                                            |
 | `/packages/<name>/recipes/` | The package's recipes, each block in a code window with a copy button, under a breadcrumb and a link back to the package's page, with a table of contents of the recipes |
 
+Both package pages carry a "Copy page" button beside their breadcrumb, which copies the page's [Markdown version](#markdown-versions-and-files-for-agents), fetched when clicked. When the copy fails, its guidance links to the Markdown file, so the text is a click away.
+| `/404.html` | A page-not-found page, `noindex` and without a canonical URL, linking back to the home page and the packages |
+
 The home page's sections, in order:
 
 1. **The hero:** what coding agents gain, the two actions "Set up your agent" and "View all packages", and the packages as icon tiles, from `package-grid`. It shows the first 8, so the hero keeps its shape as packages are added, and below them a "View all <count> packages" link, with a down arrow, to the packages section.
@@ -50,15 +57,90 @@ A project connects to the packages through [jg-skills](https://jg-skills.jesusgr
 
 `SITE_CONFIG.agentSetup` holds the three destinations: `policyUrl`, `skillUrl` and `installCommand`. jg-skills owns all three, so a change there is one edit here. How package changes keep jg-skills current is in [Keeping jg-skills in sync](package-guidelines.md#keeping-jg-skills-in-sync).
 
-**The launch order,** so no link points at a page that isn't live:
+Local implementation and passing checks establish source readiness, not public availability. Publishing, merging, and deployment are separate actions. Before publishing either site's new links, verify that each destination serves the expected content; a committed file or a pending Pages deployment is not enough.
 
-1. jg-skills publishes its skill page and policy, and its Pages deploy finishes.
-2. This site launches, after checking that both destinations answer with the expected page and file.
-3. jg-skills publishes its home page section, which links here.
+**The launch order:**
+
+1. jg-skills publishes its [skill page](https://jg-skills.jesusgraterol.dev/skills/jg-packages/) and [policy asset](https://github.com/jesusgraterol/jg-skills/blob/main/skills/jg-packages/assets/agents-section.md). Wait for its Pages deployment and verify both destinations.
+2. This site publishes its contextual setup links only after those checks. Preserve its existing jg-skills homepage footer link throughout.
+3. Verify that [the package homepage](https://jg-packages.jesusgraterol.dev/) serves the actual site, then publish the jg-skills homepage section and footer link that point here.
+
+Record any outstanding destination checks in the publication handoff. Local previews do not complete them. The package docs own API contracts, the jg-skills asset owns the reusable policy, and this setup section connects projects to that policy and the package-selection skill without maintaining another policy copy.
 
 ### Navigation
 
 Pages crossfade into each other, and a page is prerendered when the pointer rests on its link, both from `jg-personal-astro-ui` without JavaScript. When a page is slow to arrive, the layout's `navigation-progress` shows a thin bar along the top until it does. [`personal-astro-ui.md`](personal-astro-ui.md#navigation) describes all three. Judge how navigation feels on the built site, through `pnpm --filter @jg-packages/website preview`: the dev server loads unbundled modules on every page.
+
+### Search
+
+The header's search button, at every width, opens `search-dialog`, and so do `/` and Ctrl+K or Cmd+K. Typing searches the [Pagefind](https://pagefind.app/) index `build` writes, and lists up to 8 pages with their matches marked.
+
+- **What's indexed:** `base-layout` marks `main` with `data-pagefind-body` on every page but a `noIndex` one, so the home page, the package pages, and the recipes pages are searchable, and the 404 page isn't. Code window headers, copy buttons, and the tables of contents carry `data-pagefind-ignore`, so excerpts show the content.
+- **Result titles:** a page's `h1`, so a package page is its name. A recipes page's `h1` is the name too, so `data-pagefind-meta` titles it "<name> recipes", and the home page "jg-packages".
+- **In development:** `pnpm dev` has no index, so the dialog says search isn't available. Try it on a build, through `preview`.
+
+## Markdown versions and files for agents
+
+Every page has a Markdown version at `index.md` in its directory, which its head links as `<link rel="alternate" type="text/markdown">`. Every page's head also links `/llms.txt` as `describedby`. In production, a request for the page itself with `Accept: text/markdown` gets the Markdown version too, through a Cloudflare rule [`deployment.md`](deployment.md#markdown-for-agents) describes.
+
+| Path                                | What it serves                                                                                                                                                                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/index.md`                         | The home page, section by section, with each package linked to its Markdown version. It reads the same words as the page, from `src/utilities/home-content/`.                                          |
+| `/packages/<name>/index.md`         | The package's header (description, version, runtimes, install command, and its npm, source, and recipes links), its README's sections as the page shows them, and its API reference at heading level 2 |
+| `/packages/<name>/recipes/index.md` | The package's `RECIPES.md`, as it ships                                                                                                                                                                |
+| `/llms.txt`                         | The site's index in the [llmstxt.org](https://llmstxt.org/) format: the agent setup links, then every package's and every recipes page's Markdown version                                              |
+| `/llms-full.txt`                    | Every package's Markdown version and recipes in one file, for loading into a context window                                                                                                            |
+| `/robots.txt`                       | Lets every crawler read the site, and names the sitemap index                                                                                                                                          |
+
+The sitemap lists the HTML pages only. A recipes page's description is the sentence under its `RECIPES.md` title when it fits search results, 70 to 160 characters, and otherwise names the recipes.
+
+**Head data.** `base-layout` gives every page its canonical URL, its Markdown version, the `llms.txt` link, the open-graph image, and the JSON-LD from `buildStructuredData` in `jg-personal-astro-ui/seo`: the home page is the `WebSite`, with an `ItemList` of the package pages; every other page is a `WebPage` with its `BreadcrumbList`, and a package page adds its `SoftwareSourceCode`.
+
+**The open-graph image** is `public/og/jg-packages.png`, 1200 by 630, committed. `pnpm --filter @jg-packages/website assets:generate` writes it again from `scripts/open-graph-template.html`, in Chromium, listing every package in the catalog. Run it after changing the template or the catalog.
+
+## Build checks
+
+`scripts/verify-build.ts` runs `verifyBuild` from `src/utilities/verify-build/` on `dist`. The first failure stops the build with one of these messages:
+
+| Message                                                                                                              | What it means, and how to fix it                                                                                                                                                                                                                                     |
+| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Missing build path                                                                                                   | A required file is missing: the home page, the 404 page, the favicon, `llms.txt`, `llms-full.txt`, `robots.txt`, the sitemap index, the open-graph image, or the search index's `pagefind.js` and `pagefind-entry.json`. Restore its route or file, or run Pagefind. |
+| Production build contains a test file                                                                                | A test file reached `public/` or the build. Move it out.                                                                                                                                                                                                             |
+| Missing package page                                                                                                 | A listed package lacks its page, its recipes page, or one of their Markdown versions. A new catalog entry needs the package's README and `RECIPES.md`.                                                                                                               |
+| Page holds an event handler or a URL with a disallowed scheme                                                        | Markup has an `on…` attribute, or a URL with a scheme other than `http`, `https`, or `mailto`. Scripts and styles are skipped. Remove it.                                                                                                                            |
+| Page repeats an element ID                                                                                           | Two elements share an ID, such as two API symbols with one anchor. Make them unique.                                                                                                                                                                                 |
+| Missing required metadata                                                                                            | A public page lacks one of the head tags `base-layout` writes, such as its canonical URL, its Markdown alternate, or an open-graph tag. Render the page through `base-layout` with its `canonicalPath` and `markdownPath`.                                           |
+| Page has no Markdown version                                                                                         | The `index.md` next to a page is missing. Add its route.                                                                                                                                                                                                             |
+| Missing or duplicate page title, or description                                                                      | Two pages share a title or a description. Make each unique.                                                                                                                                                                                                          |
+| Page title is longer than 60 characters                                                                              | Shorten the title.                                                                                                                                                                                                                                                   |
+| Page description is not 70 to 160 characters long                                                                    | Rewrite the description to fit. The catalog checks package descriptions the same way.                                                                                                                                                                                |
+| Canonical URL is missing from the sitemap                                                                            | A public page isn't in the sitemap. Check the sitemap integration's settings in `astro.config.ts`.                                                                                                                                                                   |
+| Missing structured data, Invalid structured data, Structured data is not an object, Structured data graph is invalid | The page's JSON-LD is missing or malformed. Pass `structuredData` from `buildStructuredData` to `base-layout`.                                                                                                                                                       |
+| Structured data does not match the canonical page                                                                    | The JSON-LD describes another URL, or has no description.                                                                                                                                                                                                            |
+| Home page item list does not list every package                                                                      | The home page's `ItemList` and the catalog disagree.                                                                                                                                                                                                                 |
+| Breadcrumb hierarchy is incomplete                                                                                   | A page's `BreadcrumbList` doesn't end at the page, or the page shows no `<nav aria-label="Breadcrumb">`. Keep the JSON-LD and the visible breadcrumb in step.                                                                                                        |
+| Package page is missing its source code entity                                                                       | A package page's JSON-LD lacks its `SoftwareSourceCode`.                                                                                                                                                                                                             |
+| Broken internal link                                                                                                 | A link to this site reaches no file of the build.                                                                                                                                                                                                                    |
+| Fragment link has no matching element ID                                                                             | A link's `#fragment` matches no element of the page it points to.                                                                                                                                                                                                    |
+| The 404 page must stay out of search indexes, or must not name a canonical URL                                       | The 404 page lost its `noIndex`, or gained a canonical URL.                                                                                                                                                                                                          |
+| The search index does not hold every public page                                                                     | Pagefind indexed more or fewer pages than the build's public pages: a page lost `data-pagefind-body`, or the 404 page gained it.                                                                                                                                     |
+| robots.txt does not name the sitemap index                                                                           | Restore the `Sitemap:` line in `src/pages/robots.txt.ts`.                                                                                                                                                                                                            |
+| llms.txt does not follow the required structure                                                                      | `llms.txt` lacks its title and summary, the agent setup links, or a package's or recipes page's link.                                                                                                                                                                |
+| Broken internal llms.txt link                                                                                        | A link in `llms.txt` reaches no file of the build.                                                                                                                                                                                                                   |
+| llms-full.txt is missing a package or its recipes                                                                    | A package's Markdown version or its `RECIPES.md` is missing from `llms-full.txt`.                                                                                                                                                                                    |
+| The build names a package the site never mentions                                                                    | A text file names one of the packages the jg packages replaced, or one kept off the site, such as `jg-personal-astro-ui`. `OLD_PACKAGE_NAMES` in `src/utilities/verify-build/constants.ts` lists the old ones. Reword it.                                            |
+
+## End-to-end tests
+
+`pnpm turbo run test:e2e --filter=@jg-packages/website` builds the site, then runs `website/e2e/` with Playwright in Chromium, against `astro preview` on port 4330, apart from the dev server. `pnpm check` runs it. The suite covers:
+
+- **Every route,** the public pages and the 404 page: the speculation rules, each page's Markdown version against its file, no axe violations in either theme, no overflow at 320 px, and no stacked dividers at 390 and 1280 px. A stacked divider is two horizontal hairlines within 48 px of each other that overlap, counting top and bottom borders without side borders, and not rows of one table, list, or code block.
+- **Navigation:** at most 8 hero tiles and the "View all <count> packages" link, and the progress bar showing while a page is held for 600 ms and hidden after going back. Chromium fetches a hovered link's page through the speculation rules, which Playwright's routing can't intercept, so a proxy in front of the preview holds the response. With reduced motion, the bar stands still and transitions are instant.
+- **Keyboard and remembered choices:** the skip link, the theme across reloads and pages, the mobile menu with Escape, and the package manager tabs by keyboard.
+- **Search:** opening from the button and the shortcuts, results from the index, and focus returning on Escape.
+- **Copying:** code windows in READMEs and recipes copy exactly their code, "Copy page" copies exactly the Markdown version and links to it when that fails, the agent setup's install command copies exactly, and the guidance when the clipboard is missing or fails. The setup links' destinations and new-tab notice are checked without loading jg-skills, so the suite doesn't depend on another site.
+
+Run it three times with retries off after changing it, as [`development.md`](development.md#tests) says.
 
 ## Package icons
 

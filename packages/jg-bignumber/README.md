@@ -20,6 +20,7 @@ processValue(512.155); // 512.16
 processValue(19.991, { roundingMode: 'ROUND_CEIL' }); // 20
 processValue('0.000001', { decimalPlaces: 6, type: 'string' }); // '0.000001'
 prettifyValue(1234.5, { format: { prefix: '$' } }); // '$1,234.5'
+prettifyValue(1234.5, { format: { prefix: '$', minimumDecimalPlaces: 2 } }); // '$1,234.50'
 ```
 
 Percentages and money:

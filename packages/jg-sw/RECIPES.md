@@ -28,6 +28,9 @@ export default defineConfig({
 
         // the worker answers from its cache first, so keep API data and other pages out of it
         excludeMIMETypesFromCache: ['application/json', 'text/html'],
+
+        // offline, a route the app handles, such as /settings, opens through the page
+        navigationFallback: '/index.html',
       },
     }),
   ],
@@ -61,7 +64,7 @@ window.addEventListener(
 );
 ```
 
-During `vite`, the dev server answers `/sw.js` with a worker that caches nothing, so registration works and every request still reaches the dev server. To try the offline app, run `vite build` and `vite preview`, load the page once, then turn the network off in the browser's devtools. The worker matches each request exactly and has no fallback page, so offline, open the app at `/`: reloading a client-side route, such as `/settings`, gets the worker's network error instead of the app.
+During `vite`, the dev server answers `/sw.js` with a worker that caches nothing, so registration works and every request still reaches the dev server. To try the offline app, run `vite build` and `vite preview`, load the page once, then turn the network off in the browser's devtools. The worker matches each request exactly, so a client-side route, such as `/settings`, is never in its cache. Offline, `navigationFallback` answers the navigation with the precached page, at the route's URL, so the app's router shows it; without it, reloading the route gets the worker's network error. The fallback must be one of the precached paths, or the build fails with `NAVIGATION_FALLBACK_NOT_PRECACHED`.
 
 ## Telling people an update is ready
 
