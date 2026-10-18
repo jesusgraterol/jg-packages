@@ -2,7 +2,7 @@ import { createVitestConfig } from '@jg-packages/vitest-config';
 
 export default createVitestConfig({
   categories: ['unit', 'browser'],
-  // the coverage measured when the package was created, rounded down; the scroll hook's client
-  // snapshot runs only in the browser tests, which coverage doesn't measure
-  coverage: { thresholds: { statements: 98, branches: 100, functions: 97, lines: 100 } },
+  // the coverage of the unit tests and the browser tests' Chromium run, which test:coverage
+  // measures together, rounded down; raise them as tests improve
+  coverage: { thresholds: { statements: 100, branches: 100, functions: 100, lines: 100 } },
 });
