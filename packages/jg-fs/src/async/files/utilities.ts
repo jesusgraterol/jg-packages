@@ -1,6 +1,12 @@
-import { constants, lstat, open, stat, type FileHandle } from 'node:fs/promises';
+import { constants, lstat, open, realpath, rename, stat, type FileHandle } from 'node:fs/promises';
 
-import { isNoFollowError, isNotFoundError, notARegularFile } from '../../shared/index.js';
+import {
+  isBusyRenameError,
+  isNoFollowError,
+  isNotFoundError,
+  notARegularFile,
+  RENAME_RETRY_DELAYS_MS,
+} from '../../shared/index.js';
 
 /**
  * Reads the permission bits of an existing file.
@@ -13,6 +19,47 @@ export const readPermissionBits = async (path: string): Promise<number | undefin
   } catch (error) {
     if (isNotFoundError(error)) {
       return undefined;
+    }
+    throw error;
+  }
+};
+
+/**
+ * Renames a file over another, trying again for about 4 seconds while Windows refuses because
+ * another process, such as an antivirus scanner, holds the destination.
+ * @param from The file to rename.
+ * @param to Its new path.
+ * @returns A promise that resolves once it's renamed.
+ */
+export const renameReplacing = async (from: string, to: string): Promise<void> => {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await rename(from, to);
+      return;
+    } catch (error) {
+      const delay = RENAME_RETRY_DELAYS_MS[attempt];
+      if (delay === undefined || !isBusyRenameError(error)) {
+        throw error;
+      }
+      await new Promise((resolve) => {
+        setTimeout(resolve, delay);
+      });
+    }
+  }
+};
+
+/**
+ * Resolves the file a write replaces: the target of a symbolic link at the path, so the link keeps
+ * pointing at the new content, or the path itself when nothing is there yet.
+ * @param path The path.
+ * @returns A promise that resolves to the path to write.
+ */
+export const resolveWriteTarget = async (path: string): Promise<string> => {
+  try {
+    return await realpath(path);
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      return path;
     }
     throw error;
   }

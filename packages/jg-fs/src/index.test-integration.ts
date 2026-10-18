@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer';
-import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { chmod, lstat, mkdir, mkdtemp, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expectToRejectCode } from 'jg-exception/testing';
@@ -161,6 +161,49 @@ describe.each([
     expect(await fs.readTextFile(p('dir', 'state.json'))).toBe('{"v":2}');
     expect(await fs.readDirectory(p('dir'))).toStrictEqual([p('dir', 'state.json')]);
   });
+
+  test.skipIf(process.platform === 'win32')(
+    'writes JSON atomically, through a symbolic link at the path',
+    async () => {
+      await fs.writeJsonFile(p('config.json'), { v: 1 });
+      const { ino } = await stat(p('config.json'));
+      await fs.writeJsonFile(p('config.json'), { v: 2 });
+
+      // a rename replaced the file, so a write cut short would have left the old one whole
+      expect((await stat(p('config.json'))).ino).not.toBe(ino);
+      expect(await fs.readJsonFile(p('config.json'))).toStrictEqual({ v: 2 });
+      expect(await fs.readDirectory(root)).toStrictEqual([p('config.json')]);
+
+      await symlink(p('config.json'), p('link.json'));
+      await fs.writeJsonFile(p('link.json'), { v: 3 });
+
+      expect((await lstat(p('link.json'))).isSymbolicLink()).toBe(true);
+      expect(await fs.readJsonFile(p('config.json'))).toStrictEqual({ v: 3 });
+      expect(await fs.readDirectory(root)).toStrictEqual([p('config.json'), p('link.json')]);
+    },
+  );
+
+  test.skipIf(process.platform === 'win32')(
+    'reads JSON within maxBytes, and rejects a larger file or a symbolic link',
+    async () => {
+      // 8 bytes
+      await writeFile(p('data.json'), '{"id":1}');
+      await symlink(p('data.json'), p('data-link.json'));
+      const schema = { parse: (value: unknown) => value as { id: number } };
+
+      expect(await fs.readJsonFile(p('data.json'), { maxBytes: 8, schema })).toStrictEqual({
+        id: 1,
+      });
+      await expectToRejectCode(
+        fs.readJsonFile(p('data.json'), { maxBytes: 7 }),
+        fs.ERRORS.FILE_TOO_LARGE,
+      );
+      await expectToRejectCode(
+        fs.readJsonFile(p('data-link.json'), { maxBytes: 100 }),
+        fs.ERRORS.NOT_A_FILE,
+      );
+    },
+  );
 
   test.runIf(process.platform === 'linux')(
     'rejects a file that holds more than its size said, as FILE_TOO_LARGE, without reading it all',

@@ -4,11 +4,11 @@ Patterns for Node.js apps that keep their files whole through crashes, and read 
 
 ## A config file that's never half-written
 
-Use this for a file the app reads at startup and rewrites while it runs, such as settings changed from an admin page. A plain write that's cut short, by a crash or a full disk, leaves a truncated file that won't parse at the next start. `writeFileAtomic` writes a temporary file next to it, flushes it to disk, and renames it over the old one, so the file holds either the old config or the new one:
+Use this for a file the app reads at startup and rewrites while it runs, such as settings changed from an admin page. A plain write that's cut short, by a crash or a full disk, leaves a truncated file that won't parse at the next start. `writeJsonFile` writes a temporary file next to it, flushes it to disk, and renames it over the old one, so the file holds either the old config or the new one:
 
 ```ts
 import { hasErrorCode } from 'jg-exception';
-import { ERRORS, readJsonFile, writeFileAtomic } from 'jg-fs';
+import { ERRORS, readJsonFile, writeJsonFile } from 'jg-fs';
 
 // the config's type, from your schema
 type IConfig = ReturnType<typeof Config.parse>;
@@ -40,7 +40,7 @@ let pendingUpdate: Promise<unknown> = Promise.resolve();
 export const updateConfig = (change: (config: IConfig) => IConfig): Promise<IConfig> => {
   const update = pendingUpdate.then(async () => {
     const config = change(await loadConfig());
-    await writeFileAtomic(CONFIG_PATH, `${JSON.stringify(config, undefined, 2)}\n`);
+    await writeJsonFile(CONFIG_PATH, config);
     return config;
   });
 
@@ -52,7 +52,7 @@ export const updateConfig = (change: (config: IConfig) => IConfig): Promise<ICon
 await updateConfig((config) => ({ ...config, port: 3000 }));
 ```
 
-`writeJsonFile` is a plain write, so a file that must survive a crash goes through `writeFileAtomic` with `JSON.stringify` instead. Any error other than a missing file propagates, such as `FILE_CONTENT_IS_EMPTY_OR_INVALID` for a file that isn't JSON, or the schema's own error, so the app never starts from a config it can't trust. The atomic write keeps each save whole, but doesn't order saves: the queue does that inside one process, and when several processes write the file, give it one owner. A crash during a save can leave a temporary `.<random>.tmp` file next to the config, which is safe to delete.
+`writeFileAtomic` writes any other content the same way, and both try again for a few seconds while Windows refuses the rename because a scanner holds the file. A symbolic link at the path keeps pointing at the config. Any error other than a missing file propagates, such as `FILE_CONTENT_IS_EMPTY_OR_INVALID` for a file that isn't JSON, or the schema's own error, so the app never starts from a config it can't trust. The atomic write keeps each save whole, but doesn't order saves: the queue does that inside one process, and when several processes write the file, give it one owner. A crash during a save can leave a temporary `.<random>.tmp` file next to the config, which is safe to delete.
 
 `jg-fs/sync` has the same functions without promises, for code that can't await, such as an `exit` handler or a short CLI command. An explicit mode keeps a secret private from the first byte written:
 

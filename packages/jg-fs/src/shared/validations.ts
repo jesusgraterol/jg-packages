@@ -127,6 +127,22 @@ export const isNotFoundError = (error: unknown): boolean =>
   error instanceof Error && 'code' in error && error.code === 'ENOENT';
 
 /**
+ * Checks whether a rename failed only because another process holds the file for now, which
+ * Windows reports as EACCES, EBUSY, or EPERM, so the rename is worth another attempt.
+ * @param error The rename's error.
+ * @param platform The platform. Defaults to the current one.
+ * @returns Whether to try the rename again.
+ */
+export const isBusyRenameError = (
+  error: unknown,
+  platform: NodeJS.Platform = process.platform,
+): boolean =>
+  platform === 'win32' &&
+  error instanceof Error &&
+  'code' in error &&
+  (error.code === 'EACCES' || error.code === 'EBUSY' || error.code === 'EPERM');
+
+/**
  * Builds the exception for a bounded read whose path doesn't exist or ends in a symbolic link.
  * @param path The path.
  * @param error The error opening it.

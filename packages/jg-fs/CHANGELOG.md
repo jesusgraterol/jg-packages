@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+
+- `readJsonFile` takes `maxBytes`, and then reads the file as `readBoundedFile` does, throwing `FILE_TOO_LARGE` for a larger one, for JSON whose size isn't yours to decide.
+
+### Changed
+
+- `writeJsonFile` writes atomically, as `writeFileAtomic` does, so a crash or a full disk never leaves a truncated file. A symbolic link at the path keeps pointing at the file, whose target is replaced.
+
+### Fixed
+
+- `writeFileAtomic`, and so `writeJsonFile`, tries the rename again for about 4 seconds while Windows refuses it with `EACCES`, `EBUSY`, or `EPERM` because another process, such as an antivirus scanner, holds the file.
+
 ## 1.1.1
 
 ### Added

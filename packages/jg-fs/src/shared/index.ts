@@ -19,6 +19,7 @@ export {
   BOUNDED_READ_CHUNK_SIZE,
   DIRECTORY_ELEMENTS_CONCURRENCY,
   DIRECTORY_ELEMENTS_DEFAULT_OPTIONS,
+  RENAME_RETRY_DELAYS_MS,
 } from './constants.js';
 
 // paths
@@ -32,6 +33,7 @@ export {
   assertBufferData,
   assertTextData,
   fileTooLarge,
+  isBusyRenameError,
   isNoFollowError,
   isNotFoundError,
   notADirectory,

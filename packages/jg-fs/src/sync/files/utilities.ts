@@ -1,6 +1,21 @@
-import { closeSync, constants, fsyncSync, lstatSync, openSync, statSync } from 'node:fs';
+import {
+  closeSync,
+  constants,
+  fsyncSync,
+  lstatSync,
+  openSync,
+  realpathSync,
+  renameSync,
+  statSync,
+} from 'node:fs';
 
-import { isNoFollowError, isNotFoundError, notARegularFile } from '../../shared/index.js';
+import {
+  isBusyRenameError,
+  isNoFollowError,
+  isNotFoundError,
+  notARegularFile,
+  RENAME_RETRY_DELAYS_MS,
+} from '../../shared/index.js';
 
 /**
  * Reads the permission bits of an existing file.
@@ -13,6 +28,45 @@ export const readPermissionBits = (path: string): number | undefined => {
   } catch (error) {
     if (isNotFoundError(error)) {
       return undefined;
+    }
+    throw error;
+  }
+};
+
+/**
+ * Renames a file over another, trying again for about 4 seconds while Windows refuses because
+ * another process, such as an antivirus scanner, holds the destination. It blocks between
+ * attempts, as every sync function does.
+ * @param from The file to rename.
+ * @param to Its new path.
+ */
+export const renameReplacing = (from: string, to: string): void => {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      renameSync(from, to);
+      return;
+    } catch (error) {
+      const delay = RENAME_RETRY_DELAYS_MS[attempt];
+      if (delay === undefined || !isBusyRenameError(error)) {
+        throw error;
+      }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delay);
+    }
+  }
+};
+
+/**
+ * Resolves the file a write replaces: the target of a symbolic link at the path, so the link keeps
+ * pointing at the new content, or the path itself when nothing is there yet.
+ * @param path The path.
+ * @returns The path to write.
+ */
+export const resolveWriteTarget = (path: string): string => {
+  try {
+    return realpathSync(path);
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      return path;
     }
     throw error;
   }
