@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+### Fixed
+
+- `copy-button` makes room for its "Copied" and "Copy failed" labels from the start, so a label longer than its resting one, such as "Copied" after "Copy", no longer widens the button. A button with a long resting label still holds its width while a shorter one shows.
+
 ## 0.3.0
 
 ### Added

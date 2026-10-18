@@ -43,7 +43,7 @@ describe('renderCodeWindowHeader', () => {
     });
 
     expect(html).toContain(
-      '<span data-copy-label>Copy</span><span class="sr-only"> install command</span>',
+      'data-copy-label>Copy</span></span><span class="sr-only"> install command</span>',
     );
   });
 

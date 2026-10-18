@@ -40,6 +40,15 @@ const TONE_CLASSES: Record<ICopyButtonTone, string> = {
     'rounded-md px-2.5 text-terminal-foreground/80 hover:bg-terminal-foreground/10 hover:text-terminal-foreground focus-visible:outline-terminal-accent',
 };
 
+// the labels a button shows after a copy, which LABEL_CELL_CLASSES makes room for
+export const COPY_OUTCOME_LABELS = { error: 'Copy failed', success: 'Copied' } as const;
+
+// holds the label in a grid cell that also stacks the outcome labels, invisible, so the button is
+// as wide as the longest label it shows from the start, and a longer one, such as "Copied" after
+// "Copy", never widens it. The outcome labels match the ones copy-behavior shows
+const LABEL_CELL_CLASSES =
+  "grid justify-items-center before:invisible before:col-start-1 before:row-start-1 before:content-['Copied'] after:invisible after:col-start-1 after:row-start-1 after:content-['Copy_failed']";
+
 // the icons' shared attributes, as Lucide draws them
 const ICON_ATTRIBUTES =
   'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
@@ -96,7 +105,7 @@ export const renderCopyButton = ({
     `<span class="${escapeHtml(['relative inline-flex shrink-0 items-center', className].filter(Boolean).join(' '))}" data-pagefind-ignore>`,
     `<button type="button" class="inline-flex ${SIZE_CLASSES[size]} font-semibold transition-colors ${TONE_CLASSES[tone]}" data-copy-button${renderAttribute('data-copy-context', context)}${renderAttribute('data-copy-source', sourceId)}${renderAttribute('data-copy-text', text)}${renderAttribute('data-copy-url', url)}>`,
     ICONS,
-    `<span data-copy-label>${escapeHtml(label)}</span>`,
+    `<span class="${LABEL_CELL_CLASSES}"><span class="col-start-1 row-start-1" data-copy-label>${escapeHtml(label)}</span></span>`,
     `<span class="sr-only"> ${escapeHtml(context)}</span>`,
     '</button>',
     '<span class="sr-only" data-copy-status aria-live="polite"></span>',

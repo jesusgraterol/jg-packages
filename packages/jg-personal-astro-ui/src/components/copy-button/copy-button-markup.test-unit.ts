@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { renderCopyButton } from './copy-button-markup.ts';
+import { COPY_OUTCOME_LABELS, renderCopyButton } from './copy-button-markup.ts';
 
 /**
  * Reads the opening tag of the rendered button.
@@ -16,7 +16,7 @@ describe('renderCopyButton', () => {
     expect(readButtonTag(html)).toBe(
       '<button type="button" class="inline-flex min-h-8 items-center gap-1.5 text-xs font-semibold transition-colors rounded-md px-2.5 text-muted hover:bg-secondary hover:text-foreground" data-copy-button data-copy-context="text">',
     );
-    expect(html).toContain('<span data-copy-label>Copy</span>');
+    expect(html).toContain('<span class="col-start-1 row-start-1" data-copy-label>Copy</span>');
     expect(html).toContain('<span class="sr-only"> text</span>');
     expect(html).toContain('<span class="sr-only" data-copy-status aria-live="polite"></span>');
     expect(html).toContain('data-copy-hint hidden></span>');
@@ -44,13 +44,32 @@ describe('renderCopyButton', () => {
       'data-copy-context="npm &lt;install&gt; command" data-copy-source="cmd&quot;1" data-copy-text="npm install &quot;a&quot; &lt;b&gt; &amp; c">',
     );
     expect(readButtonTag(html)).toContain('text-terminal-foreground/80');
-    expect(html).toContain('<span data-copy-label>Copy &amp; paste</span>');
+    expect(html).toContain(
+      '<span class="col-start-1 row-start-1" data-copy-label>Copy &amp; paste</span>',
+    );
     expect(html).toContain('<span class="sr-only"> npm &lt;install&gt; command</span>');
     expect(
       html.startsWith(
         '<span class="relative inline-flex shrink-0 items-center ml-auto &quot;x&quot;" data-pagefind-ignore>',
       ),
     ).toBe(true);
+  });
+
+  test('makes room for each outcome label in the label cell, so a longer one never widens it', () => {
+    const cell = /<span class="(grid [^"]*)"><span[^>]*data-copy-label>/u.exec(
+      renderCopyButton(),
+    )?.[1];
+
+    // invisible pseudo-elements in the label's grid cell, holding the labels copy-behavior shows
+    expect(cell).toContain(
+      `before:content-['${COPY_OUTCOME_LABELS.success.replaceAll(' ', '_')}']`,
+    );
+    expect(cell).toContain(`after:content-['${COPY_OUTCOME_LABELS.error.replaceAll(' ', '_')}']`);
+    for (const pseudo of ['before', 'after']) {
+      for (const utility of ['invisible', 'col-start-1', 'row-start-1']) {
+        expect(cell).toContain(`${pseudo}:${utility}`);
+      }
+    }
   });
 
   test.each([
