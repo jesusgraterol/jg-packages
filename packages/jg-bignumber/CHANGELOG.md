@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.0
+
+### Added
+
+- `toScaledInteger(value, decimals)`, which converts an amount, such as dollars, to a `bigint` count of its smallest unit, such as microcents with 8 decimals, without rounding. It takes a number or a plain decimal string, with surrounding spaces and a leading `+`, and throws `INVALID_VALUE` for scientific notation, including a number JavaScript writes that way, such as `0.00000001`, for hex and malformed values, and for digits beyond `decimals` other than trailing zeros.
+- `fromScaledInteger(value, decimals)`, which converts a `bigint` or an integer string back to the exact decimal string, with all `decimals` digits and no symbol, separators, or rounding.
+- A recipe for storing money as integers.
+
+### Fixed
+
+- `prettifyValue` puts the sign before the prefix, so `-5` with the prefix `$` is `-$5` instead of `$-5`.
+
 ## 1.2.0
 
 ### Added

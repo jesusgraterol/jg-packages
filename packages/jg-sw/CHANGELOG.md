@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0
+
+### Added
+
+- `preloadErrorDetected` in the snapshot. `registerServiceWorker()` listens for Vite's `vite:preloadError`, and when a chunk fails to load while the browser is online and the page has the build's entry module, a `script[type="module"][src]`, it prevents the event's default and sets the flag, so the app can offer `updateApp()`. Any other failure, such as one while offline, is left to Vite and the app's own error handling.
+
 ## 1.2.0
 
 ### Added

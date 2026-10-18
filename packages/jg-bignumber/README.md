@@ -21,6 +21,7 @@ processValue(19.991, { roundingMode: 'ROUND_CEIL' }); // 20
 processValue('0.000001', { decimalPlaces: 6, type: 'string' }); // '0.000001'
 prettifyValue(1234.5, { format: { prefix: '$' } }); // '$1,234.5'
 prettifyValue(1234.5, { format: { prefix: '$', minimumDecimalPlaces: 2 } }); // '$1,234.50'
+prettifyValue(-5, { format: { prefix: '$' } }); // '-$5'
 ```
 
 Percentages and money:
@@ -40,6 +41,17 @@ calculateWeightedEntry([
   [100, 2],
   [130, 1],
 ]); // 110, the average price weighted by amount
+```
+
+Store money as an integer count of its smallest unit, such as microcents in a PostgreSQL `BIGINT`, and convert it exactly, never rounding:
+
+```ts
+import { fromScaledInteger, toScaledInteger } from 'jg-bignumber';
+
+toScaledInteger('1.23', 8); // 123000000n
+toScaledInteger('0.123456789', 8); // throws INVALID_VALUE: the 9th decimal would be lost
+toScaledInteger(1e-8, 8); // throws INVALID_VALUE: JavaScript writes it as '1e-8'
+fromScaledInteger(123000000n, 8); // '1.23000000'
 ```
 
 `BigNumber` is the package's own bignumber.js constructor, so creating values with it never changes the global bignumber.js configuration.

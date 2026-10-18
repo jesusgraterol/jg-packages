@@ -50,6 +50,34 @@ totalCell.textContent = prettifyValue(total, { format: { prefix: '$', minimumDec
 
 Every jg-bignumber calculation, and `processValue`, rounds its result, so call one where the invoice rounds, and do the steps in between with BigNumber methods, such as `times` and `dividedBy`, which don't. `{ type: 'bignumber' }` returns a BigNumber instead of a number, so the next step starts from the decimal value. Results round to 2 decimal places with `ROUND_HALF_UP`: pass `roundingMode: 'ROUND_HALF_EVEN'` where an accounting rule asks for banker's rounding, or `decimalPlaces: 0` for a currency without cents. A string that isn't a number, such as `''` from an empty form field, throws `INVALID_VALUE`, so check input with `isNumber` before it reaches the math.
 
+## Storing money as integers
+
+Use this when amounts are stored or added up as integers, such as microcents in a PostgreSQL `BIGINT`, which sums exactly and sorts fast. Convert at the edges: an amount that reaches the API becomes an integer before it's stored, and an integer read back becomes a decimal string before it's shown. The conversions never round, so an amount with more decimals than the unit holds is rejected instead of losing a fraction of a cent:
+
+```ts
+import { fromScaledInteger, prettifyValue, toScaledInteger } from 'jg-bignumber';
+
+// microcents: a dollar is 100,000,000 of them
+const MICROCENTS = 8;
+
+// adds a credit to an account's balance, such as with a SQL query on a BIGINT column, which
+// node-postgres returns as a string
+declare function addToBalance(accountId: string, microcents: bigint): Promise<string>;
+
+export const creditAccount = async (accountId: string, dollars: string): Promise<string> => {
+  // throws INVALID_VALUE for '1e-8', '0x10', or '0.123456789', so the request fails instead of
+  // storing a different amount
+  const balance = await addToBalance(accountId, toScaledInteger(dollars, MICROCENTS));
+
+  // the exact amount, such as '12.50000000', formatted as '$12.50' for people
+  return prettifyValue(fromScaledInteger(balance, MICROCENTS), {
+    format: { prefix: '$', minimumDecimalPlaces: 2 },
+  });
+};
+```
+
+Pass amounts as strings, as a form or an API sends them. A number works while JavaScript writes it as a plain decimal, but `0.00000001` is written `1e-8`, and `0.1 + 0.2` is `0.30000000000000004`, so both are rejected. `fromScaledInteger` keeps every decimal, so its result can go back through `toScaledInteger` unchanged, and `prettifyValue` rounds it only for display.
+
 ## A percentage change for a dashboard
 
 Use this for a metric tile that compares a period with the one before, such as this month's revenue against last month's. `calculatePercentageChange` returns a signed percentage, and `prettifyValue` formats it with a sign and a suffix:

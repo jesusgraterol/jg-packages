@@ -284,6 +284,22 @@ describe('Value Procesors', () => {
       ).toThrow(expect.objectContaining({ code: ERRORS.INVALID_BIGNUMBER_FORMAT, cause }));
     });
 
+    test.each([
+      [-5, { prefix: '$' }, '-$5'],
+      [-1234.5, { prefix: '$', minimumDecimalPlaces: 2, suffix: ' USD' }, '-$1,234.50 USD'],
+      [-5, { prefix: '$', negativeSign: '−' }, '−$5'],
+      [5, { prefix: '$', positiveSign: '+' }, '+$5'],
+      [0, { prefix: '$', positiveSign: '+' }, '+$0'],
+      [-0.001, { prefix: '$' }, '$0'],
+      [-5, { negativeSign: '', prefix: '$' }, '$5'],
+      [5, { prefix: '$' }, '$5'],
+    ])(
+      'puts the sign before the prefix: prettifyValue(%d, %o) -> %s',
+      (value, format, expected) => {
+        expect(prettifyValue(value, { format })).toBe(expected);
+      },
+    );
+
     test('keeps trailing zeros up to minimumDecimalPlaces, and drops them by default', () => {
       expect(prettifyValue(1234.5, { format: { prefix: '$' } })).toBe('$1,234.5');
       expect(prettifyValue(1234.5, { format: { prefix: '$', minimumDecimalPlaces: 2 } })).toBe(

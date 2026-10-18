@@ -2,6 +2,7 @@ import { Exception } from 'jg-exception';
 
 import { DEFAULT_SERVICE_WORKER_PATH, DEFAULT_SERVICE_WORKER_SCOPE } from '../../shared/index.js';
 import { listenForInstallation } from '../installation/index.js';
+import { listenForPreloadErrors } from '../preload-error/index.js';
 import {
   ERRORS,
   type IRegisterServiceWorkerOptions,
@@ -64,8 +65,10 @@ const register = async ({
 }: IRegisterServiceWorkerOptions): Promise<IServiceWorkerSnapshot> => {
   setDebugMode(debugMode);
 
-  // the install prompt can fire before the registration settles, or without one
+  // the install prompt and a chunk's failure can come before the registration settles, or
+  // without one
   listenForInstallation();
+  listenForPreloadErrors();
 
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
     updateSnapshot({
@@ -113,8 +116,10 @@ const register = async ({
 };
 
 /**
- * Registers the service worker and starts following its updates and whether the app can be
- * installed. Later calls return the first call's promise. It never rejects: a failure lands in the
+ * Registers the service worker and starts following its updates, whether the app can be
+ * installed, and whether a chunk of a replaced build failed to load, which sets the snapshot's
+ * preloadErrorDetected. Call it as the app starts, so it hears the first failure. Later calls
+ * return the first call's promise. It never rejects: a failure lands in the
  * snapshot's registrationError, an Exception with SW_NO_BROWSER_SUPPORT, EMPTY_SW_REGISTRATION, or
  * SW_REGISTRATION_FAILED as its code, and the browser's error as its cause.
  * @param options The worker's path and registration options, and whether to log.

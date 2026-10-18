@@ -6,6 +6,7 @@ const INITIAL_SNAPSHOT: IServiceWorkerSnapshot = Object.freeze({
   worker: undefined,
   registrationError: undefined,
   hasWaitingWorker: false,
+  preloadErrorDetected: false,
   installation: Object.freeze({
     canInstall: false,
     isAppInstalled: undefined,

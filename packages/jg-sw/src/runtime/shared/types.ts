@@ -72,6 +72,10 @@ export type IServiceWorkerSnapshot = {
   // whether a new version is installed and waits to activate, which updateApp does
   hasWaitingWorker: boolean;
 
+  // whether a chunk of the page's build failed to load while online, most likely because a newer
+  // deployment replaced it; updateApp loads the new version
+  preloadErrorDetected: boolean;
+
   // whether the app can be installed, and what happened when it was offered
   installation: IAppInstallationState;
 };
