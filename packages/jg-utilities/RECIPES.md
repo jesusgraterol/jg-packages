@@ -278,4 +278,4 @@ const listOrders = async (searchParams: URLSearchParams, authorization: string |
 };
 ```
 
-Check the header with `isAuthorizationHeaderValid` before you call `extractTokenFromAuthorizationHeader`. The extractor's own `INVALID_AUTHORIZATION_HEADER` message repeats the header it received, which can hold credentials, such as a `Basic` one, so that error shouldn't reach a client or a log.
+Checking the header with `isAuthorizationHeaderValid` before `extractTokenFromAuthorizationHeader` turns a missing or malformed header into the handler's own `UNAUTHENTICATED`, answered with a 401, so it never reaches the shared error handler as jg-utilities' `INVALID_AUTHORIZATION_HEADER`, which that handler doesn't know.

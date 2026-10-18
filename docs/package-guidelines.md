@@ -69,7 +69,7 @@ if (hasErrorCode(error, ERRORS.INVALID_CURSOR)) {
 - **`redact`:** when a cause may hold a value that logs mustn't, such as a token, a password, or a one-time code, pass it as `redact` where you wrap the cause. The exception's message, data, and whole cause chain are redacted as it's built, so nothing downstream has to remember to. [jg-exception's README](../packages/jg-exception/README.md#keeping-secrets-out-of-an-error) says what it costs.
 - **`toJSON()`** returns `{ name, code, message, data }`, which `JSON.stringify` and `jg-api-response` use. Data that can't be serialized at runtime, such as an object that refers back to itself, becomes `null` there, as do `NaN` and `Infinity`, as in any JSON.
 
-The message is written where the error is thrown, so it can name the value that failed. Each function documents what it throws, one `- CODE: message` line per code, with the stable part of the message:
+The message is written where the error is thrown, so it can name the value that failed, except a credential or personal data, such as an authorization header, a token, or an email address: say what's wrong with it instead, because messages reach logs and clients. Each function documents what it throws, one `- CODE: message` line per code, with the stable part of the message:
 
 ```ts
 /**

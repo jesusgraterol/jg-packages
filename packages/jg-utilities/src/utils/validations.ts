@@ -51,8 +51,9 @@ export const validateObjectAndKeys = (input: unknown, propKeys: unknown): void =
  */
 export const validateAuthorizationHeader = (header: unknown): void => {
   if (!isAuthorizationHeaderValid(header)) {
+    // the header isn't repeated, because it can hold a credential, such as a Basic one
     throw new Exception(
-      `The provided authorization header does not comply with the expected format (RFC6750). Received: ${String(header)}`,
+      'The provided authorization header does not comply with the expected format (RFC6750).',
       { code: ERRORS.INVALID_AUTHORIZATION_HEADER },
     );
   }
@@ -66,9 +67,9 @@ export const validateAuthorizationHeader = (header: unknown): void => {
  */
 export const validateEmailAddress = (email: unknown): void => {
   if (!isEmailValid(email)) {
-    throw new Exception(
-      `The provided email address is not valid or has a forbidden extension. Received: ${String(email)}`,
-      { code: ERRORS.INVALID_EMAIL_ADDRESS },
-    );
+    // the address isn't repeated, because it's personal data that logs and clients mustn't get
+    throw new Exception('The provided email address is not valid or has a forbidden extension.', {
+      code: ERRORS.INVALID_EMAIL_ADDRESS,
+    });
   }
 };

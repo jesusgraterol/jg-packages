@@ -10,6 +10,22 @@ import {
   getInitials,
 } from './extractors.js';
 
+/**
+ * Runs an action that must throw an error, and returns the error.
+ * @param action The action.
+ * @returns The thrown error.
+ */
+const catchError = (action: () => unknown): Error => {
+  try {
+    action();
+  } catch (error) {
+    if (error instanceof Error) {
+      return error;
+    }
+  }
+  throw new Error('The action was expected to throw an error.');
+};
+
 describe('extractTokenFromAuthorizationHeader', () => {
   test.each([
     [
@@ -38,6 +54,18 @@ describe('extractTokenFromAuthorizationHeader', () => {
       ERRORS.INVALID_AUTHORIZATION_HEADER,
     );
   });
+
+  test.each([
+    'Basic dXNlcjpwYXNzd29yZA==',
+    'Bearer abc123#',
+    'bearer abc123',
+    'Token tok_live_123',
+  ])('leaves the rejected header %s out of the message', (header) => {
+    const error = catchError(() => extractTokenFromAuthorizationHeader(header));
+
+    expect(error).toMatchObject({ code: ERRORS.INVALID_AUTHORIZATION_HEADER });
+    expect(error.message).not.toContain(header);
+  });
 });
 
 describe('extractEmailUsername', () => {
@@ -65,6 +93,16 @@ describe('extractEmailUsername', () => {
   ])('extractEmailUsername(%s) -> Error: INVALID_EMAIL_ADDRESS', (email) => {
     expectToThrowCode(() => extractEmailUsername(email as string), ERRORS.INVALID_EMAIL_ADDRESS);
   });
+
+  test.each(['jane.doe@example', 'jane.doe@example.con', 'jane.doe@@example.com'])(
+    'leaves the rejected address %s out of the message',
+    (email) => {
+      const error = catchError(() => extractEmailUsername(email));
+
+      expect(error).toMatchObject({ code: ERRORS.INVALID_EMAIL_ADDRESS });
+      expect(error.message).not.toContain(email);
+    },
+  );
 });
 
 describe('getInitials', () => {
