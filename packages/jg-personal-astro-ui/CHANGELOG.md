@@ -9,6 +9,11 @@
   - `openGraphType`, `'website'` by default, or `'article'` or `'profile'`
   - `article`, for the `article:*` tags of an article
   - `profile`, for the `profile:*` tags of a person's profile
+- `section` takes `align="center"` and `layout="split"`, which puts the eyebrow beside the title and lede from the `lg` breakpoint, and a `header-end` slot after the lede.
+- `page-header` and `breadcrumb` take `align="center"`.
+- `brand-logo` takes a `tagline`, a second line under the name.
+- `./icon-tile`, the primary square that holds an icon in the jg sites' cards and page headers, in `card` and `header` sizes.
+- `./agentic-coding-mark` and `./agentic-coding-mark.svg`, the Agentic Coding mark in fixed colors, so the sites that show it draw it from one file.
 - `./new-tab-marker`, the arrow and screen-reader notice that end a link opening a new tab. Its arrow now carries `data-new-tab-marker`.
 - `./new-tab-marker-markup` and `./code-window`, which render the marker's and a code window's header markup, for sites whose build checks allow only the markup Markdown produces.
 - `llms-text` sections can carry a Markdown `body`, such as an install command in a code block, instead of links.

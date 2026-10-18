@@ -1,11 +1,16 @@
 ---
+import { buildBrandLogoClasses } from './brand-logo-classes.ts';
+
 interface Props {
   class?: string | undefined;
   // the site's name, shown beside the mark
   name: string;
+  // a second line under the name, such as the person's role
+  tagline?: string | undefined;
 }
 
-const { class: className, name } = Astro.props;
+const { class: className, name, tagline } = Astro.props;
+const classes = buildBrandLogoClasses(tagline !== undefined);
 ---
 
 {/* the site supplies its own mark, such as an SVG monogram, in the mark slot */}
@@ -13,5 +18,12 @@ const { class: className, name } = Astro.props;
   class:list={['inline-flex min-w-0 items-center gap-2.5 font-semibold tracking-tight', className]}
 >
   <slot name="mark" />
-  <span class="truncate text-base">{name}</span>
+  {tagline === undefined ? (
+    <span class={classes.name}>{name}</span>
+  ) : (
+    <span class="min-w-0">
+      <span class={classes.name}>{name}</span>
+      <span class={classes.tagline}>{tagline}</span>
+    </span>
+  )}
 </span>

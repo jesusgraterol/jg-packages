@@ -8,6 +8,10 @@ Where the marks, fonts, and icons the website and `jg-personal-astro-ui` use com
 
 The website's `public/favicon.svg` is written from `jg-favicon.svg`, and `public/og/jg-packages.png`, the open-graph image, draws it beside text set in Ubuntu Sans. `pnpm --filter @jg-packages/website assets:generate` regenerates both.
 
+## Agentic Coding mark
+
+`jg-personal-astro-ui`'s `agentic-coding-mark.svg` is the Agentic Coding site's own mark: two code chevrons meeting at a node, in fixed colors. It is the artwork of that site's favicon, unchanged, and `agentic-coding-mark.astro` draws the same paths inline. agenticcoding generates its favicon and open-graph image from the file, and the jg-skills website shows the component beside the `AGENTS.md` label. Don't alter its geometry or its colors.
+
 ## Fonts
 
 `jg-personal-astro-ui` depends on [Ubuntu Sans and Ubuntu Sans Mono](https://design.ubuntu.com/font), Copyright 2011, 2022, 2023 Canonical Ltd., through Fontsource's `@fontsource-variable/ubuntu-sans` and `@fontsource-variable/ubuntu-sans-mono`. `theme.css` imports them, so sites bundle the font files from those packages unchanged.

@@ -1,8 +1,11 @@
 ---
 import Breadcrumb from '../breadcrumb/breadcrumb.astro';
 import HeroBackdrop from '../hero-backdrop/hero-backdrop.astro';
+import { buildPageHeaderClasses, type IPageHeaderAlign } from './page-header-classes.ts';
 
 interface Props {
+  // centers the header: its breadcrumb, title row, and lede. Defaults to 'start'
+  align?: IPageHeaderAlign | undefined;
   // draws a hairline under the header, between it and the page's content. Defaults to true
   border?: boolean | undefined;
   // the trail to the page, ending at it
@@ -15,7 +18,8 @@ interface Props {
   title: string;
 }
 
-const { border = true, breadcrumbs, class: className, eyebrow, lede, title } = Astro.props;
+const { align, border = true, breadcrumbs, class: className, eyebrow, lede, title } = Astro.props;
+const classes = buildPageHeaderClasses(align);
 ---
 
 {/*
@@ -26,14 +30,15 @@ const { border = true, breadcrumbs, class: className, eyebrow, lede, title } = A
   class:list={['relative isolate overflow-hidden', border && 'border-b border-border', className]}
 >
   <HeroBackdrop class="opacity-70" />
-  <div class="jg-container pt-8 pb-12 sm:pt-10 sm:pb-16">
+  <div class={classes.container}>
     {breadcrumbs !== undefined && (
       <Breadcrumb
+        align={align}
         class="mb-10"
         items={breadcrumbs}
       />
     )}
-    <div class="flex items-center gap-4 sm:gap-5">
+    <div class={classes.row}>
       <slot name="leading" />
       <div class="min-w-0">
         {eyebrow !== undefined && <p class="eyebrow">{eyebrow}</p>}
@@ -42,7 +47,7 @@ const { border = true, breadcrumbs, class: className, eyebrow, lede, title } = A
         </h1>
       </div>
     </div>
-    {lede !== undefined && <p class="lede mt-5">{lede}</p>}
+    {lede !== undefined && <p class={classes.lede}>{lede}</p>}
     <slot />
   </div>
 </header>

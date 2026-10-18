@@ -1,6 +1,8 @@
 ---
 import { ChevronRight } from '@lucide/astro';
 
+import { buildBreadcrumbListClasses, type IBreadcrumbAlign } from './breadcrumb-classes.ts';
+
 // one step of the trail; the last one is the current page
 interface IBreadcrumbItem {
   href: string;
@@ -8,18 +10,20 @@ interface IBreadcrumbItem {
 }
 
 interface Props {
+  // centers the trail, as over a centered page header. Defaults to 'start'
+  align?: IBreadcrumbAlign | undefined;
   class?: string | undefined;
   items: readonly IBreadcrumbItem[];
 }
 
-const { class: className, items } = Astro.props;
+const { align, class: className, items } = Astro.props;
 ---
 
 <nav
   aria-label="Breadcrumb"
   class={className}
 >
-  <ol class="flex flex-wrap items-center gap-1.5 font-mono text-xs font-semibold text-muted">
+  <ol class={buildBreadcrumbListClasses(align)}>
     {items.map(({ href, name }, index) => {
       const isCurrentPage = index === items.length - 1;
       return (

@@ -1,38 +1,76 @@
 ---
+import { buildSectionClasses, type ISectionAlign, type ISectionLayout } from './section-classes.ts';
+
 interface Props {
+  // centers a stacked header. Defaults to 'start'
+  align?: ISectionAlign | undefined;
   // draws a hairline under the section, as between the home page's sections
   border?: boolean | undefined;
   class?: string | undefined;
-  // the small mono label above the title
+  // the small mono label above the title, or beside it in the split layout
   eyebrow?: string | undefined;
   // the section's id, which links and its heading's id build on
   id: string;
+  // stacks the header, or splits it into the eyebrow beside the title and lede. Defaults to
+  // 'stacked'
+  layout?: ISectionLayout | undefined;
   // the paragraph under the title
   lede?: string | undefined;
   title?: string | undefined;
   width?: 'page' | 'prose' | undefined;
 }
 
-const { border = true, class: className, eyebrow, id, lede, title, width = 'page' } = Astro.props;
+const {
+  align,
+  border,
+  class: className,
+  eyebrow,
+  id,
+  layout = 'stacked',
+  lede,
+  title,
+  width,
+} = Astro.props;
+const classes = buildSectionClasses({ align, border, layout, width });
 const titleId = `${id}-title`;
 ---
 
+{/* the header-end slot follows the lede, for something such as a link to the section's archive */}
 <section
   id={id}
-  class:list={['jg-section-space scroll-mt-16', border && 'border-b border-border', className]}
+  class:list={[classes.root, className]}
   aria-labelledby={title === undefined ? undefined : titleId}
 >
-  <div class={width === 'prose' ? 'jg-container-prose' : 'jg-container'}>
+  <div class={classes.container}>
     {title !== undefined && (
-      <header class="max-w-3xl">
-        {eyebrow !== undefined && <p class="eyebrow">{eyebrow}</p>}
-        <h2
-          id={titleId}
-          class="section-title mt-4"
-        >
-          {title}
-        </h2>
-        {lede !== undefined && <p class="lede mt-5">{lede}</p>}
+      <header class={classes.header}>
+        {layout === 'split' ? (
+          <>
+            <div>{eyebrow !== undefined && <p class="eyebrow">{eyebrow}</p>}</div>
+            <div class="min-w-0">
+              <h2
+                id={titleId}
+                class={classes.title}
+              >
+                {title}
+              </h2>
+              {lede !== undefined && <p class={classes.lede}>{lede}</p>}
+              <slot name="header-end" />
+            </div>
+          </>
+        ) : (
+          <>
+            {eyebrow !== undefined && <p class="eyebrow">{eyebrow}</p>}
+            <h2
+              id={titleId}
+              class={classes.title}
+            >
+              {title}
+            </h2>
+            {lede !== undefined && <p class={classes.lede}>{lede}</p>}
+            <slot name="header-end" />
+          </>
+        )}
       </header>
     )}
     <slot />
