@@ -7,6 +7,9 @@ const VARIANT_CLASSES = {
   ghost: 'border-transparent bg-transparent text-muted hover:bg-secondary hover:text-foreground',
   destructive: 'border-danger bg-danger text-background hover:bg-danger/90',
   link: 'border-transparent bg-transparent text-foreground underline-offset-4 hover:underline',
+  // a light pill for the inverse surface, with a light focus ring that shows on it
+  inverse:
+    'border-inverse-foreground bg-inverse-foreground text-inverse hover:bg-inverse-foreground/90 hover:border-inverse-foreground/90 focus-visible:outline-inverse-foreground',
 } as const;
 
 // the height, gap, and text of each size; touch keeps a 44 px target

@@ -28,6 +28,9 @@
   --color-terminal: var(--jg-terminal);
   --color-terminal-foreground: var(--jg-terminal-foreground);
   --color-terminal-accent: var(--jg-terminal-accent);
+  --color-inverse: var(--jg-inverse);
+  --color-inverse-foreground: var(--jg-inverse-foreground);
+  --color-inverse-accent: var(--jg-inverse-accent);
   --color-focus: var(--jg-focus);
   --color-code: var(--jg-code);
   --color-success: var(--jg-success);
@@ -226,6 +229,13 @@
     font-size: 0.75rem;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* a long caption, such as a sentence, wraps onto more lines instead of ending in an ellipsis */
+  .jg-code-window-caption[data-wrap] {
+    padding-block: 0.375rem;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .jg-code-window pre {

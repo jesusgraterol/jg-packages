@@ -1,0 +1,15 @@
+---
+import {
+  renderSegmentedControl,
+  type ISegmentedControlOptions,
+} from './segmented-control-markup.ts';
+
+// the legend, the radios' name, the options, and the one checked at first
+type Props = ISegmentedControlOptions;
+---
+
+{/*
+ * a radio group drawn as a segmented pill; the section around it toggles its own content with
+ * group-has-[[data-segment=<value>]:checked]/<group>: variants
+ */}
+<Fragment set:html={renderSegmentedControl(Astro.props)} />

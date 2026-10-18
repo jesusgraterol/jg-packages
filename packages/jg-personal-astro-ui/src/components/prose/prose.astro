@@ -1,13 +1,16 @@
 ---
-interface Props {
-  class?: string | undefined;
-}
+import type { HTMLAttributes } from 'astro/types';
 
-const { class: className } = Astro.props;
+type Props = { class?: string | undefined } & Omit<HTMLAttributes<'div'>, 'class'>;
+
+const { class: className, ...attributes } = Astro.props;
 ---
 
 {/* styled by prose.css, which the site imports with its stylesheet */}
-<div class:list={['jg-prose', className]}>
+<div
+  class:list={['jg-prose', className]}
+  {...attributes}
+>
   <slot />
 </div>
 

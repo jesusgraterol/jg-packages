@@ -104,6 +104,29 @@ describe('copy buttons', () => {
     expect(writeText).toHaveBeenCalledWith('npm install jg-clipboard');
   });
 
+  test('keep their box while a shorter label shows, copy after copy, and let go once it resets', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
+    document.body.innerHTML = renderCopyButton({
+      context: 'install command',
+      label: 'Copy install command',
+      text: 'npm install jg-clipboard',
+    });
+    const button = document.querySelector('button') as HTMLButtonElement;
+    const resting = button.getBoundingClientRect();
+
+    for (let copy = 1; copy <= 2; copy += 1) {
+      const outcome = await clickAndRead(button);
+      const shown = button.getBoundingClientRect();
+      expect(outcome.label).toBe('Copied');
+      expect([shown.width, shown.height]).toStrictEqual([resting.width, resting.height]);
+    }
+
+    vi.advanceTimersByTime(2_000);
+    expect(button.style.minWidth).toBe('');
+    vi.useRealTimers();
+  });
+
   test('copy the text at their URL, and show their own label again', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const markdown = '# jg-clipboard\n\nCopy and read the clipboard.\n';

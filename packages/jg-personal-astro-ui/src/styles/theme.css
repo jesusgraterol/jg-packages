@@ -43,6 +43,11 @@
   --jg-terminal-foreground: oklch(99.048% 0.00493 166.268);
   --jg-terminal-accent: oklch(76.08% 0.12019 173.72);
 
+  /* inverse panels, such as a contact band or a dark aside, stay dark in both themes */
+  --jg-inverse: oklch(15.434% 0.00002 271.152);
+  --jg-inverse-foreground: oklch(99.048% 0.00493 166.268);
+  --jg-inverse-accent: oklch(76.08% 0.12019 173.72);
+
   --jg-shadow-surface:
     0 1px 2px oklch(18.142% 0.01839 215.333 / 0.04),
     0 8px 20px -14px oklch(18.142% 0.01839 215.333 / 0.1);

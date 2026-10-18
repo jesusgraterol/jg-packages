@@ -1,8 +1,10 @@
 // one link of an llms.txt section, with what the reader finds there
 export type ILlmsTextLink = { description: string; title: string; url: string };
 
-// one `##` section of an llms.txt
-export type ILlmsTextSection = { heading: string; links: readonly ILlmsTextLink[] };
+// one `##` section of an llms.txt: a list of links, or a Markdown body, such as an install command
+// in a code block
+export type ILlmsTextSection =
+  { heading: string; links: readonly ILlmsTextLink[] } | { body: string; heading: string };
 
 // what an llms.txt says, in the llmstxt.org format
 export type ILlmsTextOptions = {
