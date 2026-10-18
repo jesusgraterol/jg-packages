@@ -77,6 +77,8 @@ Every push to `main`, which is every merged pull request, runs these after the u
 
 `publish` installs no dependencies and holds `id-token: write` only so npm can verify the workflow. `tag` holds `contents: write` only to push its tags.
 
+The same push deploys the website: `check` also uploads the built site, and the `deploy` job publishes it to GitHub Pages, without waiting for `publish`. [`deployment.md`](deployment.md) covers it.
+
 ## The first publish of a new package
 
 CI only publishes packages that already exist on npm, because a package's trusted publisher can only be set up once it exists. The first version goes out by hand:

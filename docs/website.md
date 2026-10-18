@@ -12,6 +12,8 @@ pnpm turbo run build --filter=@jg-packages/website
 pnpm --filter @jg-packages/website preview
 ```
 
+Pushes to `main` deploy the site to GitHub Pages, behind Cloudflare; [`deployment.md`](deployment.md) covers the pipeline, the domain, and the rules that serve Markdown to agents.
+
 `pnpm dev` runs the site's `dev` task through Turborepo. It serves the site at `http://localhost:4321/` and reloads when a README or a component changes. Running `astro dev` or `astro build` directly skips `generate`, and the package pages then fail with "has no API reference".
 
 `build` runs `astro build`, then Pagefind, which writes the [search](#search) index to `dist/pagefind/`, then `verify-build` on the result, so a build that breaks one of [its checks](#build-checks) fails. The site's integration tests run `verify-build` against copies of that build, each broken in one way, and its [end-to-end suite](#end-to-end-tests) runs the build in Chromium, so `pnpm check` builds the site before them.
@@ -75,7 +77,7 @@ The header's search button, at every width, opens `search-dialog`, and so do `/`
 
 ## Markdown versions and files for agents
 
-Every page has a Markdown version at `index.md` in its directory, which its head links as `<link rel="alternate" type="text/markdown">`. Every page's head also links `/llms.txt` as `describedby`.
+Every page has a Markdown version at `index.md` in its directory, which its head links as `<link rel="alternate" type="text/markdown">`. Every page's head also links `/llms.txt` as `describedby`. In production, a request for the page itself with `Accept: text/markdown` gets the Markdown version too, through a Cloudflare rule [`deployment.md`](deployment.md#markdown-for-agents) describes.
 
 | Path                                | What it serves                                                                                                                                                                                         |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
