@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, describe, expect, test, vi } from 'vitest';
@@ -10,6 +10,8 @@ import { useOnlineStatus } from './online-status/index.js';
 import { useIsWindowScrolledPast } from './window-scroll/index.js';
 
 afterEach(() => {
+  // Vitest runs without globals here, so Testing Library can't unmount on its own
+  cleanup();
   vi.restoreAllMocks();
 });
 

@@ -68,7 +68,8 @@ const createAstroConfig = (): Linter.Config[] =>
 /**
  * Creates a package's ESLint flat configuration: the recommended JavaScript rules for its
  * configuration files and service worker scripts, type-aware TypeScript rules for its sources and
- * tests, and Prettier's overrides last, so formatting is left to Prettier.
+ * tests, React components in `.tsx` files included, and Prettier's overrides last, so formatting
+ * is left to Prettier.
  * @param options The package directory whose `tsconfig.json` type-aware rules use, the globs of
  * its service worker scripts, and whether it has Astro components.
  * @returns The flat configuration array.
@@ -112,7 +113,7 @@ export const createEslintConfig = ({
           },
         ]),
     {
-      files: ['**/*.ts'],
+      files: ['**/*.{ts,tsx}'],
       ignores: isAstro ? ASTRO_SCRIPT_FILES : [],
       extends: [js.configs.recommended, ...tseslint.configs.recommendedTypeChecked],
       languageOptions: {

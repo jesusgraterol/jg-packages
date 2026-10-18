@@ -88,6 +88,24 @@ describe('createEslintConfig', () => {
     });
   });
 
+  test('lints React components in .tsx files with the same type-aware rules', async () => {
+    await writeFixturePackage({
+      'src/component.tsx': [
+        'const load = async (): Promise<string> => Promise.resolve("a");',
+        '',
+        'export const Greeting = (): string => {',
+        '  load();',
+        "  return 'Hello';",
+        '};',
+        '',
+      ].join('\n'),
+    });
+
+    expect(await lintRuleIds(['src'])).toStrictEqual({
+      'src/component.tsx': ['@typescript-eslint/no-floating-promises'],
+    });
+  });
+
   test('lints configuration files with Node.js globals and never lints build output', async () => {
     await writeFixturePackage({
       'eslint.config.js': 'export default process.env.CI;\n',

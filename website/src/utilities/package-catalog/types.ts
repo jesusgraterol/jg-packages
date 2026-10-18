@@ -15,6 +15,7 @@ export type IPackageIcon =
   | 'globe'
   | 'key-round'
   | 'octagon-alert'
+  | 'refresh-cw'
   | 'table-2'
   | 'wrench'
   | 'zap';
