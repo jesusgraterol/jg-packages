@@ -57,11 +57,15 @@ A project connects to the packages through [jg-skills](https://jg-skills.jesusgr
 
 `SITE_CONFIG.agentSetup` holds the three destinations: `policyUrl`, `skillUrl` and `installCommand`. jg-skills owns all three, so a change there is one edit here. How package changes keep jg-skills current is in [Keeping jg-skills in sync](package-guidelines.md#keeping-jg-skills-in-sync).
 
-**The launch order,** so no link points at a page that isn't live:
+Local implementation and passing checks establish source readiness, not public availability. Publishing, merging, and deployment are separate actions. Before publishing either site's new links, verify that each destination serves the expected content; a committed file or a pending Pages deployment is not enough.
 
-1. jg-skills publishes its skill page and policy, and its Pages deploy finishes.
-2. This site launches, after checking that both destinations answer with the expected page and file.
-3. jg-skills publishes its home page section, which links here.
+**The launch order:**
+
+1. jg-skills publishes its [skill page](https://jg-skills.jesusgraterol.dev/skills/jg-packages/) and [policy asset](https://github.com/jesusgraterol/jg-skills/blob/main/skills/jg-packages/assets/agents-section.md). Wait for its Pages deployment and verify both destinations.
+2. This site publishes its contextual setup links only after those checks. Preserve its existing jg-skills homepage footer link throughout.
+3. Verify that [the package homepage](https://jg-packages.jesusgraterol.dev/) serves the actual site, then publish the jg-skills homepage section and footer link that point here.
+
+Record any outstanding destination checks in the publication handoff. Local previews do not complete them. The package docs own API contracts, the jg-skills asset owns the reusable policy, and this setup section connects projects to that policy and the package-selection skill without maintaining another policy copy.
 
 ### Navigation
 

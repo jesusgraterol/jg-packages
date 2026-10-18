@@ -180,11 +180,11 @@ A change to a process, script, check, or convention updates the doc that describ
 
 [jg-skills](https://github.com/jesusgraterol/jg-skills) connects projects to these packages in two parts: the `jg-packages` skill, which tells an agent which package fits a task, and its policy asset, the `## jg-packages` section projects add to their `AGENTS.md`. Each package's docs own its API, the policy asset owns the policy, and the skill owns which package fits which task. Nothing syncs them automatically, so a change here checks them by hand.
 
-Whenever a listed package is added, renamed or removed, or changes a capability, a runtime, an entry point, a cross-package contract, where its docs live, or a version jg-skills names:
+Whenever a consumer package is added, or a package referred to by jg-skills is changed, renamed or removed, assess the impact on its guidance:
 
-1. Check what in jg-skills refers to it: `skills/jg-packages/SKILL.md`, with its package map and the version bullet that names the versions it was written for; the policy asset, `skills/jg-packages/assets/agents-section.md`; the coding-instructions candidate's skill index; and the jg-skills site's descriptions.
-2. Record the jg-skills change that matches, in the pull request or the release notes, or say why none is needed. An internal change that leaves the guidance accurate needs no edit.
+1. Check capabilities and discovery triggers, supported runtimes, named entry points, cross-package contracts, documentation locations, and reviewed-version markers. Follow the references in `skills/jg-packages/SKILL.md`, its policy asset at `skills/jg-packages/assets/agents-section.md`, the matching implicit-skill entry in coding-instruction candidates, and relevant catalog and website descriptions.
+2. Record the corresponding jg-skills change or revision in the pull request or release notes, or give a specific reason no update is needed. An internal change that leaves the guidance accurate needs no edit.
 3. Remove any recommendation of something removed or renamed. Advance the skill's version bullet only after reviewing the guidance it covers.
-4. Make the jg-skills change with that repository's own checks, in `docs/skill-guidelines.md`, and its protected-instructions handoff, which never edits the canonical instructions directly.
+4. Make the jg-skills change with that repository's own checks, in `docs/skill-guidelines.md`. Changes needed in canonical coding instructions go through its protected-instructions handoff; never edit them directly.
 
-When the access or the authorization to change jg-skills is missing, report the exact work left to do there instead of calling it done.
+When the access or the authorization to change jg-skills is missing, report the exact work left to do there instead of calling it done or silently widening the task's scope.
