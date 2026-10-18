@@ -39,6 +39,7 @@
     "./inline-code": "./src/components/inline-code/inline-code.astro",
     "./jg-mark": "./src/components/jg-mark/jg-mark.astro",
     "./jg-mark.svg": "./src/components/jg-mark/jg-mark.svg",
+    "./jg-favicon.svg": "./src/components/jg-mark/jg-favicon.svg",
     "./install-command": "./src/components/install-command/install-command.astro",
     "./kbd": "./src/components/kbd/kbd.astro",
     "./link-card": "./src/components/link-card/link-card.astro",

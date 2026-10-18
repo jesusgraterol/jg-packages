@@ -4,7 +4,7 @@
 
 ### Added
 
-- `jg-mark`, the lowercase `jg/` mark the jg sites share: Ubuntu Sans Mono's letters drawn as outlines on a dark tile, in fixed colors, so it renders the same on every system and in both themes. `./jg-mark.svg` is the same mark as a file, for a site's favicon and social images.
+- `jg-mark`, the lowercase `jg/` mark the jg sites share: Ubuntu Sans Mono's letters drawn as outlines on a dark tile, in fixed colors, so it renders the same on every system and in both themes. `./jg-mark.svg` is the same mark as a file, for a site's social images, and `./jg-favicon.svg` is its slash alone on the same tile, for a favicon, where the three letters are too small to read.
 
 ## 0.1.0
 
