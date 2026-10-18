@@ -7,4 +7,9 @@ export type {
 } from './types.ts';
 
 // llms.txt and llms-full.txt
-export { buildLlmsFullText, buildLlmsText } from './llms-text.ts';
+export {
+  buildLlmsFullText,
+  buildLlmsText,
+  escapeMarkdownLabel,
+  normalizeDescription,
+} from './llms-text.ts';

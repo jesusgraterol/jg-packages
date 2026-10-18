@@ -25,7 +25,7 @@ import {
 } from '../utilities/home-content/index.ts';
 import { toMarkdownPath } from '../utilities/markdown-pages/index.ts';
 import { groupPackagesByRuntime, loadListedPackages } from '../utilities/package-catalog/index.ts';
-import { buildStructuredData } from '../utilities/seo/index.ts';
+import { buildStructuredData } from 'jg-personal-astro-ui/seo';
 
 // the icon of each benefit, by its id
 const BENEFIT_ICONS: Record<(typeof HOME_BENEFITS)[number]['id'], typeof Minimize2> = {

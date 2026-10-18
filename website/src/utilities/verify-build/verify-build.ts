@@ -5,7 +5,7 @@ import { PACKAGE_CATALOG, SITE_CONFIG } from '../../site.config.ts';
 import { toMarkdownPath } from '../markdown-pages/index.ts';
 import { UNLISTED_PACKAGES } from '../package-catalog/index.ts';
 import { decodeHtmlEntities, findUnsafeAttributes } from '../rendered-html/index.ts';
-import { SEARCH_TEXT_LIMITS } from '../seo/index.ts';
+import { SEARCH_TEXT_LIMITS } from 'jg-personal-astro-ui/seo';
 import {
   OLD_PACKAGE_NAMES,
   REQUIRED_BUILD_PATHS,

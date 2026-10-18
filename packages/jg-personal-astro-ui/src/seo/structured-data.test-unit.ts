@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { buildStructuredData } from './structured-data.ts';
+import { buildStructuredData, serializeStructuredData } from './structured-data.ts';
 import type { IStructuredDataSite } from './types.ts';
 
 const SITE: IStructuredDataSite = {
@@ -126,5 +126,14 @@ describe('buildStructuredData', () => {
 
     expect(data['@type']).toBe('WebPage');
     expect(data['breadcrumb']).toBeUndefined();
+  });
+});
+
+describe('serializeStructuredData', () => {
+  test('escapes every <, so the data cannot close its script element', () => {
+    const serialized = serializeStructuredData({ name: '</script><script>alert(1)</script>' });
+
+    expect(serialized).not.toContain('<');
+    expect(JSON.parse(serialized)).toStrictEqual({ name: '</script><script>alert(1)</script>' });
   });
 });

@@ -11,4 +11,4 @@ export type {
 export { SEARCH_TEXT_LIMITS } from './constants.ts';
 
 // structured data
-export { buildStructuredData } from './structured-data.ts';
+export { buildStructuredData, serializeStructuredData } from './structured-data.ts';

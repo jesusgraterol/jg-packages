@@ -79,6 +79,21 @@ const buildSourceCode = (
  * WebPage within it, with its breadcrumb and the source code it documents, for every other page.
  * @param options What the page describes.
  * @returns The page's JSON-LD.
+ * @example
+ * import { buildStructuredData } from 'jg-personal-astro-ui/seo';
+ *
+ * const structuredData = buildStructuredData({
+ *   breadcrumbs: [
+ *     { name: 'jg-packages', path: '/' },
+ *     { name: 'jg-fetch', path: '/packages/jg-fetch/' },
+ *   ],
+ *   canonicalUrl: 'https://jg-packages.jesusgraterol.dev/packages/jg-fetch/',
+ *   description: 'A fetch wrapper that never throws.',
+ *   site: SITE_CONFIG,
+ *   title: 'jg-fetch: HTTP requests | jg-packages',
+ *   type: 'webpage',
+ * });
+ * // a WebPage with its BreadcrumbList, for document-head's structuredData
  */
 export const buildStructuredData = ({
   breadcrumbs,
@@ -134,3 +149,16 @@ export const buildStructuredData = ({
     ? { '@context': 'https://schema.org', ...page }
     : { '@context': 'https://schema.org', '@graph': entities };
 };
+
+/**
+ * Serializes JSON-LD for a `<script type="application/ld+json">`, escaping every `<`, so text in
+ * the data, such as a description that mentions `</script>`, can't end the script element.
+ * @param structuredData The JSON-LD.
+ * @returns The serialized JSON.
+ * @example
+ * import { serializeStructuredData } from 'jg-personal-astro-ui/seo';
+ *
+ * serializeStructuredData({ name: '</script>' }); // '{"name":"\\u003c/script>"}'
+ */
+export const serializeStructuredData = (structuredData: unknown): string =>
+  JSON.stringify(structuredData).replaceAll('<', '\\u003c');

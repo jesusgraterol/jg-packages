@@ -7,6 +7,9 @@ export type ICodeWindowHeaderOptions = {
   caption: string;
   // shows a copy button that copies the window's code. Defaults to true
   copy?: boolean | undefined;
+  // what the copy button copies instead of the window's code: the element with this id, named by
+  // context in its accessible name, such as "command"
+  copySource?: { context: string; sourceId: string } | undefined;
 };
 
 /**
@@ -19,11 +22,18 @@ export type ICodeWindowHeaderOptions = {
 export const renderCodeWindowHeader = ({
   caption,
   copy = true,
+  copySource,
 }: ICodeWindowHeaderOptions): string =>
   [
     '<figcaption class="jg-code-window-header">',
     '<span class="jg-code-window-dots" aria-hidden="true"><span></span><span></span><span></span></span>',
     `<span class="jg-code-window-caption">${escapeHtml(caption)}</span>`,
-    copy ? renderCopyButton({ context: 'code', tone: 'terminal' }) : '',
+    copy
+      ? renderCopyButton({
+          context: copySource?.context ?? 'code',
+          sourceId: copySource?.sourceId,
+          tone: 'terminal',
+        })
+      : '',
     '</figcaption>',
   ].join('');

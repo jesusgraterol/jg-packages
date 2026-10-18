@@ -1,0 +1,24 @@
+---
+// the space between the stacked children
+const GAP_CLASSES = {
+  xs: 'gap-1',
+  sm: 'gap-2',
+  md: 'gap-4',
+  lg: 'gap-6',
+  xl: 'gap-10',
+} as const;
+
+interface Props {
+  // the element: a div, or a list when the children are list items
+  as?: 'div' | 'ol' | 'section' | 'ul' | undefined;
+  class?: string | undefined;
+  gap?: keyof typeof GAP_CLASSES | undefined;
+}
+
+const { as: Element = 'div', class: className, gap = 'md' } = Astro.props;
+---
+
+{/* its children in one column, evenly spaced */}
+<Element class:list={['flex min-w-0 flex-col', GAP_CLASSES[gap], className]}>
+  <slot />
+</Element>

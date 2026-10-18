@@ -1,0 +1,40 @@
+---
+import { renderCodeWindowHeader } from '../code-block/code-window.ts';
+
+interface Props {
+  class?: string | undefined;
+  // copies the element with this id; context completes the copy button's accessible name, such as
+  // "install command"
+  copy?: { context: string; sourceId: string } | undefined;
+  // the window's caption, such as 'Terminal'
+  title: string;
+}
+
+const { class: className, copy, title } = Astro.props;
+---
+
+{/*
+ * a terminal window: the code window's dark frame, dots, and caption, around a shell session or
+ * output in the default slot, with a copy button when given what to copy
+ */}
+<figure
+  class:list={['jg-code-window', className]}
+  data-code-window
+>
+  <Fragment
+    set:html={renderCodeWindowHeader({
+      caption: title,
+      copy: copy !== undefined,
+      copySource: copy,
+    })}
+  />
+  <div class="overflow-x-auto px-4 py-3.5 font-mono text-[0.8125rem] leading-6 sm:text-sm">
+    <slot />
+  </div>
+</figure>
+
+<script>
+  import { registerCopyButtons } from '../copy-button/copy-behavior.ts';
+
+  registerCopyButtons();
+</script>

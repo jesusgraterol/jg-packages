@@ -1,0 +1,48 @@
+---
+import Breadcrumb from '../breadcrumb/breadcrumb.astro';
+import HeroBackdrop from '../hero-backdrop/hero-backdrop.astro';
+
+interface Props {
+  // draws a hairline under the header, between it and the page's content. Defaults to true
+  border?: boolean | undefined;
+  // the trail to the page, ending at it
+  breadcrumbs?: readonly { href: string; name: string }[] | undefined;
+  class?: string | undefined;
+  // the small mono label above the title
+  eyebrow?: string | undefined;
+  // the paragraph under the title
+  lede?: string | undefined;
+  title: string;
+}
+
+const { border = true, breadcrumbs, class: className, eyebrow, lede, title } = Astro.props;
+---
+
+{/*
+ * an inner page's header, over the hero backdrop: its breadcrumb, an optional mark in the
+ * `leading` slot, its eyebrow, title and lede, and its actions in the default slot
+ */}
+<header
+  class:list={['relative isolate overflow-hidden', border && 'border-b border-border', className]}
+>
+  <HeroBackdrop class="opacity-70" />
+  <div class="jg-container pt-8 pb-12 sm:pt-10 sm:pb-16">
+    {breadcrumbs !== undefined && (
+      <Breadcrumb
+        class="mb-10"
+        items={breadcrumbs}
+      />
+    )}
+    <div class="flex items-center gap-4 sm:gap-5">
+      <slot name="leading" />
+      <div class="min-w-0">
+        {eyebrow !== undefined && <p class="eyebrow">{eyebrow}</p>}
+        <h1 class="mt-2 text-[clamp(2rem,6vw,3.5rem)] leading-none font-bold tracking-tight wrap-anywhere">
+          {title}
+        </h1>
+      </div>
+    </div>
+    {lede !== undefined && <p class="lede mt-5">{lede}</p>}
+    <slot />
+  </div>
+</header>

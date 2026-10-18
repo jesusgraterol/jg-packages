@@ -1,0 +1,17 @@
+---
+interface Props {
+  class?: string | undefined;
+}
+
+const { class: className } = Astro.props;
+---
+
+{/* one key, such as / or K; a shortcut is several, such as Ctrl and K */}
+<kbd
+  class:list={[
+    'inline-flex min-w-[1.5em] items-center justify-center rounded border border-border-strong border-b-2 bg-surface px-1.5 font-mono text-[0.8125em] leading-5 font-semibold text-foreground',
+    className,
+  ]}
+>
+  <slot />
+</kbd>

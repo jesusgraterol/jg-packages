@@ -1,0 +1,50 @@
+---
+import TerminalWindow from '../terminal-window/terminal-window.astro';
+
+interface Props {
+  class?: string | undefined;
+  command: string;
+  // the id of the command's element, which the copy button copies; unique on the page
+  id: string;
+  // the window's caption. Defaults to 'Terminal'
+  title?: string | undefined;
+}
+
+// a word longer than this may break anywhere on a narrow screen; shorter ones, such as flags,
+// stay whole
+const MAX_UNBROKEN_WORD_LENGTH = 16;
+
+const { class: className, command, id, title = 'Terminal' } = Astro.props;
+const words = command.split(' ');
+---
+
+{/* one shell command after a $ prompt, which isn't copied, with a copy button for the command */}
+<TerminalWindow
+  class={className}
+  copy={{ context: 'command', sourceId: id }}
+  title={title}
+>
+  <p class="flex gap-3">
+    <span
+      class="text-terminal-accent select-none"
+      aria-hidden="true"
+    >
+      $
+    </span>
+    <code
+      class="min-w-0 whitespace-pre-wrap"
+      id={id}
+    >
+      {words.map((word, index) => (
+        <>
+          {index > 0 && ' '}
+          <span
+            class={word.length > MAX_UNBROKEN_WORD_LENGTH ? 'wrap-anywhere' : 'whitespace-nowrap'}
+          >
+            {word}
+          </span>
+        </>
+      ))}
+    </code>
+  </p>
+</TerminalWindow>

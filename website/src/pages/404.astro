@@ -1,7 +1,7 @@
 ---
 import { ArrowLeft } from '@lucide/astro';
 import Button from 'jg-personal-astro-ui/button';
-import HeroBackdrop from 'jg-personal-astro-ui/hero-backdrop';
+import PageHeader from 'jg-personal-astro-ui/page-header';
 
 import BaseLayout from '../layouts/base-layout.astro';
 import { SITE_CONFIG } from '../site.config.ts';
@@ -13,29 +13,26 @@ import { SITE_CONFIG } from '../site.config.ts';
   noIndex
   title={`Page not found | ${SITE_CONFIG.name}`}
 >
-  <section class="relative isolate overflow-hidden">
-    <HeroBackdrop />
-    <div class="jg-container py-20 sm:py-28">
-      <p class="eyebrow">404</p>
-      <h1 class="display-title mt-6">Page not found.</h1>
-      <p class="lede mt-7">
-        The page you asked for isn't here. It may have moved, or the link may be mistyped.
-      </p>
-      <div class="mt-8 flex flex-wrap gap-3">
-        <Button href="/">
-          <ArrowLeft
-            class="size-4"
-            aria-hidden="true"
-          />
-          Back to the home page
-        </Button>
-        <Button
-          href="/#packages"
-          variant="outline"
-        >
-          View all packages
-        </Button>
-      </div>
+  <PageHeader
+    border={false}
+    eyebrow="404"
+    lede="The page you asked for isn't here. It may have moved, or the link may be mistyped."
+    title="Page not found."
+  >
+    <div class="mt-8 flex flex-wrap gap-3">
+      <Button href="/">
+        <ArrowLeft
+          class="size-4"
+          aria-hidden="true"
+        />
+        Back to the home page
+      </Button>
+      <Button
+        href="/#packages"
+        variant="outline"
+      >
+        View all packages
+      </Button>
     </div>
-  </section>
+  </PageHeader>
 </BaseLayout>

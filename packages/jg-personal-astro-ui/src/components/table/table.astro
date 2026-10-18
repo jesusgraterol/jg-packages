@@ -1,0 +1,27 @@
+---
+interface Props {
+  // what the table holds, read by screen readers and shown above it
+  caption?: string | undefined;
+  class?: string | undefined;
+}
+
+const { caption, class: className } = Astro.props;
+---
+
+{/*
+ * a data table that scrolls sideways on its own when it's wider than the page; the default slot
+ * holds its thead and tbody
+ */}
+<div
+  class:list={[
+    'overflow-x-auto rounded-xl border border-border bg-surface shadow-surface',
+    className,
+  ]}
+>
+  <table class="w-full border-collapse text-left text-sm [&_tbody_tr]:border-t [&_tbody_tr]:border-border [&_td]:px-4 [&_td]:py-3 [&_td]:align-top [&_th]:px-4 [&_th]:py-3 [&_th]:font-semibold [&_th]:whitespace-nowrap [&_thead]:bg-secondary">
+    {caption !== undefined && (
+      <caption class="px-4 pt-3 text-left text-xs text-muted">{caption}</caption>
+    )}
+    <slot />
+  </table>
+</div>

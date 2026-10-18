@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'vitest';
 
-import { buildLlmsFullText, buildLlmsText } from './llms-text.ts';
+import {
+  buildLlmsFullText,
+  buildLlmsText,
+  escapeMarkdownLabel,
+  normalizeDescription,
+} from './llms-text.ts';
 
 describe('buildLlmsText', () => {
   test('writes the title, the summary, the details, and each section of links', () => {
@@ -47,6 +52,29 @@ describe('buildLlmsFullText', () => {
       }),
     ).toBe(
       '# jg-example\n\n> Packages for agents.\n\n---\n\n# jg-one\n\nErrors.\n\n---\n\n# jg-two\n',
+    );
+  });
+});
+
+describe('escapeMarkdownLabel', () => {
+  test('escapes brackets and backslashes, so the label stays one label', () => {
+    expect(escapeMarkdownLabel('[draft] a\\b')).toBe('\\[draft\\] a\\\\b');
+    expect(
+      buildLlmsText({
+        name: 'x',
+        sections: [
+          { heading: 'Links', links: [{ description: 'd', title: '[x]', url: 'https://x.dev' }] },
+        ],
+        summary: 's',
+      }),
+    ).toContain('- [\\[x\\]](https://x.dev): d');
+  });
+});
+
+describe('normalizeDescription', () => {
+  test('collapses whitespace into single spaces, and trims it', () => {
+    expect(normalizeDescription('  Typed stores,\n  for pages\tand workers. ')).toBe(
+      'Typed stores, for pages and workers.',
     );
   });
 });

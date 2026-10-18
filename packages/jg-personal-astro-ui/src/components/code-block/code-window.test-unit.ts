@@ -23,4 +23,14 @@ describe('renderCodeWindowHeader', () => {
     expect(html).toContain('<span class="jg-code-window-caption">&lt;script&gt;</span>');
     expect(html).not.toContain('data-copy-button');
   });
+
+  test('copies an element by its id when given a source, named by its context', () => {
+    const html = renderCodeWindowHeader({
+      caption: 'Terminal',
+      copySource: { context: 'command', sourceId: 'install' },
+    });
+
+    expect(html).toContain('data-copy-context="command"');
+    expect(html).toContain('data-copy-source="install"');
+  });
 });

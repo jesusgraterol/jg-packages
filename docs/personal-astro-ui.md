@@ -71,30 +71,39 @@ Then render `DocumentHead` and `ThemeInitScript` in every page's `<head>`, so th
 
 Each component is its own subpath, such as `jg-personal-astro-ui/button`. Most take a `class` prop for layout classes on their root element; the page frame (`skip-link`, `site-header`, and `site-footer`) and the head components don't.
 
-| Component              | What it renders                                                                                         |
-| ---------------------- | ------------------------------------------------------------------------------------------------------- |
-| `document-head`        | The title, description, canonical URL, robots, Open Graph and X tags, JSON-LD, favicon, and agent links |
-| `theme-init-script`    | The inline script that applies the stored or system theme before the first paint                        |
-| `skip-link`            | A "Skip to main content" link that shows on focus                                                       |
-| `site-header`          | The sticky header: brand, navigation, actions, and a menu on narrow screens                             |
-| `site-footer`          | The footer: brand, about text, link columns, and notes, in one row on wide screens however many columns |
-| `theme-control`        | The light and dark switch, which stores the choice                                                      |
-| `brand-logo`           | The site's name beside the mark the site supplies                                                       |
-| `container`, `section` | The page and reading columns, and a home page section with its eyebrow, title, and lede                 |
-| `hero-backdrop`        | The jg sites' hero backdrop: a faint dot lattice under a soft accent glow                               |
-| `navigation-progress`  | The page-loading bar along the top of the viewport, shown when the next page is slow to arrive          |
-| `breadcrumb`           | A trail of links, ending at the current page                                                            |
-| `button`, `text-link`  | Pill buttons and links, with variants and sizes, and an arrow and the new-tab notice on external links  |
-| `badge`                | A small label, with status variants                                                                     |
-| `link-card`            | A card whose whole area is one link, with icon, meta, and footer slots                                  |
-| `prose`                | Rendered Markdown in the shared reading style                                                           |
-| `code-block`           | A code window: highlighted code on the dark terminal surface, with window dots, a caption, and copying  |
-| `code-diff`            | Two versions of code as a diff: unified on narrow screens, side by side on wide ones                    |
-| `copy-button`          | A button that copies with `jg-clipboard`, and says what to do when the browser refuses, for each reason |
-| `tabs`                 | ARIA tabs, with arrow keys, Home and End, and an optional remembered choice                             |
-| `package-manager-tabs` | An install command for npm and pnpm in a terminal panel, with the choice remembered across the site     |
+| Component              | What it renders                                                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `document-head`        | The title, description, canonical URL, robots, Open Graph and X tags, JSON-LD, favicon, and agent links                               |
+| `theme-init-script`    | The inline script that applies the stored or system theme before the first paint                                                      |
+| `skip-link`            | A "Skip to main content" link that shows on focus                                                                                     |
+| `site-header`          | The sticky header: brand, navigation, actions, and a menu on narrow screens                                                           |
+| `site-footer`          | The footer: brand, about text, link columns, and notes, in one row on wide screens however many columns                               |
+| `theme-control`        | The light and dark switch, which stores the choice                                                                                    |
+| `brand-logo`           | The site's name beside the mark the site supplies                                                                                     |
+| `container`, `section` | The page and reading columns, and a home page section with its eyebrow, title, and lede                                               |
+| `stack`                | Its children in one column, evenly spaced, as a div, a list, or a section                                                             |
+| `page-header`          | An inner page's header over the hero backdrop: a breadcrumb, a mark in its `leading` slot, an eyebrow, the title, a lede, and actions |
+| `hero-backdrop`        | The jg sites' hero backdrop: a faint dot lattice under a soft accent glow                                                             |
+| `navigation-progress`  | The page-loading bar along the top of the viewport, shown when the next page is slow to arrive                                        |
+| `breadcrumb`           | A trail of links, ending at the current page                                                                                          |
+| `button`, `text-link`  | Pill buttons and links, with variants and sizes, and an arrow and the new-tab notice on external links                                |
+| `badge`                | A small label, with status variants                                                                                                   |
+| `link-card`            | A card whose whole area is one link, with icon, meta, and footer slots                                                                |
+| `card`                 | A raised surface for one item, as a div, an article, a section, or a list item                                                        |
+| `prose`                | Rendered Markdown in the shared reading style                                                                                         |
+| `inline-code`          | Code in a sentence that wraps only after `/`, `_`, `.`, and `-`, so a long path or name breaks at its separators                      |
+| `kbd`                  | A key, such as `/` or `K`; a shortcut is several                                                                                      |
+| `table`                | A data table with an optional caption, which scrolls sideways on its own when it's wider than the page                                |
+| `callout`              | A boxed aside, as a note, a tip, a warning, or a danger, with an optional title; `role="note"` marks one as a note in ARIA's sense    |
+| `code-block`           | A code window: highlighted code on the dark terminal surface, with window dots, a caption, and copying                                |
+| `code-diff`            | Two versions of code as a diff: unified on narrow screens, side by side on wide ones                                                  |
+| `terminal-window`      | The code window's frame around a shell session or output, with a copy button for an element when given its id                         |
+| `install-command`      | One shell command after a `$` prompt, in a terminal window, with a copy button that copies the command alone                          |
+| `copy-button`          | A button that copies with `jg-clipboard`, and says what to do when the browser refuses, for each reason                               |
+| `tabs`                 | ARIA tabs, with arrow keys, Home and End, and an optional remembered choice                                                           |
+| `package-manager-tabs` | An install command for npm and pnpm in a terminal panel, with the choice remembered across the site                                   |
 
-Only `theme-control`, the copy buttons, `tabs`, the header's menu, and `navigation-progress` run JavaScript in the browser, besides the theme script. Copy buttons come from `copy-button`, `code-block`, and the code windows in Markdown, which `prose` makes work; one click listener on the document serves them all, however many there are.
+Only `theme-control`, the copy buttons, `tabs`, the header's menu, and `navigation-progress` run JavaScript in the browser, besides the theme script. Copy buttons come from `copy-button`, `code-block`, `terminal-window`, `install-command`, and the code windows in Markdown, which `prose` makes work; one click listener on the document serves them all, however many there are.
 
 External links show an arrow after their text. On a `button`, `externalIcon={false}` hides it, and so does `externalIcon: false` on a `site-footer` link; the jg-packages site does that on the links to its own repository.
 
@@ -117,11 +126,13 @@ Chromium supports both, Safari only the transitions, and Firefox neither; where 
 
 ## Modules
 
-| Subpath                                   | What it exports                                                                                         |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `jg-personal-astro-ui/code-window-plugin` | `codeWindowPlugin`, the Sätteri hast plugin that puts Markdown code blocks in code windows              |
-| `jg-personal-astro-ui/syntax-theme`       | `SYNTAX_THEME`, the Shiki theme that colours code with the `--jg-syntax-*` properties                   |
-| `jg-personal-astro-ui/theme-preference`   | Reading, writing, and resolving the stored theme preference, and the events the theme script listens to |
+| Subpath                                   | What it exports                                                                                                                                                                                                                                                                                                                            |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `jg-personal-astro-ui/code-window-plugin` | `codeWindowPlugin`, the Sätteri hast plugin that puts Markdown code blocks in code windows                                                                                                                                                                                                                                                 |
+| `jg-personal-astro-ui/llms-text`          | `buildLlmsText`, which writes an llms.txt in the llmstxt.org format, `buildLlmsFullText`, which gathers a site's Markdown into one file, and `escapeMarkdownLabel` and `normalizeDescription`, which keep each link one well-formed list item                                                                                              |
+| `jg-personal-astro-ui/seo`                | `buildStructuredData`, the JSON-LD of a page (the WebSite with an ItemList of its pages, or a WebPage with its BreadcrumbList and the SoftwareSourceCode it documents), `serializeStructuredData`, which escapes `<` for a script element, and `SEARCH_TEXT_LIMITS`, the lengths that keep titles and descriptions whole in search results |
+| `jg-personal-astro-ui/syntax-theme`       | `SYNTAX_THEME`, the Shiki theme that colours code with the `--jg-syntax-*` properties                                                                                                                                                                                                                                                      |
+| `jg-personal-astro-ui/theme-preference`   | Reading, writing, and resolving the stored theme preference, and the events the theme script listens to                                                                                                                                                                                                                                    |
 
 ## Releasing it
 
