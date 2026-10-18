@@ -1,4 +1,4 @@
-# jg-query recipes
+# jg-tanstack-query recipes
 
 Patterns for React apps that cache server data with TanStack Query: setting it up, keeping a query across reloads, and signing out without leaking data.
 
@@ -7,7 +7,11 @@ Patterns for React apps that cache server data with TanStack Query: setting it u
 Create the client and its persister in their own module, so every part of the app shares them:
 
 ```tsx
-import { createIndexedDbPersister, createQueryClient, PersistedQueryProvider } from 'jg-query';
+import {
+  createIndexedDbPersister,
+  createQueryClient,
+  PersistedQueryProvider,
+} from 'jg-tanstack-query';
 import type { ReactNode } from 'react';
 
 export const queryClient = createQueryClient();
@@ -67,7 +71,7 @@ Leave `meta.persist` off anything personal, such as an account's details or mess
 Clear the cache before the next person can use the device, and wait for the clear before showing the sign-in page:
 
 ```tsx
-import { clearQueryCache, createIndexedDbPersister, createQueryClient } from 'jg-query';
+import { clearQueryCache, createIndexedDbPersister, createQueryClient } from 'jg-tanstack-query';
 
 declare const queryClient: ReturnType<typeof createQueryClient>;
 declare const persister: ReturnType<typeof createIndexedDbPersister>;

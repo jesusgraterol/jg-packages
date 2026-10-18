@@ -20,7 +20,7 @@ afterEach(() => {
  */
 const createTestPersister = (): Persister =>
   createIndexedDbPersister({
-    databaseName: `jg-query-test-${crypto.randomUUID()}`,
+    databaseName: `jg-tanstack-query-test-${crypto.randomUUID()}`,
     storeName: 'queries',
     key: 'query-client',
   });

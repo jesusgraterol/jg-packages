@@ -1,11 +1,11 @@
-# jg-query
+# jg-tanstack-query
 
 TanStack Query for React apps: a client with safe defaults, opt-in IndexedDB persistence, and a sign-out clear that waits for restore.
 
 ## Install
 
 ```bash
-npm install jg-query @tanstack/react-query @tanstack/react-query-persist-client
+npm install jg-tanstack-query @tanstack/react-query @tanstack/react-query-persist-client
 ```
 
 It needs React 19.2.4 and TanStack Query 5.100.14 or later.
@@ -16,7 +16,11 @@ Create the client and its persister once, outside any component, and provide the
 
 ```ts
 import { createElement } from 'react';
-import { createIndexedDbPersister, createQueryClient, PersistedQueryProvider } from 'jg-query';
+import {
+  createIndexedDbPersister,
+  createQueryClient,
+  PersistedQueryProvider,
+} from 'jg-tanstack-query';
 
 declare const App: () => null;
 
@@ -42,7 +46,7 @@ export const Root = () =>
 ### Signing out
 
 ```ts
-import { clearQueryCache } from 'jg-query';
+import { clearQueryCache } from 'jg-tanstack-query';
 
 declare const queryClient: Parameters<typeof clearQueryCache>[0];
 declare const persister: Parameters<typeof clearQueryCache>[1];
@@ -56,10 +60,10 @@ export const signOut = async (): Promise<void> => {
 
 ## Documentation
 
-The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-query/.
+The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-tanstack-query/.
 
-Recipes for common jobs ship as `RECIPES.md`, with every block typechecked against the release, and are at https://jg-packages.jesusgraterol.dev/packages/jg-query/recipes/.
+Recipes for common jobs ship as `RECIPES.md`, with every block typechecked against the release, and are at https://jg-packages.jesusgraterol.dev/packages/jg-tanstack-query/recipes/.
 
 ## License
 
-[MIT](https://github.com/jesusgraterol/jg-packages/blob/main/packages/jg-query/LICENSE)
+[MIT](https://github.com/jesusgraterol/jg-packages/blob/main/packages/jg-tanstack-query/LICENSE)

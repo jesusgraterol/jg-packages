@@ -23,7 +23,7 @@ describe('listPeerTypePackages', () => {
           peerDependencies: { react: '^19.2.4' },
           devDependencies: { '@types/react': '19.2.14' },
         }),
-        buildPackage('jg-query', {
+        buildPackage('jg-tanstack-query', {
           peerDependencies: { react: '^19.2.4', '@tanstack/react-query': '^5.100.14' },
           devDependencies: { '@types/react': '19.2.14' },
         }),
