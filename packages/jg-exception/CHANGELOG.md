@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+
+- `redact` in `Exception`'s options: values replaced with `[redacted]`, as written and URL-encoded, throughout the exception: its message, its data, and every cause. Each cause becomes a copy that keeps its name, code, and plain fields without running the cause's own code, and nothing keeps the values.
+
 ## 1.1.0
 
 A fresh start: breaking changes in a minor version, once, because nothing depended on 1.0.x.

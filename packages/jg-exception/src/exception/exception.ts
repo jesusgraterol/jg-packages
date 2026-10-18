@@ -1,6 +1,7 @@
 import { UNKNOWN_ERROR_CODE } from '../shared/constants.js';
 import type { IJsonValue } from '../shared/types.js';
 import { EXCEPTION_BRAND } from './constants.js';
+import { redactExceptionParts } from './redaction.js';
 import type { IExceptionJson, IExceptionOptions } from './types.js';
 
 /**
@@ -41,6 +42,16 @@ const toSerializableData = (data: IJsonValue | undefined): IJsonValue => {
  *   }
  * };
  * readSettings('{"theme":"dark"}'); // => { theme: 'dark' }
+ * @example
+ * import { Exception, extractMessage } from 'jg-exception';
+ *
+ * // the values in `redact` are replaced throughout the exception, including in its causes
+ * const exception = new Exception("Couldn't verify the token.", {
+ *   code: 'TOKEN_INVALID',
+ *   cause: new Error('Invalid token abc123'),
+ *   redact: ['abc123'],
+ * });
+ * extractMessage(exception); // => "Couldn't verify the token.; [CAUSE]: Invalid token [redacted]"
  */
 export class Exception extends Error {
   // the stable code callers handle the error by
@@ -52,16 +63,21 @@ export class Exception extends Error {
   /**
    * Creates an exception.
    * @param message What failed, for people reading logs.
-   * @param options The code, and optionally the data and the error underneath as `cause`.
+   * @param options The code, and optionally the data, the error underneath as `cause`, and the
+   * values to `redact`.
    */
   constructor(message: string, options: IExceptionOptions) {
     // callers that skip type checking may leave the options out, and creating an error mustn't throw
-    const { code, data, cause } = (options as IExceptionOptions | undefined) ?? { code: '' };
-    super(message, cause === undefined ? undefined : { cause });
+    const { code, data, cause, redact } = (options as IExceptionOptions | undefined) ?? {
+      code: '',
+    };
+    // redacted before super(), so the stack, which starts with the message, never holds a value
+    const parts = redactExceptionParts({ message, data, cause }, redact, Exception);
+    super(parts.message, parts.cause === undefined ? undefined : { cause: parts.cause });
 
     this.name = 'Exception';
     this.code = typeof code === 'string' && code.length > 0 ? code : UNKNOWN_ERROR_CODE;
-    this.data = data;
+    this.data = parts.data;
     Object.defineProperty(this, EXCEPTION_BRAND, { value: true });
   }
 

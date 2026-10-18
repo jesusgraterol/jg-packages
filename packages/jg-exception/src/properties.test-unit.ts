@@ -1,4 +1,5 @@
 import fc from 'fast-check';
+import { inspect } from 'node:util';
 import { describe, expect, test } from 'vitest';
 
 import { extractMessage } from './error-handler/index.js';
@@ -57,6 +58,70 @@ describe('Exception#toJSON', () => {
           const exception = new Exception(message, { code, data: data as IJsonValue });
 
           expect(JSON.parse(JSON.stringify(exception))).toStrictEqual(exception.toJSON());
+        },
+      ),
+    );
+  });
+});
+
+describe('Exception with redact', () => {
+  // a value behind a fixed prefix, so it can't occur in the output's own text, such as `Exception`,
+  // a property name, or a file path
+  const secret = fc.stringMatching(/^[a-z0-9]{8,16}$/).map((token) => `SECRET-${token}`);
+
+  // one layer of a cause chain, and where it holds the value
+  const layer = fc.record({
+    kind: fc.constantFrom('error', 'exception', 'object', 'string'),
+    inMessage: fc.boolean(),
+    inField: fc.boolean(),
+  });
+
+  test('never shows a value, wherever the message, the data, or a cause chain holds it', () => {
+    fc.assert(
+      fc.property(
+        secret,
+        fc.string(),
+        fc.string(),
+        fc.jsonValue(),
+        fc.array(layer, { maxLength: 4 }),
+        (value, before, after, json, layers) => {
+          const text = (holdsValue: boolean): string =>
+            holdsValue ? `${before}${value}${after}` : `${before}${after}`;
+          const cause = layers.reduceRight<unknown>((inner, { kind, inMessage, inField }) => {
+            switch (kind) {
+              case 'error':
+                return Object.assign(new Error(text(inMessage), { cause: inner }), {
+                  detail: text(inField),
+                });
+              case 'exception':
+                return new Exception(text(inMessage), {
+                  code: 'INNER',
+                  data: { detail: text(inField), json },
+                  cause: inner,
+                });
+              case 'object':
+                return { message: text(inMessage), detail: text(inField), cause: inner };
+              default:
+                return text(true);
+            }
+          }, undefined);
+          const exception = new Exception(text(true), {
+            code: 'FAILED',
+            data: { json, detail: text(true), list: [text(true)] },
+            cause,
+            redact: [value],
+          });
+          const printed = inspect(exception, {
+            depth: null,
+            showHidden: true,
+            maxArrayLength: null,
+            maxStringLength: null,
+          });
+
+          expect(printed).not.toContain(value);
+          expect(extractMessage(exception)).not.toContain(value);
+          expect(JSON.stringify(exception)).not.toContain(value);
+          expect(exception.toString()).not.toContain(value);
         },
       ),
     );
