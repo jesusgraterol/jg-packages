@@ -35,4 +35,24 @@ describe('renderCodeWindowHeader', () => {
     expect(html).toContain('data-copy-context="command"');
     expect(html).toContain('data-copy-source="install"');
   });
+
+  test('names the copy button from the context, as an install command does', () => {
+    const html = renderCodeWindowHeader({
+      caption: 'Terminal',
+      copySource: { context: 'install command', sourceId: 'install' },
+    });
+
+    expect(html).toContain(
+      '<span data-copy-label>Copy</span><span class="sr-only"> install command</span>',
+    );
+  });
+
+  test('lets a long caption wrap when asked', () => {
+    const caption = "Install the skills from your repository's root";
+
+    expect(renderCodeWindowHeader({ caption, wrapCaption: true })).toContain(
+      `<span class="jg-code-window-caption" data-wrap>${caption}</span>`,
+    );
+    expect(renderCodeWindowHeader({ caption })).toContain('<span class="jg-code-window-caption">');
+  });
 });

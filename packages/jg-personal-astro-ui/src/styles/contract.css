@@ -231,6 +231,13 @@
     white-space: nowrap;
   }
 
+  /* a long caption, such as a sentence, wraps onto more lines instead of ending in an ellipsis */
+  .jg-code-window-caption[data-wrap] {
+    padding-block: 0.375rem;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
   .jg-code-window pre {
     margin: 0;
     overflow-x: auto;

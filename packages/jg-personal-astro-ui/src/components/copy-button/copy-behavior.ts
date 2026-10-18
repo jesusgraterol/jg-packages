@@ -69,7 +69,12 @@ const showOutcome = (
   const hint = wrapper?.querySelector<HTMLElement>('[data-copy-hint]');
   if (outcome === undefined) {
     delete button.dataset['copyState'];
+    button.style.removeProperty('min-width');
   } else {
+    // holds the resting width while the outcome shows, so a shorter label, such as "Copied" in
+    // place of "Copy install command", never shrinks the button and moves what sits beside it.
+    // Every attempt resets the button first, so this reads its width at rest
+    button.style.minWidth = `${button.getBoundingClientRect().width}px`;
     button.dataset['copyState'] = outcome.state;
   }
   if (label) {

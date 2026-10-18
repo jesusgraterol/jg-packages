@@ -4,12 +4,24 @@ import { escapeHtml } from '../../html/index.ts';
 // 'outline', a bordered pill for a button that stands on its own, such as a page's copy button
 export type ICopyButtonTone = 'outline' | 'surface' | 'terminal';
 
+// the copy button's height and text: 'sm', compact, as in a code window's header, or 'md', as tall
+// as a default-sized button beside it
+export type ICopyButtonSize = 'md' | 'sm';
+
+// the height, gap, and text of each size
+const SIZE_CLASSES: Record<ICopyButtonSize, string> = {
+  sm: 'min-h-8 items-center gap-1.5 text-xs',
+  md: 'min-h-11 items-center gap-2 text-sm',
+};
+
 // what renderCopyButton needs
 export type ICopyButtonOptions = {
   class?: string | undefined;
   // what the button copies, added to its accessible name and its guidance, such as "install command"
   context?: string | undefined;
   label?: string | undefined;
+  // defaults to 'sm'
+  size?: ICopyButtonSize | undefined;
   // copies the text of the element with this id
   sourceId?: string | undefined;
   // the text to copy. Without it, url, or sourceId, the button copies the code of its code window
@@ -74,6 +86,7 @@ export const renderCopyButton = ({
   class: className,
   context = 'text',
   label = 'Copy',
+  size = 'sm',
   sourceId,
   text,
   tone = 'surface',
@@ -81,7 +94,7 @@ export const renderCopyButton = ({
 }: ICopyButtonOptions = {}): string =>
   [
     `<span class="${escapeHtml(['relative inline-flex shrink-0 items-center', className].filter(Boolean).join(' '))}" data-pagefind-ignore>`,
-    `<button type="button" class="inline-flex min-h-8 items-center gap-1.5 text-xs font-semibold transition-colors ${TONE_CLASSES[tone]}" data-copy-button${renderAttribute('data-copy-context', context)}${renderAttribute('data-copy-source', sourceId)}${renderAttribute('data-copy-text', text)}${renderAttribute('data-copy-url', url)}>`,
+    `<button type="button" class="inline-flex ${SIZE_CLASSES[size]} font-semibold transition-colors ${TONE_CLASSES[tone]}" data-copy-button${renderAttribute('data-copy-context', context)}${renderAttribute('data-copy-source', sourceId)}${renderAttribute('data-copy-text', text)}${renderAttribute('data-copy-url', url)}>`,
     ICONS,
     `<span data-copy-label>${escapeHtml(label)}</span>`,
     `<span class="sr-only"> ${escapeHtml(context)}</span>`,

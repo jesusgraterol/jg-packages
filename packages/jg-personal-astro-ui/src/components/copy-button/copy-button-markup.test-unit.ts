@@ -53,6 +53,13 @@ describe('renderCopyButton', () => {
     ).toBe(true);
   });
 
+  test.each([
+    ['sm', 'min-h-8 items-center gap-1.5 text-xs'],
+    ['md', 'min-h-11 items-center gap-2 text-sm'],
+  ] as const)('renders the %s size', (size, classes) => {
+    expect(readButtonTag(renderCopyButton({ size }))).toContain(`class="inline-flex ${classes} `);
+  });
+
   test('copies the text at a URL, linking to it under the guidance', () => {
     const html = renderCopyButton({
       context: 'as Markdown',

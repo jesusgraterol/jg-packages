@@ -22,6 +22,11 @@
 - `./new-tab-marker`, the arrow and screen-reader notice that end a link opening a new tab. Its arrow now carries `data-new-tab-marker`.
 - `./new-tab-marker-markup` and `./code-window`, which render the marker's and a code window's header markup, for sites whose build checks allow only the markup Markdown produces.
 - `llms-text` sections can carry a Markdown `body`, such as an install command in a code block, instead of links.
+- `copy-button` keeps its resting width while its label changes, so a shorter outcome, such as "Copied" in place of "Copy install command", never moves what sits beside it. It takes `size="md"`, as tall as a default-sized `button`.
+- `install-command` takes `context`, which names its copy button, as in "Copy install command", and its title wraps onto more lines instead of ending in an ellipsis. `terminal-window` takes `wrapTitle`, and `renderCodeWindowHeader` takes `wrapCaption`, for the same.
+- `table` takes `scrollLabel`, which makes its wrapper a labelled scroll region keyboard users can focus, `captionHidden`, for a caption only screen readers read, and `stickyFirstColumn`, which pins each row's first cell while the rest scroll under it.
+- `./segmented-control`, a radio group drawn as a segmented pill, which works without JavaScript. Each radio carries `data-segment="<value>"`, so the section around it toggles its own content with `group-has-[[data-segment=<value>]:checked]` variants.
+- `./external-link-plugin`, a Sätteri hast plugin that opens a site's Markdown links to other sites in a new tab, with `rel="noreferrer"` and the new-tab marker, as the components do.
 
 ### Changed
 

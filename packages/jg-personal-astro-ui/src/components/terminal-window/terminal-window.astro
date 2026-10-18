@@ -8,9 +8,11 @@ interface Props {
   copy?: { context: string; sourceId: string } | undefined;
   // the window's caption, such as 'Terminal'
   title: string;
+  // lets a long title, such as a sentence, wrap onto more lines instead of ending in an ellipsis
+  wrapTitle?: boolean | undefined;
 }
 
-const { class: className, copy, title } = Astro.props;
+const { class: className, copy, title, wrapTitle } = Astro.props;
 ---
 
 {/*
@@ -26,6 +28,7 @@ const { class: className, copy, title } = Astro.props;
       caption: title,
       copy: copy !== undefined,
       copySource: copy,
+      wrapCaption: wrapTitle,
     })}
   />
   <div class="overflow-x-auto px-4 py-3.5 font-mono text-[0.8125rem] leading-6 sm:text-sm">

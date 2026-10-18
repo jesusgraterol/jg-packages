@@ -57,8 +57,18 @@ const createButton = ({
     querySelector: (selector: string) =>
       selector === '[data-copy-status]' ? parts.status : parts.hint,
   };
+  const style = {
+    minWidth: '',
+    removeProperty: (property: string) => {
+      if (property === 'min-width') {
+        style.minWidth = '';
+      }
+    },
+  };
   const button = {
     dataset: { ...dataset },
+    getBoundingClientRect: () => ({ width: 72 }),
+    style,
     parentElement: bare ? null : wrapper,
     querySelector: () => (bare ? null : parts.label),
     closest: (selector: string) =>
@@ -277,6 +287,24 @@ describe('copyFromButton', () => {
 
     expect(writeText).not.toHaveBeenCalled();
     expect(hint.textContent).toBe(getCopyGuidance(null, { context: 'text' }));
+  });
+
+  test('holds its resting width while an outcome shows, and lets go when it resets', async () => {
+    stubClipboard(() => Promise.resolve());
+    const { button } = createButton({ dataset: { copyText: 'npm i jg-fs' } });
+
+    await copyFromButton(button);
+    expect(button.style.minWidth).toBe('72px');
+
+    // a second outcome keeps the width the button had at rest, not the outcome's
+    (
+      button as unknown as { getBoundingClientRect: () => { width: number } }
+    ).getBoundingClientRect = () => ({ width: 60 });
+    await copyFromButton(button);
+    expect(button.style.minWidth).toBe('60px');
+
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(button.style.minWidth).toBe('');
   });
 
   test('clears the last outcome and its reset timer when clicked again', async () => {
