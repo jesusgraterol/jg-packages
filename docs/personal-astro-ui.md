@@ -1,6 +1,6 @@
 # jg-personal-astro-ui
 
-The Astro components, Tailwind CSS token contract, and theme that Jesus Graterol's sites share, published as `jg-personal-astro-ui`. This repository's [website](website.md) is built from it. It stays unlisted on the site, and its API can change in any `0.x` release.
+The Astro components, Tailwind CSS token contract, and theme that Jesus Graterol's sites share, published as `jg-personal-astro-ui`. Four sites are built from it: this repository's [website](website.md), [jesusgraterol.dev](https://jesusgraterol.dev), [Agentic Coding](https://agenticcoding.jesusgraterol.dev), and [jg-skills](https://jg-skills.jesusgraterol.dev). It stays unlisted on the site, and its API can change in any `0.x` release.
 
 ## Setting up a site
 

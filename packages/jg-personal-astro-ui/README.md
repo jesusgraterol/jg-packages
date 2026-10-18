@@ -37,16 +37,22 @@ import ThemeInitScript from 'jg-personal-astro-ui/theme-init-script';
 
 The components style themselves with the contract's tokens only, so another theme can replace `theme.css` by defining every `--jg-*` property.
 
-Put the code blocks of the site's Markdown in the same code windows as `code-block`, with a copy button each, through Astro's Markdown processor, and render the Markdown inside `prose`:
+Put the code blocks of the site's Markdown in the same code windows as `code-block`, with a copy button each, and open its links to other sites in a new tab, as the components do, through Astro's Markdown processor. Render the Markdown inside `prose`:
 
 ```ts
 // astro.config.ts
 import { satteri } from '@astrojs/markdown-satteri';
 import { defineConfig } from 'astro/config';
 import { codeWindowPlugin } from 'jg-personal-astro-ui/code-window-plugin';
+import { externalLinkPlugin } from 'jg-personal-astro-ui/external-link-plugin';
+
+const site = 'https://example.com';
 
 export default defineConfig({
-  markdown: { processor: satteri({ hastPlugins: [codeWindowPlugin] }) },
+  site,
+  markdown: {
+    processor: satteri({ hastPlugins: [codeWindowPlugin, externalLinkPlugin({ siteUrl: site })] }),
+  },
 });
 ```
 
