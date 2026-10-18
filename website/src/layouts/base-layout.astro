@@ -83,7 +83,11 @@ const footerColumns = [
       author={SITE_CONFIG.author.name}
       canonicalUrl={canonicalUrl}
       description={description}
-      icons={[{ href: '/favicon.svg', rel: 'icon', type: 'image/svg+xml' }]}
+      icons={[
+        { href: '/favicon.ico', rel: 'icon', sizes: '16x16 32x32 48x48' },
+        { href: '/favicons/32x32.png', rel: 'icon', sizes: '32x32', type: 'image/png' },
+        { href: '/favicons/192x192.png', rel: 'apple-touch-icon' },
+      ]}
       llmsTextUrl={toSiteUrl('/llms.txt')}
       locale={openGraph.locale}
       noIndex={noIndex}
