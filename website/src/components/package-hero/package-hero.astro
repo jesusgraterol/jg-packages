@@ -1,5 +1,5 @@
 ---
-import { BookOpen, GitBranch, Package } from '@lucide/astro';
+import { BookOpen, ChefHat, GitBranch, Package } from '@lucide/astro';
 import Badge from 'jg-personal-astro-ui/badge';
 import Breadcrumb from 'jg-personal-astro-ui/breadcrumb';
 import Button from 'jg-personal-astro-ui/button';
@@ -82,6 +82,17 @@ const sourceUrl = `${SITE_CONFIG.repositoryUrl}/tree/main/packages/${listedPacka
               aria-hidden="true"
             />
             Source
+          </Button>
+          <Button
+            href={`/packages/${listedPackage.name}/recipes/`}
+            size="sm"
+            variant="outline"
+          >
+            <ChefHat
+              class="size-4"
+              aria-hidden="true"
+            />
+            Recipes
           </Button>
           <Button
             href="#api-reference"

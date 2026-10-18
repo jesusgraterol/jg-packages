@@ -16,20 +16,22 @@ pnpm --filter @jg-packages/website preview
 
 ## Where the content comes from
 
-| Content            | Source                                                                                                                                                                                       |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The package list   | `PACKAGE_CATALOG` in `website/src/site.config.ts`: each package's title, description, icon, runtimes, and position. Names and versions come from `package.json`.                             |
-| A package's README | `packages/<name>/README.md`, loaded by the `packageReadmes` collection without the title, the summary, and the Install, Documentation, and License sections, which the page shows elsewhere. |
-| The API reference  | `website/src/generated/api/<name>.json`, which `generate` writes from each package's TSDoc. It's ignored by Git.                                                                             |
+| Content             | Source                                                                                                                                                                                       |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The package list    | `PACKAGE_CATALOG` in `website/src/site.config.ts`: each package's title, description, icon, runtimes, and position. Names and versions come from `package.json`.                             |
+| A package's README  | `packages/<name>/README.md`, loaded by the `packageReadmes` collection without the title, the summary, and the Install, Documentation, and License sections, which the page shows elsewhere. |
+| A package's recipes | `packages/<name>/RECIPES.md`, loaded by the `packageRecipes` collection without its title, which the recipes page shows in its header. A listed package without one fails the build.         |
+| The API reference   | `website/src/generated/api/<name>.json`, which `generate` writes from each package's TSDoc. It's ignored by Git.                                                                             |
 
 The build fails when the catalog and `packages/` disagree: every published package needs an entry except those in `UNLISTED_PACKAGES` (`jg-personal-astro-ui`), orders and icons must be unique, and descriptions must be 70 to 160 characters. `generate` fails when an export has no TSDoc.
 
 ## Pages
 
-| Path                | What it shows                                                                                    |
-| ------------------- | ------------------------------------------------------------------------------------------------ |
-| `/`                 | The home page, in the sections below                                                             |
-| `/packages/<name>/` | The package's header and install command, its README, its API reference, and a table of contents |
+| Path                        | What it shows                                                                                                                                                            |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/`                         | The home page, in the sections below                                                                                                                                     |
+| `/packages/<name>/`         | The package's header, with its install command and a "Recipes" button, its README, its API reference, and a table of contents                                            |
+| `/packages/<name>/recipes/` | The package's recipes, each block in a code window with a copy button, under a breadcrumb and a link back to the package's page, with a table of contents of the recipes |
 
 The home page's sections, in order:
 
