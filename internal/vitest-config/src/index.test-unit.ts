@@ -107,6 +107,21 @@ describe('createVitestConfig', () => {
     );
   });
 
+  test('runs the global setup around the integration project only, and sets none by default', () => {
+    const globalSetup = './src/test-utils/postgres.global-setup.ts';
+    const projects = createVitestConfig({
+      categories: ['unit', 'integration', 'browser'],
+      globalSetup,
+    }).test?.projects;
+    const readGlobalSetup = (project: unknown): unknown =>
+      (project as { test?: { globalSetup?: unknown } }).test?.globalSetup;
+
+    expect(projects?.map(readGlobalSetup)).toStrictEqual([undefined, globalSetup, undefined]);
+    expect(
+      createVitestConfig({ categories: ['integration'] }).test?.projects?.map(readGlobalSetup),
+    ).toStrictEqual([undefined]);
+  });
+
   test.each([
     [[], 'needs at least one test category'],
     [['unit', 'unit'], 'duplicated test category'],

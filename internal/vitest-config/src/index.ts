@@ -26,6 +26,10 @@ export type IVitestConfigOptions = {
 
   // the coverage `vitest run --coverage` must reach. Without thresholds, it only reports
   coverage?: { thresholds?: ICoverageThresholds };
+
+  // a file the integration project runs once before its tests and tears down after them, such as
+  // one that starts a database container and provides its connection details
+  globalSetup?: string;
 };
 
 // file suffix that identifies each category's test files
@@ -57,11 +61,13 @@ const COVERAGE_EXCLUDE = [
  * stubbed environment variables and globals are restored after every test.
  * @param category The category the project runs.
  * @param environment The environment its tests run in, for every category but browser.
+ * @param globalSetup The file the integration project runs once around its tests, if any.
  * @returns The inline project configuration.
  */
 const buildProject = (
   category: ITestCategory,
   environment: ITestEnvironment,
+  globalSetup: string | undefined,
 ): TestProjectInlineConfiguration => {
   const pattern = CATEGORY_FILE_PATTERNS[category];
   const shared = {
@@ -92,6 +98,7 @@ const buildProject = (
       ...(category === 'bench'
         ? { include: [], benchmark: { include: [pattern] } }
         : { include: [pattern] }),
+      ...(category === 'integration' && globalSetup !== undefined ? { globalSetup } : {}),
     },
   };
 };
@@ -103,9 +110,10 @@ const buildProject = (
  * project runs its tests in headless Chromium, Firefox, and WebKit. Tests and hooks fail after 30
  * seconds unless they set their own timeout. `vitest run --coverage`
  * measures the source with V8 and prints a summary, failing below the thresholds when there are
- * any.
- * @param options The categories the package has, the environment its tests run in, and its
- * coverage thresholds.
+ * any. A `globalSetup` file runs once around the integration project, such as to start a database
+ * container for it, and the other projects never run it.
+ * @param options The categories the package has, the environment its tests run in, its coverage
+ * thresholds, and the integration project's global setup.
  * @returns The Vitest configuration.
  * @example
  * export default createVitestConfig({ categories: ['unit', 'integration'] });
@@ -113,6 +121,11 @@ const buildProject = (
  * export default createVitestConfig({
  *   categories: ['unit', 'browser'],
  *   coverage: { thresholds: { lines: 95, branches: 90 } },
+ * });
+ * @example
+ * export default createVitestConfig({
+ *   categories: ['unit', 'integration'],
+ *   globalSetup: './src/test-utils/postgres.global-setup.ts',
  * });
  * @throws
  * - createVitestConfig needs at least one test category.
@@ -122,6 +135,7 @@ export const createVitestConfig = ({
   categories,
   environment = 'node',
   coverage = {},
+  globalSetup,
 }: IVitestConfigOptions): ViteUserConfig => {
   if (categories.length === 0) {
     throw new Error('createVitestConfig needs at least one test category.');
@@ -133,7 +147,7 @@ export const createVitestConfig = ({
   }
   return defineConfig({
     test: {
-      projects: categories.map((category) => buildProject(category, environment)),
+      projects: categories.map((category) => buildProject(category, environment, globalSetup)),
       coverage: {
         provider: 'v8',
         include: COVERAGE_INCLUDE,

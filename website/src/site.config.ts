@@ -95,6 +95,14 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['universal'],
     order: 11,
   },
+  'jg-postgres': {
+    title: 'PostgreSQL',
+    description:
+      'node-postgres helpers: transactions that report an unknown commit, advisory locks, SQLSTATE checks, cursor pages, and ordered lists.',
+    icon: 'table-2',
+    runtimes: ['node'],
+    order: 12,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/
