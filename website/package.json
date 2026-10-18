@@ -9,13 +9,15 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "astro build",
+    "assets:generate": "node scripts/generate-open-graph.ts",
+    "build": "astro build && node scripts/verify-build.ts",
     "dev": "astro dev",
     "generate": "node scripts/generate-api-reference.ts",
     "lint": "astro sync && eslint .",
     "preview": "astro preview",
-    "test": "pnpm test:unit",
-    "test:coverage": "vitest run --coverage --project unit",
+    "test": "pnpm test:unit && pnpm test:integration",
+    "test:coverage": "vitest run --coverage --project unit --project integration",
+    "test:integration": "vitest run --project integration",
     "test:unit": "vitest run --project unit",
     "typecheck": "astro check"
   },
@@ -46,6 +48,7 @@
     "jg-storage": "workspace:*",
     "jg-sw": "workspace:*",
     "jg-utilities": "workspace:*",
+    "playwright": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

@@ -1,8 +1,12 @@
 import { describe, expect, test } from 'vitest';
 
 import { PACKAGE_CATALOG, PACKAGES_DIRECTORY } from '../../site.config.ts';
-import { findCatalogProblems, readWorkspaceManifests } from './package-catalog.ts';
-import type { IPackageCatalogEntry, IPackageIcon } from './types.ts';
+import {
+  findCatalogProblems,
+  groupPackagesByRuntime,
+  readWorkspaceManifests,
+} from './package-catalog.ts';
+import type { IListedPackage, IPackageCatalogEntry, IPackageIcon } from './types.ts';
 
 // distinct icons for the test entries, picked by order
 const ICONS: readonly IPackageIcon[] = ['braces', 'calculator', 'cloud-off', 'cpu'];
@@ -69,5 +73,36 @@ describe('PACKAGE_CATALOG', () => {
     expect(
       findCatalogProblems(PACKAGE_CATALOG, await readWorkspaceManifests(PACKAGES_DIRECTORY)),
     ).toStrictEqual([]);
+  });
+});
+
+describe('groupPackagesByRuntime', () => {
+  const listed = (name: string, runtimes: IListedPackage['runtimes']): IListedPackage => ({
+    description: 'x'.repeat(80),
+    icon: 'wrench',
+    name,
+    order: 1,
+    runtimes,
+    title: name,
+    version: '1.0.0',
+  });
+
+  test('groups by the first runtime, in the order of RUNTIMES, without empty groups', () => {
+    const groups = groupPackagesByRuntime([
+      listed('jg-node', ['node']),
+      listed('jg-both', ['universal']),
+      listed('jg-page', ['browser', 'node']),
+    ]);
+
+    expect(
+      groups.map(({ packages, runtime }) => [runtime, packages.map(({ name }) => name)]),
+    ).toStrictEqual([
+      ['universal', ['jg-both']],
+      ['browser', ['jg-page']],
+      ['node', ['jg-node']],
+    ]);
+    expect(
+      groupPackagesByRuntime([listed('jg-node', ['node'])]).map(({ runtime }) => runtime),
+    ).toStrictEqual(['node']);
   });
 });

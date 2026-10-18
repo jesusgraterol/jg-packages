@@ -900,6 +900,9 @@ importers:
       jg-utilities:
         specifier: workspace:*
         version: link:../packages/jg-utilities
+      playwright:
+        specifier: 'catalog:'
+        version: 1.64.1
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

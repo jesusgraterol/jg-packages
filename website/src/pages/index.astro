@@ -17,99 +17,56 @@ import PackageCard from '../components/package-card/package-card.astro';
 import PackageGrid from '../components/package-grid/package-grid.astro';
 import BaseLayout from '../layouts/base-layout.astro';
 import { PACKAGE_CATALOG, PACKAGES_DIRECTORY, SITE_CONFIG } from '../site.config.ts';
-import { loadListedPackages, RUNTIMES, type IRuntime } from '../utilities/package-catalog/index.ts';
+import {
+  AGENT_RESOURCES,
+  HOME_BENEFITS,
+  HOME_HERO,
+  HOME_SECTIONS,
+} from '../utilities/home-content/index.ts';
+import { toMarkdownPath } from '../utilities/markdown-pages/index.ts';
+import { groupPackagesByRuntime, loadListedPackages } from '../utilities/package-catalog/index.ts';
+import { buildStructuredData } from '../utilities/seo/index.ts';
 
-// what a coding agent gains from the packages, which also says how they're built
-const BENEFITS = [
-  {
-    Icon: Minimize2,
-    title: 'Less code to generate and review',
-    text: 'Your agent imports a tested function instead of writing a new one, so there’s less code to generate, review, and maintain.',
-  },
-  {
-    Icon: ArrowLeftRight,
-    title: 'One error model, server to client',
-    text: 'Every failure is an Exception with a stable code and JSON data. APIs send it in one envelope and jg-fetch reads it back, so code checks codes, not messages.',
-  },
-  {
-    Icon: BookOpenText,
-    title: 'Docs inside each package',
-    text: 'Every package ships its full API reference as API.md, and every export has TSDoc, so an agent reads the docs of the installed version from node_modules.',
-  },
-  {
-    Icon: FileCheck,
-    title: 'Examples that are checked',
-    text: 'Every example in the docs typechecks against the published package, and the ones without I/O run on every release, with their stated results asserted.',
-  },
-  {
-    Icon: PackageCheck,
-    title: 'Tested as you install them',
-    text: 'Each release is packed and installed into a new project before it ships, and browser code is tested in Chromium, Firefox, and WebKit.',
-  },
-  {
-    Icon: Ruler,
-    title: 'One set of conventions',
-    text: 'The same names, units in option names, ESM with types, and nothing running at import. An agent that knows one package knows how the others work.',
-  },
-] as const;
-
-// what agents can read, linked once the site serves it
-const AGENT_RESOURCES: readonly { path: string; href?: string; text: string }[] = [
-  {
-    path: 'node_modules/<package>/API.md',
-    text: 'The full API reference of the installed version, shipped in every package, so it reads offline.',
-  },
-  {
-    path: 'node_modules/<package>/RECIPES.md',
-    text: 'App-side patterns for the package, such as an API exception or a typed client, typechecked on every release.',
-  },
-  {
-    path: '/llms.txt',
-    text: 'An index of the packages in the llmstxt.org format, with a link to each package’s Markdown.',
-  },
-  {
-    path: '/llms-full.txt',
-    text: 'Every package’s README and API reference in one file, for loading into a context window.',
-  },
-  {
-    path: '/packages/<name>/index.md',
-    text: 'The Markdown version of each page: a package’s README and its full API reference.',
-  },
-  {
-    path: 'Accept: text/markdown',
-    text: 'Request any page with this header to get its Markdown instead of HTML.',
-  },
-];
+// the icon of each benefit, by its id
+const BENEFIT_ICONS: Record<(typeof HOME_BENEFITS)[number]['id'], typeof Minimize2> = {
+  'less-code': Minimize2,
+  'one-error-model': ArrowLeftRight,
+  'docs-inside': BookOpenText,
+  'checked-examples': FileCheck,
+  'tested-as-installed': PackageCheck,
+  'one-set-of-conventions': Ruler,
+};
 
 const packages = await loadListedPackages(PACKAGE_CATALOG, PACKAGES_DIRECTORY);
-const groups = (Object.keys(RUNTIMES) as IRuntime[])
-  .map((runtime) => ({
-    ...RUNTIMES[runtime],
-    runtime,
-    packages: packages.filter(({ runtimes }) => runtimes[0] === runtime),
-  }))
-  .filter((group) => group.packages.length > 0);
+const groups = groupPackagesByRuntime(packages);
+const title = `${SITE_CONFIG.name} | TypeScript packages for coding agents`;
+const structuredData = buildStructuredData({
+  canonicalUrl: new URL('/', SITE_CONFIG.url).toString(),
+  description: SITE_CONFIG.defaultDescription,
+  listedPages: packages.map(({ name }) => ({ name, path: `/packages/${name}/` })),
+  site: SITE_CONFIG,
+  title,
+  type: 'website',
+});
 ---
 
 <BaseLayout
   canonicalPath="/"
   description={SITE_CONFIG.defaultDescription}
-  title={`${SITE_CONFIG.name} | TypeScript packages for coding agents`}
+  markdownPath={toMarkdownPath('/')}
+  structuredData={structuredData}
+  title={title}
 >
   <section class="relative isolate overflow-hidden border-b border-border">
     <HeroBackdrop />
     <div class="jg-container grid items-center gap-12 pt-14 pb-16 sm:pt-20 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14">
       <div>
-        <p class="eyebrow">TypeScript packages for coding agents</p>
+        <p class="eyebrow">{HOME_HERO.eyebrow}</p>
         <h1 class="display-title mt-6">
-          Give your coding agent
-          <span class="block text-accent">tested code to build on.</span>
+          {HOME_HERO.titleStart}
+          <span class="block text-accent">{HOME_HERO.titleEnd}</span>
         </h1>
-        <p class="lede mt-7">
-          Errors, HTTP requests, storage, files, processes, and more, as small packages that share
-          one set of conventions. Each ships its full API reference, so your agent writes less code
-          and you review less of it.
-        </p>
+        <p class="lede mt-7">{HOME_HERO.lede}</p>
         <div class="mt-8 flex flex-wrap gap-3">
           <Button href="#setup">Set up your agent</Button>
           <Button
@@ -126,9 +83,9 @@ const groups = (Object.keys(RUNTIMES) as IRuntime[])
 
   <Section
     id="packages"
-    eyebrow="The packages"
-    title="One job each, one set of conventions."
-    lede="Each one does one job, with the same error handling, naming, and docs as the others. Pick the ones you need; siblings depend on each other only where it saves you code."
+    eyebrow={HOME_SECTIONS.packages.eyebrow}
+    title={HOME_SECTIONS.packages.title}
+    lede={HOME_SECTIONS.packages.lede}
   >
     <div class="mt-12 grid gap-12">
       {groups.map(({ heading, packages: groupPackages, runtime, summary }) => (
@@ -159,40 +116,43 @@ const groups = (Object.keys(RUNTIMES) as IRuntime[])
 
   <Section
     id="why"
-    eyebrow="Why agents use them"
-    title="Code your agent doesn't have to write."
-    lede="Agents write code faster than anyone can review it. Each package replaces code an agent would otherwise generate with code that's already tested, documented, and consistent with the rest."
+    eyebrow={HOME_SECTIONS.why.eyebrow}
+    title={HOME_SECTIONS.why.title}
+    lede={HOME_SECTIONS.why.lede}
   >
     <ul class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {BENEFITS.map(({ Icon, text, title }) => (
-        <li class="rounded-xl border border-border bg-surface p-5 shadow-surface">
-          <span
-            class="inline-flex size-9 items-center justify-center rounded-lg border border-border bg-background text-accent"
-            aria-hidden="true"
-          >
-            <Icon class="size-[1.125rem]" />
-          </span>
-          <h3 class="mt-4 text-base font-semibold tracking-tight">{title}</h3>
-          <p class="mt-2 text-sm leading-6 text-muted">{text}</p>
-        </li>
-      ))}
+      {HOME_BENEFITS.map(({ id, text, title: benefitTitle }) => {
+        const Icon = BENEFIT_ICONS[id];
+        return (
+          <li class="rounded-xl border border-border bg-surface p-5 shadow-surface">
+            <span
+              class="inline-flex size-9 items-center justify-center rounded-lg border border-border bg-background text-accent"
+              aria-hidden="true"
+            >
+              <Icon class="size-[1.125rem]" />
+            </span>
+            <h3 class="mt-4 text-base font-semibold tracking-tight">{benefitTitle}</h3>
+            <p class="mt-2 text-sm leading-6 text-muted">{text}</p>
+          </li>
+        );
+      })}
     </ul>
   </Section>
 
   <Section
     id="setup"
-    eyebrow="Set up your agent"
-    title="Two steps to put your agent on them."
-    lede="The policy tells your agent to prefer these packages, and the skill tells it which one fits each task. Both live in jg-skills, so they stay current as the packages change."
+    eyebrow={HOME_SECTIONS.setup.eyebrow}
+    title={HOME_SECTIONS.setup.title}
+    lede={HOME_SECTIONS.setup.lede}
   >
     <AgentSetup />
   </Section>
 
   <Section
     id="agents"
-    eyebrow="Docs for agents"
-    title="Docs your coding agent can read."
-    lede="The same READMEs and API references you read here, as Markdown: inside each package, and on this site."
+    eyebrow={HOME_SECTIONS.agents.eyebrow}
+    title={HOME_SECTIONS.agents.title}
+    lede={HOME_SECTIONS.agents.lede}
     border={false}
   >
     <ul class="mt-12 grid gap-4 sm:grid-cols-2">
