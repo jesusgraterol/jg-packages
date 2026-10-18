@@ -46,6 +46,7 @@
     "jg-clipboard": "workspace:*",
     "jg-env": "workspace:*",
     "jg-postgres": "workspace:*",
+    "jg-redis": "workspace:*",
     "jg-exception": "workspace:*",
     "jg-fetch": "workspace:*",
     "jg-fs": "workspace:*",

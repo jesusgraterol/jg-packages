@@ -15,7 +15,8 @@ export type IPackageIcon =
   | 'key-round'
   | 'octagon-alert'
   | 'table-2'
-  | 'wrench';
+  | 'wrench'
+  | 'zap';
 
 // the site's presentation of one listed package
 export type IPackageCatalogEntry = {

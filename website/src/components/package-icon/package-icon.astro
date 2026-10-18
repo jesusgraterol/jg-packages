@@ -12,6 +12,7 @@ import {
   OctagonAlert,
   Table2,
   Wrench,
+  Zap,
 } from '@lucide/astro';
 
 import type { IPackageIcon } from '../../utilities/package-catalog/index.ts';
@@ -36,6 +37,7 @@ const LUCIDE_ICONS = {
   'octagon-alert': OctagonAlert,
   'table-2': Table2,
   wrench: Wrench,
+  zap: Zap,
 } as const satisfies Record<IPackageIcon, typeof Braces>;
 
 // the tile's classes and the glyph's size inside it

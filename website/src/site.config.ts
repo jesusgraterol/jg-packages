@@ -103,6 +103,14 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['node'],
     order: 12,
   },
+  'jg-redis': {
+    title: 'Redis',
+    description:
+      'A read-through cache that keeps working when Redis fails, and fail-closed one-time claims and single-use values, on node-redis.',
+    icon: 'zap',
+    runtimes: ['node'],
+    order: 13,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/

@@ -18,6 +18,7 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 | [`jg-clipboard`](packages/jg-clipboard)       | Copies and reads text, HTML, and images on the browser clipboard, with support detection and errors that say why the browser refused. |
 | [`jg-env`](packages/jg-env)                   | Reads environment variables strictly from any source, and secrets from files, with errors that name the key and never the value.      |
 | [`jg-postgres`](packages/jg-postgres)         | node-postgres helpers: safe transactions, advisory locks, SQLSTATE checks, cursor pages, and ordered lists.                           |
+| [`jg-redis`](packages/jg-redis)               | A read-through cache that survives Redis failing, and fail-closed one-time claims, on node-redis.                                     |
 
 [`jg-personal-astro-ui`](packages/jg-personal-astro-ui) is also published from `packages/`: the Astro components and theme Jesus Graterol's own sites share. It isn't meant for general use, so the website doesn't list it.
 
