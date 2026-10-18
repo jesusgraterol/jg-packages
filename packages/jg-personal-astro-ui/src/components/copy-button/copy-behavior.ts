@@ -1,6 +1,7 @@
 import { copyText } from 'jg-clipboard';
 import { getErrorCode } from 'jg-exception';
 
+import { COPY_OUTCOME_LABELS } from './copy-button-markup.ts';
 import { getCopyGuidance } from './copy-guidance.ts';
 
 // how long the copied state shows before the button resets
@@ -72,8 +73,9 @@ const showOutcome = (
     button.style.removeProperty('min-width');
   } else {
     // holds the resting width while the outcome shows, so a shorter label, such as "Copied" in
-    // place of "Copy install command", never shrinks the button and moves what sits beside it.
-    // Every attempt resets the button first, so this reads its width at rest
+    // place of "Copy install command", never shrinks the button and moves what sits beside it; the
+    // markup already makes room for a longer one. Every attempt resets the button first, so this
+    // reads its width at rest
     button.style.minWidth = `${button.getBoundingClientRect().width}px`;
     button.dataset['copyState'] = outcome.state;
   }
@@ -115,7 +117,7 @@ export const copyFromButton = async (button: HTMLElement): Promise<void> => {
     }
     showOutcome(button, {
       state: 'error',
-      label: 'Copy failed',
+      label: COPY_OUTCOME_LABELS.error,
       message: getCopyGuidance(getErrorCode(error), {
         context: button.dataset['copyContext'] ?? 'text',
         label: defaultLabels.get(button),
@@ -127,7 +129,11 @@ export const copyFromButton = async (button: HTMLElement): Promise<void> => {
   if (latestAttempts.get(button) !== attempt) {
     return;
   }
-  showOutcome(button, { state: 'success', label: 'Copied', message: 'Copied to the clipboard.' });
+  showOutcome(button, {
+    state: 'success',
+    label: COPY_OUTCOME_LABELS.success,
+    message: 'Copied to the clipboard.',
+  });
   resetTimers.set(
     button,
     setTimeout(() => {
