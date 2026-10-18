@@ -23,6 +23,9 @@ export type IRenderServiceWorkerInput = {
   excludeMIMETypes: string[];
   caching: boolean;
 
+  // the precached page that answers a navigation the network can't serve, or null for none
+  navigationFallback: string | null;
+
   // the firebase-fcm template's SDK version and app options
   firebase?: { sdkVersion: string; options: IFirebaseOptions };
 };
@@ -67,6 +70,7 @@ export const renderServiceWorker = async (input: IRenderServiceWorkerInput): Pro
     EXCLUDE_MIME_TYPES: input.excludeMIMETypes,
     SKIP_WAITING_MESSAGE_TYPE,
     CACHING: input.caching,
+    NAVIGATION_FALLBACK: input.navigationFallback,
   });
   if (input.template === 'base' || input.firebase === undefined) {
     return `${GENERATED_HEADER}\n${base}`;

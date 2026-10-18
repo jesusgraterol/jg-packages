@@ -167,4 +167,36 @@ describe('buildServiceWorker', () => {
       ERRORS.NOT_A_PATH_ELEMENT,
     );
   });
+
+  test('writes a precached navigation fallback into the worker', async () => {
+    await writeBuild();
+
+    const source = await buildServiceWorker(
+      baseConfig({ includeToPrecache: ['/', '/index.html'], navigationFallback: '/index.html' }),
+      { cwd: directory },
+    );
+
+    expect(readConstant(source, 'NAVIGATION_FALLBACK')).toBe('/index.html');
+    expect(
+      readConstant(
+        await buildServiceWorker(baseConfig(), { cwd: directory }),
+        'NAVIGATION_FALLBACK',
+      ),
+    ).toBeNull();
+  });
+
+  test('rejects a navigation fallback the worker does not precache, unless it caches nothing', async () => {
+    await writeBuild();
+
+    await expectToRejectCode(
+      buildServiceWorker(baseConfig({ navigationFallback: '/index.html' }), { cwd: directory }),
+      ERRORS.NAVIGATION_FALLBACK_NOT_PRECACHED,
+      "The navigation fallback '/index.html' isn't precached.",
+    );
+    const source = await buildServiceWorker(
+      baseConfig({ outDir: 'missing', navigationFallback: '/index.html' }),
+      { cwd: directory, caching: false },
+    );
+    expect(readConstant(source, 'NAVIGATION_FALLBACK')).toBe('/index.html');
+  });
 });

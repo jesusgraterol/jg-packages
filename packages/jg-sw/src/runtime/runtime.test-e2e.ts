@@ -94,6 +94,31 @@ test.afterEach(async () => {
   await server.close();
 });
 
+test('offline, a navigation the worker never cached opens the navigation fallback', async ({
+  page,
+}) => {
+  await server.deploy('v1', { navigationFallback: true });
+  await openApp(page);
+  server.setOffline(true);
+
+  await page.goto(`${server.origin}/settings`);
+
+  // the app's page, from the worker's cache, at the route's URL
+  await expect(page.locator('body')).toHaveText('fixture');
+  expect(new URL(page.url()).pathname).toBe('/settings');
+});
+
+test('offline, without a navigation fallback, such a navigation gets the network error', async ({
+  page,
+}) => {
+  await openApp(page);
+  server.setOffline(true);
+
+  await page.goto(`${server.origin}/settings`);
+
+  await expect(page.locator('body')).toHaveText('Network error happened');
+});
+
 test('registers v1, then sees v2 waiting once it is deployed', async ({ page }) => {
   await openApp(page);
   expect(await readVersion(page)).toBe('v1');
