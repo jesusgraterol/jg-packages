@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- `FetchException` inherits `severity` and `shouldLog` from jg-exception 1.4.0's `Exception`, for an app's own throw sites and reporters. jg-fetch never sets them.
+
 ## 0.2.2
 
 ### Fixed

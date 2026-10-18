@@ -1,8 +1,8 @@
 import { UNKNOWN_ERROR_CODE } from '../shared/constants.js';
 import type { IJsonValue } from '../shared/types.js';
-import { EXCEPTION_BRAND } from './constants.js';
+import { EXCEPTION_BRAND, EXCEPTION_SEVERITIES } from './constants.js';
 import { redactExceptionParts } from './redaction.js';
-import type { IExceptionJson, IExceptionOptions } from './types.js';
+import type { IExceptionJson, IExceptionOptions, IExceptionSeverity } from './types.js';
 
 /**
  * Makes data safe to serialize by passing it through JSON. A type can't rule out an object that
@@ -20,7 +20,17 @@ const toSerializableData = (data: IJsonValue | undefined): IJsonValue => {
 };
 
 /**
+ * Checks whether a value is one of the severities an Exception accepts.
+ * @param value The value of the `severity` option.
+ * @returns Whether it's a known severity.
+ */
+const isExceptionSeverity = (value: unknown): value is IExceptionSeverity =>
+  (EXCEPTION_SEVERITIES as readonly unknown[]).includes(value);
+
+/**
  * An `Error` with a stable string code and optional JSON data, the error every jg package throws.
+ * An app's throw sites can also say how serious the failure is with `severity`, and ask for it to
+ * be logged with `shouldLog`, for its reporter to read. Neither is serialized.
  * @example
  * import { Exception } from 'jg-exception';
  *
@@ -52,6 +62,17 @@ const toSerializableData = (data: IJsonValue | undefined): IJsonValue => {
  *   redact: ['abc123'],
  * });
  * extractMessage(exception); // => "Couldn't verify the token.; [CAUSE]: Invalid token [redacted]"
+ * @example
+ * import { Exception } from 'jg-exception';
+ *
+ * // an app's throw site says how its reporter treats the failure, without changing the JSON
+ * const exception = new Exception('The user was not found.', {
+ *   code: 'USER_NOT_FOUND',
+ *   severity: 'expected',
+ * });
+ * exception.severity; // => 'expected'
+ * exception.shouldLog; // => undefined
+ * JSON.stringify(exception).includes('severity'); // => false
  */
 export class Exception extends Error {
   // the stable code callers handle the error by
@@ -60,15 +81,22 @@ export class Exception extends Error {
   // context that helps whoever handles or debugs the error
   public readonly data: IJsonValue | undefined;
 
+  // how serious the failure is, only when the throw site gave a known severity
+  declare public readonly severity?: IExceptionSeverity;
+
+  // whether the error is worth logging in full, only when the throw site asked for it
+  declare public readonly shouldLog?: boolean;
+
   /**
    * Creates an exception.
    * @param message What failed, for people reading logs.
-   * @param options The code, and optionally the data, the error underneath as `cause`, and the
-   * values to `redact`.
+   * @param options The code, and optionally the data, the error underneath as `cause`, the values
+   * to `redact`, and the throw site's `severity` and `shouldLog`.
    */
   constructor(message: string, options: IExceptionOptions) {
     // callers that skip type checking may leave the options out, and creating an error mustn't throw
-    const { code, data, cause, redact } = (options as IExceptionOptions | undefined) ?? {
+    const { code, data, cause, redact, severity, shouldLog } = (options as
+      IExceptionOptions | undefined) ?? {
       code: '',
     };
     // redacted before super(), so the stack, which starts with the message, never holds a value
@@ -78,6 +106,13 @@ export class Exception extends Error {
     this.name = 'Exception';
     this.code = typeof code === 'string' && code.length > 0 ? code : UNKNOWN_ERROR_CODE;
     this.data = parts.data;
+    // own properties only when given, so an Exception without them logs and inspects as before
+    if (isExceptionSeverity(severity)) {
+      this.severity = severity;
+    }
+    if (shouldLog === true) {
+      this.shouldLog = true;
+    }
     Object.defineProperty(this, EXCEPTION_BRAND, { value: true });
   }
 

@@ -19,6 +19,16 @@ export { redactFields } from './redact-fields/index.js';
 export {
   type IExceptionJson,
   type IExceptionOptions,
+  type IExceptionSeverity,
+  EXCEPTION_SEVERITIES,
   Exception,
   isException,
 } from './exception/index.js';
+
+// error feedback
+export {
+  type IErrorFeedback,
+  type IErrorFeedbackOptions,
+  type IErrorFeedbackOverrides,
+  createErrorFeedback,
+} from './error-feedback/index.js';

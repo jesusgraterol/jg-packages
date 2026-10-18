@@ -1,6 +1,6 @@
 {
   "name": "jg-fetch",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "A fetch wrapper for browsers and Node.js that never throws: timeouts, retries with Retry-After, response caps, and API envelopes.",
   "author": "Jesus Graterol",
   "license": "MIT",

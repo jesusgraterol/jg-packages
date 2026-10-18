@@ -1,95 +1,55 @@
 # jg-exception recipes
 
-Patterns for apps that throw coded errors, report them, keep secrets out of them, and handle them by their code.
+Patterns for apps that throw coded errors, report them, show them to users, keep secrets out of them, and handle them by their code.
 
-## An API exception with an HTTP status and logging flags
+## Severity and logging flags for an error reporter
 
-Use this in an API whose errors need more than a code: the HTTP status the client gets, and whether the error is worth logging or sending to the error tracker. A subclass keeps those decisions where the error is thrown, the one place that knows whether the client asked for something missing or the server broke. It's still an Exception, so `isException`, `hasErrorCode`, and jg-api-response treat it like any other:
+Use this in an app that reports its errors, such as to its logs and an error tracker, when the place that throws an error knows better than the reporter how serious it is. `severity` says it: `'expected'` for a failure the app anticipates, such as a user that doesn't exist, and `'critical'` for one someone must hear about at once, such as a charge without a matching record. `shouldLog: true` asks for the error to be written to the logs in full, such as one whose details are too large for the error tracker's storage. Leaving both out means an ordinary unexpected failure:
 
 ```ts
-import { Exception, type IExceptionOptions } from 'jg-exception';
+import { Exception } from 'jg-exception';
 
 type IUser = { id: number; name: string };
-
-// what an ApiException takes on top of an Exception's options
-type IApiExceptionOptions = IExceptionOptions & {
-  // the HTTP status the API answers with, 500 when it's left out
-  status?: number | undefined;
-
-  // whether the error tracker, such as Sentry, gets the error; by default only for a 5xx status
-  shouldCapture?: boolean | undefined;
-
-  // whether the error is written to the logs; by default only for a 5xx status
-  shouldLog?: boolean | undefined;
-};
-
-// an Exception that says how the API answers it, and who hears about it
-export class ApiException extends Exception {
-  public readonly status: number;
-  public readonly shouldCapture: boolean;
-  public readonly shouldLog: boolean;
-
-  constructor(
-    message: string,
-    {
-      status = 500,
-      shouldCapture = status >= 500,
-      shouldLog = status >= 500,
-      ...options
-    }: IApiExceptionOptions,
-  ) {
-    super(message, options);
-    this.name = 'ApiException';
-    this.status = status;
-    this.shouldCapture = shouldCapture;
-    this.shouldLog = shouldLog;
-  }
-}
 
 // finds a user by id, such as with a database query
 declare function findUser(userId: number): Promise<IUser | null>;
 
-// checks a webhook's signature against the secret shared with the sender
-declare function isSignatureValid(payload: string, signature: string): boolean;
+// compares what a payment provider charged for an invoice with what the ledger recorded
+declare function compareLedger(invoiceId: number): Promise<{ charged: bigint; recorded: bigint }>;
 
 export const getUser = async (userId: number): Promise<IUser> => {
   const user = await findUser(userId);
   if (user === null) {
-    // the client asked for a user that doesn't exist: a 404, with nothing to log or capture
-    throw new ApiException('The user was not found.', {
+    // the caller asked for a user that doesn't exist, which the app expects to happen
+    throw new Exception('The user was not found.', {
       code: 'USER_NOT_FOUND',
-      status: 404,
       data: { userId },
+      severity: 'expected',
     });
   }
   return user;
 };
 
-export const verifyWebhook = (payload: string, signature: string): void => {
-  if (!isSignatureValid(payload, signature)) {
-    // the sender's mistake, so a 401, but logged: a run of them means an attack or a rotated secret
-    throw new ApiException('The webhook signature is invalid.', {
-      code: 'WEBHOOK_SIGNATURE_INVALID',
-      status: 401,
+export const checkInvoice = async (invoiceId: number): Promise<void> => {
+  const { charged, recorded } = await compareLedger(invoiceId);
+  if (charged !== recorded) {
+    // money moved without a matching record: someone must look at it now, with the full details
+    throw new Exception("The ledger doesn't match the charge.", {
+      code: 'LEDGER_MISMATCH',
+      data: { invoiceId, charged: String(charged), recorded: String(recorded) },
+      severity: 'critical',
       shouldLog: true,
     });
   }
 };
 ```
 
-The defaults follow the status: a 4xx is the client's to fix, so it's neither logged nor captured, and a 5xx is both. Override them where you know better, as for the webhook. The status and the flags stay on the server: `toJSON()`, which jg-api-response's `buildResponse` reads, gives only the name, code, message, and data. Setting `name` makes `String(error)` read `ApiException [USER_NOT_FOUND]: The user was not found.` in logs.
+Neither flag is serialized: `toJSON()`, which jg-api-response's `buildResponse` reads, gives only the name, code, message, and data, so clients never see them. They also survive `redact`, so a wrapped cause keeps its own. For an HTTP status, jg-nestjs's `ApiException` is an Exception that adds one.
 
-Read the flags in one place, where every error is reported, such as the API's error handler:
+Read the flags in one place, where every error is reported, such as the app's error handler:
 
 ```ts
-import { Exception, extractMessage, getErrorCode } from 'jg-exception';
-
-// the ApiException from the block above
-declare class ApiException extends Exception {
-  readonly status: number;
-  readonly shouldCapture: boolean;
-  readonly shouldLog: boolean;
-}
+import { extractMessage, getErrorCode, isException } from 'jg-exception';
 
 // writes a line to the app's logs
 declare const logger: { error(message: string, details: object): void };
@@ -97,48 +57,46 @@ declare const logger: { error(message: string, details: object): void };
 // sends an error to the error tracker, such as Sentry's captureException
 declare function captureError(error: unknown): void;
 
-// logs and captures an error as its flags say
+// pages whoever is on call
+declare function notifyOnCall(error: unknown): void;
+
+// logs, captures, and escalates an error as its throw site asked
 export const reportError = (error: unknown): void => {
-  // an error that isn't an ApiException wasn't expected, so the logs and the tracker both get it
-  const shouldLog = error instanceof ApiException ? error.shouldLog : true;
-  const shouldCapture = error instanceof ApiException ? error.shouldCapture : true;
-  if (shouldLog) {
+  // an error that isn't an Exception, such as a bug's TypeError, has no flags
+  const severity = isException(error) ? error.severity : undefined;
+  if (severity === 'expected') {
+    return;
+  }
+  if (!isException(error) || error.shouldLog === true || severity === 'critical') {
     // the message joins the causes, which the logs need and the client never sees
     logger.error(extractMessage(error), { code: getErrorCode(error) });
   }
-  if (shouldCapture) {
-    captureError(error);
+  captureError(error);
+  if (severity === 'critical') {
+    notifyOnCall(error);
   }
 };
 ```
 
-An error from anywhere else, such as a bug's `TypeError` or another package's Exception, has no flags, so it's logged and captured. When you expect one, wrap it in an ApiException where you call the code that throws it, with the error as its `cause`.
+An error that isn't an Exception wasn't expected, so it's logged and captured. An Exception from another package has neither flag, because packages never set them: it's an ordinary failure, captured but not logged in full. When you expect one, wrap it in an Exception with `severity: 'expected'` where you call the code that throws it, with the error as its `cause`.
 
-## A client exception for the UI
+## Feedback for the UI
 
-Use this in a browser app, where most errors are expected, such as a file that's too large or a session that expired, and the user needs to know what to do next. Two things change from an API: the flag says whether the error tracker needs the error, and what users read comes from copy you write for each code, never from the error's message.
-
-Throw an AppException for a failure the app detects itself, and mark the ones the user can fix, so they don't flood the tracker:
+Use this in a browser app, where most errors are expected, such as a file that's too large or a session that expired, and the user needs to know what to do next. What users read comes from copy you write for each code, never from the error's message, which is written for whoever debugs it: it can name an id or an internal step, and it isn't translated. `createErrorFeedback` holds that copy, configured once:
 
 ```ts
-import { Exception, type IExceptionOptions } from 'jg-exception';
+import { createErrorFeedback, Exception } from 'jg-exception';
 
-// what an AppException takes on top of an Exception's options
-type IAppExceptionOptions = IExceptionOptions & {
-  // whether the error tracker gets the error; false for a failure the user expects and can fix
-  shouldCapture?: boolean | undefined;
-};
-
-// an Exception thrown in the browser app, which says whether the error tracker needs it
-export class AppException extends Exception {
-  public readonly shouldCapture: boolean;
-
-  constructor(message: string, { shouldCapture = true, ...options }: IAppExceptionOptions) {
-    super(message, options);
-    this.name = 'AppException';
-    this.shouldCapture = shouldCapture;
-  }
-}
+// the copy users read for each code, and the codes that send them back to sign in
+export const getErrorFeedback = createErrorFeedback({
+  fallbackMessage: 'Something went wrong. Try again in a moment.',
+  messagesByCode: {
+    AVATAR_TOO_LARGE: 'Choose an image of 5 MB or less.',
+    SESSION_EXPIRED: 'Your session expired. Sign in again to continue.',
+    USER_NOT_FOUND: 'This account no longer exists.',
+  },
+  accessDeniedCodes: ['SESSION_EXPIRED'],
+});
 
 // the largest avatar the app uploads, in bytes
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
@@ -146,25 +104,23 @@ const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 // checks the image a user picked before it's uploaded
 export const checkAvatar = (file: File): void => {
   if (file.size > MAX_AVATAR_BYTES) {
-    // the user can pick a smaller image, so there's nothing to track
-    throw new AppException('The avatar is larger than 5 MB.', {
+    // the user can pick a smaller image, so the error tracker doesn't need it
+    throw new Exception('The avatar is larger than 5 MB.', {
       code: 'AVATAR_TOO_LARGE',
       data: { sizeBytes: file.size, maxSizeBytes: MAX_AVATAR_BYTES },
-      shouldCapture: false,
+      severity: 'expected',
     });
   }
 };
 ```
 
-Handle errors where the UI catches them, such as in an event handler or an error boundary. A message is written for whoever debugs the error: it can name an id or an internal step, and it isn't written for users or translated. So show the copy for the error's code, and a fallback for any other:
+Handle errors where the UI catches them, such as in an event handler or an error boundary:
 
 ```ts
-import { Exception, getErrorCode } from 'jg-exception';
+import { type createErrorFeedback, isException } from 'jg-exception';
 
-// the AppException from the block above
-declare class AppException extends Exception {
-  readonly shouldCapture: boolean;
-}
+// the function from the block above
+declare const getErrorFeedback: ReturnType<typeof createErrorFeedback>;
 
 // sends an error to the error tracker, such as Sentry's captureException
 declare function captureError(error: unknown): void;
@@ -172,27 +128,28 @@ declare function captureError(error: unknown): void;
 // shows a short message to the user, such as in a toast
 declare function showToast(message: string): void;
 
-// the copy users see for each code, written for them rather than for the logs
-const MESSAGES_BY_CODE: ReadonlyMap<string, string> = new Map([
-  ['AVATAR_TOO_LARGE', 'Choose an image of 5 MB or less.'],
-  ['SESSION_EXPIRED', 'Your session expired. Sign in again to continue.'],
-  ['USER_NOT_FOUND', 'This account no longer exists.'],
-]);
+// sends the user to the sign-in page
+declare function redirectToSignIn(): void;
 
-// what users see for an error without copy of its own
-const FALLBACK_MESSAGE = 'Something went wrong. Try again in a moment.';
-
-// captures an error when it needs tracking, and tells the user what happened
-export const handleUiError = (error: unknown): void => {
-  if (!(error instanceof AppException) || error.shouldCapture) {
+// tells the user what happened, and captures the errors the app didn't expect
+export const showError = (error: unknown, fallbackMessage?: string): void => {
+  const feedback = getErrorFeedback(error, { fallbackMessage });
+  // a cancelled request, such as when the user left the page, needs no message
+  if (feedback.isCancelled) {
+    return;
+  }
+  if (!isException(error) || error.severity !== 'expected') {
     captureError(error);
   }
-  const code = getErrorCode(error);
-  showToast((code === null ? undefined : MESSAGES_BY_CODE.get(code)) ?? FALLBACK_MESSAGE);
+  if (feedback.isAccessDenied) {
+    redirectToSignIn();
+    return;
+  }
+  showToast(feedback.message);
 };
 ```
 
-The codes come from anywhere: your AppExceptions, your API's envelope errors, which jg-fetch's FetchException carries as its `code`, and other packages, such as jg-clipboard. A code without copy gets the fallback, so a new code never shows users a developer's message. Any error that isn't an AppException is captured, because the UI can't tell whether it was expected. If your API already reports its own failures, skip the errors your API client returns for them, so the tracker doesn't get each one twice.
+A screen passes a fallback of its own, such as `showError(error, "Couldn't upload the avatar.")`, and keeps the copy for every code. The codes come from anywhere: your Exceptions, your API's envelope errors, which jg-fetch's FetchException carries as its `code`, and other packages, such as jg-clipboard. A code without copy gets the fallback, so a new code never shows users a developer's message, and `feedback.code` is `null` for it unless `publicCodePattern` marks it safe to show, such as for a support request. If your API already reports its own failures, skip the errors your API client returns for them, so the tracker doesn't get each one twice.
 
 ## Keeping secrets out of a cause
 

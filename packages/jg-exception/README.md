@@ -50,6 +50,12 @@ JSON.stringify(
 String(error); // 'Exception [USER_NOT_FOUND]: The user was not found.'
 ```
 
+An app's throw sites can also say how serious a failure is, for the code that reports it: `severity` is `'expected'` or `'critical'`, and `shouldLog: true` asks for the error to be logged in full. Neither is serialized, and packages never set them:
+
+```ts
+throw new Exception('The user was not found.', { code: 'USER_NOT_FOUND', severity: 'expected' });
+```
+
 `data` must be a JSON value, so a `BigInt`, a `Date`, or a class instance is a type error. An object's values may be `undefined`, so `{ email }` works when `email` is optional. An interface has no index signature, so pass an interface-typed value as `{ ...user }`, or declare its type with `type`. Whatever can't be serialized at runtime, such as an object that refers back to itself, becomes `null` in `toJSON()`, and `NaN` and `Infinity` become `null` as in any JSON.
 
 Extract a readable message from anything a `catch` block receives: strings, errors with their causes, ZodErrors, and objects with a `message`, `error`, or `reason`:
@@ -59,6 +65,19 @@ import { extractMessage } from 'jg-exception';
 
 extractMessage(new Error('Request failed', { cause: new Error('Timed out') }));
 // 'Request failed; [CAUSE]: Timed out'
+```
+
+Turn an error into what users read with `createErrorFeedback`: the copy you wrote for its code, or a fallback, never the error's message, which is written for whoever debugs it:
+
+```ts
+import { createErrorFeedback } from 'jg-exception';
+
+const getErrorFeedback = createErrorFeedback({
+  fallbackMessage: 'Something went wrong.',
+  messagesByCode: { SESSION_EXPIRED: 'Your session expired. Sign in again to continue.' },
+});
+
+getErrorFeedback(error).message; // the copy for the error's code, or the fallback
 ```
 
 Assert error codes in tests with any test runner:

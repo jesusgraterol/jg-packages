@@ -5,7 +5,7 @@ import { extractMessage, hasErrorCode } from '../error-handler/index.js';
 import { UNKNOWN_ERROR_CODE } from '../shared/constants.js';
 import type { IJsonValue } from '../shared/types.js';
 import { Exception } from './exception.js';
-import type { IExceptionJson, IExceptionOptions } from './types.js';
+import type { IExceptionJson, IExceptionOptions, IExceptionSeverity } from './types.js';
 import { isException } from './utilities.js';
 
 /**
@@ -504,6 +504,97 @@ describe('Exception with redact', () => {
   });
 });
 
+describe('Exception with severity and shouldLog', () => {
+  test('keeps a known severity and shouldLog set to true', () => {
+    const expected = new Exception('Not found', { code: 'NOT_FOUND', severity: 'expected' });
+    const critical = new Exception('Ledger mismatch', {
+      code: 'LEDGER_MISMATCH',
+      severity: 'critical',
+      shouldLog: true,
+    });
+
+    expect(expected.severity).toBe('expected');
+    expect(Object.hasOwn(expected, 'shouldLog')).toBe(false);
+    expect(critical.severity).toBe('critical');
+    expect(critical.shouldLog).toBe(true);
+  });
+
+  test.each([
+    ['no options', {}],
+    ['an unknown severity', { severity: 'fatal' }],
+    ['shouldLog set to false', { shouldLog: false }],
+    ['a shouldLog that is not true', { shouldLog: 'yes' }],
+    ['undefined values', { severity: undefined, shouldLog: undefined }],
+  ])('has neither field with %s', (_, flags) => {
+    // the flags as an untyped caller passes them
+    const exception = new Exception('Failed', { code: 'FAILED', ...flags } as IExceptionOptions);
+
+    expect(Object.hasOwn(exception, 'severity')).toBe(false);
+    expect(Object.hasOwn(exception, 'shouldLog')).toBe(false);
+    expect('severity' in exception).toBe(false);
+    expect('shouldLog' in exception).toBe(false);
+  });
+
+  test('leaves an Exception without them with the same own properties as before', () => {
+    const exception = new Exception('Not found', { code: 'NOT_FOUND', data: { id: 1 } });
+
+    expect(Object.keys(exception)).toStrictEqual(['code', 'data', 'name']);
+  });
+
+  test('never serializes them', () => {
+    const exception = new Exception('Ledger mismatch', {
+      code: 'LEDGER_MISMATCH',
+      data: { id: 1 },
+      severity: 'critical',
+      shouldLog: true,
+    });
+
+    expect(exception.toJSON()).toStrictEqual({
+      name: 'Exception',
+      code: 'LEDGER_MISMATCH',
+      message: 'Ledger mismatch',
+      data: { id: 1 },
+    });
+    expect(JSON.stringify(exception)).toBe(
+      '{"name":"Exception","code":"LEDGER_MISMATCH","message":"Ledger mismatch","data":{"id":1}}',
+    );
+    expect(exception.toString()).toBe('Exception [LEDGER_MISMATCH]: Ledger mismatch');
+  });
+
+  test("copies a cause's flags verbatim into its snapshot, whatever the values to redact", () => {
+    const cause = new Exception('The ledger is critical and true', {
+      code: 'LEDGER_MISMATCH',
+      severity: 'critical',
+      shouldLog: true,
+    });
+    const exception = new Exception('Failed', {
+      code: 'FAILED',
+      cause,
+      redact: ['true', 'critical'],
+    });
+    const snapshot = exception.cause as Exception;
+
+    expect(snapshot).not.toBe(cause);
+    expect(isException(snapshot)).toBe(true);
+    expect(snapshot.message).toBe('The ledger is [redacted] and [redacted]');
+    expect(snapshot.severity).toBe('critical');
+    expect(snapshot.shouldLog).toBe(true);
+  });
+
+  test("redacts the same fields on a cause that isn't an Exception", () => {
+    const cause = Object.assign(new Error('Failed'), { severity: 'critical', shouldLog: true });
+    const exception = new Exception('Failed', {
+      code: 'FAILED',
+      cause,
+      redact: ['true', 'critical'],
+    });
+    const snapshot = exception.cause as Error & Record<string, unknown>;
+
+    expect(snapshot['severity']).toBe('[redacted]');
+    expect(snapshot['shouldLog']).toBe('[redacted]');
+  });
+});
+
 describe('Exception#toJSON', () => {
   test('returns the name, code, message, and data', () => {
     const exception = new Exception('Not found', {
@@ -632,11 +723,21 @@ describe('Exception types', () => {
     expectTypeOf<IExceptionOptions['redact']>().toEqualTypeOf<readonly string[] | undefined>();
   });
 
+  test('accepts only the known severities and a boolean shouldLog', () => {
+    // @ts-expect-error: the severity is one of the known ones
+    expect(new Exception('Failed', { code: 'FAILED', severity: 'fatal' }).code).toBe('FAILED');
+    // @ts-expect-error: shouldLog is a boolean
+    expect(new Exception('Failed', { code: 'FAILED', shouldLog: 'yes' }).code).toBe('FAILED');
+    expectTypeOf<IExceptionSeverity>().toEqualTypeOf<'expected' | 'critical'>();
+  });
+
   test('types the data and the JSON form', () => {
     const exception = new Exception('Not found', { code: 'NOT_FOUND' });
 
     expectTypeOf(exception.code).toEqualTypeOf<string>();
     expectTypeOf(exception.data).toEqualTypeOf<IJsonValue | undefined>();
+    expectTypeOf(exception.severity).toEqualTypeOf<IExceptionSeverity | undefined>();
+    expectTypeOf(exception.shouldLog).toEqualTypeOf<boolean | undefined>();
     expectTypeOf(exception.toJSON()).toEqualTypeOf<IExceptionJson>();
     expectTypeOf(exception.toJSON().data).toEqualTypeOf<IJsonValue>();
   });
