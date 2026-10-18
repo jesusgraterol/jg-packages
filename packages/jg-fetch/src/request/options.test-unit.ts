@@ -169,6 +169,18 @@ describe('buildUrl', () => {
     expect(url.search).toBe('?sort=asc&q=caf%C3%A9+%26+tea&page=2&exact=true&id=10&tags=a&tags=b');
   });
 
+  test.each([
+    ['a string', 'page=2'],
+    ['null', null],
+  ])('rejects a query that is %s, not an object, with INVALID_OPTIONS', (_description, query) => {
+    const failure = catchFailure(() =>
+      buildUrl('https://api.example.com', undefined, query as unknown as Record<string, string>),
+    );
+
+    expect(failure.kind).toBe('INVALID_OPTIONS');
+    expect(failure.details.message).toContain('query must be an object.');
+  });
+
   test('rejects a query value that is an object with INVALID_OPTIONS', () => {
     const failure = catchFailure(() =>
       buildUrl('https://api.example.com', undefined, { filter: { a: 1 } as unknown as string }),
