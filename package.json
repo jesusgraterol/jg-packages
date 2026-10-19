@@ -15,14 +15,16 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "check": "turbo run lint typecheck build test:coverage test:browser test:e2e && pnpm format:check && pnpm release:verify",
+    "check": "node internal/vitest-config/src/run-test-suite.ts full run lint typecheck build test:coverage test:browser test:e2e && pnpm format:check && pnpm release:verify",
+    "check:essential": "node internal/vitest-config/src/run-test-suite.ts essential run lint typecheck build test:unit test:integration test:browser test:e2e && pnpm format:check",
     "dev": "turbo run dev --filter=@jg-packages/website",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "turbo run lint",
     "release:pack": "node internal/release-checks/src/cli.ts pack --out .release",
     "release:verify": "node internal/release-checks/src/cli.ts verify",
-    "test": "turbo run test:unit test:integration test:e2e",
+    "test": "node internal/vitest-config/src/run-test-suite.ts essential run test:unit test:integration test:e2e",
+    "test:full": "node internal/vitest-config/src/run-test-suite.ts full run test:unit test:integration test:e2e",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {

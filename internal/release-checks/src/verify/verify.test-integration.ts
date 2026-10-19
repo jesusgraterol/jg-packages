@@ -76,7 +76,7 @@ afterEach(async () => {
   await rm(workDirectory, { recursive: true, force: true });
 });
 
-describe('packAndCheck', () => {
+describe('packAndCheck', { tags: ['full'] }, () => {
   test('passes a well-formed package and lists its tarball with its checksum', async () => {
     const { entries, problems } = await packAndCheck(rootDirectory, outputDirectory, dependencies);
 
@@ -169,7 +169,7 @@ describe('packAndCheck', () => {
   });
 });
 
-describe('runPack', () => {
+describe('runPack', { tags: ['full'] }, () => {
   test('writes the release manifest next to the tarballs when every check passes', async () => {
     const releaseDirectory = join(workDirectory, 'packed');
 

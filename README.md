@@ -74,7 +74,7 @@ pnpm check
 │   ├── eslint-config/        # createEslintConfig(), the shared ESLint flat configuration
 │   ├── release-checks/       # the verify, pack, publish, and tag release commands
 │   ├── tsconfig/             # base, library, browser and node TypeScript configurations
-│   └── vitest-config/        # createVitestConfig(), one Vitest project per test category
+│   └── vitest-config/        # createVitestConfig(), one Vitest project per test category, and the suites
 ├── packages/                 # the published jg-* packages, and jg-personal-astro-ui
 ├── website/                  # the Astro site at jg-packages.jesusgraterol.dev, private
 ├── LICENSE

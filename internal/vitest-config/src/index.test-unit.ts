@@ -1,8 +1,20 @@
-import { describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { createVitestConfig } from './index.ts';
 
+// the tag every project defines, as the full suite configures it
+const FULL_TAG = {
+  name: 'full',
+  description: 'Slow tests the essential suite skips.',
+  skip: false,
+};
+
 describe('createVitestConfig', () => {
+  // the run that executes these tests may itself select a suite, which they must not inherit
+  beforeEach(() => {
+    vi.stubEnv('JG_TEST_SUITE', undefined);
+  });
+
   test('creates one isolated project per category, named after it', () => {
     expect(createVitestConfig({ categories: ['unit', 'integration'] })).toStrictEqual({
       test: {
@@ -15,6 +27,7 @@ describe('createVitestConfig', () => {
               unstubGlobals: true,
               testTimeout: 30_000,
               hookTimeout: 30_000,
+              tags: [FULL_TAG],
               include: ['src/**/*.test-unit.{ts,tsx}'],
             },
           },
@@ -26,6 +39,7 @@ describe('createVitestConfig', () => {
               unstubGlobals: true,
               testTimeout: 30_000,
               hookTimeout: 30_000,
+              tags: [FULL_TAG],
               include: ['src/**/*.test-integration.{ts,tsx}'],
             },
           },
@@ -55,6 +69,7 @@ describe('createVitestConfig', () => {
           unstubGlobals: true,
           testTimeout: 30_000,
           hookTimeout: 30_000,
+          tags: [FULL_TAG],
           include: [],
           benchmark: { include: ['src/**/*.test-bench.{ts,tsx}'] },
         },
@@ -120,6 +135,28 @@ describe('createVitestConfig', () => {
     expect(
       createVitestConfig({ categories: ['integration'] }).test?.projects?.map(readGlobalSetup),
     ).toStrictEqual([undefined]);
+  });
+
+  test('skips the tests tagged full in every project when JG_TEST_SUITE selects the essential suite', () => {
+    vi.stubEnv('JG_TEST_SUITE', 'essential');
+    const projects = createVitestConfig({ categories: ['unit', 'integration', 'browser'] }).test
+      ?.projects;
+    const readTags = (project: unknown): unknown =>
+      (project as { test?: { tags?: unknown } }).test?.tags;
+
+    expect(projects?.map(readTags)).toStrictEqual([
+      [{ ...FULL_TAG, skip: true }],
+      [{ ...FULL_TAG, skip: true }],
+      [{ ...FULL_TAG, skip: true }],
+    ]);
+  });
+
+  test('rejects a JG_TEST_SUITE that names no suite', () => {
+    vi.stubEnv('JG_TEST_SUITE', 'quick');
+
+    expect(() => createVitestConfig({ categories: ['unit'] })).toThrow(
+      'JG_TEST_SUITE must be "essential" or "full" when set.',
+    );
   });
 
   test.each([

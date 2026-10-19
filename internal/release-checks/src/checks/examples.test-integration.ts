@@ -64,7 +64,7 @@ afterEach(async () => {
   await rm(workDirectory, { recursive: true, force: true });
 });
 
-describe('checkExamples', () => {
+describe('checkExamples', { tags: ['full'] }, () => {
   test('typechecks inputs examples.d.ts declares, which a runnable example still lacks', async () => {
     await editSource(
       " * greet('Ada'); // => 'Hello, Ada!'\n",
