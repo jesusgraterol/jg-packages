@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+
+- `createDialogSession({ whileOpen?, restoreFocus? })`, one dialog's sessions outside React: `open(options, { returnFocusTo? })` resolves to the result `close(result?, id?)` gives, or to `undefined` when another session replaces it, and never rejects; a `close` naming an ended session's id does nothing; and one frame after a close, focus returns to the element the session opened from, when it can still take focus and focus is lost. `getSnapshot` and `subscribe` read it from anywhere, such as jg-react-router's `useDialogNavigationDismissal`.
+- `useDialogSession(session)`, which reads the open session, the same object while it lasts, and `null` on a server.
+- `IDialogSession`, `IDialogSessionOptions`, `IDialogSessionOpenInit`, and `IDialogSessionSnapshot`.
+
 ## 0.3.0
 
 ### Added

@@ -2,6 +2,12 @@
 export type { IBreakpoint } from './breakpoint/index.js';
 export type { IUseCopyFeedbackOptions, IUseCopyFeedbackResult } from './copy-feedback/index.js';
 export type {
+  IDialogSession,
+  IDialogSessionOpenInit,
+  IDialogSessionOptions,
+  IDialogSessionSnapshot,
+} from './dialog-session/index.js';
+export type {
   IFileUploadCanceledHandler,
   IFileUploadCanceledItem,
   IFileUploadControls,
@@ -80,6 +86,9 @@ export {
 
 // feedback
 export { DEFAULT_COPY_FEEDBACK_SECONDS, useCopyFeedback } from './copy-feedback/index.js';
+
+// dialogs
+export { createDialogSession, useDialogSession } from './dialog-session/index.js';
 
 // theme
 export {
