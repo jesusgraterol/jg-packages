@@ -7,6 +7,14 @@ export type {
 } from './dialog-navigation/index.js';
 export type { IPageOutletProps } from './page-outlet/index.js';
 export type {
+  IPageReturn,
+  IPageReturnOptions,
+  IPageReturnOrigin,
+  IPageReturnResolution,
+  IResolvePageReturnOptions,
+  IRetainedSearchParamRule,
+} from './page-return/index.js';
+export type {
   ICreatePageRouteObjectOptions,
   IPageRouteComponentProps,
   IPageRouteDefinition,
@@ -48,3 +56,11 @@ export {
 
 // URL state
 export { useSearchParamState } from './search-param-state/index.js';
+
+// page returns
+export {
+  createPageReturn,
+  DEFAULT_PAGE_RETURN_STATE_KEY,
+  retainSearchParams,
+  usePageReturn,
+} from './page-return/index.js';

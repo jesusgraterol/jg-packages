@@ -118,6 +118,39 @@ The schema reads the URL's strings, with the defaults filling missing keys, so g
 
 Each change is a navigation, so `DialogNavigationProvider` closes the dialogs open at the time, as for any other navigation.
 
+### Page return
+
+`createPageReturn` gives a detail page a way back to the page it was opened from, such as a filtered list, kept in the router state rather than the URL. The app says which pages it returns to, with their labels and the query each keeps:
+
+```ts
+import { createPageReturn, retainSearchParams, usePageReturn } from 'jg-react-router';
+import { z } from 'zod';
+
+const LABELS: Record<string, string> = { '/payments': 'Payments', '/projects': 'All projects' };
+
+export const pageReturn = createPageReturn({
+  excludedPaths: ['/sign-in'], // never a way back
+  resolveOrigin: (url) => {
+    const label = Object.hasOwn(LABELS, url.pathname) ? LABELS[url.pathname] : undefined;
+    const search = retainSearchParams(url.searchParams, {
+      status: { schema: z.enum(['all', 'failed']), defaultValue: 'all' }, // left out at all
+    });
+    return label === undefined || search === null
+      ? null
+      : { href: `${url.pathname}${search.size > 0 ? `?${search.toString()}` : ''}`, label };
+  },
+});
+
+// on the list, linking to a payment
+const linkState = pageReturn.createState(`${location.pathname}${location.search}`, location.state);
+
+// on the payment, with its own back link to /payments
+const { returnTo, returnState } = usePageReturn(pageReturn, { parentHref: '/payments' });
+// returnTo: { href: '/payments?status=failed', label: 'Payments' }, or null
+```
+
+An origin must be a safe internal path, not under `excludedPaths`, that `resolveOrigin` accepts, and its hash is dropped. `retainSearchParams` keeps only the parameters its rules list, each at most once and valid, leaving out one at its default, so a search box's private text never reaches the state; a repeated or invalid parameter offers no way back. `createState` replaces an earlier origin and keeps the rest of the state. `usePageReturn` offers no way back to the parent, the current page, or its pathname, and gives the state to return with without the origin, so the way back is used once. A state that isn't valid offers none.
+
 ## Documentation
 
 The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-react-router/.

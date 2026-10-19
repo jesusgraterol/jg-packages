@@ -58,7 +58,8 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json"
   },
   "dependencies": {
-    "jg-exception": "workspace:^"
+    "jg-exception": "workspace:^",
+    "jg-utilities": "workspace:^"
   },
   "peerDependencies": {
     "react": "^19.2.4",
