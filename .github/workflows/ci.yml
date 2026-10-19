@@ -72,8 +72,10 @@ jobs:
       - name: Install Chromium
         run: pnpm --filter jg-sw exec playwright install --with-deps chromium
 
+      # four packages at a time on the runner's four CPUs: more starve the browser tests' iframes
+      # and the integration tests' timing
       - name: Run the tests with coverage
-        run: node internal/vitest-config/src/run-test-suite.ts full run test:coverage
+        run: node internal/vitest-config/src/run-test-suite.ts full run test:coverage --concurrency=4
 
   browser:
     name: Browser tests
@@ -214,8 +216,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # four packages at a time, as in the tests job
       - name: Run the package unit and integration tests
-        run: pnpm turbo run test:unit test:integration --filter='./packages/*'
+        run: pnpm turbo run test:unit test:integration --filter='./packages/*' --concurrency=4
 
   deploy:
     name: Deploy the site

@@ -56,13 +56,19 @@ describe('lockTransaction', () => {
   test('waits for the transaction holding the lock, and releases it at COMMIT', async () => {
     const key = createAdvisoryLockKey(`test:${crypto.randomUUID()}`);
     const order: string[] = [];
+    let markHolding = (): void => undefined;
+    const isHolding = new Promise<void>((resolve) => {
+      markHolding = resolve;
+    });
     const holder = postgres.transaction(async (client) => {
       await lockTransaction(client, key);
       order.push('first holds');
+      markHolding();
       await setTimeout(300);
       order.push('first done');
     });
-    await setTimeout(100);
+    // the second asks only once the first holds the lock, however long the first took to get it
+    await isHolding;
 
     await postgres.transaction(async (client) => {
       await lockTransaction(client, key);

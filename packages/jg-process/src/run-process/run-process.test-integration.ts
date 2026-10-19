@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -71,13 +71,19 @@ describe.skipIf(IS_WINDOWS)('runProcess', () => {
 
   // reads the pids a child recorded, and remembers them for the cleanup
   const readPids = async (pidFile: string): Promise<{ child: number; grandchild: number }> => {
-    await waitFor(() => existsSync(pidFile));
-    const pids = JSON.parse(readFileSync(pidFile, 'utf-8')) as {
-      child: number;
-      grandchild: number;
-    };
-    recordedPids.push(pids.child, pids.grandchild);
-    return pids;
+    let pids: { child: number; grandchild: number } | undefined;
+    // the file can exist before the child has written it, so it's read until it parses
+    await waitFor(() => {
+      try {
+        pids = JSON.parse(readFileSync(pidFile, 'utf-8')) as { child: number; grandchild: number };
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    const { child, grandchild } = pids as { child: number; grandchild: number };
+    recordedPids.push(child, grandchild);
+    return { child, grandchild };
   };
 
   beforeAll(async () => {
