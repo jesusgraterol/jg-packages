@@ -101,6 +101,58 @@ const unread = counters.read(
 const count = await unread.completion; // a number, or null
 ```
 
+### Usage limits
+
+`admitUsage` decides, atomically, whether an actor may do a rate-limited action now, such as sending an invitation, and records it when they may. It refuses with `cooldown` while the same action on the same scope was accepted less than `cooldownSeconds` ago, by any actor, and with `limit` once the actor did the action `limit` times within `windowSeconds`:
+
+```ts
+import { admitUsage } from 'jg-postgres';
+
+const admission = await admitUsage(postgres, {
+  actorId: userId,
+  actionId: 'send-invitation',
+  scopeKey: inviteeEmailHash, // the cooldown applies per invitee
+  limit: 20,
+  windowSeconds: 86_400,
+  cooldownSeconds: 60,
+});
+// { outcome: 'accepted' | 'cooldown' | 'limit', retryAt: an ISO timestamp, or null }
+```
+
+Concurrent calls queue on transaction advisory locks, the scope's then the actor's, so two can never both pass, and every comparison uses the database's clock. The accepted actions go in a `usage_event` table:
+
+```sql
+CREATE TABLE usage_event (
+  id bigint GENERATED ALWAYS AS IDENTITY,
+  actor_id varchar(256) NOT NULL,
+  action_id varchar(128) NOT NULL,
+  scope_key varchar(256) NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT pk_ue__id PRIMARY KEY (id),
+  CONSTRAINT chk_ue__actor_id_non_empty CHECK (actor_id <> ''),
+  CONSTRAINT chk_ue__action_id_non_empty CHECK (action_id <> ''),
+  CONSTRAINT chk_ue__scope_key_non_empty CHECK (scope_key <> '')
+);
+CREATE INDEX idx_ue__actor_id_action_id_created_at ON usage_event (actor_id, action_id, created_at);
+CREATE INDEX idx_ue__action_id_scope_key_created_at_scoped
+  ON usage_event (action_id, scope_key, created_at)
+  WHERE scope_key IS NOT NULL;
+CREATE INDEX idx_ue__created_at ON usage_event (created_at);
+```
+
+The table grows with every accepted action. Prune it on a schedule, deleting in batches the rows older than the longest window or cooldown, `$1` seconds, `$2` rows at a time, such as 1024, and running it again while it deletes a whole batch. It compares with `now()`, which in a statement of its own is the statement's start, because the index can bound a scan by `now()` but not by `clock_timestamp()`:
+
+```sql
+DELETE FROM usage_event
+WHERE id IN (
+  SELECT id
+  FROM usage_event
+  WHERE created_at < now() - make_interval(secs => $1)
+  ORDER BY created_at
+  LIMIT $2
+);
+```
+
 ### Constraint errors
 
 ```ts
@@ -188,6 +240,7 @@ The defaults fill every missing or null field when the record is read, and are t
 | `MOVE_FAILED`                   | The move didn't update exactly two rows                                                                          |
 | `INVALID_TIMEOUT_PROFILE`       | A timeout profile's seconds aren't positive and finite, or its lock timeout is longer than its statement timeout |
 | `INVALID_OPTIONAL_READ_OPTIONS` | An optional reader's database, limits, or timeouts aren't valid                                                  |
+| `INVALID_USAGE_ADMISSION`       | A usage admission's ids, limit, or seconds aren't valid, or it has a cooldown without a scope                    |
 
 A query's own error, such as a constraint violation, is node-postgres's `DatabaseError`, unchanged.
 

@@ -10,6 +10,7 @@ export type { IPostgres, IPostgresConfig, ITransactionOptions } from './postgres
 export type { IColumnFilter, IQueryExecutor, IRowId } from './shared/index.js';
 export type { IMoveOptions, IOrderedList } from './sorting/index.js';
 export type { ITimeoutProfile } from './timeouts/index.js';
+export type { IUsageAdmission, IUsageAdmissionInput } from './usage-limits/index.js';
 
 // constants
 export { POSTGRES_BIGINT_MAX, POSTGRES_BIGINT_MIN } from './shared/index.js';
@@ -25,6 +26,9 @@ export { defineTimeoutProfile, toPoolTimeouts, withQueryTimeout } from './timeou
 
 // optional reads
 export { createOptionalReader } from './optional-reads/index.js';
+
+// usage limits
+export { admitUsage } from './usage-limits/index.js';
 
 // SQLSTATE checks
 export {

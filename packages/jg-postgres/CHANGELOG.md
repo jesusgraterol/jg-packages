@@ -7,7 +7,8 @@
 - `defineTimeoutProfile({ statementTimeoutSeconds, lockTimeoutSeconds, queryGraceSeconds? })`, a frozen profile of how long a kind of work may run, whose client timeout is the statement timeout plus a grace, 15 seconds by default. `toPoolTimeouts(profile)` gives it to `createPostgres`, and `withQueryTimeout(query, profile)` gives one query its client timeout. A profile that isn't valid throws `INVALID_TIMEOUT_PROFILE`.
 - `transaction(operation, { timeouts })`, which sets a profile's statement and lock timeouts for that transaction only.
 - `createOptionalReader(options)`, which runs optional reads, such as a header's counters, only while the pool has spare clients, shares a running read by its key, gives up after `admissionSeconds`, and never throws. Options that aren't valid throw `INVALID_OPTIONAL_READ_OPTIONS`.
-- `ITimeoutProfile`, `ITransactionOptions`, `IOptionalRead`, `IOptionalReader`, and `IOptionalReaderOptions`.
+- `admitUsage(postgres, input)`, which admits an actor's action at most `limit` times in a trailing window, and, with a `cooldownSeconds`, once per scope for any actor, recording each admission in a `usage_event` table the README describes. It resolves to `accepted`, `cooldown`, or `limit`, with a `retryAt` when one is known, and concurrent callers can't exceed either rule. Input that isn't valid throws `INVALID_USAGE_ADMISSION`.
+- `ITimeoutProfile`, `ITransactionOptions`, `IOptionalRead`, `IOptionalReader`, `IOptionalReaderOptions`, `IUsageAdmission`, and `IUsageAdmissionInput`.
 - A recipe for a slow transaction with its own timeouts.
 
 ## 0.1.1
