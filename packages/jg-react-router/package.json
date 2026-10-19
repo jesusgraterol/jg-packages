@@ -1,6 +1,6 @@
 {
   "name": "jg-react-router",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "React Router helpers: a page outlet that focuses each new page and restores scroll on Back and Forward, and dialogs that close when the route changes.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -51,9 +51,10 @@
   "scripts": {
     "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/build-tools/src/copy-assets.ts 'page-outlet/styles.css' && node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
-    "test": "pnpm test:browser",
+    "test": "pnpm test:unit && pnpm test:browser",
     "test:browser": "vitest run --project browser",
-    "test:coverage": "vitest run --coverage --project \"browser (chromium)\"",
+    "test:coverage": "vitest run --coverage --project unit --project \"browser (chromium)\"",
+    "test:unit": "vitest run --project unit",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json"
   },
   "peerDependencies": {

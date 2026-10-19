@@ -1,6 +1,6 @@
 # jg-react-router recipes
 
-Layouts that restore scroll on Back and Forward, and dialogs that close when the user navigates away, in React Router apps.
+Layouts that restore scroll on Back and Forward, dialogs that close when the user navigates away, and titles from a route map, in React Router apps.
 
 ## A layout route that restores scroll
 
@@ -114,3 +114,47 @@ export const App = () => (
 ```
 
 The provider closes dialogs without touching history, so closing one never moves the user back. Inside a nested `DialogNavigationProvider`, dialogs follow only that provider's observer.
+
+## A document title from the route map
+
+Keep every page's title and description next to its path, and set the document's title and meta description from the matched page in one place, the root layout:
+
+```tsx
+import { useEffect } from 'react';
+import { createBrowserRouter } from 'react-router';
+import {
+  createPageRouteObject,
+  type IPageRouteComponentProps,
+  PageOutlet,
+  usePageRouteMetadata,
+} from 'jg-react-router';
+
+const SettingsPage = ({ title }: IPageRouteComponentProps) => <h1>{title}</h1>;
+
+const RootLayout = () => {
+  const pageMetadata = usePageRouteMetadata();
+  useEffect(() => {
+    document.title = pageMetadata === null ? 'Acme' : `${pageMetadata.title} | Acme`;
+    document
+      .querySelector('meta[name="description"]')
+      ?.setAttribute('content', pageMetadata?.description ?? '');
+  }, [pageMetadata]);
+  return <PageOutlet />;
+};
+
+export const router = createBrowserRouter([
+  {
+    element: <RootLayout />,
+    children: [
+      createPageRouteObject({
+        path: '/settings',
+        title: 'Settings',
+        description: 'Your account and notifications.',
+        Component: SettingsPage,
+      }),
+    ],
+  },
+]);
+```
+
+The page's heading and the document's title come from the same entry, so they can't drift apart, and a route without page metadata, such as a redirect, leaves the default title.
