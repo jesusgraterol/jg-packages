@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.0
+
+### Added
+
+- `severity` and `shouldLog` in `Exception`'s options, for an app's throw sites to tell its reporter how serious a failure is, `'expected'` or `'critical'`, and to ask for it to be logged in full. Each is an own property only when given a valid value, neither is serialized, and redacted causes keep both as they are. Packages never set them.
+- `IExceptionSeverity` and `EXCEPTION_SEVERITIES`, the severities an Exception accepts.
+- `createErrorFeedback(options)`, which creates the function a UI turns errors into feedback with: the copy for the error's code or a fallback, the code when it's safe to show, and whether the error means the user cancelled or was denied access. It never throws.
+
+### Changed
+
+- The recipes "An API exception with an HTTP status and logging flags" and "A client exception for the UI" are replaced by "Severity and logging flags for an error reporter" and "Feedback for the UI", built on `severity`, `shouldLog`, and `createErrorFeedback`.
+
 ## 1.3.0
 
 ### Added

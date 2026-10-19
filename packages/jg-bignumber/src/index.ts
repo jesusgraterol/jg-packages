@@ -30,7 +30,11 @@ export {
 } from './processing/processing.js';
 
 // scaled integers
-export { fromScaledInteger, toScaledInteger } from './scaled-integers/scaled-integers.js';
+export {
+  applyBasisPoints,
+  fromScaledInteger,
+  toScaledInteger,
+} from './scaled-integers/scaled-integers.js';
 
 // calculations
 export {

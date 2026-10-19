@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.0
+
+### Added
+
+- `useFormChanges({ confirmedCommand, currentCommand, normalizeCommand? })`, which tells whether a form's command differs by value from the last confirmed one, with a submit-time check and `confirmChanges` to advance the baseline once a save succeeds.
+- `useResendCooldown({ durationSeconds, cooldownKey?, lastAttemptedAt?, storeId? })`, which makes a resend wait after each send, with a countdown. With a key, the deadline survives a reload of the tab in sessionStorage, and stays in memory when storage fails. The first render is always `{ isCoolingDown: false, remainingSeconds: 0 }`, so hydration never mismatches. A duration that isn't a positive safe integer throws `INVALID_COOLDOWN_DURATION`.
+- `useResolvedTheme(preference)`, which resolves a light, dark, or system preference to the theme a page shows, following the system's color scheme while the preference is `system`, and `resolveThemePreference(preference, systemPrefersDark)`, the same resolution outside React.
+- `useAppliedTheme(preference, options?)`, which sets the `light` or `dark` class on `<html>` before the browser paints, with transitions off while it changes unless `disableTransitionsOnChange` is false.
+- `createThemeInitScript({ storageKey, field?, defaultPreference? })`, which builds the inline script that applies the stored preference before the page paints. Its output is deterministic and escaped for a `<script>` element, and options that aren't valid throw `INVALID_THEME_SCRIPT_OPTIONS`.
+- `THEME_PREFERENCES`, and the types `IThemePreference`, `IResolvedTheme`, `IAppliedThemeOptions`, and `IThemeInitScriptOptions`.
+- A recipe for a theme that applies before the first paint.
+- `ERRORS`, and the types `IFormChangesComparable`, `IUseFormChangesOptions`, `IUseFormChangesResult`, `IUseResendCooldownOptions`, and `IUseResendCooldownResult`.
+- Dependencies on jg-exception, jg-storage, and jg-utilities.
+
 ## 0.1.1
 
 ### Changed

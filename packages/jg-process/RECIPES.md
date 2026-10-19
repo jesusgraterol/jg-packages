@@ -147,3 +147,31 @@ try {
   await stopProcessTree(server);
 }
 ```
+
+## Starting a dev server on a free port
+
+Use this when a script starts a server that needs a port, such as a second copy of your API for an agent or a test run, while 3000 may already be taken. `reservePort` keeps the preferred port when it's free and reserves another free one when it isn't, so the server never fails to start because of a port conflict:
+
+```ts
+import { reservePort, startProcess, stopProcessTree } from 'jg-process';
+
+// 3000 when it's free, or any free port when another server holds it
+const reservation = await reservePort({ preferredPort: 3000 });
+const { port } = reservation;
+
+// the server must bind the port itself, so the reservation ends right before it starts
+await reservation.release();
+const server = startProcess(process.execPath, ['server.js'], {
+  cwd: 'apps/api',
+  env: { ...process.env, PORT: String(port) },
+});
+console.log(`The API runs on http://localhost:${port}`);
+
+process.once('SIGINT', () => {
+  void stopProcessTree(server).finally(() => {
+    process.exitCode = 130;
+  });
+});
+```
+
+Another process can take the port between the release and the server binding it. It's a short window, but when two scripts start servers at the same moment, let the server exit on `EADDRINUSE` and run the script again.

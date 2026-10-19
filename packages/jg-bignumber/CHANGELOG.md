@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.0
+
+### Added
+
+- `applyBasisPoints(value, basisPoints)`, which applies a rate in basis points, such as 500 for 5%, to a `bigint` count of an amount's smallest unit, rounding down to a whole unit. A negative value throws `NEGATIVE_VALUE_NOT_ALLOWED`, and basis points that aren't a non-negative safe integer throw `INVALID_VALUE`.
+
 ## 1.3.0
 
 ### Added

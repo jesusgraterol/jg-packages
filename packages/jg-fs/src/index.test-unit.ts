@@ -10,6 +10,7 @@ describe('public API', () => {
     expect(Object.keys(syncApi).sort()).toStrictEqual(Object.keys(publicApi).sort());
     expect(Object.keys(publicApi).sort()).toStrictEqual([
       'ERRORS',
+      'acquireLock',
       'copyDirectory',
       'copyFile',
       'createDirectory',

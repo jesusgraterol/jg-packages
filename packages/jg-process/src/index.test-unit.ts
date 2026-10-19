@@ -9,6 +9,7 @@ describe('public API', () => {
       'DEFAULT_GRACE_PERIOD_SECONDS',
       'DEFAULT_MAX_OUTPUT_BYTES',
       'ERRORS',
+      'reservePort',
       'runProcess',
       'startProcess',
       'stopProcessTree',

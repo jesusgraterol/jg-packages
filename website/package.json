@@ -48,6 +48,8 @@
     "jg-postgres": "workspace:*",
     "jg-tanstack-query": "workspace:*",
     "jg-react": "workspace:*",
+    "jg-react-router": "workspace:*",
+    "jg-nestjs": "workspace:*",
     "jg-redis": "workspace:*",
     "jg-exception": "workspace:*",
     "jg-fetch": "workspace:*",

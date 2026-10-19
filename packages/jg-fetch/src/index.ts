@@ -1,6 +1,7 @@
 // types
 export type {
   IAttemptContext,
+  ICredentialFailure,
   IHeadersInit,
   IHttpMethod,
   IParseAs,

@@ -60,6 +60,34 @@ generateUuid(7); // a time-ordered UUID
 createTimestamp(); // '2026-10-17T08:30:00.000Z'
 ```
 
+Work with UTC calendar dates, such as the days a report covers, and fit text into a byte budget, such as a push notification's payload limit:
+
+```ts
+import {
+  generateUtcDateSequence,
+  getTrailingUtcDateRange,
+  toUtcDate,
+  truncateToUtf8Bytes,
+} from 'jg-utilities';
+
+toUtcDate(createdAt); // '2026-10-17', the UTC day of an instant
+const range = getTrailingUtcDateRange(30); // the last 30 UTC days, today included
+generateUtcDateSequence(range); // one 'YYYY-MM-DD' per day, oldest first
+truncateToUtf8Bytes(body, 2048); // whole code points only, at most 2048 bytes in UTF-8
+```
+
+Run side effects away from the code that triggers them with an in-process event bus:
+
+```ts
+import { createEventBus } from 'jg-utilities';
+
+type IAppEvents = { userSignedUp: { userId: string } };
+
+const events = createEventBus<IAppEvents>({ onError: (error) => logger.error(error) });
+events.subscribe('userSignedUp', ({ userId }) => sendWelcomeEmail(userId));
+events.emit('userSignedUp', { userId }); // returns at once; each handler runs later, on its own
+```
+
 Paginate with opaque cursors, and wait or retry with timing in seconds:
 
 ```ts

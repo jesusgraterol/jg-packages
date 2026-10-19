@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 
 import {
   applyDefaults,
+  createEventBus,
   createTimestamp,
   decodeBase64Url,
   decodeCursor,
@@ -10,6 +11,8 @@ import {
   encodeCursor,
   ERRORS,
   estimateReadingTime,
+  generateUtcDateSequence,
+  getTrailingUtcDateRange,
   hasNavigator,
   hasWindow,
   isFileNameValid,
@@ -19,6 +22,8 @@ import {
   prefersReducedMotion,
   prettifyTime,
   splitArrayIntoBatches,
+  toUtcDate,
+  truncateToUtf8Bytes,
   waitUntil,
 } from './index.js';
 
@@ -67,6 +72,19 @@ describe('public API', () => {
     [hasWindow, hasNavigator, isIndexedDbAvailable, prefersReducedMotion].forEach((check) => {
       expect(check).toBeTypeOf('function');
     });
+  });
+
+  test('exports the UTC date helpers, UTF-8 truncation, and the event bus', () => {
+    expect(toUtcDate(0)).toBe('1970-01-01');
+    expect(getTrailingUtcDateRange(1, 0)).toStrictEqual({
+      fromDate: '1970-01-01',
+      toDate: '1970-01-01',
+    });
+    expect(generateUtcDateSequence({ fromDate: '1970-01-01', toDate: '1970-01-02' })).toHaveLength(
+      2,
+    );
+    expect(truncateToUtf8Bytes('café', 4)).toBe('caf');
+    expect(createEventBus({ onError: () => undefined }).emit).toBeTypeOf('function');
   });
 
   test('keeps the date formatting constants internal', async () => {

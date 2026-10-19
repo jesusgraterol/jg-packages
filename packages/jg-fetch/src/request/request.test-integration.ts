@@ -764,3 +764,290 @@ describe('error messages', () => {
     }
   });
 });
+
+describe('credential refresh', () => {
+  /**
+   * Answers 401 until the request carries the fresh token, then 200 with the token it saw.
+   * @param path The route's path.
+   * @param freshToken The token the route accepts.
+   */
+  const routeRequiringToken = (path: string, freshToken: string): void => {
+    server.route(path, (request, response) => {
+      const authorization = request.headers['authorization'];
+      if (authorization === `Bearer ${freshToken}`) {
+        sendJson(response, 200, { authorization });
+        return;
+      }
+      sendJson(response, 401, { error: 'unauthorized' });
+    });
+  };
+
+  test('refreshes after a 401 and repeats at once, sending the new token', async () => {
+    const path = uniquePath('refresh-ok');
+    routeRequiringToken(path, 'fresh');
+    let token = 'expired';
+    const refreshCredentials = vi.fn(() => {
+      token = 'fresh';
+      return true;
+    });
+
+    const { data, error, meta } = await request(`${server.origin}${path}`, {
+      headers: () => ({ authorization: `Bearer ${token}` }),
+      refreshCredentials,
+    });
+
+    expect(error).toBeNull();
+    expect(data).toStrictEqual({ authorization: 'Bearer fresh' });
+    expect(meta.attempts).toBe(2);
+    // the default retry schedule waits 3 seconds, which a refresh never does
+    expect(meta.durationMs).toBeLessThan(2_000);
+    expect(refreshCredentials).toHaveBeenCalledExactlyOnceWith({
+      status: 401,
+      code: 'HTTP_ERROR',
+      refreshes: 0,
+      signal: expect.any(AbortSignal) as AbortSignal,
+    });
+    expect(
+      server.requests(path).map((received) => received.headers['authorization']),
+    ).toStrictEqual(['Bearer expired', 'Bearer fresh']);
+  });
+
+  test('returns the original failure when the hook declines, or answers anything but true', async () => {
+    const path = uniquePath('refresh-declined');
+    routeRequiringToken(path, 'fresh');
+
+    const declined = await request(`${server.origin}${path}`, { refreshCredentials: () => false });
+    const unclear = await request(`${server.origin}${path}`, {
+      refreshCredentials: () => 'yes' as unknown as boolean,
+    });
+
+    expect(declined.error).toMatchObject({ kind: 'HTTP_ERROR', status: 401, attempts: 1 });
+    expect(unclear.error).toMatchObject({ kind: 'HTTP_ERROR', status: 401, attempts: 1 });
+  });
+
+  test('refreshes at most maxCredentialRefreshes times', async () => {
+    const path = uniquePath('refresh-max');
+    routeRequiringToken(path, 'never-issued');
+    const refreshCredentials = vi.fn(() => true);
+
+    const once = await request(`${server.origin}${path}`, { refreshCredentials });
+    expect(once.error).toMatchObject({ kind: 'HTTP_ERROR', status: 401, attempts: 2 });
+    expect(refreshCredentials).toHaveBeenCalledOnce();
+
+    refreshCredentials.mockClear();
+    const none = await request(`${server.origin}${path}`, {
+      refreshCredentials,
+      maxCredentialRefreshes: 0,
+    });
+    expect(none.error).toMatchObject({ status: 401, attempts: 1 });
+    expect(refreshCredentials).not.toHaveBeenCalled();
+  });
+
+  test("refreshes twice for two credentials, each reported by the envelope's code", async () => {
+    const path = uniquePath('refresh-two');
+    let appCheckToken = 'expired';
+    let idToken = 'expired';
+    server.route(path, (request, response) => {
+      if (request.headers['x-app-check'] !== 'fresh') {
+        sendJson(response, 401, {
+          success: false,
+          error: { code: 'APP_CHECK_INVALID', message: 'App Check failed.', data: null },
+        });
+        return;
+      }
+      if (request.headers['authorization'] !== 'Bearer fresh') {
+        sendJson(response, 401, {
+          success: false,
+          error: { code: 'ID_TOKEN_EXPIRED', message: 'The session expired.', data: null },
+        });
+        return;
+      }
+      sendJson(response, 200, { success: true, data: { ok: true } });
+    });
+    const codes: string[] = [];
+
+    const { data, error, meta } = await request(`${server.origin}${path}`, {
+      parseAs: 'envelope',
+      maxCredentialRefreshes: 2,
+      headers: () => ({ 'x-app-check': appCheckToken, authorization: `Bearer ${idToken}` }),
+      refreshCredentials: ({ code, refreshes }) => {
+        codes.push(`${code}:${refreshes}`);
+        if (code === 'APP_CHECK_INVALID') {
+          appCheckToken = 'fresh';
+        } else {
+          idToken = 'fresh';
+        }
+        return Promise.resolve(true);
+      },
+    });
+
+    expect(error).toBeNull();
+    expect(data).toStrictEqual({ ok: true });
+    expect(codes).toStrictEqual(['APP_CHECK_INVALID:0', 'ID_TOKEN_EXPIRED:1']);
+    expect(meta.attempts).toBe(3);
+  });
+
+  test('ends with CREDENTIALS_REFRESH_FAILED, keeping the cause and the status, when the hook throws', async () => {
+    const path = uniquePath('refresh-throws');
+    routeRequiringToken(path, 'fresh');
+    const failure = new Error('The refresh token was revoked.');
+
+    const { error } = await request(`${server.origin}${path}`, {
+      refreshCredentials: () => {
+        throw failure;
+      },
+    });
+
+    expect(error).toBeInstanceOf(FetchException);
+    expect(error).toMatchObject({
+      kind: 'CREDENTIALS_REFRESH_FAILED',
+      code: 'CREDENTIALS_REFRESH_FAILED',
+      message: ERROR_MESSAGES.CREDENTIALS_REFRESH_FAILED,
+      status: 401,
+      data: { code: 'HTTP_ERROR' },
+      attempts: 1,
+    });
+    expect(error?.cause).toBe(failure);
+  });
+
+  test("keeps the envelope's code in the data when a rejected refresh follows an API error", async () => {
+    const path = uniquePath('refresh-rejects');
+    server.route(path, (_request, response) => {
+      sendJson(response, 401, {
+        success: false,
+        error: { code: 'ID_TOKEN_EXPIRED', message: 'The session expired.', data: null },
+      });
+    });
+
+    const { error } = await request(`${server.origin}${path}`, {
+      parseAs: 'envelope',
+      refreshCredentials: () => Promise.reject(new Error('offline')),
+    });
+
+    expect(error).toMatchObject({
+      kind: 'CREDENTIALS_REFRESH_FAILED',
+      status: 401,
+      data: { code: 'ID_TOKEN_EXPIRED' },
+    });
+  });
+
+  test('ends with TIMEOUT when the hook outlives the call, and ABORTED when the caller aborts it', async () => {
+    const path = uniquePath('refresh-hangs');
+    routeRequiringToken(path, 'fresh');
+    const controller = new AbortController();
+
+    const timedOut = await request(`${server.origin}${path}`, {
+      timeoutSeconds: 0.2,
+      refreshCredentials: () => new Promise<boolean>(() => undefined),
+    });
+    const aborted = await request(`${server.origin}${path}`, {
+      signal: controller.signal,
+      refreshCredentials: ({ signal }) => {
+        controller.abort();
+        return new Promise<boolean>((_resolve, reject) => {
+          signal.addEventListener('abort', () => reject(new Error('stopped')));
+        });
+      },
+    });
+
+    expect(timedOut.error).toMatchObject({ kind: 'TIMEOUT', attempts: 1 });
+    expect(timedOut.meta.durationMs).toBeLessThan(1_500);
+    expect(aborted.error).toMatchObject({ kind: 'ABORTED', attempts: 1 });
+  });
+
+  test('keeps the whole retry schedule for a retryable failure after a refresh', async () => {
+    const path = uniquePath('refresh-then-retry');
+    server.route(path, (_request, response, attempt) => {
+      if (attempt === 1) {
+        sendJson(response, 401, {});
+      } else if (attempt <= 3) {
+        response.writeHead(503).end();
+      } else {
+        sendJson(response, 200, { ok: true });
+      }
+    });
+
+    const { data, error, meta } = await request(`${server.origin}${path}`, {
+      retryDelaysSeconds: [0, 0],
+      refreshCredentials: () => true,
+    });
+
+    expect(error).toBeNull();
+    expect(data).toStrictEqual({ ok: true });
+    expect(meta.attempts).toBe(4);
+  });
+
+  test('repeats a POST after a refresh, but never retries its other failures', async () => {
+    const refreshedPath = uniquePath('refresh-post');
+    routeRequiringToken(refreshedPath, 'fresh');
+    const failingPath = uniquePath('refresh-post-500');
+    server.route(failingPath, (_request, response) => {
+      response.writeHead(500).end();
+    });
+    let token = 'expired';
+
+    const refreshed = await request(`${server.origin}${refreshedPath}`, {
+      method: 'POST',
+      body: { name: 'Ada' },
+      headers: () => ({ authorization: `Bearer ${token}` }),
+      refreshCredentials: () => {
+        token = 'fresh';
+        return true;
+      },
+    });
+    const failing = await request(`${server.origin}${failingPath}`, {
+      method: 'POST',
+      body: { name: 'Ada' },
+      retryDelaysSeconds: [0, 0],
+      refreshCredentials: () => false,
+    });
+
+    expect(refreshed.error).toBeNull();
+    expect(refreshed.meta.attempts).toBe(2);
+    expect(failing.error).toMatchObject({ kind: 'HTTP_ERROR', status: 500, attempts: 1 });
+    expect(server.requests(failingPath)).toHaveLength(1);
+  });
+
+  test("never asks the hook for a streamed body, which can't be sent again", async () => {
+    // a 403, because Node.js's fetch turns a 401 to a streamed body into a network error, as the
+    // Fetch standard asks
+    const path = uniquePath('refresh-stream');
+    server.route(path, (_request, response) => {
+      sendJson(response, 403, { error: 'forbidden' });
+    });
+    const refreshCredentials = vi.fn(() => true);
+    const body = new ReadableStream<Uint8Array>({
+      start: (controller) => {
+        controller.enqueue(new TextEncoder().encode('streamed'));
+        controller.close();
+      },
+    });
+
+    const { error } = await request(`${server.origin}${path}`, {
+      method: 'POST',
+      body,
+      refreshCredentials,
+    });
+
+    expect(error).toMatchObject({ kind: 'HTTP_ERROR', status: 403, attempts: 1 });
+    expect(refreshCredentials).not.toHaveBeenCalled();
+  });
+
+  test('never asks the hook without a failed response, such as for a network error or a body that is not JSON', async () => {
+    const closed = await startTestServer();
+    const { origin } = closed;
+    await closed.close();
+    const textPath = uniquePath('refresh-parse');
+    server.route(textPath, (_request, response) => {
+      response.writeHead(200, { 'Content-Type': 'text/plain' }).end('not json');
+    });
+    const refreshCredentials = vi.fn(() => true);
+
+    const network = await request(`${origin}/gone`, { retryDelaysSeconds: [], refreshCredentials });
+    const parse = await request(`${server.origin}${textPath}`, { refreshCredentials });
+
+    expect(network.error).toMatchObject({ kind: 'NETWORK_ERROR' });
+    expect(parse.error).toMatchObject({ kind: 'PARSE_ERROR', status: 200 });
+    expect(refreshCredentials).not.toHaveBeenCalled();
+  });
+});

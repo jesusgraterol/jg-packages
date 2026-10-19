@@ -46,12 +46,13 @@ calculateWeightedEntry([
 Store money as an integer count of its smallest unit, such as microcents in a PostgreSQL `BIGINT`, and convert it exactly, never rounding:
 
 ```ts
-import { fromScaledInteger, toScaledInteger } from 'jg-bignumber';
+import { applyBasisPoints, fromScaledInteger, toScaledInteger } from 'jg-bignumber';
 
 toScaledInteger('1.23', 8); // 123000000n
 toScaledInteger('0.123456789', 8); // throws INVALID_VALUE: the 9th decimal would be lost
 toScaledInteger(1e-8, 8); // throws INVALID_VALUE: JavaScript writes it as '1e-8'
 fromScaledInteger(123000000n, 8); // '1.23000000'
+applyBasisPoints(100000000n, 500); // 5000000n: a 5% commission, rounded down to a whole unit
 ```
 
 `BigNumber` is the package's own bignumber.js constructor, so creating values with it never changes the global bignumber.js configuration.

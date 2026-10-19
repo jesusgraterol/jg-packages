@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { DEPENDENCY_FIELDS } from '../shared/constants.ts';
 import type { IConsumerProject } from './consumer-project.ts';
 import type { IPackageManifest, IRunCommand } from '../shared/types.ts';
+import { getImportableSubpaths } from './subpaths.ts';
 import type { IPackedPackage } from './types.ts';
 
 // the import every subpath check runs, with the specifier passed as an argument
@@ -11,27 +12,6 @@ const IMPORT_SCRIPT = 'await import(process.argv[1]);';
 
 // unpublished ranges pnpm replaces when packing
 const WORKSPACE_RANGE = /^(?:workspace|catalog):/;
-
-/**
- * Lists the `exports` subpaths a Node.js consumer can import: those whose default target is
- * JavaScript, leaving out stylesheets and source-only targets such as Astro components.
- * @param exportsMap The packed manifest's `exports`.
- * @returns The importable subpaths, such as `.` and `./sync`.
- */
-export const getImportableSubpaths = (exportsMap: unknown): string[] => {
-  if (typeof exportsMap !== 'object' || exportsMap === null) {
-    return [];
-  }
-  return Object.entries(exportsMap as Record<string, unknown>)
-    .filter(([, target]) => {
-      const defaultTarget =
-        typeof target === 'object' && target !== null
-          ? (target as { default?: unknown }).default
-          : target;
-      return typeof defaultTarget === 'string' && /\.m?js$/.test(defaultTarget);
-    })
-    .map(([subpath]) => subpath);
-};
 
 /**
  * Builds the specifier a consumer imports a subpath with.

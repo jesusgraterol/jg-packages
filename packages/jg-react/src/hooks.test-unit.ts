@@ -1,5 +1,6 @@
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
+import { expectToThrowCode } from 'jg-exception/testing';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { useBreakpoint } from './breakpoint/index.js';
@@ -10,8 +11,12 @@ import {
   subscribeToBreakpoint,
 } from './breakpoint/utilities.js';
 import { useDocumentVisibility } from './document-visibility/index.js';
+import { useFormChanges } from './form-changes/index.js';
 import { getVisibilitySnapshot, subscribeToVisibility } from './document-visibility/utilities.js';
 import { useOnlineStatus } from './online-status/index.js';
+import { useResendCooldown } from './resend-cooldown/index.js';
+import { ERRORS } from './shared/index.js';
+import { useAppliedTheme, useResolvedTheme } from './theme/index.js';
 import { getOnlineSnapshot, subscribeToOnlineStatus } from './online-status/utilities.js';
 import { useIsWindowScrolledPast } from './window-scroll/index.js';
 import { getScrollY, subscribeToScroll } from './window-scroll/utilities.js';
@@ -49,6 +54,68 @@ describe('in a server render', () => {
       '<p>[true,true,&quot;unknown&quot;,false]</p>',
     );
   });
+
+  test('useFormChanges compares the commands in a server render', () => {
+    const Probe = ({ current }: { current: { name: string } }) => {
+      const { hasChanges } = useFormChanges({
+        confirmedCommand: { name: 'Ada' },
+        currentCommand: current,
+      });
+      return createElement('p', null, String(hasChanges));
+    };
+
+    expect(renderToString(createElement(Probe, { current: { name: 'Ada' } }))).toBe('<p>false</p>');
+    expect(renderToString(createElement(Probe, { current: { name: 'Grace' } }))).toBe(
+      '<p>true</p>',
+    );
+  });
+
+  test('useResendCooldown renders no cooldown on the server, even right after a send', () => {
+    const Probe = () => {
+      const { isCoolingDown, remainingSeconds } = useResendCooldown({
+        durationSeconds: 60,
+        cooldownKey: 'account-a:verify-email',
+        lastAttemptedAt: Date.now() - 1_000,
+      });
+      return createElement('p', null, JSON.stringify([isCoolingDown, remainingSeconds]));
+    };
+
+    expect(renderToString(createElement(Probe))).toBe('<p>[false,0]</p>');
+  });
+
+  test('the theme hooks give dark for dark and light otherwise, without touching a document', () => {
+    const Probe = () =>
+      createElement(
+        'p',
+        null,
+        JSON.stringify([
+          useResolvedTheme('light'),
+          useResolvedTheme('dark'),
+          useResolvedTheme('system'),
+          useAppliedTheme('dark'),
+          useAppliedTheme('system'),
+        ]),
+      );
+
+    expect(renderToString(createElement(Probe))).toBe(
+      '<p>[&quot;light&quot;,&quot;dark&quot;,&quot;light&quot;,&quot;dark&quot;,&quot;light&quot;]</p>',
+    );
+  });
+
+  test.each([[0], [-1], [1.5], [Number.NaN]])(
+    'useResendCooldown throws INVALID_COOLDOWN_DURATION for %d seconds',
+    (durationSeconds) => {
+      const Probe = () => {
+        useResendCooldown({ durationSeconds });
+        return null;
+      };
+
+      expectToThrowCode(
+        () => renderToString(createElement(Probe)),
+        ERRORS.INVALID_COOLDOWN_DURATION,
+      );
+    },
+  );
 
   test('the snapshots and subscriptions work without a window, a document, or a navigator', () => {
     const notify = vi.fn();

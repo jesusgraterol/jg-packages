@@ -80,3 +80,31 @@ export type IReadJsonFileOptions<T> = {
   // a user uploaded. With it, the file is read as readBoundedFile reads it
   maxBytes?: number;
 };
+
+// the process that holds a lock, as its lock directory's owner.json names it
+export type IFileLockOwner = {
+  // the process id
+  pid: number;
+
+  // a random id that tells this acquisition apart from any other by the same process id
+  nonce: string;
+
+  // the host the process runs on; a lock is never recovered from another host
+  hostname: string;
+};
+
+/*
+ * Why a lock that already exists can't be acquired:
+ * - held: its owner is alive, or can't be checked
+ * - other-host: its owner runs on another host
+ * - ownerless: its owner.json is missing or invalid
+ * - recovery-in-progress: another process is taking it over, or crashed while doing so
+ * - unexpected-entries: it holds files besides owner.json, such as an interrupted write's
+ */
+export type ILockBusyReason =
+  'held' | 'other-host' | 'ownerless' | 'recovery-in-progress' | 'unexpected-entries';
+
+// what judging an existing lock decides: why it's busy, or the dead owner it can be taken over from
+export type ILockJudgement =
+  | { isRecoverable: false; reason: ILockBusyReason }
+  | { isRecoverable: true; owner: IFileLockOwner };

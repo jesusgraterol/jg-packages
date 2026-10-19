@@ -1,6 +1,6 @@
 # jg-react
 
-React hooks for the browser: online status, page visibility, Tailwind CSS breakpoints, and scroll thresholds, safe in server renders.
+React hooks for the browser: online status, page visibility, Tailwind CSS breakpoints, scroll thresholds, unsaved form changes, resend cooldowns, and light and dark themes, safe in server renders.
 
 ## Install
 
@@ -30,14 +30,63 @@ export const useLayoutState = () => {
 };
 ```
 
-| Hook                              | Returns                                                 | Re-renders when                      | In a server render |
-| --------------------------------- | ------------------------------------------------------- | ------------------------------------ | ------------------ |
-| `useOnlineStatus()`               | Whether the browser is online                           | It goes online or offline            | `true`             |
-| `useDocumentVisibility()`         | Whether the page is visible                             | Its tab is hidden or shown           | `true`             |
-| `useBreakpoint()`                 | Tailwind CSS's breakpoint: `xs` below `sm`, up to `2xl` | The viewport crosses a breakpoint    | `undefined`        |
-| `useIsWindowScrolledPast(pixels)` | Whether the window is scrolled further than `pixels`    | The answer changes, not every scroll | `false`            |
+| Hook                                    | Returns                                                                                                 | Re-renders when                                 | In a server render                                   |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------- |
+| `useOnlineStatus()`                     | Whether the browser is online                                                                           | It goes online or offline                       | `true`                                               |
+| `useDocumentVisibility()`               | Whether the page is visible                                                                             | Its tab is hidden or shown                      | `true`                                               |
+| `useBreakpoint()`                       | Tailwind CSS's breakpoint: `xs` below `sm`, up to `2xl`                                                 | The viewport crosses a breakpoint               | `undefined`                                          |
+| `useIsWindowScrolledPast(pixels)`       | Whether the window is scrolled further than `pixels`                                                    | The answer changes, not every scroll            | `false`                                              |
+| `useFormChanges(options)`               | Whether a form's command differs from the last confirmed one, a submit-time check, and `confirmChanges` | The commands or the baseline change             | Compared as usual                                    |
+| `useResendCooldown(options)`            | Whether a resend must wait, the seconds left, and `startCooldown`                                       | Every second while cooling down                 | `{ isCoolingDown: false, remainingSeconds: 0 }`      |
+| `useResolvedTheme(preference)`          | `light` or `dark`, following the system while the preference is `system`                                | The system's color scheme changes, for `system` | `dark` for `dark`, otherwise `light`                 |
+| `useAppliedTheme(preference, options?)` | The theme it sets as the `light` or `dark` class on `<html>`                                            | As `useResolvedTheme`                           | As `useResolvedTheme`, without touching the document |
 
-Each hook reads the browser through `useSyncExternalStore`, so every component sees the same value in the same render, and a server render gets a fixed value instead of failing. The breakpoints are Tailwind CSS's defaults, in `rem`, read through media queries, so they follow the browser's font size as CSS does. Prefer CSS for layout, and `useBreakpoint` for what CSS can't do, such as rendering a different component.
+Keep a save button disabled until the form holds a real change, and a resend button waiting after each send:
+
+```ts
+import { useFormChanges, useResendCooldown } from 'jg-react';
+
+const trim = ({ name }: { name: string }) => ({ name: name.trim() });
+
+export const useProfileEditor = (saved: { name: string }, draft: { name: string }) => {
+  // a whitespace-only edit isn't a change, and the baseline advances only once a save succeeds
+  const { hasChanges, confirmChanges } = useFormChanges({
+    confirmedCommand: saved,
+    currentCommand: draft,
+    normalizeCommand: trim,
+  });
+  // the deadline survives a reload of the tab, apart from other accounts and actions
+  const resend = useResendCooldown({ durationSeconds: 60, cooldownKey: 'account-a:verify-email' });
+  return { canSave: hasChanges, confirmChanges, resend };
+};
+```
+
+The browser hooks read the browser through `useSyncExternalStore`, so every component sees the same value in the same render, and a server render gets a fixed value instead of failing. The breakpoints are Tailwind CSS's defaults, in `rem`, read through media queries, so they follow the browser's font size as CSS does. Prefer CSS for layout, and `useBreakpoint` for what CSS can't do, such as rendering a different component.
+
+### Light and dark themes
+
+`createThemeInitScript` builds an inline script that applies the stored preference before the page paints, so a server render never flashes the wrong theme, and `useAppliedTheme` keeps the class on `<html>` in step once React runs:
+
+```tsx
+import { createThemeInitScript, useAppliedTheme } from 'jg-react';
+
+// jg-storage's createLocalStore('preferences') keeps { theme } under this key
+const script = createThemeInitScript({ storageKey: 'jg-storage:preferences', field: 'theme' });
+
+export const ThemeScript = ({ nonce }: { nonce: string }) => (
+  <script
+    nonce={nonce}
+    dangerouslySetInnerHTML={{ __html: script }}
+  />
+);
+
+export const ThemeRoot = ({ preference }: { preference: 'light' | 'dark' | 'system' }) => {
+  useAppliedTheme(preference); // turns transitions off while the class changes
+  return null;
+};
+```
+
+Set `color-scheme` per class in your stylesheet, such as `:root.dark { color-scheme: dark; }`, so form controls and scrollbars follow the theme.
 
 ## Documentation
 

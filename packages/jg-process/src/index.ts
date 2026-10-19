@@ -17,3 +17,10 @@ export { runProcess } from './run-process/index.js';
 
 // process trees
 export { startProcess, stopProcessTree } from './process-tree/index.js';
+
+// port reservations
+export {
+  type IPortReservation,
+  type IReservePortOptions,
+  reservePort,
+} from './reserve-port/index.js';

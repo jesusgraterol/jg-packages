@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+
+- `reservePort({ preferredPort?, host? })`, which reserves a free TCP port by listening on it until it's released: the preferred port when it's free, any free port when it's taken. It closes every connection to the port, and doesn't keep the process running. A preferred port that isn't an integer from 1 to 65535 throws `INVALID_PORT`, and a listen failure other than a taken port throws `PORT_RESERVATION_FAILED`.
+- `IReservePortOptions` and `IPortReservation`.
+- A recipe for starting a dev server on a free port.
+
 ## 1.1.1
 
 ### Added

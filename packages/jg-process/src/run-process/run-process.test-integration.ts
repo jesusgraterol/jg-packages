@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { extractMessage } from 'jg-exception';
-import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 
 import { FORCED_STOP_SECONDS } from '../process-tree/constants.js';
 import { DEFAULT_GRACE_PERIOD_SECONDS, ERRORS } from '../shared/index.js';
@@ -176,17 +176,25 @@ describe.skipIf(IS_WINDOWS)('runProcess', () => {
   });
 
   test('rejects with PROCESS_TIMED_OUT and stops the child and its grandchild', async () => {
-    const pidFile = nextPidFile();
-    await expect(
-      runProcess({
+    // only the timeout's clock is faked, and it runs out once the child and its grandchild exist,
+    // so a slow start can't end the run before the tree it stops is there. The stop itself polls
+    // with node:timers/promises, which stays real
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const pidFile = nextPidFile();
+      const run = runProcess({
         command: NODE,
         args: ['-e', parentScript(pidFile, 'setInterval(() => {}, 1000)')],
         timeoutSeconds: 1,
-      }),
-    ).rejects.toMatchObject({ code: ERRORS.PROCESS_TIMED_OUT });
-    const pids = await readPids(pidFile);
-    expect(isGone(pids.child)).toBe(true);
-    expect(isGone(pids.grandchild)).toBe(true);
+      });
+      const pids = await readPids(pidFile);
+      vi.advanceTimersByTime(1000);
+      await expect(run).rejects.toMatchObject({ code: ERRORS.PROCESS_TIMED_OUT });
+      expect(isGone(pids.child)).toBe(true);
+      expect(isGone(pids.grandchild)).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test('rejects with PROCESS_OUTPUT_TOO_LARGE and stops the child and its grandchild', async () => {
@@ -225,26 +233,29 @@ describe.skipIf(IS_WINDOWS)('runProcess', () => {
     expect(isGone(pids.grandchild)).toBe(true);
   });
 
-  test('escalates a timeout from SIGTERM to SIGKILL after the grace period, for the whole tree', async () => {
+  test('escalates a stop from SIGTERM to SIGKILL after the grace period, for the whole tree', async () => {
     const pidFile = nextPidFile();
-    const startedAt = Date.now();
-    await expect(
-      runProcess({
-        command: NODE,
-        args: [
-          '-e',
-          parentScript(pidFile, 'process.on("SIGTERM", () => {}); setInterval(() => {}, 1000)'),
-        ],
-        timeoutSeconds: 0.5,
-      }),
-    ).rejects.toMatchObject({ code: ERRORS.PROCESS_TIMED_OUT });
-    const elapsedMs = Date.now() - startedAt;
-    // SIGTERM at the timeout, SIGKILL once the grace period passed, then at most the forced stop
-    expect(elapsedMs).toBeGreaterThanOrEqual(500 + DEFAULT_GRACE_PERIOD_SECONDS * 1000);
-    expect(elapsedMs).toBeLessThan(
-      500 + (DEFAULT_GRACE_PERIOD_SECONDS + FORCED_STOP_SECONDS + 2) * 1000,
-    );
+    const controller = new AbortController();
+    const reason = new Error('Stopped');
+    // the child ignores SIGTERM before it records its pids, and the stop starts only once they're
+    // recorded, so it always escalates, however slowly Node.js starts. A timeout stops the tree the
+    // same way, as the PROCESS_TIMED_OUT test shows
+    const run = runProcess({
+      command: NODE,
+      args: [
+        '-e',
+        `process.on("SIGTERM", () => {});\n${parentScript(pidFile, 'setInterval(() => {}, 1000)')}`,
+      ],
+      signal: controller.signal,
+    });
     const pids = await readPids(pidFile);
+    const stoppedAt = Date.now();
+    controller.abort(reason);
+    await expect(run).rejects.toBe(reason);
+    const elapsedMs = Date.now() - stoppedAt;
+    // SIGTERM at once, SIGKILL once the grace period passed, then at most the forced stop
+    expect(elapsedMs).toBeGreaterThanOrEqual(DEFAULT_GRACE_PERIOD_SECONDS * 1000);
+    expect(elapsedMs).toBeLessThan((DEFAULT_GRACE_PERIOD_SECONDS + FORCED_STOP_SECONDS + 2) * 1000);
     expect(isGone(pids.child)).toBe(true);
     expect(isGone(pids.grandchild)).toBe(true);
   });
@@ -268,18 +279,16 @@ describe.skipIf(IS_WINDOWS)('runProcess', () => {
 
   test('rejects with PROCESS_TREE_SURVIVED when an unreachable descendant keeps stdout open', async () => {
     const pidFile = nextPidFile();
-    const startedAt = Date.now();
-    await expect(
-      runProcess({
-        command: NODE,
-        args: [
-          '-e',
-          parentScript(pidFile, 'process.exit(0)', { stdio: 'inherit', detached: true }),
-        ],
-      }),
-    ).rejects.toMatchObject({ code: ERRORS.PROCESS_TREE_SURVIVED });
-    expect(Date.now() - startedAt).toBeLessThan((DEFAULT_GRACE_PERIOD_SECONDS + 3) * 1000);
+    const run = runProcess({
+      command: NODE,
+      args: ['-e', parentScript(pidFile, 'process.exit(0)', { stdio: 'inherit', detached: true })],
+    });
+    // the child records its pids just before it exits, so the time from then excludes how long
+    // Node.js took to start, which a loaded runner can stretch
     const pids = await readPids(pidFile);
+    const exitedAt = Date.now();
+    await expect(run).rejects.toMatchObject({ code: ERRORS.PROCESS_TREE_SURVIVED });
+    expect(Date.now() - exitedAt).toBeLessThan((DEFAULT_GRACE_PERIOD_SECONDS + 3) * 1000);
     // the grandchild left the group with setsid, so the test stops it itself
     expect(isGone(pids.grandchild)).toBe(false);
   });

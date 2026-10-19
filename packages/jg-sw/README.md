@@ -57,6 +57,14 @@ Without React, `subscribeToServiceWorker(listener)` calls the listener on every 
 
 `installApp()` shows the browser's install prompt and resolves to `'accepted'` or `'dismissed'`. Only Chromium-based browsers offer it, so check `canInstallApp()` or `installation.canInstall` first.
 
+On an iPhone or an iPad, no browser offers an install prompt, and web push works only once the app is installed to the Home Screen. When installing unlocks something your app needs, such as notifications, show your own Add to Home Screen instructions, and only where they apply: `isIosBrowserTab()` is true in an iOS browser tab, including an iPad that asks for desktop sites, and false in the installed app and everywhere else.
+
+```ts
+import { isIosBrowserTab } from 'jg-sw';
+
+homeScreenHint.hidden = !isIosBrowserTab(); // Share, then Add to Home Screen
+```
+
 ### Describe the worker
 
 Create `jg-sw.config.json` next to your app's `package.json`:

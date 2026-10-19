@@ -13,6 +13,7 @@ export const ERRORS = {
   ENVELOPE_INVALID: 'ENVELOPE_INVALID',
   RESPONSE_INVALID: 'RESPONSE_INVALID',
   RESPONSE_TOO_LARGE: 'RESPONSE_TOO_LARGE',
+  CREDENTIALS_REFRESH_FAILED: 'CREDENTIALS_REFRESH_FAILED',
 } as const;
 
 // the kind of a failed request, one of the ERRORS codes
@@ -33,4 +34,5 @@ export const ERROR_MESSAGES: Record<IFetchErrorKind, string> = {
   ENVELOPE_INVALID: 'The response is not a valid API envelope.',
   RESPONSE_INVALID: 'The response data failed schema validation.',
   RESPONSE_TOO_LARGE: 'The response exceeded maxResponseBytes.',
+  CREDENTIALS_REFRESH_FAILED: 'The credentials could not be refreshed.',
 };

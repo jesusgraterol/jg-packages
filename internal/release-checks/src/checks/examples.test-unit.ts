@@ -1,8 +1,11 @@
+import { join } from 'node:path';
+
 import { describe, expect, test } from 'vitest';
 
 import type { IApiReference, IApiSymbol } from '@jg-packages/api-reference';
 
 import {
+  buildExamplesTsconfig,
   collectExamples,
   collectRecipeBlocks,
   readExampleCode,
@@ -227,5 +230,26 @@ describe('readThrownError', () => {
 
   test('keeps the first lines when no error name is found', () => {
     expect(readThrownError('Killed\n')).toBe('Killed');
+  });
+});
+
+describe('buildExamplesTsconfig', () => {
+  const FIXTURES = join(import.meta.dirname, '..', 'fixtures');
+
+  test('keeps standard decorators for a package that sets nothing', async () => {
+    const { compilerOptions } = JSON.parse(
+      await buildExamplesTsconfig(join(FIXTURES, 'sample-package')),
+    ) as { compilerOptions: Record<string, unknown> };
+
+    expect(compilerOptions).not.toHaveProperty('experimentalDecorators');
+    expect(compilerOptions).toMatchObject({ strict: true, jsx: 'react-jsx', noEmit: true });
+  });
+
+  test("enables experimental decorators when the package's own tsconfig.json does", async () => {
+    const { compilerOptions } = JSON.parse(
+      await buildExamplesTsconfig(join(FIXTURES, 'experimental-decorators')),
+    ) as { compilerOptions: Record<string, unknown> };
+
+    expect(compilerOptions).toMatchObject({ experimentalDecorators: true, strict: true });
   });
 });

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0
+
+### Added
+
+- `toUtcDate(value?)`, the UTC calendar date of an instant as `YYYY-MM-DD`, now when no value is given. An invalid instant throws `INVALID_DATE` instead of a native `RangeError`.
+- `getTrailingUtcDateRange(dayCount, value?)`, the inclusive range of the last `dayCount` UTC days ending on an instant's UTC date, and `generateUtcDateSequence(range)`, every date in such a range, oldest first. `INVALID_DAY_COUNT` and `INVALID_DATE_RANGE` reject a day count that isn't a positive safe integer and a range that isn't two real dates in order.
+- `truncateToUtf8Bytes(text, maxBytes)`, the longest prefix of whole code points that fits a number of UTF-8 bytes. A limit that isn't a non-negative safe integer throws `INVALID_BYTE_LIMIT`.
+- `createEventBus({ onError })`, a typed in-process event bus: `emit` returns at once, each event is delivered later in the order it was emitted, each handler runs on its own with its errors sent to `onError`, and `close()` drops pending deliveries.
+- `IUtcDateRange`, `IEventBus`, and `IEventBusOptions`.
+
 ## 1.2.0
 
 ### Added

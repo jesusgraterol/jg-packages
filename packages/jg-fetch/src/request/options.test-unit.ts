@@ -45,7 +45,19 @@ describe('resolveOptions', () => {
       signal: undefined,
       init: undefined,
       onRetry: undefined,
+      refreshCredentials: undefined,
+      maxCredentialRefreshes: 1,
     });
+  });
+
+  test('keeps the credential refresh function and its limit, including 0', () => {
+    const refreshCredentials = () => true;
+
+    expect(resolveOptions({ refreshCredentials, maxCredentialRefreshes: 2 })).toMatchObject({
+      refreshCredentials,
+      maxCredentialRefreshes: 2,
+    });
+    expect(resolveOptions({ maxCredentialRefreshes: 0 }).maxCredentialRefreshes).toBe(0);
   });
 
   test('keeps valid options', () => {
@@ -122,6 +134,10 @@ describe('resolveOptions', () => {
     ['maxRetryAfterSeconds', { maxRetryAfterSeconds: Infinity }],
     ['maxResponseBytes 0', { maxResponseBytes: 0 }],
     ['maxResponseBytes 1.5', { maxResponseBytes: 1.5 }],
+    ['refreshCredentials', { refreshCredentials: true }],
+    ['maxCredentialRefreshes -1', { maxCredentialRefreshes: -1 }],
+    ['maxCredentialRefreshes 1.5', { maxCredentialRefreshes: 1.5 }],
+    ['maxCredentialRefreshes as a string', { maxCredentialRefreshes: '2' }],
   ])('rejects invalid %s with INVALID_OPTIONS', (_description, options) => {
     const failure = catchFailure(() => resolveOptions(options as IRequestOptions<unknown>));
 

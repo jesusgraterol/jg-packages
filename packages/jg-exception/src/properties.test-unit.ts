@@ -3,7 +3,7 @@ import { inspect } from 'node:util';
 import { describe, expect, test } from 'vitest';
 
 import { extractMessage } from './error-handler/index.js';
-import { Exception } from './exception/index.js';
+import { Exception, type IExceptionSeverity } from './exception/index.js';
 import type { IJsonValue } from './shared/types.js';
 
 /*
@@ -48,16 +48,25 @@ describe('extractMessage', () => {
 });
 
 describe('Exception#toJSON', () => {
-  test('survives a trip through JSON, whatever the data', () => {
+  test('survives a trip through JSON, whatever the data and the flags', () => {
     fc.assert(
       fc.property(
         fc.string({ minLength: 1 }),
         fc.string(),
         fc.oneof(fc.jsonValue(), thrown),
-        (code, message, data) => {
-          const exception = new Exception(message, { code, data: data as IJsonValue });
+        fc.option(fc.oneof(fc.constantFrom('expected', 'critical'), fc.anything())),
+        fc.option(fc.oneof(fc.boolean(), fc.anything())),
+        (code, message, data, severity, shouldLog) => {
+          const exception = new Exception(message, {
+            code,
+            data: data as IJsonValue,
+            severity: severity as IExceptionSeverity,
+            shouldLog: shouldLog as boolean,
+          });
+          const json = exception.toJSON();
 
-          expect(JSON.parse(JSON.stringify(exception))).toStrictEqual(exception.toJSON());
+          expect(JSON.parse(JSON.stringify(exception))).toStrictEqual(json);
+          expect(Object.keys(json)).toStrictEqual(['name', 'code', 'message', 'data']);
         },
       ),
     );

@@ -11,7 +11,7 @@ export type {
 export { decodeBase64Url, encodeBase64Url } from './base64url.js';
 
 // date transformers
-export { createTimestamp, prettifyDate, prettifyTime, toDate, toMS } from './date.js';
+export { createTimestamp, prettifyDate, prettifyTime, toDate, toMS, toUtcDate } from './date.js';
 
 // cursor transformers
 export { type ICursorValue, decodeCursor, encodeCursor } from './cursor.js';
@@ -50,4 +50,5 @@ export {
   toSlug,
   toTitleCase,
   truncateText,
+  truncateToUtf8Bytes,
 } from './string.js';

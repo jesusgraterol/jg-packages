@@ -5,7 +5,8 @@ import ts from 'typescript';
 
 import type { IRunCommand } from '../shared/types.ts';
 import type { IConsumerProject } from './consumer-project.ts';
-import { getImportableSubpaths, toSpecifier } from './install-import.ts';
+import { toSpecifier } from './install-import.ts';
+import { getImportableSubpaths } from './subpaths.ts';
 import type { IPackedPackage } from './types.ts';
 
 // the assertion helpers whose second argument is the expected code

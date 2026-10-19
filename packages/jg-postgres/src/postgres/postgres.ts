@@ -4,8 +4,9 @@ import { Exception } from 'jg-exception';
 
 import { isDatabaseError } from '../database-errors/index.js';
 import { ERRORS } from '../shared/index.js';
+import { assertTimeoutProfile, buildTransactionTimeoutsQuery } from '../timeouts/index.js';
 import { POOL_TYPES } from './parsers.js';
-import type { IPostgres, IPostgresConfig } from './types.js';
+import type { IPostgres, IPostgresConfig, ITransactionOptions } from './types.js';
 
 // each database's onError, which the package's own helpers, such as withSessionLock, report to
 const ERROR_REPORTERS = new WeakMap<IPostgres, (error: unknown) => void>();
@@ -63,13 +64,22 @@ export const createPostgres = ({ onError, ...poolConfig }: IPostgresConfig): IPo
   pool.on('error', reportError);
 
   /**
-   * Runs an operation in a transaction on one client.
+   * Runs an operation in a transaction on one client, with the profile's statement and lock
+   * timeouts set for that transaction only when options.timeouts is given.
    * @param operation The work, given the transaction's client.
+   * @param options The transaction's timeouts.
    * @returns A promise that resolves to what the operation resolves to, once committed.
    * @throws
+   * - INVALID_TIMEOUT_PROFILE: The timeout profile needs positive, finite seconds, with the lock timeout no longer than the statement timeout.
    * - TRANSACTION_OUTCOME_UNKNOWN: The connection was lost during COMMIT, so the transaction may or may not have committed.
    */
-  const transaction = async <T>(operation: (client: PoolClient) => Promise<T>): Promise<T> => {
+  const transaction = async <T>(
+    operation: (client: PoolClient) => Promise<T>,
+    { timeouts }: ITransactionOptions = {},
+  ): Promise<T> => {
+    if (timeouts !== undefined) {
+      assertTimeoutProfile(timeouts);
+    }
     const client = await pool.connect();
     let hasLostConnection = false;
     const onClientError = (error: Error): void => {
@@ -82,6 +92,9 @@ export const createPostgres = ({ onError, ...poolConfig }: IPostgresConfig): IPo
     let isCommitting = false;
     try {
       await client.query('BEGIN');
+      if (timeouts !== undefined) {
+        await client.query(buildTransactionTimeoutsQuery(timeouts));
+      }
       const result = await operation(client);
       isCommitting = true;
       await client.query('COMMIT');

@@ -6,6 +6,7 @@ export type {
   IDirectoryElementsKeySort,
   IDirectoryElementsOptions,
   IDirectoryPathElements,
+  IFileLockOwner,
   IPathElement,
   IReadJsonFileOptions,
   ISchema,
@@ -43,3 +44,6 @@ export {
   writeJsonFile,
   writeTextFile,
 } from './files/index.js';
+
+// lock actions
+export { type IFileLock, acquireLock } from './locks/index.js';

@@ -7,6 +7,8 @@ import {
 } from '../shared/index.js';
 import { getServiceWorkerSnapshot, log, updateSnapshot } from '../state/index.js';
 
+import { isStandaloneDisplay } from './utilities.js';
+
 // the prompt event the browser fired last, until installApp uses it
 let installationPrompt: IBeforeInstallPromptEvent | undefined;
 
@@ -33,10 +35,7 @@ export const listenForInstallation = (): void => {
     return;
   }
   isListening = true;
-  const isRunningInstalledApp =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(display-mode: standalone)').matches;
-  updateSnapshot({}, { isRunningInstalledApp });
+  updateSnapshot({}, { isRunningInstalledApp: isStandaloneDisplay() });
 
   window.addEventListener('beforeinstallprompt', (event) => {
     log('Event fired: beforeinstallprompt', event);

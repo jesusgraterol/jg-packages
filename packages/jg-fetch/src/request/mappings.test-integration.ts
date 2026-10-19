@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
-import { FetchException } from '../fetch-exception/index.js';
 import { parseRetryAfterMs } from '../retry-after/index.js';
 import { request } from './request.js';
 import { sendJson, startTestServer, type ITestServer } from './server.test-utils.js';
@@ -56,23 +55,40 @@ describe('moldea packages/app/api-request', () => {
     expect(data).toStrictEqual({ authorization: 'Bearer id-token' });
   });
 
-  test('App Check codes reach the app, which refreshes and maps them', async () => {
+  test('App Check codes reach the refresh hook, which refreshes the token and repeats once', async () => {
     const moldeaAppCheckPath = uniquePath('moldea-app-check');
-    server.route(moldeaAppCheckPath, (_request, response) => {
-      sendJson(response, 401, {
-        success: false,
-        error: { code: '80', message: 'The App Check token is invalid.', data: null },
-      });
+    let appCheckToken = 'expired-app-check';
+    server.route(moldeaAppCheckPath, (request, response) => {
+      if (request.headers['x-firebase-appcheck'] === 'expired-app-check') {
+        sendJson(response, 401, {
+          success: false,
+          error: { code: '80', message: 'The App Check token is invalid.', data: null },
+        });
+        return;
+      }
+      sendJson(response, 200, { success: true, data: { ok: true } });
     });
+    const refreshedCodes: string[] = [];
 
-    const { error } = await request(moldeaAppCheckPath, {
+    const { data, error, meta } = await request(moldeaAppCheckPath, {
       baseUrl: server.origin,
       parseAs: 'envelope',
+      headers: () => ({ 'x-firebase-appcheck': appCheckToken }),
+      // the app refreshes App Check for its codes, and leaves every other failure alone
+      refreshCredentials: ({ code }) => {
+        refreshedCodes.push(code);
+        if (code !== '80') {
+          return false;
+        }
+        appCheckToken = 'fresh-app-check';
+        return true;
+      },
     });
 
-    // the app throws toAppException(error) for React Query, mapping the code
-    expect(error).toBeInstanceOf(FetchException);
-    expect(error).toMatchObject({ kind: 'API_ERROR', code: '80', status: 401, attempts: 1 });
+    expect(error).toBeNull();
+    expect(data).toStrictEqual({ ok: true });
+    expect(refreshedCodes).toStrictEqual(['80']);
+    expect(meta.attempts).toBe(2);
   });
 });
 

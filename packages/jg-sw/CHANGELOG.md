@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.0
+
+### Added
+
+- `isIosBrowserTab()`, true when the page runs in a browser tab on an iPhone, an iPad, including one that asks for desktop sites, or an iPod touch, rather than as an app installed to the Home Screen, so an app can decide when to show Add to Home Screen instructions.
+
+### Changed
+
+- `installation.isRunningInstalledApp` is also true in Safari's Home Screen app, which reports `navigator.standalone` without a standalone display mode.
+
 ## 1.3.0
 
 ### Added

@@ -3,7 +3,10 @@ export type {
   IDelayOptions,
   IFilterByQueryOptions,
   IRetryAsyncFunctionOptions,
+  IEventBus,
+  IEventBusOptions,
   ISortDirection,
+  IUtcDateRange,
   IWaitUntilOptions,
 } from './types.js';
 
@@ -28,6 +31,9 @@ export {
   prefersReducedMotion,
 } from './environment.js';
 
+// events
+export { createEventBus } from './event-bus.js';
+
 // extractors
 export {
   extractEmailUsername,
@@ -48,7 +54,9 @@ export {
   generateRandomInteger,
   generateRandomString,
   generateSequence,
+  generateUtcDateSequence,
   generateUuid,
+  getTrailingUtcDateRange,
 } from './generators.js';
 
 // Markdown utilities

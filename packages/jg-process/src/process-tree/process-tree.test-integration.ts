@@ -150,14 +150,18 @@ describe.skipIf(IS_WINDOWS)('startProcess & stopProcessTree', () => {
   });
 
   test('stops a child without its own process group, only once it has exited', async () => {
+    // the child says it's ready once it ignores SIGTERM, so it's never signalled before then,
+    // however slowly Node.js starts
     const child = spawn(
       process.execPath,
-      ['-e', 'process.on("SIGTERM", () => {}); setInterval(() => {}, 1000)'],
-      { stdio: 'ignore' },
+      [
+        '-e',
+        'process.on("SIGTERM", () => {}); process.stdout.write("ready"); setInterval(() => {}, 1000)',
+      ],
+      { stdio: ['ignore', 'pipe', 'ignore'] },
     );
     children.push(child);
-    await waitFor(() => child.pid !== undefined);
-    await sleep(200);
+    await new Promise((resolve) => child.stdout?.once('data', resolve));
     await stopProcessTree(child, 0.5);
     expect(child.signalCode).toBe('SIGKILL');
     expect(isGone(child.pid!)).toBe(true);

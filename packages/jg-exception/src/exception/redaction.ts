@@ -32,6 +32,10 @@ type IPrimitive = string | number | bigint | boolean | symbol | null | undefined
 // the properties a snapshot builds itself, instead of copying them as plain fields
 const BUILT_PROPERTIES: ReadonlySet<string> = new Set(['name', 'message', 'stack', 'cause']);
 
+// an Exception's flags for its reporter, copied as they are, so a redacted value such as `true`
+// can't rewrite them
+const VERBATIM_EXCEPTION_PROPERTIES: ReadonlySet<string> = new Set(['severity', 'shouldLog']);
+
 // the most prototypes a lookup walks, so a proxy that keeps returning new prototypes can't hang it
 const MAX_PROTOTYPE_DEPTH = 32;
 
@@ -265,7 +269,8 @@ const createSnapshot = (cause: object, context: IRedactionContext): Error => {
   for (const [key, value] of readDataEntries(cause)) {
     const isBuilt = BUILT_PROPERTIES.has(key) || (isRecognisedException && key === 'data');
     if (!isBuilt && isPrimitive(value)) {
-      defineValue(snapshot, key, redactPrimitive(value, values), true);
+      const isVerbatim = isRecognisedException && VERBATIM_EXCEPTION_PROPERTIES.has(key);
+      defineValue(snapshot, key, isVerbatim ? value : redactPrimitive(value, values), true);
     }
   }
   if (isRecognisedException) {

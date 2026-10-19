@@ -16,6 +16,7 @@ export { ERROR_MESSAGES, ERRORS, type IFetchErrorKind } from './errors.js';
 // types
 export type {
   IAttemptContext,
+  ICredentialFailure,
   IHeadersInit,
   IHttpMethod,
   IParseAs,

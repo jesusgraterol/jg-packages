@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest';
 import { decodeBase64Url, encodeBase64Url } from './base64url.js';
 import { decodeCursor, encodeCursor } from './cursor.js';
 import { parseJson, stringifyJson, stringifyJsonDeterministically } from './json.js';
+import { truncateToUtf8Bytes } from './string.js';
 
 /*
  * Properties: the transformers' guarantees, over generated inputs, for what examples can't cover.
@@ -69,6 +70,29 @@ describe('JSON helpers', () => {
           );
         },
       ),
+    );
+  });
+});
+
+describe('truncateToUtf8Bytes', () => {
+  // a string of any code points, lone surrogates included
+  const text = fc.oneof(fc.string({ unit: 'binary' }), fc.string({ unit: 'grapheme' }));
+
+  test('gives the longest prefix of whole code points that fits the limit', () => {
+    fc.assert(
+      fc.property(text, fc.nat({ max: 64 }), (value, maxBytes) => {
+        const result = truncateToUtf8Bytes(value, maxBytes);
+        const encoder = new TextEncoder();
+
+        expect(value.startsWith(result)).toBe(true);
+        expect(encoder.encode(result).length).toBeLessThanOrEqual(maxBytes);
+        if (result !== value) {
+          const nextCodePoint = String.fromCodePoint(value.codePointAt(result.length) ?? 0);
+          const next = value.slice(result.length, result.length + nextCodePoint.length);
+
+          expect(encoder.encode(result + next).length).toBeGreaterThan(maxBytes);
+        }
+      }),
     );
   });
 });

@@ -127,6 +127,22 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['browser'],
     order: 15,
   },
+  'jg-react-router': {
+    title: 'React Router',
+    description:
+      'React Router helpers: a page outlet that focuses each new page and restores scroll on Back and Forward, and dialogs that close when the route changes.',
+    icon: 'route',
+    runtimes: ['browser'],
+    order: 16,
+  },
+  'jg-nestjs': {
+    title: 'NestJS',
+    description:
+      'NestJS for HTTP APIs: an ApiException, a filter and an interceptor for the jg-api-response envelope, schema validation, CORS, and app bootstrap.',
+    icon: 'server',
+    runtimes: ['node'],
+    order: 17,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/

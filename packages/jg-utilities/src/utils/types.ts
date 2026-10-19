@@ -36,3 +36,33 @@ export type IWaitUntilOptions = {
   // stops waiting and rejects with the signal's reason, even while a probe is pending
   signal?: AbortSignal;
 };
+
+// an inclusive range of UTC calendar dates, each as `YYYY-MM-DD`
+export type IUtcDateRange = {
+  fromDate: string;
+  toDate: string;
+};
+
+// what an event bus calls with each error a handler throws or rejects with
+export type IEventBusOptions<TEvents extends Record<string, unknown>> = {
+  // receives the error and the event the handler was handling; anything it throws is swallowed
+  onError: (
+    error: unknown,
+    context: { name: keyof TEvents; event: TEvents[keyof TEvents] },
+  ) => void;
+};
+
+// an in-process event bus, whose events and their payloads are the keys and values of TEvents
+export type IEventBus<TEvents extends Record<string, unknown>> = {
+  // delivers the event to its handlers later, and returns at once
+  emit: <TName extends keyof TEvents>(name: TName, event: TEvents[TName]) => void;
+
+  // registers a handler for an event, and returns the function that unsubscribes it
+  subscribe: <TName extends keyof TEvents>(
+    name: TName,
+    handler: (event: TEvents[TName]) => unknown,
+  ) => () => void;
+
+  // drops the pending deliveries and every handler, and ignores later emits and subscriptions
+  close: () => void;
+};

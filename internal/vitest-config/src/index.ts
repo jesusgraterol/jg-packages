@@ -32,12 +32,12 @@ export type IVitestConfigOptions = {
   globalSetup?: string;
 };
 
-// file suffix that identifies each category's test files
+// file suffix that identifies each category's test files; a test of a `.tsx` file is `.tsx` too
 const CATEGORY_FILE_PATTERNS: Record<ITestCategory, string> = {
-  unit: 'src/**/*.test-unit.ts',
-  integration: 'src/**/*.test-integration.ts',
-  bench: 'src/**/*.test-bench.ts',
-  browser: 'src/**/*.test-browser.ts',
+  unit: 'src/**/*.test-unit.{ts,tsx}',
+  integration: 'src/**/*.test-integration.{ts,tsx}',
+  bench: 'src/**/*.test-bench.{ts,tsx}',
+  browser: 'src/**/*.test-browser.{ts,tsx}',
 };
 
 // how long a test or hook may run before it fails: long enough that a CI runner several times
@@ -50,7 +50,7 @@ export const BROWSER_INSTANCES = ['chromium', 'firefox', 'webkit'] as const;
 // the files coverage measures: the source, without tests, test utilities, fixtures, or declarations
 const COVERAGE_INCLUDE = ['src/**/*.ts'];
 const COVERAGE_EXCLUDE = [
-  'src/**/*.test-*.ts',
+  'src/**/*.test-*.{ts,tsx}',
   'src/**/test-utils/**',
   'src/**/fixtures/**',
   'src/**/*.d.ts',

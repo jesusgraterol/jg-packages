@@ -15,6 +15,7 @@ import {
   toSlug,
   toTitleCase,
   truncateText,
+  truncateToUtf8Bytes,
 } from './string.js';
 
 // ASCII and C1 control characters that search normalization replaces with word separators
@@ -322,4 +323,51 @@ describe('pluralize', () => {
   ])('pluralize(%d, %s, %s) -> %s', (count, singular, plural, expected) => {
     expect(pluralize(count, singular, plural)).toBe(expected);
   });
+});
+
+describe('truncateToUtf8Bytes', () => {
+  test.each([
+    ['Hello, world', 5, 'Hello'],
+    ['Hello', 5, 'Hello'],
+    ['Hello', 100, 'Hello'],
+    ['Hello', 0, ''],
+    ['', 0, ''],
+    ['café', 4, 'caf'],
+    ['café', 5, 'café'],
+    ['日本語', 6, '日本'],
+    ['日本語', 8, '日本'],
+    ['日本語', 9, '日本語'],
+    ['a😀b', 4, 'a'],
+    ['a😀b', 5, 'a😀'],
+    ['a😀b', 6, 'a😀b'],
+    ['\uD800x', 2, ''],
+    ['\uD800x', 3, '\uD800'],
+    ['\uDC00\uD800', 5, '\uDC00'],
+  ])('truncateToUtf8Bytes(%o, %d) -> %o', (text, maxBytes, expected) => {
+    expect(truncateToUtf8Bytes(text, maxBytes)).toBe(expected);
+  });
+
+  test('never splits a surrogate pair, and matches the TextEncoder byte count', () => {
+    const text = '😀'.repeat(8);
+
+    for (let maxBytes = 0; maxBytes <= 32; maxBytes += 1) {
+      const result = truncateToUtf8Bytes(text, maxBytes);
+
+      expect(result.length % 2).toBe(0);
+      expect(new TextEncoder().encode(result).length).toBe(Math.floor(maxBytes / 4) * 4);
+    }
+  });
+
+  test('walks a long string once, in linear time', () => {
+    const text = 'é'.repeat(1_000_000);
+
+    expect(truncateToUtf8Bytes(text, 1_000_001)).toBe('é'.repeat(500_000));
+  });
+
+  test.each([[-1], [1.5], [Number.NaN], [Number.POSITIVE_INFINITY], [2 ** 53]])(
+    'truncateToUtf8Bytes(text, %d) -> throws INVALID_BYTE_LIMIT',
+    (maxBytes) => {
+      expectToThrowCode(() => truncateToUtf8Bytes('text', maxBytes), ERRORS.INVALID_BYTE_LIMIT);
+    },
+  );
 });
