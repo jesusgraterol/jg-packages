@@ -32,7 +32,7 @@ describe('createVitestConfig', () => {
         ],
         coverage: {
           provider: 'v8',
-          include: ['src/**/*.ts'],
+          include: ['src/**/*.{ts,tsx}'],
           exclude: [
             'src/**/*.test-*.{ts,tsx}',
             'src/**/test-utils/**',

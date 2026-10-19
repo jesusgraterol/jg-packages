@@ -48,7 +48,7 @@ const TEST_TIMEOUT_MS = 30_000;
 export const BROWSER_INSTANCES = ['chromium', 'firefox', 'webkit'] as const;
 
 // the files coverage measures: the source, without tests, test utilities, fixtures, or declarations
-const COVERAGE_INCLUDE = ['src/**/*.ts'];
+const COVERAGE_INCLUDE = ['src/**/*.{ts,tsx}'];
 const COVERAGE_EXCLUDE = [
   'src/**/*.test-*.{ts,tsx}',
   'src/**/test-utils/**',

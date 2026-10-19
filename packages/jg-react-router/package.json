@@ -53,6 +53,7 @@
     "lint": "eslint .",
     "test": "pnpm test:browser",
     "test:browser": "vitest run --project browser",
+    "test:coverage": "vitest run --coverage --project \"browser (chromium)\"",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json"
   },
   "peerDependencies": {
@@ -68,6 +69,7 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

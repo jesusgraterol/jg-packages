@@ -143,6 +143,14 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['node'],
     order: 17,
   },
+  'jg-crypto': {
+    title: 'Crypto',
+    description:
+      'Hashing, random bytes and digits, and HMAC signatures with constant-time verification, for Node.js.',
+    icon: 'lock-keyhole',
+    runtimes: ['node'],
+    order: 18,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/
