@@ -17,6 +17,7 @@ export type IPackageIcon =
   | 'octagon-alert'
   | 'refresh-cw'
   | 'route'
+  | 'server'
   | 'table-2'
   | 'wrench'
   | 'zap';

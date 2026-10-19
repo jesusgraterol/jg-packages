@@ -201,18 +201,33 @@ export const toRunnableExample = (code: string): IRunnableExample => {
 };
 
 /**
- * Builds the compiler options the examples are typechecked with: the repository's strict settings,
- * without the unused-name rules examples don't need, with Node.js and DOM globals, and with React's
- * JSX transform for ```tsx recipes.
+ * Reads the compiler options a tsconfig.json sets itself, without those it extends.
+ * @param path The tsconfig.json.
+ * @returns A promise that resolves to its `compilerOptions`, or none.
+ */
+const readCompilerOptions = async (path: string): Promise<Record<string, unknown>> =>
+  (JSON.parse(await readFile(path, 'utf8')) as { compilerOptions?: Record<string, unknown> })
+    .compilerOptions ?? {};
+
+/**
+ * Builds the compiler options a package's examples are typechecked with: the repository's strict
+ * settings, without the unused-name rules examples don't need, with Node.js and DOM globals, and
+ * with React's JSX transform for ```tsx recipes. A package whose own `tsconfig.json` enables
+ * `experimentalDecorators`, such as one for NestJS, gets them too; the others keep standard
+ * decorators.
+ * @param packageDirectory The package's directory.
  * @returns A promise that resolves to the tsconfig.json content.
  */
-const buildExamplesTsconfig = async (): Promise<string> => {
-  const base = JSON.parse(await readFile(BASE_TSCONFIG, 'utf8')) as {
-    compilerOptions: Record<string, unknown>;
-  };
+export const buildExamplesTsconfig = async (packageDirectory: string): Promise<string> => {
+  const [baseOptions, packageOptions] = await Promise.all([
+    readCompilerOptions(BASE_TSCONFIG),
+    readCompilerOptions(join(packageDirectory, 'tsconfig.json')),
+  ]);
+  const hasExperimentalDecorators = packageOptions['experimentalDecorators'] === true;
   return JSON.stringify({
     compilerOptions: {
-      ...base.compilerOptions,
+      ...baseOptions,
+      ...(hasExperimentalDecorators ? { experimentalDecorators: true } : {}),
       noUnusedLocals: false,
       noUnusedParameters: false,
       noEmit: true,
@@ -295,7 +310,7 @@ const checkPackageExamples = async (
   if (hasDeclarations) {
     await copyFile(declarations, join(directory, EXAMPLES_DECLARATIONS_FILE));
   }
-  await writeFile(join(directory, 'tsconfig.json'), await buildExamplesTsconfig());
+  await writeFile(join(directory, 'tsconfig.json'), await buildExamplesTsconfig(packageDirectory));
 
   const problems: string[] = [];
   const failed = new Set<number>();

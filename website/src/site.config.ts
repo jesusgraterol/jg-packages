@@ -135,6 +135,14 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['browser'],
     order: 16,
   },
+  'jg-nestjs': {
+    title: 'NestJS',
+    description:
+      'NestJS for HTTP APIs: an ApiException, a filter and an interceptor that answer in the jg-api-response envelope, schema validation, and strict CORS.',
+    icon: 'server',
+    runtimes: ['node'],
+    order: 17,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/

@@ -1,0 +1,6 @@
+{
+  "extends": "../sample-package/tsconfig.json",
+  "compilerOptions": {
+    "experimentalDecorators": true
+  }
+}
