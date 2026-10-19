@@ -85,24 +85,25 @@ A dev server is rarely one process. `node --watch` runs your server in a second 
 Use this for a dev script that runs a server until you press Ctrl+C:
 
 ```ts
-import { startProcess, stopProcessTree } from 'jg-process';
+import { createShutdownSignal, startProcess, stopProcessTree } from 'jg-process';
 
 // process.execPath is the Node.js running this script, which works on every platform
 const server = startProcess(process.execPath, ['--watch', 'server.js'], { cwd: 'apps/api' });
 
 // the server leads its own process group, so Ctrl+C reaches only this script, which stops the
-// group, then exits with 128 plus the signal's number, as a shell reports it
-const stop = async (exitCode: number): Promise<void> => {
-  try {
-    await stopProcessTree(server);
-  } catch (error) {
-    // PROCESS_TREE_SURVIVED: part of the tree outlived SIGKILL, and may still hold the port
-    console.error(error);
-  }
-  process.exitCode = exitCode;
-};
-process.once('SIGINT', () => void stop(130));
-process.once('SIGTERM', () => void stop(143));
+// group, then exits with 128 plus the signal's number, as a shell reports it; a second Ctrl+C
+// stops the script at once, should the group take too long
+const shutdown = createShutdownSignal({ forceOnRepeat: true });
+shutdown.signal.addEventListener(
+  'abort',
+  () => {
+    stopProcessTree(server).catch((error: unknown) => {
+      // PROCESS_TREE_SURVIVED: part of the tree outlived SIGKILL, and may still hold the port
+      console.error(error);
+    });
+  },
+  { once: true },
+);
 ```
 
 On Windows, `npm` and `npx` are `.cmd` shims, which Node.js won't start without a shell, so start a tool's JavaScript entry with `process.execPath` instead. There, `stopProcessTree` runs `taskkill /T /F`, which finds the descendants only while the root process still runs. On POSIX, a descendant that starts its own session or process group, such as with `setsid`, isn't stopped.
