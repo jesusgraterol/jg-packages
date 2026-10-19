@@ -1,6 +1,6 @@
 {
   "name": "jg-crypto",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Hashing, random bytes and digits, and HMAC signatures with constant-time verification, for Node.js.",
   "author": "Jesus Graterol",
   "license": "MIT",
