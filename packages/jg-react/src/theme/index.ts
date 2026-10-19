@@ -15,4 +15,5 @@ export { resolveThemePreference } from './utilities.js';
 
 // hooks
 export { useAppliedTheme } from './applied-theme.hook.js';
+export { useDocumentTheme } from './document-theme.hook.js';
 export { useResolvedTheme } from './resolved-theme.hook.js';

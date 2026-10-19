@@ -7,6 +7,7 @@ export type {
   IDialogSessionOptions,
   IDialogSessionSnapshot,
 } from './dialog-session/index.js';
+export type { IUseElementWidthResult } from './element-width/index.js';
 export type {
   IFileUploadCanceledHandler,
   IFileUploadCanceledItem,
@@ -68,6 +69,7 @@ export { useDocumentVisibility } from './document-visibility/index.js';
 // viewport
 export { isBreakpointAtLeast, useBreakpoint } from './breakpoint/index.js';
 export { useIsWindowScrolledPast } from './window-scroll/index.js';
+export { useElementWidth } from './element-width/index.js';
 
 // forms
 export { useFormChanges } from './form-changes/index.js';
@@ -96,5 +98,6 @@ export {
   resolveThemePreference,
   THEME_PREFERENCES,
   useAppliedTheme,
+  useDocumentTheme,
   useResolvedTheme,
 } from './theme/index.js';
