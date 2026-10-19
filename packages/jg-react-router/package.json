@@ -1,6 +1,6 @@
 {
   "name": "jg-react-router",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "React Router helpers: a page outlet that focuses each new page and restores scroll on Back and Forward, and dialogs that close when the route changes.",
   "author": "Jesus Graterol",
   "license": "MIT",
