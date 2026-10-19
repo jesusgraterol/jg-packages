@@ -1,6 +1,6 @@
 # jg-tanstack-query recipes
 
-Patterns for React apps that cache server data with TanStack Query: setting it up, keeping a query across reloads, and signing out without leaking data.
+Patterns for React apps that cache server data with TanStack Query: setting it up, keeping a query across reloads, signing out safely, and a query boundary.
 
 ## Setting up the client at the root
 
@@ -96,3 +96,52 @@ export const SignOutButton = () => {
 ```
 
 When sign-out happens right after the page loads, the clear waits for the persisted copy to finish restoring, so restored data can't come back afterwards.
+
+## A query boundary component
+
+`useQueryBoundary` decides and draws nothing, so one small component gives every screen the same loader, error, and load-more control, in the app's own markup:
+
+```tsx
+import type { ReactNode } from 'react';
+import { type IQueryBoundaryQuery, useQueryBoundary } from 'jg-tanstack-query';
+
+type IQueryBoundaryProps = {
+  queries: IQueryBoundaryQuery[];
+  resolutionKey: string;
+  children: ReactNode;
+};
+
+export const QueryBoundary = ({ queries, resolutionKey, children }: IQueryBoundaryProps) => {
+  const boundary = useQueryBoundary({ queries, resolutionKey });
+  return (
+    <>
+      {boundary.isLoaderVisible ? <p role="status">Loading…</p> : null}
+      {boundary.hasError ? (
+        <div
+          role="alert"
+          data-presentation={boundary.errorPresentation}
+        >
+          Something went wrong.
+          <button
+            type="button"
+            onClick={() => void boundary.retryFailed()}
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
+      {boundary.canRenderContent ? children : null}
+      {boundary.loadMoreQuery === undefined ? null : (
+        <button
+          type="button"
+          onClick={() => void boundary.loadMoreQuery?.fetchNextPage?.()}
+        >
+          Load more
+        </button>
+      )}
+    </>
+  );
+};
+```
+
+A `blocking` error replaces the content, so it deserves the space the content would take; a `retained` one sits beside content that's still current, so a compact notice fits. Pass an `isAccessDenied` that recognizes the API's 403 code, so content the user lost access to disappears at once.

@@ -2,6 +2,12 @@
 export type { IQueryClientOptions } from './client/index.js';
 export type { IIndexedDbPersisterOptions } from './persister/index.js';
 export type { IPersistedQueryProviderProps } from './provider/index.js';
+export type {
+  IQueryBoundaryQuery,
+  IQueryBoundaryState,
+  IQueryErrorPresentation,
+  IUseQueryBoundaryOptions,
+} from './query-boundary/index.js';
 export type { IQueryExecutionState, IQueryInitialResolutionState } from './query-state/index.js';
 export type {
   ISeededInfiniteQueryResult,
@@ -34,3 +40,6 @@ export {
   isQueryReadyForInitialDisplay,
   isQueryResultDataAvailable,
 } from './query-state/index.js';
+
+// query boundaries
+export { useQueryBoundary } from './query-boundary/index.js';

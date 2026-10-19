@@ -84,6 +84,24 @@ Each `firstPageUpdatedAt` and first page form a generation. When the screen's qu
 
 The query-state helpers read the flags of any query, or of `useSeededInfiniteQuery`'s result: `isQueryLoading`, `isQueryReadyForInitialDisplay`, which holds back stale cached data until it's refetched after mount, `canQueryLoadMore`, `isQueryLoadingMore`, and `isQueryResultDataAvailable`, for a list of queries.
 
+### Query boundaries
+
+`useQueryBoundary` decides what a screen shows around the queries its content needs, and leaves the drawing to the app:
+
+```ts
+import { useQueryBoundary } from 'jg-tanstack-query';
+
+const boundary = useQueryBoundary({
+  queries: [project, members],
+  resolutionKey: projectId, // a new key hides the content until its queries resolve
+  isAccessDenied: (error) => getErrorCode(error) === 'ACCESS_DENIED',
+});
+// { canRenderContent, isLoaderVisible, hasError, errorPresentation, failedQueries,
+//   loadMoreQuery, retryFailed }
+```
+
+The content waits until every query has data for the key that's fresh, or fetched since mount, so cached data from an earlier visit never shows as current. Once it shows, refetches, pagination, and background errors keep it on screen, with `errorPresentation: 'retained'`; an error before then, or one that leaves a query without data, is `blocking`. A new key, or an error `isAccessDenied` recognizes, hides the content in the same render, and after an access loss it returns only once every query settles with current data, even when `isInitialResolutionApproved` says the app approved the key's data before. `loadMoreQuery` is the first query when it pages and the content shows, and `retryFailed` refetches every failed query; it and the result keep their identity while nothing changes. RECIPES.md has an unstyled boundary component.
+
 ### Errors
 
 | Code                   | When                                                                      |
