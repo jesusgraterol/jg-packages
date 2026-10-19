@@ -6,7 +6,9 @@
 
 - `useCopyFeedback({ durationSeconds?, onError? })`, which shows that a copy worked for a moment. Its `copy(write)` calls `write` before awaiting anything, so a clipboard write stays inside the click, ignores a copy while another runs, resolves to whether it worked without ever rejecting, and passes a failure to the latest `onError`. Nothing changes after unmount. A duration that isn't positive and finite throws `INVALID_COPY_FEEDBACK_DURATION`.
 - `DEFAULT_COPY_FEEDBACK_SECONDS`, `IUseCopyFeedbackOptions`, and `IUseCopyFeedbackResult`.
-- A recipe for a copy button that explains a failed copy by jg-clipboard's error code.
+- `useFileUploadQueue(options)`, a headless file upload queue: each selection is checked in a fixed order against the policy and `existingFiles`, then by `validateFile`, then again; admitted files upload first in, first out, within `maxConcurrentUploads`, with progress coalesced per frame; uploads can be canceled until every byte is sent, retried under the same id, removed, and reset; a single file is replaced only once its successor validates; preview URLs are revoked when no longer shown; and an announcement follows each change. A policy that isn't valid throws `INVALID_FILE_UPLOAD_POLICY`.
+- `resolveFileUploadPolicy`, `validateFileUploadCandidate`, `createFileUploadAcceptValue`, `hasDraggedFiles`, `isFileUploadItemCancelable`, `DEFAULT_FILE_UPLOAD_MESSAGES`, and the upload queue's types.
+- Recipes for a copy button that explains a failed copy by jg-clipboard's error code, and for an accessible upload field.
 
 ## 0.2.0
 
