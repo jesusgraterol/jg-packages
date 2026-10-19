@@ -1,6 +1,6 @@
 # jg-postgres recipes
 
-Patterns for services that keep their data in PostgreSQL: wiring the pools into an app, turning constraint errors into app errors, and paginating a list.
+Patterns for PostgreSQL services: wiring pools into an app, turning constraint errors into app errors, paginating a list, and giving slow work its own timeouts.
 
 ## A NestJS module with two databases
 
@@ -115,3 +115,52 @@ export const listApiErrors = async (
 ```
 
 The rows come newest first, by an ascending `id`. Pass the page's `nextCursor` as `after` for the next page, and stop when it's `null`.
+
+## A slow transaction with its own timeouts
+
+Use this when most queries must fail fast, so a slow one frees its client for other requests, but some work, such as a monthly report, needs longer. Give the pool the short profile, and the slow transaction a profile of its own:
+
+```ts
+import {
+  createPostgres,
+  defineTimeoutProfile,
+  toPoolTimeouts,
+  withQueryTimeout,
+} from 'jg-postgres';
+
+// every request's queries: a slow one fails fast and frees its client
+const STANDARD = defineTimeoutProfile({ statementTimeoutSeconds: 15, lockTimeoutSeconds: 5 });
+
+// the monthly report, which reads a lot and may wait longer for the rows it locks
+const REPORT = defineTimeoutProfile({ statementTimeoutSeconds: 300, lockTimeoutSeconds: 30 });
+
+const postgres = createPostgres({
+  connectionString: process.env['DATABASE_URL'],
+  ...toPoolTimeouts(STANDARD),
+});
+
+export const buildMonthlyReport = (month: string): Promise<void> =>
+  postgres.transaction(
+    async (client) => {
+      // without withQueryTimeout, the pool's 30-second client timeout would cut these off
+      await client.query(
+        withQueryTimeout(
+          { text: 'DELETE FROM monthly_report WHERE month = $1;', values: [month] },
+          REPORT,
+        ),
+      );
+      await client.query(
+        withQueryTimeout(
+          {
+            text: 'INSERT INTO monthly_report (month, revenue) SELECT $1, sum(amount) FROM payment WHERE to_char(paid_at, $2) = $1;',
+            values: [month, 'YYYY-MM'],
+          },
+          REPORT,
+        ),
+      );
+    },
+    { timeouts: REPORT },
+  );
+```
+
+The profile's statement and lock timeouts last only as long as the transaction, so the client goes back to the pool with the pool's own. Each query also needs `withQueryTimeout`, because node-postgres gives every query the pool's `query_timeout`, the statement timeout plus a grace of 15 seconds, unless the query sets its own. When the client stops waiting for a query, the transaction rolls back, and the client goes back to the pool only if `ROLLBACK` confirms the connection in time.

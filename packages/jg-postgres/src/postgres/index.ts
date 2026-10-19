@@ -1,5 +1,5 @@
 // types
-export type { IPostgres, IPostgresConfig } from './types.js';
+export type { IPostgres, IPostgresConfig, ITransactionOptions } from './types.js';
 
 // pools
 export { createPostgres } from './postgres.js';

@@ -55,6 +55,52 @@ const orderId = await postgres.transaction(async (client) => {
 
 `transaction` commits when the operation resolves, rolls back when it throws, and rejects with the operation's own error. It always returns its client to the pool, or destroys it when its state is unknown. When the connection breaks during `COMMIT`, nobody can tell whether the transaction committed, so it rejects with `TRANSACTION_OUTCOME_UNKNOWN`: check the data before retrying anything that isn't idempotent. Run work inside a transaction on its `client`, and never start a transaction inside another.
 
+### Timeouts
+
+A profile says how long a kind of work may run: a statement on the server, a wait for a lock, and the client's wait for the answer, which adds a grace, 15 seconds by default, so the server's own error arrives first. Give the pool the profile of everyday work, and a slow transaction one of its own:
+
+```ts
+import {
+  createPostgres,
+  defineTimeoutProfile,
+  toPoolTimeouts,
+  withQueryTimeout,
+} from 'jg-postgres';
+
+const STANDARD = defineTimeoutProfile({ statementTimeoutSeconds: 15, lockTimeoutSeconds: 5 });
+const REPORT = defineTimeoutProfile({ statementTimeoutSeconds: 300, lockTimeoutSeconds: 30 });
+
+const postgres = createPostgres({ connectionString, ...toPoolTimeouts(STANDARD) });
+
+await postgres.transaction(
+  (client) =>
+    client.query(withQueryTimeout({ text: 'SELECT build_report($1);', values: [month] }, REPORT)),
+  { timeouts: REPORT },
+);
+```
+
+`timeouts` sets the statement and lock timeouts for that transaction only, so the client goes back to the pool with the pool's. The pool's `query_timeout` still applies to each query that doesn't set its own, so pass the transaction's queries through `withQueryTimeout` with the same profile. A query the client stops waiting for is rolled back: the client goes back to the pool once `ROLLBACK`, which has the pool's `query_timeout` too, confirms the connection, and is destroyed otherwise.
+
+### Optional reads
+
+`createOptionalReader` runs reads that are nice to have, such as a counter in a page's header, without ever delaying or crowding out essential work. A read is skipped, giving `null` at once, when the reader already runs `maxActiveReads` reads, a request waits for a client, or the pool can't give more clients than `reservedIdleClients`, counting idle ones and the room left to open new ones. It runs in a read-only transaction with short timeouts, gives `null` after `admissionSeconds`, and never throws:
+
+```ts
+import { createOptionalReader } from 'jg-postgres';
+
+const counters = createOptionalReader({ postgres }); // 2 reads at most, 2 clients left free, 1 second
+
+const unread = counters.read(
+  `unread:${accountId}`, // callers of the same key share one read
+  {
+    text: 'SELECT count(*)::int AS count FROM notification WHERE account_id = $1;',
+    values: [accountId],
+  },
+  (row) => (row as { count: number }).count,
+);
+const count = await unread.completion; // a number, or null
+```
+
 ### Constraint errors
 
 ```ts
@@ -131,15 +177,17 @@ The defaults fill every missing or null field when the record is read, and are t
 
 ### Errors
 
-| Code                          | When                                                                |
-| ----------------------------- | ------------------------------------------------------------------- |
-| `TRANSACTION_OUTCOME_UNKNOWN` | The connection was lost during `COMMIT`                             |
-| `SESSION_LOCK_LOST`           | The connection that held a session lock was lost                    |
-| `INVALID_IDENTIFIER`          | A name is empty, holds a null character, or is longer than 63 bytes |
-| `ROW_NOT_FOUND`               | The row to move doesn't exist in the ordered list                   |
-| `ROW_ALREADY_FIRST`           | The row to move up is already first                                 |
-| `ROW_ALREADY_LAST`            | The row to move down is already last                                |
-| `MOVE_FAILED`                 | The move didn't update exactly two rows                             |
+| Code                            | When                                                                                                             |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `TRANSACTION_OUTCOME_UNKNOWN`   | The connection was lost during `COMMIT`                                                                          |
+| `SESSION_LOCK_LOST`             | The connection that held a session lock was lost                                                                 |
+| `INVALID_IDENTIFIER`            | A name is empty, holds a null character, or is longer than 63 bytes                                              |
+| `ROW_NOT_FOUND`                 | The row to move doesn't exist in the ordered list                                                                |
+| `ROW_ALREADY_FIRST`             | The row to move up is already first                                                                              |
+| `ROW_ALREADY_LAST`              | The row to move down is already last                                                                             |
+| `MOVE_FAILED`                   | The move didn't update exactly two rows                                                                          |
+| `INVALID_TIMEOUT_PROFILE`       | A timeout profile's seconds aren't positive and finite, or its lock timeout is longer than its statement timeout |
+| `INVALID_OPTIONAL_READ_OPTIONS` | An optional reader's database, limits, or timeouts aren't valid                                                  |
 
 A query's own error, such as a constraint violation, is node-postgres's `DatabaseError`, unchanged.
 
