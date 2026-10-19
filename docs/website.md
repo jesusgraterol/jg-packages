@@ -149,28 +149,29 @@ Every package has one icon, set as `icon` in its catalog entry. It leads the pac
 - A package written for one technology would use that technology's mark. None of the current packages is, so all of them use a [Lucide](https://lucide.dev/icons/) icon.
 - Pick one idea, named for what the package is for. It must read at 20 pixels, and differ from every other package's icon; the build rejects a repeat.
 
-| Package             | Icon           | Why                             |
-| ------------------- | -------------- | ------------------------------- |
-| `jg-exception`      | `OctagonAlert` | Errors.                         |
-| `jg-api-response`   | `Braces`       | JSON envelopes.                 |
-| `jg-utilities`      | `Wrench`       | General-purpose helpers.        |
-| `jg-bignumber`      | `Calculator`   | Exact decimal math.             |
-| `jg-fetch`          | `Globe`        | Requests over the network.      |
-| `jg-storage`        | `Database`     | Key-value stores.               |
-| `jg-sw`             | `CloudOff`     | Apps that keep working offline. |
-| `jg-fs`             | `FolderOpen`   | Files and directories.          |
-| `jg-process`        | `Cpu`          | Child processes.                |
-| `jg-clipboard`      | `Clipboard`    | Copying and pasting.            |
-| `jg-env`            | `KeyRound`     | Configuration and secrets.      |
-| `jg-postgres`       | `Table2`       | Tables in a database.           |
-| `jg-redis`          | `Zap`          | A fast in-memory store.         |
-| `jg-react`          | `Atom`         | React hooks.                    |
-| `jg-tanstack-query` | `RefreshCw`    | Server data kept fresh.         |
-| `jg-react-router`   | `Route`        | Pages along a route.            |
-| `jg-nestjs`         | `Server`       | Services over HTTP.             |
-| `jg-crypto`         | `LockKeyhole`  | Hashes and signatures.          |
-| `jg-git`            | `GitBranch`    | Git repositories.               |
-| `jg-docker`         | `Container`    | Containers on this machine.     |
+| Package             | Icon             | Why                             |
+| ------------------- | ---------------- | ------------------------------- |
+| `jg-exception`      | `OctagonAlert`   | Errors.                         |
+| `jg-api-response`   | `Braces`         | JSON envelopes.                 |
+| `jg-utilities`      | `Wrench`         | General-purpose helpers.        |
+| `jg-bignumber`      | `Calculator`     | Exact decimal math.             |
+| `jg-fetch`          | `Globe`          | Requests over the network.      |
+| `jg-storage`        | `Database`       | Key-value stores.               |
+| `jg-sw`             | `CloudOff`       | Apps that keep working offline. |
+| `jg-fs`             | `FolderOpen`     | Files and directories.          |
+| `jg-process`        | `Cpu`            | Child processes.                |
+| `jg-clipboard`      | `Clipboard`      | Copying and pasting.            |
+| `jg-env`            | `KeyRound`       | Configuration and secrets.      |
+| `jg-postgres`       | `Table2`         | Tables in a database.           |
+| `jg-redis`          | `Zap`            | A fast in-memory store.         |
+| `jg-react`          | `Atom`           | React hooks.                    |
+| `jg-tanstack-query` | `RefreshCw`      | Server data kept fresh.         |
+| `jg-react-router`   | `Route`          | Pages along a route.            |
+| `jg-nestjs`         | `Server`         | Services over HTTP.             |
+| `jg-crypto`         | `LockKeyhole`    | Hashes and signatures.          |
+| `jg-git`            | `GitBranch`      | Git repositories.               |
+| `jg-docker`         | `Container`      | Containers on this machine.     |
+| `jg-github`         | `GitPullRequest` | A GitHub App's access.          |
 
 To add one, confirm the icon exists as `website/node_modules/@lucide/astro/src/icons/<name>.ts`, add its key to `IPackageIcon` in `website/src/utilities/package-catalog/types.ts`, map it to its component in `website/src/components/package-icon/package-icon.astro`, set the package's `icon`, and add its row here.
 

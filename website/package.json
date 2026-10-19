@@ -57,6 +57,7 @@
     "jg-fetch": "workspace:*",
     "jg-fs": "workspace:*",
     "jg-git": "workspace:*",
+    "jg-github": "workspace:*",
     "jg-process": "workspace:*",
     "jg-storage": "workspace:*",
     "jg-sw": "workspace:*",

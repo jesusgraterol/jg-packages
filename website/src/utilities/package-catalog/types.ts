@@ -14,6 +14,7 @@ export type IPackageIcon =
   | 'database'
   | 'folder-open'
   | 'git-branch'
+  | 'git-pull-request'
   | 'globe'
   | 'key-round'
   | 'lock-keyhole'
