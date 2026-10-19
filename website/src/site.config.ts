@@ -159,6 +159,14 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['node'],
     order: 19,
   },
+  'jg-docker': {
+    title: 'Docker',
+    description:
+      'Checks for Node.js scripts that Docker is local before using it, plus Compose service and container reads with loopback-only ports.',
+    icon: 'container',
+    runtimes: ['node'],
+    order: 20,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/

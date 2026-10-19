@@ -45,6 +45,7 @@
     "jg-bignumber": "workspace:*",
     "jg-clipboard": "workspace:*",
     "jg-crypto": "workspace:*",
+    "jg-docker": "workspace:*",
     "jg-env": "workspace:*",
     "jg-postgres": "workspace:*",
     "jg-tanstack-query": "workspace:*",

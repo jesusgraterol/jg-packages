@@ -9,6 +9,7 @@ export type IPackageIcon =
   | 'calculator'
   | 'clipboard'
   | 'cloud-off'
+  | 'container'
   | 'cpu'
   | 'database'
   | 'folder-open'
