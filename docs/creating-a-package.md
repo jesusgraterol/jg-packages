@@ -13,7 +13,7 @@ npm view jg<name> name
 
 Both should fail with `npm error code E404`.
 
-npm also rejects a name too close to a popular package, and only says so when you publish. Any other prefix of one or two characters counts: `jg-utils` was refused for its likeness to `xe-utils` (about 53,000 weekly downloads), then `jg-toolkit` for `es-toolkit`, and the package became `jg-utilities`. List the most downloaded names that differ only in the prefix:
+npm also rejects a name too close to a popular package, and only says so when you publish. Any other prefix of one or two characters counts: `jg-utils` was refused for its likeness to `xe-utils` (about 53,000 weekly downloads), then `jg-toolkit` for `es-toolkit`, and the package became `jg-utilities`. `jg-git` was refused for `cz-git` (about 71,000) and `jg-docker` for `is-docker` (about 81 million), and they became `jg-git-commands` and `jg-local-docker`. List the most downloaded names that differ only in the prefix:
 
 ```bash
 node --input-type=module - <name> <<'EOF'
