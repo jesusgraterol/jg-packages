@@ -1,4 +1,4 @@
-import { Buffer } from 'node:buffer';
+import type { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
 import {
   closeSync,
@@ -9,7 +9,6 @@ import {
   mkdirSync,
   openSync,
   readFileSync,
-  readSync,
   rmSync,
   symlinkSync,
   unlinkSync,
@@ -22,7 +21,6 @@ import { Exception } from 'jg-exception';
 import {
   assertBufferData,
   assertTextData,
-  BOUNDED_READ_CHUNK_SIZE,
   ERRORS,
   fileTooLarge,
   notAFile,
@@ -37,6 +35,7 @@ import { getPathElement } from '../general/index.js';
 
 import {
   openWithoutFollowing,
+  readOpenFile,
   readPermissionBits,
   renameReplacing,
   resolveWriteTarget,
@@ -349,23 +348,7 @@ export const readBoundedFile = (path: string, maxBytes: number): Buffer => {
     if (stats.size > maxBytes) {
       throw fileTooLarge(path, maxBytes);
     }
-    const chunks: Buffer[] = [];
-    let totalBytes = 0;
-    while (totalBytes <= maxBytes) {
-      const chunk = Buffer.allocUnsafe(
-        Math.min(BOUNDED_READ_CHUNK_SIZE, maxBytes + 1 - totalBytes),
-      );
-      const bytesRead = readSync(descriptor, chunk, 0, chunk.length, totalBytes);
-      if (bytesRead === 0) {
-        break;
-      }
-      chunks.push(chunk.subarray(0, bytesRead));
-      totalBytes += bytesRead;
-    }
-    if (totalBytes > maxBytes) {
-      throw fileTooLarge(path, maxBytes);
-    }
-    return Buffer.concat(chunks, totalBytes);
+    return readOpenFile(descriptor, path, maxBytes);
   } finally {
     closeSync(descriptor);
   }

@@ -10,11 +10,14 @@ export type {
   ILockBusyReason,
   ILockJudgement,
   IPathElement,
+  IPrivateFileOptions,
   IReadBufferFileOptions,
   IReadFileOptions,
   IReadJsonFileOptions,
+  IReadPrivateFileOptions,
   IReadStringFileOptions,
   ISchema,
+  IWritePrivateFileOptions,
 } from './types.js';
 
 // constants
@@ -45,6 +48,21 @@ export {
   parseJsonContent,
   serializeJsonData,
 } from './validations.js';
+
+// private files
+export {
+  directoryNotPrivate,
+  fileAlreadyExists,
+  fileNotPrivate,
+  hasSharedAccess,
+  HAS_POSIX_PERMISSIONS,
+  isMissingPathError,
+  mapPrivateOpenError,
+  pathNotCanonical,
+  pathOutsideRoot,
+  PRIVATE_DIRECTORY_MODE,
+  PRIVATE_FILE_MODE,
+} from './private-files.js';
 
 // locks
 export {

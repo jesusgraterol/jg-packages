@@ -108,3 +108,30 @@ export type ILockBusyReason =
 export type ILockJudgement =
   | { isRecoverable: false; reason: ILockBusyReason }
   | { isRecoverable: true; owner: IFileLockOwner };
+
+// the options assertPrivateFile takes
+export type IPrivateFileOptions = {
+  // a directory the file must be strictly inside; it must exist and contain no symbolic link
+  rootPath?: string | undefined;
+
+  // the largest size accepted, in bytes
+  maxBytes?: number | undefined;
+};
+
+// the options readPrivateFile takes
+export type IReadPrivateFileOptions = {
+  // the largest size accepted, in bytes; it's required, because the file's size isn't the reader's
+  maxBytes: number;
+
+  // a directory the file must be strictly inside; it must exist and contain no symbolic link
+  rootPath?: string | undefined;
+};
+
+// the options writePrivateFile takes
+export type IWritePrivateFileOptions = {
+  // a directory the file must be strictly inside; it must exist and contain no symbolic link
+  rootPath?: string | undefined;
+
+  // creates the file, and fails when anything already exists at the path, instead of replacing it
+  isExclusive?: boolean | undefined;
+};
