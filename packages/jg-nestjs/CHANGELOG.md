@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- `IMaintenanceModeState`'s optional `data`, which `MaintenanceModeGuard` sends as the 503 error's data as it is, in place of `{ message }`, such as `{ maintenanceMode: { content, updatedAt } }` for a client that shows the notice.
+- `getState` receives the request's `ExecutionContext`, so one guard can keep some routes up by their metadata. A `getState` that takes no argument still fits.
+- Recipes for a per-route exemption from maintenance mode, and for reporting errors to jg-postgres's error log.
+
 ## 0.2.0
 
 ### Added

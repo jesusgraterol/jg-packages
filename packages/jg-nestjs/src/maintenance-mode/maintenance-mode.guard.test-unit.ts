@@ -81,6 +81,66 @@ describe('MaintenanceModeGuard', () => {
     expect((error as ApiException).data).toBeUndefined();
   });
 
+  test.each([
+    [
+      'an object',
+      { maintenanceMode: { content: 'Back soon.', updatedAt: '2026-10-19T12:00:00.000Z' } },
+    ],
+    ['an array', ['api', 'admin']],
+    ['a string', 'Back soon.'],
+    ['null', null],
+  ])('refuses a request with the state data, %s, as the error data, as it is', async (_, data) => {
+    const guard = await createGuard(() => ({ enabled: true, data }));
+
+    const error: unknown = await guard
+      .canActivate(createContext())
+      .catch((caught: unknown) => caught);
+
+    expect(error).toMatchObject({ code: ERRORS.MAINTENANCE_MODE, status: 503 });
+    expect((error as ApiException).data).toStrictEqual(data);
+  });
+
+  test('sends the data in place of the message when the state has both', async () => {
+    const guard = await createGuard(() => ({
+      enabled: true,
+      message: 'Back at 14:00 UTC.',
+      data: { maintenanceMode: { content: 'Back at 14:00 UTC.' } },
+    }));
+
+    const error: unknown = await guard
+      .canActivate(createContext())
+      .catch((caught: unknown) => caught);
+
+    expect((error as ApiException).data).toStrictEqual({
+      maintenanceMode: { content: 'Back at 14:00 UTC.' },
+    });
+  });
+
+  test('lets a request through while maintenance is off, whatever its data', async () => {
+    const guard = await createGuard(() => ({ enabled: false, data: { maintenanceMode: null } }));
+
+    await expect(guard.canActivate(createContext())).resolves.toBe(true);
+  });
+
+  test("gives getState the request's context", async () => {
+    const getState = vi.fn<IMaintenanceModeGuardOptions['getState']>(() => ({ enabled: false }));
+    const guard = await createGuard(getState);
+    const context = createContext();
+
+    await guard.canActivate(context);
+
+    expect(getState).toHaveBeenCalledExactlyOnceWith(context);
+  });
+
+  test('fails closed when getState throws synchronously', async () => {
+    const failure = new Error('The flag could not be parsed.');
+    const guard = await createGuard(() => {
+      throw failure;
+    });
+
+    await expect(guard.canActivate(createContext())).rejects.toBe(failure);
+  });
+
   test('reads the state on every request', async () => {
     const getState = vi
       .fn<IMaintenanceModeGuardOptions['getState']>()

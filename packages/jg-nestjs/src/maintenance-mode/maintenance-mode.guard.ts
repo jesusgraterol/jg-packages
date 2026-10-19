@@ -7,10 +7,11 @@ import type { IMaintenanceModeGuardOptions } from './types.js';
 
 /**
  * Refuses HTTP requests with a 503 while the API is down for maintenance, reading the state on every
- * request, so turning it on or off needs no restart. The error, MAINTENANCE_MODE, carries the
- * state's message as its data when there is one, and the filter doesn't report it. It fails closed:
- * an error reading the state refuses the request. Other contexts, such as microservices, pass. Its
- * options come from MAINTENANCE_MODE_GUARD_OPTIONS, and the app fails to start without them.
+ * request, given its context, so turning it on or off needs no restart and a route can be exempted
+ * by its metadata. The error, MAINTENANCE_MODE, carries the state's data as it is, or else its
+ * message as `{ message }`, and the filter doesn't report it. It fails closed: an error reading the
+ * state refuses the request. Other contexts, such as microservices, pass. Its options come from
+ * MAINTENANCE_MODE_GUARD_OPTIONS, and the app fails to start without them.
  * @example
  * import { Module } from '@nestjs/common';
  * import { APP_GUARD } from '@nestjs/core';
@@ -49,12 +50,12 @@ export class MaintenanceModeGuard implements CanActivate {
     if (context.getType() !== 'http') {
       return true;
     }
-    const { enabled, message } = await this.__options.getState();
+    const { enabled, message, data } = await this.__options.getState(context);
     if (enabled) {
       throw new ApiException(ERROR_MESSAGES.MAINTENANCE_MODE, {
         code: ERRORS.MAINTENANCE_MODE,
         status: 503,
-        ...(message === undefined ? {} : { data: { message } }),
+        ...(data !== undefined ? { data } : message !== undefined ? { data: { message } } : {}),
       });
     }
     return true;
