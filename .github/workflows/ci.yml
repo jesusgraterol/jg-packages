@@ -72,10 +72,13 @@ jobs:
       - name: Install Chromium
         run: pnpm --filter jg-sw exec playwright install --with-deps chromium
 
-      # four packages at a time on the runner's four CPUs: more starve the browser tests' iframes
-      # and the integration tests' timing
+      # four packages at a time on the runner's four CPUs, except the three whose coverage runs
+      # Chromium: beside the other suites, their browser projects didn't start within a minute
       - name: Run the tests with coverage
-        run: node internal/vitest-config/src/run-test-suite.ts full run test:coverage --concurrency=4
+        run: node internal/vitest-config/src/run-test-suite.ts full run test:coverage --concurrency=4 --filter='!jg-react' --filter='!jg-react-router' --filter='!jg-tanstack-query'
+
+      - name: Run the Chromium packages' tests with coverage, one at a time
+        run: node internal/vitest-config/src/run-test-suite.ts full run test:coverage --concurrency=1 --filter=jg-react --filter=jg-react-router --filter=jg-tanstack-query
 
   browser:
     name: Browser tests
