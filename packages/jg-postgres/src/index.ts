@@ -34,6 +34,8 @@ export type {
   IVerificationDelivery,
   IVerificationIssue,
   IVerificationPolicy,
+  IVerificationResend,
+  IVerificationResendRequest,
 } from './verification/index.js';
 
 // constants

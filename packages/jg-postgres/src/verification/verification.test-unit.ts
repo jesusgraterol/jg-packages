@@ -63,6 +63,23 @@ describe('createVerificationChallenges', () => {
       'an infinite issue window',
       { policies: { 'verify-email': { ...POLICY, issueWindowSeconds: Infinity } } },
     ],
+    ['a resend limit of 0', { policies: { 'verify-email': { ...POLICY, resendLimit: 0 } } }],
+    [
+      'a resend limit of 32,768',
+      { policies: { 'verify-email': { ...POLICY, resendLimit: 32_768 } } },
+    ],
+    [
+      'a fractional resend limit',
+      { policies: { 'verify-email': { ...POLICY, resendLimit: 1.5 } } },
+    ],
+    [
+      'a resend cooldown of 0 seconds',
+      { policies: { 'verify-email': { ...POLICY, resendCooldownSeconds: 0 } } },
+    ],
+    [
+      'a fractional resend cooldown',
+      { policies: { 'verify-email': { ...POLICY, resendCooldownSeconds: 2.5 } } },
+    ],
     ['a code length of 3', { policies: { 'verify-email': POLICY }, codeLength: 3 }],
     ['a code length of 11', { policies: { 'verify-email': POLICY }, codeLength: 11 }],
     ['a fractional code length', { policies: { 'verify-email': POLICY }, codeLength: 6.5 }],
@@ -83,13 +100,20 @@ describe('createVerificationChallenges', () => {
       Object.keys(
         createVerificationChallenges(postgres, {
           policies: {
-            a: { validitySeconds: 1, maxFailedAttempts: 1, issueLimit: 1, issueWindowSeconds: 1 },
-            ['b'.repeat(128)]: { ...POLICY, maxFailedAttempts: 32_767 },
+            a: {
+              validitySeconds: 1,
+              maxFailedAttempts: 1,
+              issueLimit: 1,
+              issueWindowSeconds: 1,
+              resendLimit: 1,
+              resendCooldownSeconds: 1,
+            },
+            ['b'.repeat(128)]: { ...POLICY, maxFailedAttempts: 32_767, resendLimit: 32_767 },
           },
           codeLength: 10,
         }),
       ),
-    ).toStrictEqual(['issue', 'consume']);
+    ).toStrictEqual(['issue', 'resend', 'consume']);
     expect(() =>
       createVerificationChallenges(postgres, { policies: { a: POLICY }, codeLength: 4 }),
     ).not.toThrow();
@@ -141,6 +165,10 @@ describe('issue and consume input', () => {
         challenges.consume({ ...binding, challengeToken: TOKEN, code: '123456' }),
         ERRORS.INVALID_VERIFICATION_INPUT,
       );
+      await expectToRejectCode(
+        challenges.resend({ ...binding, challengeToken: TOKEN }, () => undefined),
+        ERRORS.INVALID_VERIFICATION_INPUT,
+      );
       expect(transaction).not.toHaveBeenCalled();
       expect(query).not.toHaveBeenCalled();
     },
@@ -157,6 +185,46 @@ describe('issue and consume input', () => {
       ERRORS.INVALID_VERIFICATION_INPUT,
     );
     expect(transaction).not.toHaveBeenCalled();
+  });
+
+  test('rejects a resend without a delivery function, or for a policy without a resend limit', async () => {
+    const { postgres, query, transaction } = createSpiedPostgres();
+    const challenges = createVerificationChallenges(postgres, {
+      policies: { 'verify-email': POLICY, 'verify-phone': { ...POLICY, resendLimit: 3 } },
+    });
+
+    await expectToRejectCode(
+      challenges.resend({ ...BINDING, challengeToken: TOKEN }, () => undefined),
+      ERRORS.INVALID_VERIFICATION_INPUT,
+      'and to resend, a policy with a resend limit',
+    );
+    await expectToRejectCode(
+      challenges.resend(
+        { ...BINDING, actionId: 'verify-phone', challengeToken: TOKEN },
+        'email' as never,
+      ),
+      ERRORS.INVALID_VERIFICATION_INPUT,
+    );
+    expect(transaction).not.toHaveBeenCalled();
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['a token of 42 characters', TOKEN.slice(1)],
+    ['a token that is not a string', null],
+  ])('resolves a resend with %s to invalid, without touching the database', async (_, token) => {
+    const { postgres, query, transaction } = createSpiedPostgres();
+    const challenges = createVerificationChallenges(postgres, {
+      policies: { 'verify-email': { ...POLICY, resendLimit: 3 } },
+    });
+    const deliver = vi.fn();
+
+    await expect(
+      challenges.resend({ ...BINDING, challengeToken: token as never }, deliver),
+    ).resolves.toStrictEqual({ outcome: 'invalid' });
+    expect(transaction).not.toHaveBeenCalled();
+    expect(query).not.toHaveBeenCalled();
+    expect(deliver).not.toHaveBeenCalled();
   });
 
   test.each<[string, Record<string, unknown>]>([

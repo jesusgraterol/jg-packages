@@ -10,8 +10,8 @@ import type { IVerificationBinding, IVerificationPolicy } from './types.js';
 // a token's shape: 32 random bytes as base64url, which is 43 characters without padding
 const CHALLENGE_TOKEN_PATTERN = /^[\w-]{43}$/;
 
-// the most failed attempts a policy allows, so the smallint count never overflows
-const MAX_FAILED_ATTEMPTS = 32_767;
+// the most failed attempts or resends a policy allows, so the smallint counts never overflow
+const MAX_SMALLINT_COUNT = 32_767;
 
 /**
  * Builds the exception for policies or a code length that aren't valid.
@@ -19,7 +19,7 @@ const MAX_FAILED_ATTEMPTS = 32_767;
  */
 const invalidPolicy = (): Exception =>
   new Exception(
-    'The verification challenges need at least one policy, each for an action id of 1 to 128 characters, with whole validity and window seconds of at least 1, a whole issue limit of at least 1, and a whole failed-attempt limit from 1 to 32767, and a whole code length from 4 to 10.',
+    'The verification challenges need at least one policy, each for an action id of 1 to 128 characters, with whole validity and window seconds of at least 1, a whole issue limit of at least 1, a whole failed-attempt limit from 1 to 32767, and, when given, a whole resend limit from 1 to 32767 and whole resend cooldown seconds of at least 1, and a whole code length from 4 to 10.',
     { code: ERRORS.INVALID_VERIFICATION_POLICY },
   );
 
@@ -29,7 +29,7 @@ const invalidPolicy = (): Exception =>
  */
 export const invalidInput = (): Exception =>
   new Exception(
-    'The verification input needs an actor id of 1 to 256 characters, an action id with a policy, a target id of 1 to 256 characters, and, to issue, a delivery function.',
+    'The verification input needs an actor id of 1 to 256 characters, an action id with a policy, a target id of 1 to 256 characters, and, to issue or resend, a delivery function, and to resend, a policy with a resend limit.',
     { code: ERRORS.INVALID_VERIFICATION_INPUT },
   );
 
@@ -42,14 +42,21 @@ const isPolicyValid = (policy: unknown): policy is IVerificationPolicy => {
   if (typeof policy !== 'object' || policy === null) {
     return false;
   }
-  const { validitySeconds, maxFailedAttempts, issueLimit, issueWindowSeconds } = policy as Partial<
-    Record<keyof IVerificationPolicy, unknown>
-  >;
+  const {
+    validitySeconds,
+    maxFailedAttempts,
+    issueLimit,
+    issueWindowSeconds,
+    resendLimit,
+    resendCooldownSeconds,
+  } = policy as Partial<Record<keyof IVerificationPolicy, unknown>>;
   return (
     isIntegerValid(validitySeconds, 1) &&
-    isIntegerValid(maxFailedAttempts, 1, MAX_FAILED_ATTEMPTS) &&
+    isIntegerValid(maxFailedAttempts, 1, MAX_SMALLINT_COUNT) &&
     isIntegerValid(issueLimit, 1) &&
-    isIntegerValid(issueWindowSeconds, 1)
+    isIntegerValid(issueWindowSeconds, 1) &&
+    (resendLimit === undefined || isIntegerValid(resendLimit, 1, MAX_SMALLINT_COUNT)) &&
+    (resendCooldownSeconds === undefined || isIntegerValid(resendCooldownSeconds, 1))
   );
 };
 
@@ -60,7 +67,7 @@ const isPolicyValid = (policy: unknown): policy is IVerificationPolicy => {
  * @param codeLength The code's digits.
  * @returns The policies, by action id.
  * @throws
- * - INVALID_VERIFICATION_POLICY: The verification challenges need at least one policy, each for an action id of 1 to 128 characters, with whole validity and window seconds of at least 1, a whole issue limit of at least 1, and a whole failed-attempt limit from 1 to 32767, and a whole code length from 4 to 10.
+ * - INVALID_VERIFICATION_POLICY: The verification challenges need at least one policy, each for an action id of 1 to 128 characters, with whole validity and window seconds of at least 1, a whole issue limit of at least 1, a whole failed-attempt limit from 1 to 32767, and, when given, a whole resend limit from 1 to 32767 and whole resend cooldown seconds of at least 1, and a whole code length from 4 to 10.
  */
 export const readPolicies = (
   policies: unknown,
@@ -87,7 +94,7 @@ export const readPolicies = (
  * @param binding The actor, action, and target.
  * @returns The action's policy.
  * @throws
- * - INVALID_VERIFICATION_INPUT: The verification input needs an actor id of 1 to 256 characters, an action id with a policy, a target id of 1 to 256 characters, and, to issue, a delivery function.
+ * - INVALID_VERIFICATION_INPUT: The verification input needs an actor id of 1 to 256 characters, an action id with a policy, a target id of 1 to 256 characters, and, to issue or resend, a delivery function, and to resend, a policy with a resend limit.
  */
 export const readBindingPolicy = (
   policies: Map<string, IVerificationPolicy>,

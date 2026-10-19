@@ -7,6 +7,14 @@
 - `runTransaction(client, operation, { timeouts?, onError? })`, which runs a transaction on a client the caller already holds and never releases it, and `isInTransaction(client)`, which is true while that transaction is open and after one whose end is unknown, so `client.release(isInTransaction(client))` destroys such a client. A client already in a transaction, including one the caller began with its own `BEGIN`, is refused with `TRANSACTION_ALREADY_ACTIVE` before any query. `postgres.transaction()` now runs on it.
 - `transaction(operation, options?)` on `withSessionLock`'s lock, which runs `runTransaction` on the lock's client after checking the lock is still held, so one lock can cover several transactions.
 - `IRunTransactionOptions`.
+- `resend(request, deliver)` on `createVerificationChallenges`, which sends a binding's active challenge a new code under the same token and expiry, so the earlier code stops working, and resolves to `resent`, `cooldown` with a `retryAt`, `limit`, or `invalid`. A policy's optional `resendLimit` (1 to 32,767) and `resendCooldownSeconds` set how often; a policy without `resendLimit` makes `resend` throw `INVALID_VERIFICATION_INPUT`. Wrong codes carry over, and resends never count toward `issueLimit`. It needs two columns, `resend_count` and `resent_at`, which the README's table has, and which an `ALTER TABLE` in the README adds to a table created from 0.3.0.
+- `IVerificationResend` and `IVerificationResendRequest`.
+- The verification recipe answers resends.
+
+### Changed
+
+- Every verification delivery has a `deliveryId`, `${challengeId}:0` for the issue and one number higher for each resend, to use as the email's idempotency key instead of `challengeId`, and `remainingSeconds`, the whole seconds the code still works.
+- `INVALID_VERIFICATION_POLICY`'s and `INVALID_VERIFICATION_INPUT`'s messages name the resend options.
 
 ### Fixed
 

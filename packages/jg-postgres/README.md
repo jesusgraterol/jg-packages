@@ -179,7 +179,7 @@ WHERE id IN (
 
 ### Verification challenges
 
-`createVerificationChallenges` issues and checks short codes bound to an actor, an action, and a target, such as the code that confirms a new email address. Each action has a policy: how long a code is valid, how many wrong codes it takes, and how many codes an actor may be issued within a window, over every target:
+`createVerificationChallenges` issues and checks short codes bound to an actor, an action, and a target, such as the code that confirms a new email address. Each action has a policy: how long a code is valid, how many wrong codes it takes, how many codes an actor may be issued within a window, over every target, and how often a challenge's code may be resent:
 
 ```ts
 import { createVerificationChallenges } from 'jg-postgres';
@@ -191,16 +191,27 @@ const challenges = createVerificationChallenges(postgres, {
       maxFailedAttempts: 5,
       issueLimit: 5,
       issueWindowSeconds: 3_600,
+      resendLimit: 3, // optional: without it, resend refuses the action
+      resendCooldownSeconds: 60, // optional
     },
   },
   codeLength: 6, // the default
 });
 
 const binding = { actorId: userId, actionId: 'verify-email', targetId: newEmail };
-const issued = await challenges.issue(binding, ({ code, challengeId }) =>
-  mailer.send(newEmail, code, { idempotencyKey: challengeId }),
+const issued = await challenges.issue(binding, ({ code, deliveryId }) =>
+  mailer.send(newEmail, code, { idempotencyKey: deliveryId }),
 );
 // { outcome: 'issued', challengeToken, expiresAt } or { outcome: 'limit', retryAt }
+
+// when the user asks for another code, with the token the client kept
+const resent = await challenges.resend(
+  { ...binding, challengeToken: savedToken },
+  ({ code, deliveryId, remainingSeconds }) =>
+    mailer.send(newEmail, code, { idempotencyKey: deliveryId, remainingSeconds }),
+);
+// { outcome: 'resent', expiresAt }, { outcome: 'cooldown', retryAt }, { outcome: 'limit' },
+// or { outcome: 'invalid' }
 
 // later, with the token the client kept and the code the user typed
 const isVerified = await challenges.consume({
@@ -211,6 +222,10 @@ const isVerified = await challenges.consume({
 ```
 
 `issue` refuses with `limit` once the actor was issued `issueLimit` codes within the window, with `retryAt`, when the oldest of them leaves it. Otherwise it supersedes the binding's active challenge and commits the new one, then calls `deliver` with the code, the only time it's available. A delivery that throws makes `issue` throw `VERIFICATION_DELIVERY_FAILED`, with the code and the token redacted from it and its cause; the challenge still counts toward the limit. Concurrent issues for an actor and an action queue on a transaction advisory lock, and every comparison uses the database's clock.
+
+`resend` sends the binding's active challenge a new code, under the same token and the same expiry, so the earlier code stops working. Wrong codes keep counting toward `maxFailedAttempts`, and resends never count toward `issueLimit`. It refuses with `limit` once the challenge was resent `resendLimit` times, and with `cooldown` and a `retryAt` until `resendCooldownSeconds` passed since its issue or its last resend; a policy without `resendLimit` makes `resend` throw `INVALID_VERIFICATION_INPUT`. A challenge that's used, superseded, expired, or out of attempts, another binding's token, or a token of the wrong shape resolves to `invalid`. Concurrent resends of one challenge queue on its row, so they can't exceed the limit. The new code is delivered once it's committed; a delivery that throws makes `resend` throw `VERIFICATION_DELIVERY_FAILED`, redacted as for `issue`, and the resend still counts, with the earlier code already stopped. A resend can go out with little time left, so `remainingSeconds` lets the message say how long the code works.
+
+Every delivery has a `deliveryId`, `${challengeId}:0` for the issue and `${challengeId}:1` and up for each resend. Use it, not `challengeId`, as the email's idempotency key: it's the same for every attempt to send one code, and different for each new code.
 
 `consume` resolves to `true` once, for the right code. A wrong code counts a failed attempt, and a challenge stops accepting codes after `maxFailedAttempts` of them, so the policy's current value applies. A used, superseded, or expired challenge, another binding's token, or a token or code of the wrong shape resolves to `false` without counting, and every `false` looks the same to the caller.
 
@@ -225,9 +240,11 @@ CREATE TABLE verification_challenge (
   token_hash text NOT NULL,
   code_hash text NOT NULL,
   failed_attempt_count smallint NOT NULL DEFAULT 0,
+  resend_count smallint NOT NULL DEFAULT 0,
   expires_at timestamptz NOT NULL,
   used_at timestamptz NULL,
   superseded_at timestamptz NULL,
+  resent_at timestamptz NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT pk_vc__id PRIMARY KEY (id),
   CONSTRAINT uq_vc__token_hash UNIQUE (token_hash),
@@ -237,7 +254,9 @@ CREATE TABLE verification_challenge (
   CONSTRAINT chk_vc__token_hash_sha256 CHECK (token_hash ~ '^[0-9a-f]{64}$'),
   CONSTRAINT chk_vc__code_hash_sha256 CHECK (code_hash ~ '^[0-9a-f]{64}$'),
   CONSTRAINT chk_vc__failed_attempt_count_non_negative CHECK (failed_attempt_count >= 0),
+  CONSTRAINT chk_vc__resend_count_non_negative CHECK (resend_count >= 0),
   CONSTRAINT chk_vc__expires_at_chronological CHECK (expires_at > created_at),
+  CONSTRAINT chk_vc__resent_at_chronological CHECK (resent_at IS NULL OR resent_at >= created_at),
   CONSTRAINT chk_vc__used_at_superseded_at_mutually_exclusive
     CHECK (used_at IS NULL OR superseded_at IS NULL)
 );
@@ -260,6 +279,17 @@ WHERE id IN (
   ORDER BY created_at
   LIMIT $2
 );
+```
+
+A table created from jg-postgres 0.3.0's README lacks the two columns `resend` uses. `issue` and `consume` keep working without them, but add them before deploying code that calls `resend`. Both are filled for every existing row, `0` and `NULL`, so the checks hold:
+
+```sql
+ALTER TABLE verification_challenge
+  ADD COLUMN resend_count smallint NOT NULL DEFAULT 0,
+  ADD COLUMN resent_at timestamptz NULL,
+  ADD CONSTRAINT chk_vc__resend_count_non_negative CHECK (resend_count >= 0),
+  ADD CONSTRAINT chk_vc__resent_at_chronological
+    CHECK (resent_at IS NULL OR resent_at >= created_at);
 ```
 
 ### Database summaries
@@ -393,25 +423,25 @@ The defaults fill every missing or null field when the record is read, and are t
 
 ### Errors
 
-| Code                            | When                                                                                                                  |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `TRANSACTION_OUTCOME_UNKNOWN`   | The connection was lost during `COMMIT`                                                                               |
-| `TRANSACTION_ALREADY_ACTIVE`    | `runTransaction` or a lock's `transaction` was given a client that's already in a transaction                         |
-| `SESSION_LOCK_LOST`             | The connection that held a session lock was lost                                                                      |
-| `INVALID_IDENTIFIER`            | A name is empty, holds a null character, or is longer than 63 bytes                                                   |
-| `ROW_NOT_FOUND`                 | The row to move doesn't exist in the ordered list                                                                     |
-| `ROW_ALREADY_FIRST`             | The row to move up is already first                                                                                   |
-| `ROW_ALREADY_LAST`              | The row to move down is already last                                                                                  |
-| `MOVE_FAILED`                   | The move didn't update exactly two rows                                                                               |
-| `INVALID_TIMEOUT_PROFILE`       | A timeout profile's seconds aren't positive and finite, or its lock timeout is longer than its statement timeout      |
-| `INVALID_OPTIONAL_READ_OPTIONS` | An optional reader's database, limits, or timeouts aren't valid                                                       |
-| `INVALID_USAGE_ADMISSION`       | A usage admission's ids, limit, or seconds aren't valid, or it has a cooldown without a scope                         |
-| `INVALID_VERIFICATION_POLICY`   | The verification policies or the code length aren't valid                                                             |
-| `INVALID_VERIFICATION_INPUT`    | A verification binding's ids aren't valid, its action has no policy, or issue has no delivery function                |
-| `VERIFICATION_DELIVERY_FAILED`  | The delivery function threw, after the challenge was committed                                                        |
-| `INVALID_COUNTER_TABLE`         | A counter table has no key column or no counter, or repeats a name                                                    |
-| `INVALID_COUNTER_CHANGE`        | A counter row's key doesn't have exactly the key columns, or an amount isn't a whole, non-zero amount within `BIGINT` |
-| `COUNTER_ROW_NOT_FOUND`         | A counter query changed no row, because the row to adjust doesn't exist                                               |
+| Code                            | When                                                                                                                                                  |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TRANSACTION_OUTCOME_UNKNOWN`   | The connection was lost during `COMMIT`                                                                                                               |
+| `TRANSACTION_ALREADY_ACTIVE`    | `runTransaction` or a lock's `transaction` was given a client that's already in a transaction                                                         |
+| `SESSION_LOCK_LOST`             | The connection that held a session lock was lost                                                                                                      |
+| `INVALID_IDENTIFIER`            | A name is empty, holds a null character, or is longer than 63 bytes                                                                                   |
+| `ROW_NOT_FOUND`                 | The row to move doesn't exist in the ordered list                                                                                                     |
+| `ROW_ALREADY_FIRST`             | The row to move up is already first                                                                                                                   |
+| `ROW_ALREADY_LAST`              | The row to move down is already last                                                                                                                  |
+| `MOVE_FAILED`                   | The move didn't update exactly two rows                                                                                                               |
+| `INVALID_TIMEOUT_PROFILE`       | A timeout profile's seconds aren't positive and finite, or its lock timeout is longer than its statement timeout                                      |
+| `INVALID_OPTIONAL_READ_OPTIONS` | An optional reader's database, limits, or timeouts aren't valid                                                                                       |
+| `INVALID_USAGE_ADMISSION`       | A usage admission's ids, limit, or seconds aren't valid, or it has a cooldown without a scope                                                         |
+| `INVALID_VERIFICATION_POLICY`   | The verification policies or the code length aren't valid                                                                                             |
+| `INVALID_VERIFICATION_INPUT`    | A verification binding's ids aren't valid, its action has no policy, issue or resend has no delivery function, or resend's policy has no resend limit |
+| `VERIFICATION_DELIVERY_FAILED`  | The delivery function threw, after the challenge or its resend was committed                                                                          |
+| `INVALID_COUNTER_TABLE`         | A counter table has no key column or no counter, or repeats a name                                                                                    |
+| `INVALID_COUNTER_CHANGE`        | A counter row's key doesn't have exactly the key columns, or an amount isn't a whole, non-zero amount within `BIGINT`                                 |
+| `COUNTER_ROW_NOT_FOUND`         | A counter query changed no row, because the row to adjust doesn't exist                                                                               |
 
 A query's own error, such as a constraint violation, is node-postgres's `DatabaseError`, unchanged.
 
