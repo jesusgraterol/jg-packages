@@ -183,6 +183,14 @@ For a browser package, extend `@jg-packages/tsconfig/browser.json` instead of `n
 }
 ```
 
+### A package with React components
+
+- **Files.** Components live in `.tsx` files, and their tests are `.tsx` too, such as `page-outlet.component.test-browser.tsx`. Hooks and helpers stay `.ts`.
+- **TypeScript.** All three configurations set `"jsx": "react-jsx"`. `tsconfig.build.json` and `tsconfig.browser.json` exclude `src/**/*.test-*`, because `src/**/*.test-*.ts` misses `.tsx` tests and would ship them.
+- **Dependencies.** `react` is a peer dependency with a caret range, plus anything the components render through, such as `react-router`. The devDependencies add them at the tested versions, along with `react-dom`, `@types/react`, `@types/react-dom`, `@testing-library/react`, and `@testing-library/dom` from the catalog. `release:verify` installs the `@types/react` version the package lists, so its JSX recipes typecheck.
+- **Examples and recipes.** TSDoc examples are typechecked as `.ts`, so they build elements with `createElement`. Recipes can use ` ```tsx ` blocks.
+- **Coverage.** Components that only run in a browser count towards coverage through the browser project's Chromium instance, as [the development guide](development.md#tests) describes: `test:coverage` adds `--project "browser (chromium)"` to the unit project, or runs only that instance when the package has no unit tests.
+
 ### Lint and test configurations
 
 `eslint.config.js`:
@@ -291,7 +299,7 @@ Follow [`package-guidelines.md`](package-guidelines.md):
 
 ## 5. Write the tests
 
-Put each test next to the file it tests, named after it with its category, such as `utilities.test-unit.ts`. Use integration tests for anything that touches the filesystem, processes, or the network, against a temporary directory or a local server. Use browser tests, `.test-browser.ts`, for behavior only a real browser has, such as storage or the clipboard: they run in Chromium, Firefox, and WebKit, with a `test:browser` script, `vitest run --project browser`. List each category you add in `vitest.config.ts`, give it a script, and keep `test:coverage` listing the unit and integration projects.
+Put each test next to the file it tests, named after it with its category, such as `utilities.test-unit.ts`. Use integration tests for anything that touches the filesystem, processes, or the network, against a temporary directory or a local server. Use browser tests, `.test-browser.ts`, or `.test-browser.tsx` for a `.tsx` file, for behavior only a real browser has, such as storage or the clipboard: they run in Chromium, Firefox, and WebKit, with a `test:browser` script, `vitest run --project browser`. List each category you add in `vitest.config.ts`, give it a script, and keep `test:coverage` listing the unit and integration projects, plus the browser project's Chromium instance for code that only runs in a browser.
 
 Expected result: `pnpm --filter jg-<name> test` passes.
 
@@ -322,7 +330,7 @@ Publish its first version by hand, following [the first publish](releasing.md#th
 - [ ] Every export has TSDoc, and every function and class an `@example`.
 - [ ] The tests sit next to their files, and each category has a script.
 - [ ] The README has its sections in order, and the changelog has a section for the version.
-- [ ] `RECIPES.md` has two to four recipes, each with a ` ```ts ` block that typechecks, unless the package has Astro components.
+- [ ] `RECIPES.md` has two to four recipes, each with a ` ```ts ` or ` ```tsx ` block that typechecks, unless the package has Astro components.
 - [ ] The package is listed on the website with its own icon, or marked unlisted.
 - [ ] jg-skills is checked for the new package, as [Keeping jg-skills in sync](package-guidelines.md#keeping-jg-skills-in-sync) describes.
 - [ ] `pnpm check` and `pnpm release:verify` pass.
