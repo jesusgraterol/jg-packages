@@ -138,7 +138,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
   'jg-nestjs': {
     title: 'NestJS',
     description:
-      'NestJS for HTTP APIs: an ApiException, a filter and an interceptor that answer in the jg-api-response envelope, schema validation, and strict CORS.',
+      'NestJS for HTTP APIs: an ApiException, a filter and an interceptor for the jg-api-response envelope, schema validation, CORS, and app bootstrap.',
     icon: 'server',
     runtimes: ['node'],
     order: 17,

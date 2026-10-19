@@ -1,7 +1,7 @@
 {
   "name": "jg-nestjs",
   "version": "0.1.0",
-  "description": "NestJS for HTTP APIs: an ApiException, a filter and an interceptor that answer in the jg-api-response envelope, schema validation, and strict CORS.",
+  "description": "NestJS for HTTP APIs: an ApiException, a filter and an interceptor for the jg-api-response envelope, schema validation, CORS, and app bootstrap.",
   "author": "Jesus Graterol",
   "license": "MIT",
   "type": "module",
@@ -75,6 +75,7 @@
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
     "express": "5.2.1",
+    "helmet": "8.1.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.1",
     "typescript": "catalog:",

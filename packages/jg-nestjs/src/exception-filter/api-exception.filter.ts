@@ -24,11 +24,12 @@ import {
 /**
  * Answers every error an HTTP request throws, from a handler, guard, pipe, or middleware, with the
  * jg-api-response envelope. An ApiException sets the status; an Exception sends its code, message,
- * and data; an HttpException sends HTTP_EXCEPTION with its own message; and anything else gets a
- * 500 with INTERNAL_ERROR and a generic message, while the error itself goes only to the logs and
- * the reporter. It logs an error that its throw site marked shouldLog or critical, or that is
- * neither an Exception nor an HttpException, and reports every error except an expected one or one
- * whose status or code is ignored. Errors outside HTTP are rethrown.
+ * and data; an HttpException sends HTTP_EXCEPTION with its own message, as does a client error
+ * Express's middleware built for clients, such as a body over the limit, with its own 4xx; and
+ * anything else gets a 500 with INTERNAL_ERROR and a generic message, while the error itself goes
+ * only to the logs and the reporter. It logs an error that its throw site marked shouldLog or
+ * critical, or that is none of those anticipated kinds, and reports every error except an expected
+ * one or one whose status or code is ignored. Errors outside HTTP are rethrown.
  * @example
  * import { Module } from '@nestjs/common';
  * import { APP_FILTER } from '@nestjs/core';

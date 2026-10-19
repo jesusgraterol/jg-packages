@@ -26,8 +26,9 @@ export type IApiExceptionFilterOptions = {
   // rejection is logged
   report?: ((report: IErrorReport) => void | Promise<void>) | undefined;
 
-  // gives the status of an error that is neither an ApiException nor an HttpException, such as one
-  // from a library. A value that isn't an integer from 400 to 599 is ignored
+  // gives the status of an error that is none of an ApiException, an HttpException, and an exposed
+  // client error, such as one from a library. A value that isn't an integer from 400 to 599 is
+  // ignored
   resolveStatus?: ((error: unknown) => number | undefined) | undefined;
 
   // the statuses that are never reported. Defaults to 401 and 429
@@ -39,6 +40,16 @@ export type IApiExceptionFilterOptions = {
   // removes secrets from a URL before it's logged or reported, such as a token in the query.
   // Defaults to leaving it as it is
   redactUrl?: ((url: string) => string) | undefined;
+};
+
+/*
+ * An error Express's own middleware, such as a body parser, built for clients with http-errors: a
+ * 4xx status, `expose: true`, which says its message is safe to show, and that message.
+ */
+export type IExposedClientError = {
+  statusCode: number;
+  expose: true;
+  message: string;
 };
 
 // the filter's options with their defaults filled in

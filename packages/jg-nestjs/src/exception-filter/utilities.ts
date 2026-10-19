@@ -5,7 +5,11 @@ import { DEFAULT_MESSAGE, Exception, getErrorCode, isException } from 'jg-except
 import { ApiException } from '../api-exception/index.js';
 import { DEFAULT_ERROR_STATUS, ERROR_MESSAGES, ERRORS, isErrorStatus } from '../shared/index.js';
 import { DEFAULT_IGNORED_CODES, DEFAULT_IGNORED_STATUSES } from './constants.js';
-import type { IApiExceptionFilterOptions, IResolvedFilterOptions } from './types.js';
+import type {
+  IApiExceptionFilterOptions,
+  IExposedClientError,
+  IResolvedFilterOptions,
+} from './types.js';
 
 /**
  * Fills in the defaults of the filter's options.
@@ -23,8 +27,31 @@ export const resolveFilterOptions = (
 });
 
 /**
- * Resolves the status an error answers with: an ApiException's, an HttpException's, the one
- * resolveStatus gives when it's an error status, or 500.
+ * Checks whether an error is a client error that Express's own middleware, such as a body parser,
+ * built with http-errors: an integer `statusCode` from 400 to 499, `expose: true`, and a string
+ * message. Only `expose` says the message is meant for clients, so an outbound HTTP client's error
+ * that merely carries an upstream's status doesn't qualify.
+ * @param error The error.
+ * @returns Whether it's an exposed client error.
+ */
+export const isExposedClientError = (error: unknown): error is IExposedClientError => {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+  const { statusCode, expose, message } = error as Record<string, unknown>;
+  return (
+    typeof statusCode === 'number' &&
+    Number.isInteger(statusCode) &&
+    statusCode >= 400 &&
+    statusCode <= 499 &&
+    expose === true &&
+    typeof message === 'string'
+  );
+};
+
+/**
+ * Resolves the status an error answers with: an ApiException's, an HttpException's, an exposed
+ * client error's, the one resolveStatus gives when it's an error status, or 500.
  * @param error The error.
  * @param resolveStatus The app's resolver for other errors, if any.
  * @returns The status.
@@ -38,6 +65,9 @@ export const resolveErrorStatus = (
   }
   if (error instanceof HttpException) {
     return error.getStatus();
+  }
+  if (isExposedClientError(error)) {
+    return error.statusCode;
   }
   const resolved = resolveStatus?.(error);
   return isErrorStatus(resolved) ? resolved : DEFAULT_ERROR_STATUS;
@@ -68,8 +98,9 @@ export const extractHttpExceptionMessage = (exception: HttpException): string =>
 
 /**
  * Builds the envelope an error answers with. An Exception sends its code, message, and data, an
- * HttpException HTTP_EXCEPTION with its own message, and anything else only INTERNAL_ERROR and a
- * generic message, because its message may hold details a client must never see.
+ * HttpException or an exposed client error HTTP_EXCEPTION with its own message, and anything else
+ * only INTERNAL_ERROR and a generic message, because its message may hold details a client must
+ * never see.
  * @param error The error.
  * @returns The envelope.
  */
@@ -83,6 +114,9 @@ export const buildErrorBody = (error: unknown): IApiResponse<undefined> => {
       new Exception(extractHttpExceptionMessage(error), { code: ERRORS.HTTP_EXCEPTION }),
     );
   }
+  if (isExposedClientError(error)) {
+    return buildResponse(undefined, new Exception(error.message, { code: ERRORS.HTTP_EXCEPTION }));
+  }
   return buildResponse(
     undefined,
     new Exception(ERROR_MESSAGES.INTERNAL_ERROR, { code: ERRORS.INTERNAL_ERROR }),
@@ -91,7 +125,8 @@ export const buildErrorBody = (error: unknown): IApiResponse<undefined> => {
 
 /**
  * Checks whether an error is logged: when its throw site asked with shouldLog or marked it
- * critical, or when it's neither an Exception nor an HttpException, so nothing anticipated it.
+ * critical, or when it's none of an Exception, an HttpException, and an exposed client error, so
+ * nothing anticipated it.
  * @param error The error.
  * @returns Whether to log it.
  */
@@ -99,7 +134,7 @@ export const shouldLogError = (error: unknown): boolean => {
   if (isException(error)) {
     return error.shouldLog === true || error.severity === 'critical';
   }
-  return !(error instanceof HttpException);
+  return !(error instanceof HttpException) && !isExposedClientError(error);
 };
 
 /**

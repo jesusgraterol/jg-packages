@@ -7,9 +7,9 @@ export const ERRORS = {
 } as const;
 
 /*
- * The message each error answers with. An HTTP_EXCEPTION answers with the HttpException's own
- * message instead, and its entry describes it. INTERNAL_ERROR's is all a client sees of an
- * unexpected error.
+ * The message each error answers with. An HTTP_EXCEPTION answers with the HttpException's or the
+ * exposed client error's own message instead, and its entry describes it. INTERNAL_ERROR's is all
+ * a client sees of an unexpected error.
  */
 export const ERROR_MESSAGES: Record<keyof typeof ERRORS, string> = {
   VALIDATION_FAILED: 'The request failed validation.',
