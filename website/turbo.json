@@ -12,11 +12,11 @@
       "inputs": ["$TURBO_EXTENDS$", "$TURBO_ROOT$/packages/jg-personal-astro-ui/src/**"]
     },
     "typecheck": {
-      "dependsOn": ["$TURBO_EXTENDS$", "generate"],
+      "dependsOn": ["$TURBO_EXTENDS$", "generate", "build"],
       "inputs": ["$TURBO_EXTENDS$", "$TURBO_ROOT$/packages/jg-personal-astro-ui/src/**"]
     },
     "lint": {
-      "dependsOn": ["$TURBO_EXTENDS$", "generate"],
+      "dependsOn": ["$TURBO_EXTENDS$", "generate", "typecheck"],
       "inputs": ["$TURBO_EXTENDS$", "$TURBO_ROOT$/packages/jg-personal-astro-ui/src/**"]
     },
     "dev": {

@@ -92,7 +92,7 @@ pnpm --filter <package> exec playwright test --repeat-each=3 --retries=0
 
 ## Turborepo and its cache
 
-`turbo.json` declares every task and what it depends on: `build` waits for the builds of the packages it depends on, and integration and end-to-end tests also wait for their own package's build. Turborepo skips a task whose inputs haven't changed and replays its output.
+`turbo.json` declares every task and what it depends on: `build` waits for the builds of the packages it depends on, and integration and end-to-end tests also wait for their own package's build. The website's `build`, `typecheck`, and `lint` run one after another, as `website/turbo.json` declares, because each one syncs Astro's content into the same files, and two syncs at once fail with `UnknownFilesystemError`. Turborepo skips a task whose inputs haven't changed and replays its output.
 
 - `pnpm turbo run <task> --force` ignores the cache.
 - `pnpm turbo run <task> --summarize` writes a summary under `.turbo/runs/` that lists each task's inputs and why it hit or missed the cache.
