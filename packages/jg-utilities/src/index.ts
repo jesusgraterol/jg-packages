@@ -27,6 +27,7 @@ export {
   isUrlValid,
   isUuidValid,
   isBigIntStringValid,
+  isYouTubeVideoIdValid,
 } from './validations/index.js';
 
 // transformers
@@ -35,6 +36,8 @@ export type {
   IDateTemplate,
   IDateValue,
   INumberFormatConfig,
+  IRedactSecretsOptions,
+  IRedactSecretsResult,
   ISubstitutionOptions,
   ITimeString,
 } from './transformers/index.js';
@@ -69,6 +72,9 @@ export {
   pruneJson,
   encodeCursor,
   decodeCursor,
+  redactSecrets,
+  redactUrlQueryParams,
+  SECRET_TOKEN_PATTERNS,
   ONE_SECOND_IN_MILLISECONDS,
   ONE_MINUTE_IN_MILLISECONDS,
   ONE_HOUR_IN_MILLISECONDS,
@@ -126,4 +132,7 @@ export {
   estimateReadingTime,
   extractFirstMarkdownHeadingName,
   extractSubstitutionPlaceholderNames,
+  parseYouTubeVideoId,
+  toYouTubeWatchUrl,
+  toYouTubeEmbedUrl,
 } from './utils/index.js';

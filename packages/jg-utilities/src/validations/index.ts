@@ -22,4 +22,5 @@ export {
   isUrlValid,
   isUuidValid,
   isBigIntStringValid,
+  isYouTubeVideoIdValid,
 } from './validations.js';

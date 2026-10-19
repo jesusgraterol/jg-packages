@@ -1,6 +1,6 @@
 // shared
 export type { IJsonValue } from './shared/types.js';
-export { DEFAULT_MESSAGE, UNKNOWN_ERROR_CODE } from './shared/constants.js';
+export { DEFAULT_MESSAGE, REDACTED_VALUE, UNKNOWN_ERROR_CODE } from './shared/constants.js';
 
 // error handler
 export {

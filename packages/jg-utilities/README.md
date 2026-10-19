@@ -50,6 +50,23 @@ import { resolveSafeInternalPath } from 'jg-utilities';
 const returnTo = resolveSafeInternalPath(searchParams.get('returnTo'), ['/sign-in']) ?? '/';
 ```
 
+Keep secrets out of logs, and read the YouTube links people paste:
+
+```ts
+import {
+  parseYouTubeVideoId,
+  redactSecrets,
+  redactUrlQueryParams,
+  toYouTubeEmbedUrl,
+} from 'jg-utilities';
+
+redactUrlQueryParams(request.url, ['token']); // the path alone when the query holds a token
+redactSecrets(logLine).text; // GitHub tokens, sk- keys, and private keys become [redacted]
+
+const videoId = parseYouTubeVideoId(pastedUrl); // the id, or null for anything but one video
+const embedUrl = videoId === null ? undefined : toYouTubeEmbedUrl(videoId);
+```
+
 Generate secure random values, IDs, and timestamps:
 
 ```ts

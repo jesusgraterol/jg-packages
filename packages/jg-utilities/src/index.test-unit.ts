@@ -17,17 +17,36 @@ import {
   hasWindow,
   isFileNameValid,
   isIndexedDbAvailable,
+  isYouTubeVideoIdValid,
   MAX_EMAIL_LENGTH,
   ONE_DAY_IN_MILLISECONDS,
   prefersReducedMotion,
+  parseYouTubeVideoId,
   prettifyTime,
+  redactSecrets,
+  redactUrlQueryParams,
+  SECRET_TOKEN_PATTERNS,
   splitArrayIntoBatches,
   toUtcDate,
+  toYouTubeEmbedUrl,
+  toYouTubeWatchUrl,
   truncateToUtf8Bytes,
   waitUntil,
 } from './index.js';
 
 describe('public API', () => {
+  test('exports the redaction and YouTube helpers from the package entry point', () => {
+    expect(redactSecrets('ghp_abcdefghijklmnopqrstuvwxyz').text).toBe('[redacted]');
+    expect(redactUrlQueryParams('/a?token=1', ['token'])).toBe('/a');
+    expect(SECRET_TOKEN_PATTERNS).toHaveLength(3);
+    expect(parseYouTubeVideoId('https://youtu.be/M7lc1UVf-VE')).toBe('M7lc1UVf-VE');
+    expect(isYouTubeVideoIdValid('M7lc1UVf-VE')).toBe(true);
+    expect(toYouTubeWatchUrl('M7lc1UVf-VE')).toBe('https://www.youtube.com/watch?v=M7lc1UVf-VE');
+    expect(toYouTubeEmbedUrl('M7lc1UVf-VE')).toBe(
+      'https://www.youtube-nocookie.com/embed/M7lc1UVf-VE',
+    );
+  });
+
   test('exports applyDefaults from the package entry point', () => {
     expect(applyDefaults({ retryCount: 8 }, { retryCount: 4 })).toStrictEqual({ retryCount: 4 });
   });

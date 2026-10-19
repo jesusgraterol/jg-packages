@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.0
+
+### Added
+
+- `redactUrlQueryParams(url, names)`, which removes a URL's query and fragment when the query holds any of the named parameters, such as a token, matching names after decoding and as array parameters, so the URL can be logged. A name that can't be decoded, or a URL that is only a query, gives `[redacted]`.
+- `redactSecrets(text, { patterns?, replacement?, preserveLineBreaks? })`, which replaces complete PEM private key blocks, in one pass, and then every match of the token patterns, `SECRET_TOKEN_PATTERNS` by default: GitHub's tokens and `sk-` API keys. It returns the text and how many secrets it replaced, can keep a key's line breaks so line numbers stay the same, and never throws.
+- `SECRET_TOKEN_PATTERNS`, `IRedactSecretsOptions`, and `IRedactSecretsResult`.
+- `parseYouTubeVideoId(url)`, the id of the single video a youtu.be, youtube.com, m.youtube.com, or youtube-nocookie.com URL points at, or null for anything else, without throwing.
+- `toYouTubeWatchUrl(videoId)` and `toYouTubeEmbedUrl(videoId)`, the canonical watch page and privacy-enhanced embed URLs. An id that isn't 11 letters, digits, `-`, or `_` throws `INVALID_YOUTUBE_VIDEO_ID`.
+- `isYouTubeVideoIdValid(value)`.
+
+### Changed
+
+- Depends on `jg-exception` 1.5.0, whose `REDACTED_VALUE` marks what the redaction functions remove.
+
 ## 1.3.0
 
 ### Added

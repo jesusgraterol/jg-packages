@@ -8,6 +8,7 @@ import {
   isArrayValid,
   isAuthorizationHeaderValid,
   isBigIntStringValid,
+  isYouTubeVideoIdValid,
   isEmailValid,
   isFileNameValid,
   isIntegerValid,
@@ -858,5 +859,22 @@ describe('isBigIntStringValid', () => {
     ['1'.repeat(30), 0n, 10n ** 40n, true],
   ])('isBigIntStringValid(%s, %s, %s) -> %o', (value, min, max, expected) => {
     expect(isBigIntStringValid(value, min, max)).toBe(expected);
+  });
+});
+
+describe('isYouTubeVideoIdValid', () => {
+  test.each([
+    ['M7lc1UVf-VE', true],
+    ['dQw4w9WgXcQ', true],
+    ['___________', true],
+    ['M7lc1UVf-V', false],
+    ['M7lc1UVf-VEx', false],
+    ['M7lc1UVf VE', false],
+    ['M7lc1UVf+VE', false],
+    ['', false],
+    [12_345_678_901, false],
+    [null, false],
+  ])('isYouTubeVideoIdValid(%o) -> %o', (value, expected) => {
+    expect(isYouTubeVideoIdValid(value)).toBe(expected);
   });
 });

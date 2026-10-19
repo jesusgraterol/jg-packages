@@ -71,6 +71,9 @@ export { getNextPageParam } from './pagination.js';
 // reading utilities
 export { estimateReadingTime } from './reading.js';
 
+// YouTube utilities
+export { parseYouTubeVideoId, toYouTubeEmbedUrl, toYouTubeWatchUrl } from './youtube.js';
+
 // sorting utilities
 export {
   sortPrimitives,
