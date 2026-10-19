@@ -71,6 +71,21 @@ export type IRetryContext = {
   delayMs: number;
 };
 
+// what refreshCredentials receives when an attempt fails with a response
+export type ICredentialFailure = {
+  // the response's HTTP status, such as 401
+  status: number;
+
+  // the error's code: the envelope error's own code, or HTTP_ERROR
+  code: string;
+
+  // the refreshes this call already made
+  refreshes: number;
+
+  // aborts when the call is cancelled, by its timeout or your signal, for the refresh's own work
+  signal: AbortSignal;
+};
+
 // the options request accepts
 export type IRequestOptions<T> = {
   // the HTTP method. Defaults to 'GET'
@@ -136,4 +151,14 @@ export type IRequestOptions<T> = {
 
   // called before each retry. Whatever it throws is ignored, so request still never throws
   onRetry?: (context: IRetryContext) => void;
+
+  // called when an attempt fails with a response, such as a 401, to refresh the credentials the
+  // headers function reads. Returning true repeats the attempt at once, for any method; false
+  // leaves the failure to the retry rules. Return true only for a credential failure, because the
+  // server didn't process the request then. A function that throws ends the call with
+  // CREDENTIALS_REFRESH_FAILED. Never called for a streamed body, which can be sent once
+  refreshCredentials?: (failure: ICredentialFailure) => boolean | Promise<boolean>;
+
+  // the most refreshes a call makes, such as 2 for two kinds of credential. Defaults to 1
+  maxCredentialRefreshes?: number;
 };

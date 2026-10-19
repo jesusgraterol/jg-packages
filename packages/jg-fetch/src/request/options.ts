@@ -14,6 +14,9 @@ import {
 } from '../shared/index.js';
 import { RequestFailure } from './failure.js';
 
+// the refreshes a call makes when maxCredentialRefreshes isn't given
+const DEFAULT_MAX_CREDENTIAL_REFRESHES = 1;
+
 // the methods request sends
 const HTTP_METHODS: readonly IHttpMethod[] = [
   'GET',
@@ -59,6 +62,8 @@ export type IResolvedOptions<T> = {
   signal: AbortSignal | undefined;
   init: IRequestOptions<T>['init'];
   onRetry: IRequestOptions<T>['onRetry'];
+  refreshCredentials: IRequestOptions<T>['refreshCredentials'];
+  maxCredentialRefreshes: number;
 };
 
 // the body as fetch receives it
@@ -180,6 +185,18 @@ export const resolveOptions = <T>(options: IRequestOptions<T>): IResolvedOptions
   if (options.onRetry !== undefined && typeof options.onRetry !== 'function') {
     throw invalidOption('onRetry must be a function.');
   }
+  if (
+    options.refreshCredentials !== undefined &&
+    typeof options.refreshCredentials !== 'function'
+  ) {
+    throw invalidOption('refreshCredentials must be a function.');
+  }
+  if (
+    options.maxCredentialRefreshes !== undefined &&
+    (!Number.isSafeInteger(options.maxCredentialRefreshes) || options.maxCredentialRefreshes < 0)
+  ) {
+    throw invalidOption('maxCredentialRefreshes must be a whole number from 0.');
+  }
   if (options.init !== undefined && (typeof options.init !== 'object' || options.init === null)) {
     throw invalidOption('init must be an object.');
   }
@@ -236,6 +253,8 @@ export const resolveOptions = <T>(options: IRequestOptions<T>): IResolvedOptions
     signal: options.signal,
     init: options.init,
     onRetry: options.onRetry,
+    refreshCredentials: options.refreshCredentials,
+    maxCredentialRefreshes: options.maxCredentialRefreshes ?? DEFAULT_MAX_CREDENTIAL_REFRESHES,
   };
 };
 

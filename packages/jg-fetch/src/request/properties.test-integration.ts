@@ -92,6 +92,23 @@ const headers = fc.constantFrom<IRequestOptions<unknown>['headers'] | 'never' | 
   'x-token: 1' as unknown as Record<string, string>,
 );
 
+// a credential refresh: none mostly, or one that repeats, declines, throws, rejects, or hangs
+const refreshCredentials = fc.constantFrom<
+  IRequestOptions<unknown>['refreshCredentials'] | 'never' | undefined
+>(
+  undefined,
+  undefined,
+  undefined,
+  () => true,
+  () => Promise.resolve(true),
+  () => false,
+  () => {
+    throw new Error('no session');
+  },
+  () => Promise.reject(new Error('no session')),
+  'never',
+);
+
 // a body, including values JSON can't hold
 const circular: Record<string, unknown> = {};
 circular['self'] = circular;
@@ -165,6 +182,11 @@ describe('request', () => {
             },
           ),
           headers,
+          refreshCredentials,
+          maxCredentialRefreshes: fc.option(
+            mostly(fc.constantFrom(0, 1, 2), fc.constantFrom(-1, 1.5)),
+            { nil: undefined },
+          ),
           body,
           query,
           signal,
@@ -181,6 +203,10 @@ describe('request', () => {
               generated.headers === 'never'
                 ? () => new Promise<Record<string, string>>(() => undefined)
                 : generated.headers,
+            refreshCredentials:
+              generated.refreshCredentials === 'never'
+                ? () => new Promise<boolean>(() => undefined)
+                : generated.refreshCredentials,
             signal: buildSignal(generated.signal),
           } as unknown as IRequestOptions<unknown>;
           const limitMs = isValidTimeout(generated.timeoutSeconds)

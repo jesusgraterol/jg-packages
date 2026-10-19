@@ -104,40 +104,35 @@ await request('/reports', {
 
 The function receives an `IAttemptContext`: the attempt's number, from 1, and a `signal` that aborts when the attempt is cancelled, by its own timeout, the call's, or your `signal`. `request` stops waiting for the function when that signal aborts, so a token call that hangs ends the attempt like a slow response: as an attempt timeout, which can retry, when `attemptTimeoutSeconds` runs out, or as the call's `TIMEOUT` when `timeoutSeconds` does. A function that throws or rejects ends the call with `INVALID_HEADERS` and its error as `cause`, without a retry, which usually means the user has to sign in again.
 
-A token can also stop working before it expires, such as when it's revoked. `request` never retries a `401`, because the same token would fail again, so refresh the token and send the request once more yourself:
+A token can also stop working before it expires, such as when it's revoked. `request` never retries a `401` on its own, because the same token would fail again. Pass `refreshCredentials`, which `request` calls when an attempt fails with a response: refresh the token and return `true`, and the attempt is repeated at once, with `headers` called again. Return `false` for any other failure, which the retry rules then handle:
 
 ```ts
-import { request, type IRequestOptions, type IRequestResult } from 'jg-fetch';
+import { request, type ICredentialFailure } from 'jg-fetch';
 
 // gets a new access token from the auth server, which getToken returns from then on; the signal
-// aborts when the attempt that asked for it is cancelled
+// aborts when the call is cancelled
 declare function refreshToken(signal: AbortSignal): Promise<string>;
 
-// sends a request, and sends it once more with a refreshed token when the API answers 401
-const requestWithAuth = async <T>(
-  path: string,
-  options: Omit<IRequestOptions<T>, 'baseUrl' | 'headers'> = {},
-): Promise<IRequestResult<T>> => {
-  const result = await request<T>(path, {
-    ...options,
-    baseUrl,
-    headers: async () => ({ authorization: `Bearer ${await getToken()}` }),
-  });
-  if (result.error?.status !== 401) {
-    return result;
+// refreshes the token only for a credential failure: the server didn't process the request then,
+// so repeating it is safe, even for a POST
+const refreshOnUnauthorized = async ({ status, signal }: ICredentialFailure): Promise<boolean> => {
+  if (status !== 401) {
+    return false;
   }
-  return request<T>(path, {
-    ...options,
-    baseUrl,
-    // the first attempt refreshes the token, and a retry after it reads the new one
-    headers: async ({ attempt, signal }) => ({
-      authorization: `Bearer ${attempt === 1 ? await refreshToken(signal) : await getToken()}`,
-    }),
-  });
+  await refreshToken(signal);
+  return true;
 };
+
+const { data, error } = await request('/reports', {
+  baseUrl,
+  method: 'POST',
+  body: { range: 'last-30-days' },
+  headers: async () => ({ authorization: `Bearer ${await getToken()}` }),
+  refreshCredentials: refreshOnUnauthorized,
+});
 ```
 
-If the second call also answers `401`, the session is over: send the user to sign in. When several calls can get a `401` at once, have `refreshToken` share one refresh between them, and don't let one call's signal cancel a refresh the others are waiting on.
+A call refreshes once by default, so a second `401` means the session is over: send the user to sign in. Set `maxCredentialRefreshes` when more than one credential can expire, such as an App Check token and an ID token, and tell them apart by `code`, the envelope error's code with `parseAs: 'envelope'`. A refresh that throws ends the call with `CREDENTIALS_REFRESH_FAILED`, its error as `cause`, and the response's status. A refresh doesn't use up a retry, and the call's `timeoutSeconds` covers it, so a refresh that hangs ends as `TIMEOUT`. A streamed body is never repeated, so its failure goes straight to the retry rules. When several calls can get a `401` at once, have `refreshToken` share one refresh between them, and don't let one call's signal cancel a refresh the others are waiting on.
 
 ## Retrying only what's safe to retry
 

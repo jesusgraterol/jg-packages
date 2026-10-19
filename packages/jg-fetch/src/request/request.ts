@@ -179,6 +179,8 @@ const runAttempt = async <T>(
  * retryDelaysSeconds between attempts, or longer when the server sends Retry-After, all within
  * timeoutSeconds. Each attempt sends a fresh Request. With parseAs 'envelope', it reads a
  * jg-api-response envelope and resolves to its data, or to API_ERROR with the API's own code.
+ * With refreshCredentials, an attempt that fails with a response, such as a 401, can refresh the
+ * credentials and repeat at once, up to maxCredentialRefreshes times, without using up a retry.
  * @param url The URL, absolute or relative to baseUrl.
  * @param options The method, query, headers, body, how to read the response, and the timeouts
  * and retries.
@@ -233,6 +235,9 @@ export async function request<T>(
   let method: IHttpMethod = 'GET';
   let safeUrl = '';
   let attempts = 0;
+  // the retries and the credential refreshes made so far, counted apart from the attempts
+  let retries = 0;
+  let refreshes = 0;
   let lastResponse: Response | undefined;
   const getMeta = (): IResponseMeta => ({
     status: lastResponse?.status ?? null,
@@ -297,8 +302,41 @@ export async function request<T>(
       failure = toFailure(error, callSignal, attemptSignal);
     }
 
+    // an attempt that got a response may refresh the credentials and repeat; a streamed body
+    // can't be sent again
+    const { refreshCredentials } = resolved;
+    const { status } = failure.details;
+    if (
+      refreshCredentials !== undefined &&
+      typeof status === 'number' &&
+      (failure.kind === 'HTTP_ERROR' || failure.kind === 'API_ERROR') &&
+      refreshes < resolved.maxCredentialRefreshes &&
+      !body.isStream
+    ) {
+      const code = failure.details.code ?? failure.kind;
+      let isRefreshed: boolean;
+      try {
+        isRefreshed =
+          (await raceSignal(
+            refreshCredentials({ status, code, refreshes, signal: callSignal }),
+            callSignal,
+          )) === true;
+      } catch (error) {
+        // an abort while the credentials were refreshed is the call's timeout or the caller's abort
+        if (callSignal.aborted) {
+          const stopped = toFailure(undefined, callSignal, callSignal);
+          return toResult(stopped.kind, stopped.details);
+        }
+        return toResult('CREDENTIALS_REFRESH_FAILED', { status, data: { code }, cause: error });
+      }
+      if (isRefreshed) {
+        refreshes += 1;
+        continue;
+      }
+    }
+
     const decision = decideRetry({
-      attempt: attempts,
+      attempt: retries + 1,
       method,
       kind: failure.kind,
       code: failure.details.code ?? failure.kind,
@@ -316,6 +354,7 @@ export async function request<T>(
     if (!decision.shouldRetry) {
       return toResult(failure.kind, failure.details);
     }
+    retries += 1;
     try {
       resolved.onRetry?.({
         attempt: attempts,

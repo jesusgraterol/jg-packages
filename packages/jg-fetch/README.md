@@ -47,6 +47,23 @@ if (error?.kind === 'API_ERROR') {
 }
 ```
 
+When a credential can expire, such as an ID token, refresh it and repeat the attempt at once, without using up a retry:
+
+```ts
+await request('/users/me', {
+  baseUrl,
+  headers: async () => ({ authorization: `Bearer ${await getIdToken()}` }),
+  // returning true repeats the attempt; once per call unless maxCredentialRefreshes says more
+  refreshCredentials: async ({ status, signal }) => {
+    if (status !== 401) {
+      return false;
+    }
+    await refreshIdToken(signal);
+    return true;
+  },
+});
+```
+
 Send JSON, query parameters, or any other body:
 
 ```ts

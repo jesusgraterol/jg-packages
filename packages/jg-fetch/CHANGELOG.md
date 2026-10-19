@@ -5,6 +5,11 @@
 ### Added
 
 - `FetchException` inherits `severity` and `shouldLog` from jg-exception 1.4.0's `Exception`, for an app's own throw sites and reporters. jg-fetch never sets them.
+- `refreshCredentials` and `maxCredentialRefreshes` in `request`'s options. When an attempt fails with a response, such as a `401`, `refreshCredentials` receives an `ICredentialFailure`, `{ status, code, refreshes, signal }`, and returning `true` repeats the attempt at once, for any method, without using up a retry, up to `maxCredentialRefreshes` times, 1 by default. A streamed body never asks it. A refresh that throws ends the call with the new `CREDENTIALS_REFRESH_FAILED` kind, and one that outlives the call ends as `TIMEOUT` or `ABORTED`.
+
+### Changed
+
+- The recipe "A fresh auth header on every request" refreshes the token with `refreshCredentials` instead of sending the request again by hand.
 
 ## 0.2.2
 
