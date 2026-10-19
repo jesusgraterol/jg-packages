@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0
+
+### Added
+
+- `createBlocklist(redis, { key })`, a list of blocked values, such as IP addresses, in one Redis SET: `has(value)`, `add(values)` and `remove(values)`, 1,000 values per command, and `replaceAll(values)`, which fills a staging SET and renames it over the list, so readers never see it half replaced, and deletes the list for no values. Every command failure throws `BLOCKLIST_FAILED`, with the cause, so callers can fail closed; a value that isn't 1 to 512 characters throws `BLOCKLIST_VALUE_INVALID`, and an empty key throws `INVALID_BLOCKLIST_KEY`.
+- `IBlocklist` and `IBlocklistOptions`.
+- A README section on the blocklist, which a flush or an eviction empties, and a recipe for an IP blocklist backed by a database table.
+
 ## 0.1.1
 
 ### Changed
