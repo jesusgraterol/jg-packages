@@ -102,11 +102,32 @@ const boundary = useQueryBoundary({
 
 The content waits until every query has data for the key that's fresh, or fetched since mount, so cached data from an earlier visit never shows as current. Once it shows, refetches, pagination, and background errors keep it on screen, with `errorPresentation: 'retained'`; an error before then, or one that leaves a query without data, is `blocking`. A new key, or an error `isAccessDenied` recognizes, hides the content in the same render, and after an access loss it returns only once every query settles with current data, even when `isInitialResolutionApproved` says the app approved the key's data before. `loadMoreQuery` is the first query when it pages and the content shows, and `retryFailed` refetches every failed query; it and the result keep their identity while nothing changes. RECIPES.md has an unstyled boundary component.
 
+### Polling
+
+`createPollingQueryOptions` makes a query refetch on an interval while it's useful, built on TanStack Query's own focus and online managers:
+
+```ts
+import { useQuery } from '@tanstack/react-query';
+import { createPollingQueryOptions } from 'jg-tanstack-query';
+
+const exportJob = useQuery({
+  queryKey: ['exports', exportId],
+  queryFn: () => fetchExport(exportId),
+  ...createPollingQueryOptions<IExport>({
+    intervalSeconds: (data) => (data.status === 'running' ? 2 : false), // or a number of seconds
+    isEnabled: isPanelOpen, // optional
+  }),
+});
+```
+
+It polls only while `isEnabled` holds and the last fetch succeeded: a hidden tab pauses it, the tab or the network coming back fetches once, and a failed fetch stops it until something else refetches the query. The interval can follow the data, and `false` stops it, such as once a job finished. An interval that isn't positive and finite throws `INVALID_POLLING_INTERVAL`.
+
 ### Errors
 
-| Code                   | When                                                                      |
-| ---------------------- | ------------------------------------------------------------------------- |
-| `FIRST_PAGE_NOT_READY` | A seeded infinite query was forced to fetch before its first page arrived |
+| Code                       | When                                                                      |
+| -------------------------- | ------------------------------------------------------------------------- |
+| `FIRST_PAGE_NOT_READY`     | A seeded infinite query was forced to fetch before its first page arrived |
+| `INVALID_POLLING_INTERVAL` | A polling interval isn't positive, finite seconds                         |
 
 ## Documentation
 

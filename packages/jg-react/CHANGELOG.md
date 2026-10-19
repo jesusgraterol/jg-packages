@@ -10,6 +10,10 @@
 - `useElementWidth(select)`, which turns an element's border-box width into the value `select` gives, through a callback `ref`, measuring before the first paint, then with a `ResizeObserver` or the window's `resize` event, re-rendering only when the value changes, keeping it while the element measures 0, and resetting it when the element detaches.
 - `IDialogSession`, `IDialogSessionOptions`, `IDialogSessionOpenInit`, `IDialogSessionSnapshot`, and `IUseElementWidthResult`.
 
+### Removed
+
+- The recipe for polling only while the tab is visible, which jg-tanstack-query's `createPollingQueryOptions` now covers, pausing in a hidden tab and stopping after a failed fetch.
+
 ## 0.3.0
 
 ### Added
