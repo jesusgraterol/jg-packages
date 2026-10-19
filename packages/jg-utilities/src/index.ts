@@ -1,5 +1,5 @@
 // shared types
-export type { IJsonValue, IUuidVersion } from './shared/types.js';
+export type { IJsonValue, ISchema, IUuidVersion } from './shared/types.js';
 
 // error codes
 export { ERRORS } from './shared/errors.js';
@@ -86,11 +86,16 @@ export {
 
 // utilities
 export type {
+  ICursorCodec,
+  ICursorCodecOptions,
   IDelayOptions,
   IEventBus,
   IEventBusOptions,
   IFilterByQueryOptions,
+  IRequestCoordinator,
+  IRequestCoordinatorOptions,
   IRetryAsyncFunctionOptions,
+  IRunRequestOptions,
   ISortDirection,
   IUtcDateRange,
   IWaitUntilOptions,
@@ -121,6 +126,8 @@ export {
   retryAsyncFunction,
   waitUntil,
   createEventBus,
+  createRequestCoordinator,
+  createCursorCodec,
   hasWindow,
   hasNavigator,
   isIndexedDbAvailable,

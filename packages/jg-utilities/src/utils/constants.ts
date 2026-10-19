@@ -31,3 +31,6 @@ export const YOUTUBE_VIDEO_PATH_SEGMENTS: ReadonlySet<string> = new Set([
   'live',
 ]);
 export const YOUTUBE_NOCOOKIE_PATH_SEGMENTS: ReadonlySet<string> = new Set(['embed']);
+
+// the longest delay setTimeout accepts, 2^31 - 1 milliseconds; a longer cooldown waits in steps
+export const MAX_TIMEOUT_MS = 2_147_483_647;

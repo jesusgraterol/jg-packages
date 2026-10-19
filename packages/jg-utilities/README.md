@@ -117,6 +117,22 @@ await retryAsyncFunction(() => fetchData(), [3, 5]); // retries after 3, then 5 
 await waitUntil(() => readStatus() === 'ready' || undefined, { timeoutSeconds: 30 });
 ```
 
+Give each list a cursor codec that validates its cursors and accepts them only for the filters they were made for, and keep a rate-limited API's requests within its limits:
+
+```ts
+import { createCursorCodec, createRequestCoordinator } from 'jg-utilities';
+
+const paymentCursors = createCursorCodec({ schema: PaymentCursorSchema }); // a Zod schema, say
+const after = paymentCursors.decode(request.query.cursor, { status }); // INVALID_CURSOR otherwise
+
+const github = createRequestCoordinator({ maxConcurrent: 4, maxQueued: 64 });
+const issues = await github.run(() => fetchIssues(), {
+  caller: installationId,
+  maxQueuedForCaller: 8,
+});
+github.deferUntil(retryAt); // queued requests wait out a Retry-After, without holding a slot
+```
+
 ## Documentation
 
 The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-utilities/.

@@ -3,7 +3,9 @@ import { describe, expect, test } from 'vitest';
 
 import {
   applyDefaults,
+  createCursorCodec,
   createEventBus,
+  createRequestCoordinator,
   createTimestamp,
   decodeBase64Url,
   decodeCursor,
@@ -35,6 +37,16 @@ import {
 } from './index.js';
 
 describe('public API', () => {
+  test('exports the request coordinator and the cursor codec from the package entry point', async () => {
+    const coordinator = createRequestCoordinator({ maxConcurrent: 1, maxQueued: 1 });
+    const codec = createCursorCodec<{ id: number }>({
+      schema: { parse: (value) => value as { id: number } },
+    });
+
+    await expect(coordinator.run(() => Promise.resolve('ran'))).resolves.toBe('ran');
+    expect(codec.decode(codec.encode({ id: 1 }), { id: 1 })).toStrictEqual({ id: 1 });
+  });
+
   test('exports the redaction and YouTube helpers from the package entry point', () => {
     expect(redactSecrets('ghp_abcdefghijklmnopqrstuvwxyz').text).toBe('[redacted]');
     expect(redactUrlQueryParams('/a?token=1', ['token'])).toBe('/a');
