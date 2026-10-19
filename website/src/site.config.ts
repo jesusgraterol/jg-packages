@@ -151,7 +151,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['node'],
     order: 18,
   },
-  'jg-git': {
+  'jg-git-commands': {
     title: 'Git',
     description:
       'Git commands for Node.js that never prompt or inherit Git environment variables, with time and output limits and typed reads.',
@@ -159,7 +159,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['node'],
     order: 19,
   },
-  'jg-docker': {
+  'jg-local-docker': {
     title: 'Docker',
     description:
       'Checks for Node.js scripts that Docker is local before using it, plus Compose service and container reads with loopback-only ports.',
