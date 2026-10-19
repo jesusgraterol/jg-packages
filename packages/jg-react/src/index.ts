@@ -1,5 +1,6 @@
 // types
 export type { IBreakpoint } from './breakpoint/index.js';
+export type { IUseCopyFeedbackOptions, IUseCopyFeedbackResult } from './copy-feedback/index.js';
 export type {
   IFormChangesComparable,
   IUseFormChangesOptions,
@@ -32,6 +33,9 @@ export { useIsWindowScrolledPast } from './window-scroll/index.js';
 // forms
 export { useFormChanges } from './form-changes/index.js';
 export { useResendCooldown } from './resend-cooldown/index.js';
+
+// feedback
+export { DEFAULT_COPY_FEEDBACK_SECONDS, useCopyFeedback } from './copy-feedback/index.js';
 
 // theme
 export {

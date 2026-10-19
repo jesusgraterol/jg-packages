@@ -38,6 +38,7 @@ export const useLayoutState = () => {
 | `useIsWindowScrolledPast(pixels)`       | Whether the window is scrolled further than `pixels`                                                    | The answer changes, not every scroll            | `false`                                              |
 | `useFormChanges(options)`               | Whether a form's command differs from the last confirmed one, a submit-time check, and `confirmChanges` | The commands or the baseline change             | Compared as usual                                    |
 | `useResendCooldown(options)`            | Whether a resend must wait, the seconds left, and `startCooldown`                                       | Every second while cooling down                 | `{ isCoolingDown: false, remainingSeconds: 0 }`      |
+| `useCopyFeedback(options?)`             | Whether a copy just succeeded, and `copy(write)`                                                        | A copy succeeds, and its feedback ends          | `isCopied: false`                                    |
 | `useResolvedTheme(preference)`          | `light` or `dark`, following the system while the preference is `system`                                | The system's color scheme changes, for `system` | `dark` for `dark`, otherwise `light`                 |
 | `useAppliedTheme(preference, options?)` | The theme it sets as the `light` or `dark` class on `<html>`                                            | As `useResolvedTheme`                           | As `useResolvedTheme`, without touching the document |
 
@@ -62,6 +63,19 @@ export const useProfileEditor = (saved: { name: string }, draft: { name: string 
 ```
 
 The browser hooks read the browser through `useSyncExternalStore`, so every component sees the same value in the same render, and a server render gets a fixed value instead of failing. The breakpoints are Tailwind CSS's defaults, in `rem`, read through media queries, so they follow the browser's font size as CSS does. Prefer CSS for layout, and `useBreakpoint` for what CSS can't do, such as rendering a different component.
+
+### Copy feedback
+
+`useCopyFeedback` shows that a copy worked, for a moment. `copy` takes the function that writes, such as jg-clipboard's `copyText`, and calls it at once, before awaiting anything, so the write stays inside the click that browsers require for clipboard access:
+
+```ts
+import { useCopyFeedback } from 'jg-react';
+
+const { isCopied, copy } = useCopyFeedback({ durationSeconds: 1.4, onError: showCopyError });
+const onClick = () => void copy(() => navigator.clipboard.writeText(inviteLink)); // resolves to whether it worked
+```
+
+`isCopied` stays true for `durationSeconds`, `DEFAULT_COPY_FEEDBACK_SECONDS` (1.4) by default, and a new copy restarts it. A copy while another runs is ignored and resolves to `false`. A failed one resolves to `false` and calls the latest `onError`; `copy` never rejects. After unmount, a copy that settles changes nothing and calls nothing. A duration that isn't positive and finite throws `INVALID_COPY_FEEDBACK_DURATION`.
 
 ### Light and dark themes
 

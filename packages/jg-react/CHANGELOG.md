@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- `useCopyFeedback({ durationSeconds?, onError? })`, which shows that a copy worked for a moment. Its `copy(write)` calls `write` before awaiting anything, so a clipboard write stays inside the click, ignores a copy while another runs, resolves to whether it worked without ever rejecting, and passes a failure to the latest `onError`. Nothing changes after unmount. A duration that isn't positive and finite throws `INVALID_COPY_FEEDBACK_DURATION`.
+- `DEFAULT_COPY_FEEDBACK_SECONDS`, `IUseCopyFeedbackOptions`, and `IUseCopyFeedbackResult`.
+- A recipe for a copy button that explains a failed copy by jg-clipboard's error code.
+
 ## 0.2.0
 
 ### Added

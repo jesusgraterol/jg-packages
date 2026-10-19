@@ -1,6 +1,6 @@
 # jg-react recipes
 
-Patterns for components that follow the browser: the network, the tab, the viewport, and the scroll position.
+Patterns for components that follow the browser: the network, the tab, the viewport, the theme, and copying to the clipboard.
 
 ## An offline banner
 
@@ -115,3 +115,44 @@ export const ThemeController = () => {
 ```
 
 The script falls back to the system theme when nothing is stored, the value isn't a preference, or storage can't be read, and never throws. Give your stylesheet a `color-scheme` per class, such as `:root.light { color-scheme: light; }` and `:root.dark { color-scheme: dark; }`, so form controls and scrollbars follow the theme. When the preference changes, `useAppliedTheme` swaps the class before the browser paints, with transitions off for two frames, so colors switch at once instead of animating.
+
+## A copy button that explains failures
+
+Pair `useCopyFeedback` with jg-clipboard's `copyText`, and tell the user what to do when the browser refuses, by its error code:
+
+```tsx
+import { copyText, ERRORS } from 'jg-clipboard';
+import { getErrorCode } from 'jg-exception';
+import { useCopyFeedback } from 'jg-react';
+
+// the app's notification function
+declare const showNotice: (message: string) => void;
+
+// what to tell the user about a failed copy, by jg-clipboard's code
+const describeCopyError = (error: unknown): string => {
+  switch (getErrorCode(error)) {
+    case ERRORS.CLIPBOARD_UNSUPPORTED:
+      return "This browser can't copy for you. Select the text and copy it.";
+    case ERRORS.CLIPBOARD_PERMISSION_DENIED:
+      return 'Allow clipboard access for this site, then try again.';
+    default:
+      return "The text couldn't be copied. Try again.";
+  }
+};
+
+export const CopyLinkButton = ({ url }: { url: string }) => {
+  const { isCopied, copy } = useCopyFeedback({
+    onError: (error) => showNotice(describeCopyError(error)),
+  });
+  return (
+    <button
+      type="button"
+      onClick={() => void copy(() => copyText(url))}
+    >
+      {isCopied ? 'Copied' : 'Copy link'}
+    </button>
+  );
+};
+```
+
+`copyText` runs inside the click because `copy` calls it before awaiting anything; awaiting something first, such as loading the text, can lose the click and fail with `CLIPBOARD_NO_USER_GESTURE`. A label that changes to "Copied" also reaches screen readers when the button has focus.
