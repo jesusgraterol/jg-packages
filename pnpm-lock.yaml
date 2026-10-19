@@ -832,6 +832,9 @@ importers:
       '@types/pg':
         specifier: ^8.23.1
         version: 8.23.1
+      jg-crypto:
+        specifier: workspace:^
+        version: link:../jg-crypto
       jg-exception:
         specifier: workspace:^
         version: link:../jg-exception

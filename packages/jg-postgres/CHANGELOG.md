@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- `createVerificationChallenges(postgres, { policies, codeLength? })`, which issues and consumes short codes bound to an actor, an action, and a target, storing only the SHA-256 hashes of the token and the code, in a `verification_challenge` table the README describes. `issue(binding, deliver)` resolves to `issued`, with the token and when it expires, or to `limit`, with a `retryAt`, once the actor reached the action's issue limit within its window; it supersedes the binding's active challenge, and delivers the code after the challenge is committed. `consume(attempt)` resolves to `true` once for the right code, counts a wrong one, and stops accepting codes after the policy's `maxFailedAttempts`. Policies that aren't valid throw `INVALID_VERIFICATION_POLICY`, input that isn't valid throws `INVALID_VERIFICATION_INPUT`, and a delivery that throws makes `issue` throw `VERIFICATION_DELIVERY_FAILED`, with the code and the token redacted.
+- `IVerificationAttempt`, `IVerificationBinding`, `IVerificationChallenges`, `IVerificationChallengesOptions`, `IVerificationDeliver`, `IVerificationDelivery`, `IVerificationIssue`, and `IVerificationPolicy`.
+- A recipe that maps verification outcomes to an app's responses.
+
 ## 0.2.0
 
 ### Added
