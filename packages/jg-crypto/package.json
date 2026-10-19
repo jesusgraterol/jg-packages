@@ -1,0 +1,70 @@
+{
+  "name": "jg-crypto",
+  "version": "0.1.0",
+  "description": "Hashing, random bytes and digits, and HMAC signatures with constant-time verification, for Node.js.",
+  "author": "Jesus Graterol",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "API.md",
+    "RECIPES.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesusgraterol/jg-packages.git",
+    "directory": "packages/jg-crypto"
+  },
+  "homepage": "https://jg-packages.jesusgraterol.dev/packages/jg-crypto/",
+  "bugs": {
+    "url": "https://github.com/jesusgraterol/jg-packages/issues"
+  },
+  "keywords": [
+    "node",
+    "crypto",
+    "hash",
+    "sha256",
+    "hmac",
+    "signature",
+    "random",
+    "token"
+  ],
+  "scripts": {
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/api-reference/src/write-api-markdown.ts",
+    "lint": "eslint .",
+    "test": "pnpm test:unit",
+    "test:coverage": "vitest run --coverage --project unit",
+    "test:unit": "vitest run --project unit",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "jg-exception": "workspace:^"
+  },
+  "devDependencies": {
+    "@jg-packages/eslint-config": "workspace:*",
+    "@jg-packages/tsconfig": "workspace:*",
+    "@jg-packages/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "eslint": "catalog:",
+    "fast-check": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -23,6 +23,7 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 | [`jg-tanstack-query`](packages/jg-tanstack-query) | TanStack Query with safe defaults, opt-in IndexedDB persistence, and a sign-out clear that waits for restore.                         |
 | [`jg-react-router`](packages/jg-react-router)     | A page outlet that focuses new pages and restores scroll on Back and Forward, and dialogs that close when the route changes.          |
 | [`jg-nestjs`](packages/jg-nestjs)                 | NestJS for HTTP APIs: an ApiException, a filter and an interceptor for one envelope, schema validation, CORS, and app bootstrap.      |
+| [`jg-crypto`](packages/jg-crypto)                 | Hashing, random bytes and digits, and HMAC signatures with constant-time verification, for Node.js.                                   |
 
 [`jg-personal-astro-ui`](packages/jg-personal-astro-ui) is also published from `packages/`: the Astro components and theme Jesus Graterol's own sites share. It isn't meant for general use, so the website doesn't list it.
 

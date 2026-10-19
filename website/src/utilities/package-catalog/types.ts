@@ -14,6 +14,7 @@ export type IPackageIcon =
   | 'folder-open'
   | 'globe'
   | 'key-round'
+  | 'lock-keyhole'
   | 'octagon-alert'
   | 'refresh-cw'
   | 'route'
