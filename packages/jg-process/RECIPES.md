@@ -1,6 +1,6 @@
 # jg-process recipes
 
-Patterns for Node.js apps that run command-line tools within a time and output budget, and stop the servers they start together with everything those servers started.
+Patterns for Node.js scripts that run CLIs within a time and output budget, start servers and wait until they answer, and run package scripts on any platform.
 
 ## Running a CLI with a timeout and an output cap
 
@@ -150,10 +150,10 @@ try {
 
 ## Starting a dev server on a free port
 
-Use this when a script starts a server that needs a port, such as a second copy of your API for an agent or a test run, while 3000 may already be taken. `reservePort` keeps the preferred port when it's free and reserves another free one when it isn't, so the server never fails to start because of a port conflict:
+Use this when a script starts a server that needs a port, such as a second copy of your API for an agent or a test run, while 3000 may already be taken. `reservePort` keeps the preferred port when it's free and reserves another free one when it isn't, so the server never fails to start because of a port conflict, and `startProcessAndWait` returns once the server answers:
 
 ```ts
-import { reservePort, startProcess, stopProcessTree } from 'jg-process';
+import { reservePort, startProcessAndWait, stopProcessTree } from 'jg-process';
 
 // 3000 when it's free, or any free port when another server holds it
 const reservation = await reservePort({ preferredPort: 3000 });
@@ -161,11 +161,16 @@ const { port } = reservation;
 
 // the server must bind the port itself, so the reservation ends right before it starts
 await reservation.release();
-const server = startProcess(process.execPath, ['server.js'], {
-  cwd: 'apps/api',
-  env: { ...process.env, PORT: String(port) },
-});
-console.log(`The API runs on http://localhost:${port}`);
+const server = await startProcessAndWait(
+  {
+    command: process.execPath,
+    args: ['server.js'],
+    cwd: 'apps/api',
+    env: { ...process.env, PORT: String(port) },
+  },
+  { readyWhen: { url: `http://127.0.0.1:${port}/health` }, timeoutSeconds: 60 },
+);
+console.log(`The API is ready on http://localhost:${port}`);
 
 process.once('SIGINT', () => {
   void stopProcessTree(server).finally(() => {
@@ -174,4 +179,23 @@ process.once('SIGINT', () => {
 });
 ```
 
-Another process can take the port between the release and the server binding it. It's a short window, but when two scripts start servers at the same moment, let the server exit on `EADDRINUSE` and run the script again.
+When the server exits, fails to start, or doesn't answer within a minute, `startProcessAndWait` stops its whole process tree and rejects, with `PROCESS_EXITED_BEFORE_READY`, `PROCESS_START_FAILED`, or `PROCESS_NOT_READY`, so a failed start leaves nothing running. Another process can take the port between the release and the server binding it. It's a short window, but when two scripts start servers at the same moment, the server exits on `EADDRINUSE`, and running the script again picks another port.
+
+## Running a package script from your own script
+
+Use this in a script that runs other package scripts, such as a test orchestrator or a release script. On Windows, `pnpm` and `npm` are `.cmd` shims, which Node.js refuses to spawn without a shell, and a shell reads its arguments as commands. `resolvePackageManagerCommand` finds the package manager's own JavaScript entry instead, so the same command runs without a shell everywhere:
+
+```ts
+import { resolvePackageManagerCommand, runProcess } from 'jg-process';
+
+// the package manager running this script, read from npm_execpath, or else pnpm wherever it's
+// installed: in the project, or on PATH
+const command = resolvePackageManagerCommand(['run', 'test:unit'], { packageManager: 'pnpm' });
+
+const { exitCode, stdout, stderr } = await runProcess({ ...command, timeoutSeconds: 600 });
+process.stdout.write(stdout);
+process.stderr.write(stderr);
+process.exitCode = exitCode ?? 1;
+```
+
+It throws `PACKAGE_MANAGER_NOT_FOUND` when pnpm is nowhere to be found, which a script can turn into a message asking the developer to install it.

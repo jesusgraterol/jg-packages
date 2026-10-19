@@ -1,6 +1,6 @@
 {
   "name": "jg-react",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "React hooks for the browser: online status, page visibility, Tailwind CSS breakpoints, and scroll thresholds, safe in server renders.",
   "author": "Jesus Graterol",
   "license": "MIT",

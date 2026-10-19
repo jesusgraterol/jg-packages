@@ -11,11 +11,14 @@ describe('public API', () => {
     expect(Object.keys(publicApi).sort()).toStrictEqual([
       'ERRORS',
       'acquireLock',
+      'assertPrivateDirectory',
+      'assertPrivateFile',
       'copyDirectory',
       'copyFile',
       'createDirectory',
       'createDirectorySymLink',
       'createFileSymLink',
+      'createPrivateDirectory',
       'deleteDirectory',
       'deleteFile',
       'getDirectoryElements',
@@ -29,11 +32,13 @@ describe('public API', () => {
       'readDirectory',
       'readFile',
       'readJsonFile',
+      'readPrivateFile',
       'readTextFile',
       'writeBufferFile',
       'writeFile',
       'writeFileAtomic',
       'writeJsonFile',
+      'writePrivateFile',
       'writeTextFile',
     ]);
   });

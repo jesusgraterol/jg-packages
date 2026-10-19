@@ -79,13 +79,34 @@ const challenge = await takeSingleUseValue(
 
 These keys must never be evicted early, so run the server with `maxmemory-policy noeviction`, or keep them on a separate instance from the cache. Under `noeviction`, a full server rejects writes: the cache skips them, and coordination throws.
 
+### A blocklist
+
+`createBlocklist` keeps a list of blocked values, such as IP addresses, in one Redis SET, for a check on every request. Values are compared exactly, so normalize them the same way when adding and checking:
+
+```ts
+import { createBlocklist } from 'jg-redis';
+
+const ipBlocklist = createBlocklist(redis, { key: 'ip-blocklist' });
+
+await ipBlocklist.add(['203.0.113.7']); // and remove([...]), 1,000 values per command
+const isBlocked = await ipBlocklist.has('203.0.113.7');
+await ipBlocklist.replaceAll(blockedIps); // atomic: readers see the old list or the new one
+```
+
+`replaceAll` fills a staging SET, `${key}:replace:<uuid>`, and renames it over the list, so a large list is never seen half replaced; an empty list deletes the key. Every command failure throws `BLOCKLIST_FAILED`, with the cause, so a guard can fail closed and refuse the request.
+
+The list has no expiry, but a flush or an eviction empties it, and then it lets everyone through. Keep the authoritative list in a database, restore it with `replaceAll` at boot and on a schedule, and run the server with `maxmemory-policy noeviction`. On Redis Cluster, give the key a hash tag, such as `{ip-blocklist}`, so the staging key lands in the same slot and the rename works.
+
 ### Errors
 
-| Code                         | When                                                            |
-| ---------------------------- | --------------------------------------------------------------- |
-| `INVALID_TTL`                | A time-to-live isn't a whole number of seconds, from 1          |
-| `COORDINATION_FAILED`        | Redis couldn't complete a claim, a store, or a take             |
-| `COORDINATION_VALUE_INVALID` | A single-use value isn't valid JSON or doesn't match its schema |
+| Code                         | When                                                                              |
+| ---------------------------- | --------------------------------------------------------------------------------- |
+| `INVALID_TTL`                | A time-to-live isn't a whole number of seconds, from 1                            |
+| `COORDINATION_FAILED`        | Redis couldn't complete a claim, a store, or a take                               |
+| `COORDINATION_VALUE_INVALID` | A single-use value isn't valid JSON or doesn't match its schema                   |
+| `BLOCKLIST_FAILED`           | Redis couldn't complete a blocklist command                                       |
+| `BLOCKLIST_VALUE_INVALID`    | A blocklist value isn't a string of 1 to 512 characters, or a list isn't an array |
+| `INVALID_BLOCKLIST_KEY`      | A blocklist's key is empty                                                        |
 
 ## Documentation
 

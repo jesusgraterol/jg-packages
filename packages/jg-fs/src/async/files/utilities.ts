@@ -1,6 +1,9 @@
+import { Buffer } from 'node:buffer';
 import { constants, lstat, open, realpath, rename, stat, type FileHandle } from 'node:fs/promises';
 
 import {
+  BOUNDED_READ_CHUNK_SIZE,
+  fileTooLarge,
   isBusyRenameError,
   isNoFollowError,
   isNotFoundError,
@@ -103,4 +106,37 @@ export const openWithoutFollowing = async (path: string): Promise<FileHandle> =>
     }
     throw error;
   }
+};
+
+/**
+ * Reads an open file from its start, at most `maxBytes` bytes, reading at most one byte more to
+ * notice a file that grew past the limit while it was read.
+ * @param handle The open file.
+ * @param path The file's path, for the error.
+ * @param maxBytes The largest size accepted, in bytes.
+ * @returns A promise that resolves to the content.
+ * @throws
+ * - FILE_TOO_LARGE: if the file holds more than maxBytes bytes
+ */
+export const readOpenFile = async (
+  handle: FileHandle,
+  path: string,
+  maxBytes: number,
+): Promise<Buffer> => {
+  const chunks: Buffer[] = [];
+  let totalBytes = 0;
+  while (totalBytes <= maxBytes) {
+    const chunk = Buffer.allocUnsafe(Math.min(BOUNDED_READ_CHUNK_SIZE, maxBytes + 1 - totalBytes));
+    // each read continues where the previous one ended
+    const { bytesRead } = await handle.read(chunk, 0, chunk.length, totalBytes);
+    if (bytesRead === 0) {
+      break;
+    }
+    chunks.push(chunk.subarray(0, bytesRead));
+    totalBytes += bytesRead;
+  }
+  if (totalBytes > maxBytes) {
+    throw fileTooLarge(path, maxBytes);
+  }
+  return Buffer.concat(chunks, totalBytes);
 };

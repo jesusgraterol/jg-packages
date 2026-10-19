@@ -50,6 +50,23 @@ import { resolveSafeInternalPath } from 'jg-utilities';
 const returnTo = resolveSafeInternalPath(searchParams.get('returnTo'), ['/sign-in']) ?? '/';
 ```
 
+Keep secrets out of logs, and read the YouTube links people paste:
+
+```ts
+import {
+  parseYouTubeVideoId,
+  redactSecrets,
+  redactUrlQueryParams,
+  toYouTubeEmbedUrl,
+} from 'jg-utilities';
+
+redactUrlQueryParams(request.url, ['token']); // the path alone when the query holds a token
+redactSecrets(logLine).text; // GitHub tokens, sk- keys, and private keys become [redacted]
+
+const videoId = parseYouTubeVideoId(pastedUrl); // the id, or null for anything but one video
+const embedUrl = videoId === null ? undefined : toYouTubeEmbedUrl(videoId);
+```
+
 Generate secure random values, IDs, and timestamps:
 
 ```ts
@@ -98,6 +115,22 @@ const continuation = decodeCursor(cursorFromClient); // throws INVALID_CURSOR fo
 
 await retryAsyncFunction(() => fetchData(), [3, 5]); // retries after 3, then 5 seconds
 await waitUntil(() => readStatus() === 'ready' || undefined, { timeoutSeconds: 30 });
+```
+
+Give each list a cursor codec that validates its cursors and accepts them only for the filters they were made for, and keep a rate-limited API's requests within its limits:
+
+```ts
+import { createCursorCodec, createRequestCoordinator } from 'jg-utilities';
+
+const paymentCursors = createCursorCodec({ schema: PaymentCursorSchema }); // a Zod schema, say
+const after = paymentCursors.decode(request.query.cursor, { status }); // INVALID_CURSOR otherwise
+
+const github = createRequestCoordinator({ maxConcurrent: 4, maxQueued: 64 });
+const issues = await github.run(() => fetchIssues(), {
+  caller: installationId,
+  maxQueuedForCaller: 8,
+});
+github.deferUntil(retryAt); // queued requests wait out a Retry-After, without holding a slot
 ```
 
 ## Documentation

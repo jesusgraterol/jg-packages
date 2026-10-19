@@ -15,3 +15,6 @@ export {
   writeJsonFile,
   writeTextFile,
 } from './files.js';
+
+// the no-follow open and the bounded read, shared with private files
+export { openWithoutFollowing, readOpenFile } from './utilities.js';

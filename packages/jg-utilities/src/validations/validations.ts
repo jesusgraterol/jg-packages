@@ -6,6 +6,7 @@ import {
   MAX_EMAIL_LENGTH,
   MAX_FILE_NAME_BYTES,
   WINDOWS_RESERVED_FILE_NAME,
+  YOUTUBE_VIDEO_ID_PATTERN,
 } from './constants.js';
 
 /**
@@ -378,3 +379,16 @@ export const isBigIntStringValid = (
   const integer = BigInt(value);
   return integer >= min && integer <= max;
 };
+
+/**
+ * Verifies if a value is a YouTube video id: 11 characters of letters, digits, `-`, and `_`.
+ * @param value The value to be validated.
+ * @returns A boolean indicating whether the value is a YouTube video id.
+ * @example
+ * import { isYouTubeVideoIdValid } from 'jg-utilities';
+ *
+ * isYouTubeVideoIdValid('M7lc1UVf-VE'); // => true
+ * isYouTubeVideoIdValid('M7lc1UVf-V'); // => false
+ */
+export const isYouTubeVideoIdValid = (value: unknown): value is string =>
+  typeof value === 'string' && YOUTUBE_VIDEO_ID_PATTERN.test(value);

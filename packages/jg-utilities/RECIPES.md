@@ -1,63 +1,72 @@
 # jg-utilities recipes
 
-Patterns for apps that page through lists, cache results by request, and check what clients send, with jg-utilities' cursors, JSON helpers, and validations.
+Patterns for apps that page through lists, cache results by request, check what clients send, and share a rate-limited API, with jg-utilities' cursor codecs, JSON helpers, validations, and request coordinator.
 
 ## Paginating with cursors
 
 For a list that grows while people page through it, such as a feed or an order history, page by position instead of by offset. Each page ends with a cursor that holds the sort keys of its last row, and the next request reads the rows after it. Rows added in between don't shift the pages, and the database seeks to the position instead of counting past an offset.
 
 ```ts
-import { Exception } from 'jg-exception';
-import { decodeCursor, encodeCursor, ERRORS, isStringValid } from 'jg-utilities';
+import { createCursorCodec, isStringValid } from 'jg-utilities';
 
 // an order in the list, which is sorted newest first
 type IOrder = { id: string; createdAt: string; total: number };
 
-// where a page ended: the sort keys of its last row
-type IPosition = { createdAt: string; id: string };
+// the list's filter, and where a page ended: the sort keys of its last row
+type IOrderCursor = { status: string | null; createdAt: string; id: string };
 
 // a page, and the cursor for the next one, or null after the last
 type IOrderPage = { items: IOrder[]; nextCursor: string | null };
 
-// reads the orders after a position, or from the start for null, such as with
-// WHERE (created_at, id) < ($1, $2) ORDER BY created_at DESC, id DESC LIMIT $3
-declare function findOrders(after: IPosition | null, limit: number): Promise<IOrder[]>;
+// reads the orders with a status after a position, or from the start for null, such as with
+// WHERE status = $1 AND (created_at, id) < ($2, $3) ORDER BY created_at DESC, id DESC LIMIT $4
+declare function findOrders(
+  status: string | null,
+  after: IOrderCursor | null,
+  limit: number,
+): Promise<IOrder[]>;
 
 const PAGE_SIZE = 20;
 
-// decodeCursor checks the encoding and returns an object or an array, and this checks the shape,
-// because a client can encode any JSON itself
-const readPosition = (cursor: string): IPosition => {
-  const value = decodeCursor(cursor);
-  if (Array.isArray(value) || !isStringValid(value['createdAt']) || !isStringValid(value['id'])) {
-    throw new Exception('The cursor is not a valid list position.', {
-      code: ERRORS.INVALID_CURSOR,
-    });
-  }
-  return { createdAt: value['createdAt'], id: value['id'] };
-};
+// a client can encode any JSON itself, so the codec checks each cursor with this schema, which
+// could be a Zod schema instead, and accepts it only for the status it was made for
+const orderCursors = createCursorCodec<IOrderCursor, { status: string | null }>({
+  schema: {
+    parse: (value) => {
+      const { status, createdAt, id } = value as Partial<IOrderCursor>;
+      if (
+        (status !== null && !isStringValid(status)) ||
+        !isStringValid(createdAt) ||
+        !isStringValid(id)
+      ) {
+        throw new TypeError('The value is not an order cursor.');
+      }
+      return { status, createdAt, id };
+    },
+  },
+});
 
 // a plain handler: it takes the request's query string and returns the page
 const listOrders = async (searchParams: URLSearchParams): Promise<IOrderPage> => {
-  const cursor = searchParams.get('cursor');
-  const after = cursor === null ? null : readPosition(cursor);
+  const status = searchParams.get('status');
+  const after = orderCursors.decode(searchParams.get('cursor'), { status }) ?? null;
   // one row more than a page holds says whether another page follows
-  const rows = await findOrders(after, PAGE_SIZE + 1);
+  const rows = await findOrders(status, after, PAGE_SIZE + 1);
   const items = rows.slice(0, PAGE_SIZE);
   const last = items.at(-1);
   return {
     items,
     nextCursor:
       rows.length > PAGE_SIZE && last !== undefined
-        ? encodeCursor({ createdAt: last.createdAt, id: last.id })
+        ? orderCursors.encode({ status, createdAt: last.createdAt, id: last.id })
         : null,
   };
 };
 ```
 
-A cursor the handler can't read throws `INVALID_CURSOR`, from `decodeCursor` or from the shape check, so your error handler answers both with a `400`. `decodeCursor` also rejects a cursor longer than 2048 characters, unless you pass another `maxLength`.
+Without a cursor, `decode` returns `undefined`, the first page. A cursor it can't accept throws `INVALID_CURSOR`, whether its encoding, its shape, or its status is wrong, which `data.reason` says, so your error handler answers it with a `400`. The codec also refuses a cursor longer than 2048 characters, unless you pass another `maxLength`, and won't encode one that long either.
 
-A cursor is opaque, but not secret or signed: it's base64url JSON, which a client can decode and change. That's harmless while it only picks a position in rows the user can already read, so keep the user's own filters in the query, and never put anything in a cursor that the client mustn't see.
+A cursor is opaque, but not secret or signed: it's base64url JSON, which a client can decode and change. The status check stops a cursor made for one filter from being replayed with another, but a client could still write one by hand, so this is only harmless while a cursor picks a position in rows the user can already read. Never put anything in a cursor that the client mustn't see.
 
 When an API pages by the last row's id instead, such as `?after=42`, `getNextPageParam` reads the next id from a page: the last row's when the page is full, or `undefined` after a short page, which is the last.
 
@@ -279,3 +288,63 @@ const listOrders = async (searchParams: URLSearchParams, authorization: string |
 ```
 
 Checking the header with `isAuthorizationHeaderValid` before `extractTokenFromAuthorizationHeader` turns a missing or malformed header into the handler's own `UNAUTHENTICATED`, answered with a 401, so it never reaches the shared error handler as jg-utilities' `INVALID_AUTHORIZATION_HEADER`, which that handler doesn't know.
+
+## Waiting out a rate limit across requests
+
+Use this when many requests share one rate-limited API, such as GitHub's for an app installation. A coordinator runs at most a few at a time, queues the rest, and, once a response says to wait with `Retry-After`, holds every queued request until then, without retrying them one by one. jg-fetch's retries handle one request; the coordinator keeps a whole app's requests in line.
+
+```ts
+import { hasErrorCode } from 'jg-exception';
+import { createRequestCoordinator, ERRORS } from 'jg-utilities';
+
+// GitHub's requests for every installation, four at a time, with up to 256 waiting
+const github = createRequestCoordinator({ maxConcurrent: 4, maxQueued: 256 });
+
+// the time a Retry-After header names, as seconds or as an HTTP date, in epoch milliseconds
+const readRetryAt = (response: Response): number | undefined => {
+  const header = response.headers.get('retry-after');
+  if (header === null) {
+    return undefined;
+  }
+  const seconds = Number(header);
+  const retryAt = Number.isFinite(seconds) ? Date.now() + seconds * 1000 : Date.parse(header);
+  return Number.isNaN(retryAt) ? undefined : retryAt;
+};
+
+// one installation's request, which waits behind at most 32 of its own
+export const requestGitHub = (installationId: number, url: string, signal: AbortSignal) =>
+  github.run(
+    async () => {
+      const response = await fetch(url, { signal });
+      const retryAt =
+        response.status === 403 || response.status === 429 ? readRetryAt(response) : undefined;
+      if (retryAt !== undefined) {
+        github.deferUntil(retryAt);
+      }
+      return response;
+    },
+    { signal, caller: installationId, maxQueuedForCaller: 32 },
+  );
+
+// a webhook that answers at once instead of waiting: GitHub redelivers it after a 503
+export const handleWebhook = async (installationId: number, url: string, signal: AbortSignal) => {
+  try {
+    await github.run(() => fetch(url, { signal }), {
+      signal,
+      caller: installationId,
+      rejectDuringCooldown: true,
+    });
+    return { status: 202 };
+  } catch (error) {
+    if (
+      hasErrorCode(error, ERRORS.REQUEST_COOLDOWN_ACTIVE) ||
+      hasErrorCode(error, ERRORS.REQUEST_QUEUE_FULL)
+    ) {
+      return { status: 503 };
+    }
+    throw error;
+  }
+};
+```
+
+A request that waits for a slot holds nothing: the cooldown blocks no slot, and an aborted signal takes its request out of the queue. `maxQueuedForCaller` keeps one busy installation from filling the queue for the rest. Discard the coordinator only when `isIdle()` is true, or call `close()`, which rejects what's still waiting.

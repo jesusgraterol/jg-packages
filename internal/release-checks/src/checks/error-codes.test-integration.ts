@@ -73,7 +73,7 @@ afterEach(async () => {
   await rm(workDirectory, { recursive: true, force: true });
 });
 
-describe('checkErrorCodes', () => {
+describe('checkErrorCodes', { tags: ['full'] }, () => {
   test('names each code no test asserts, reading ERRORS from the installed tarball', async () => {
     await addErrors();
 

@@ -98,3 +98,25 @@ export type ITimeString = `${number} ${IUnit}`;
 export type ISubstitutionOptions = {
   jsonIndent: number;
 };
+
+/* ************************************************************************************************
+ *                                           REDACTION                                            *
+ ************************************************************************************************ */
+
+// the options accepted by redactSecrets
+export type IRedactSecretsOptions = {
+  // the secrets to find, after the private keys. Defaults to SECRET_TOKEN_PATTERNS
+  patterns?: readonly RegExp[];
+
+  // what each secret becomes. Defaults to '[redacted]'
+  replacement?: string;
+
+  // whether a private key keeps its line breaks, so the text's line numbers stay the same
+  preserveLineBreaks?: boolean;
+};
+
+// the text redactSecrets returns, and how many secrets it replaced
+export type IRedactSecretsResult = {
+  text: string;
+  count: number;
+};

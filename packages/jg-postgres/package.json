@@ -1,6 +1,6 @@
 {
   "name": "jg-postgres",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "PostgreSQL helpers for node-postgres: safe transactions, advisory locks, SQLSTATE checks, cursor pages, and ordered lists.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -59,6 +59,7 @@
   },
   "dependencies": {
     "@types/pg": "^8.23.1",
+    "jg-crypto": "workspace:^",
     "jg-exception": "workspace:^",
     "jg-utilities": "workspace:^",
     "pg": "^8.23.1"

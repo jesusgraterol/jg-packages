@@ -28,7 +28,7 @@ afterEach(() => {
 });
 
 describe('createQueryClient', () => {
-  test("keeps Moldea's defaults: no retries, no refetch on focus, and data kept 10 days", () => {
+  test('keeps safe defaults: no retries, no refetch on focus, and data kept 10 days', () => {
     expect(DEFAULT_QUERY_MAX_AGE_SECONDS).toBe(864_000);
     expect(createQueryClient().getDefaultOptions()).toStrictEqual({
       queries: { gcTime: 864_000_000, retry: false, refetchOnWindowFocus: false },

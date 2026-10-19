@@ -1,6 +1,6 @@
 {
   "name": "jg-redis",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Redis for Node.js on node-redis: a read-through cache that survives Redis failing, and fail-closed one-time claims.",
   "author": "Jesus Graterol",
   "license": "MIT",

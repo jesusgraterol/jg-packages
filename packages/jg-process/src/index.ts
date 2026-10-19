@@ -24,3 +24,23 @@ export {
   type IReservePortOptions,
   reservePort,
 } from './reserve-port/index.js';
+
+// package manager commands
+export {
+  type IPackageManager,
+  type IPackageManagerCommand,
+  type IResolvePackageManagerOptions,
+  resolvePackageManagerCommand,
+} from './package-manager/index.js';
+
+// readiness waits
+export {
+  type IReadinessWaitOptions,
+  type IReadyWhen,
+  type IStartProcessAndWaitOptions,
+  type IWaitForPortOptions,
+  type IWaitForUrlOptions,
+  startProcessAndWait,
+  waitForPort,
+  waitForUrl,
+} from './readiness/index.js';

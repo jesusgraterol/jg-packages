@@ -153,6 +153,138 @@ WHERE id IN (
 );
 ```
 
+### Verification challenges
+
+`createVerificationChallenges` issues and checks short codes bound to an actor, an action, and a target, such as the code that confirms a new email address. Each action has a policy: how long a code is valid, how many wrong codes it takes, and how many codes an actor may be issued within a window, over every target:
+
+```ts
+import { createVerificationChallenges } from 'jg-postgres';
+
+const challenges = createVerificationChallenges(postgres, {
+  policies: {
+    'verify-email': {
+      validitySeconds: 600,
+      maxFailedAttempts: 5,
+      issueLimit: 5,
+      issueWindowSeconds: 3_600,
+    },
+  },
+  codeLength: 6, // the default
+});
+
+const binding = { actorId: userId, actionId: 'verify-email', targetId: newEmail };
+const issued = await challenges.issue(binding, ({ code, challengeId }) =>
+  mailer.send(newEmail, code, { idempotencyKey: challengeId }),
+);
+// { outcome: 'issued', challengeToken, expiresAt } or { outcome: 'limit', retryAt }
+
+// later, with the token the client kept and the code the user typed
+const isVerified = await challenges.consume({
+  ...binding,
+  challengeToken: savedToken,
+  code: typedCode,
+});
+```
+
+`issue` refuses with `limit` once the actor was issued `issueLimit` codes within the window, with `retryAt`, when the oldest of them leaves it. Otherwise it supersedes the binding's active challenge and commits the new one, then calls `deliver` with the code, the only time it's available. A delivery that throws makes `issue` throw `VERIFICATION_DELIVERY_FAILED`, with the code and the token redacted from it and its cause; the challenge still counts toward the limit. Concurrent issues for an actor and an action queue on a transaction advisory lock, and every comparison uses the database's clock.
+
+`consume` resolves to `true` once, for the right code. A wrong code counts a failed attempt, and a challenge stops accepting codes after `maxFailedAttempts` of them, so the policy's current value applies. A used, superseded, or expired challenge, another binding's token, or a token or code of the wrong shape resolves to `false` without counting, and every `false` looks the same to the caller.
+
+Only the SHA-256 hashes of the token and of the code, combined with its token, are stored, in a `verification_challenge` table:
+
+```sql
+CREATE TABLE verification_challenge (
+  id bigint GENERATED ALWAYS AS IDENTITY,
+  actor_id varchar(256) NOT NULL,
+  action_id varchar(128) NOT NULL,
+  target_id varchar(256) NOT NULL,
+  token_hash text NOT NULL,
+  code_hash text NOT NULL,
+  failed_attempt_count smallint NOT NULL DEFAULT 0,
+  expires_at timestamptz NOT NULL,
+  used_at timestamptz NULL,
+  superseded_at timestamptz NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT pk_vc__id PRIMARY KEY (id),
+  CONSTRAINT uq_vc__token_hash UNIQUE (token_hash),
+  CONSTRAINT chk_vc__actor_id_non_empty CHECK (actor_id <> ''),
+  CONSTRAINT chk_vc__action_id_non_empty CHECK (action_id <> ''),
+  CONSTRAINT chk_vc__target_id_non_empty CHECK (target_id <> ''),
+  CONSTRAINT chk_vc__token_hash_sha256 CHECK (token_hash ~ '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_vc__code_hash_sha256 CHECK (code_hash ~ '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_vc__failed_attempt_count_non_negative CHECK (failed_attempt_count >= 0),
+  CONSTRAINT chk_vc__expires_at_chronological CHECK (expires_at > created_at),
+  CONSTRAINT chk_vc__used_at_superseded_at_mutually_exclusive
+    CHECK (used_at IS NULL OR superseded_at IS NULL)
+);
+CREATE UNIQUE INDEX uidx_vc__actor_id_action_id_target_id_active
+  ON verification_challenge (actor_id, action_id, target_id)
+  WHERE used_at IS NULL AND superseded_at IS NULL;
+CREATE INDEX idx_vc__actor_id_action_id_created_at
+  ON verification_challenge (actor_id, action_id, created_at);
+CREATE INDEX idx_vc__created_at ON verification_challenge (created_at);
+```
+
+Prune it on a schedule as `usage_event` is pruned, deleting in batches the rows older than the longest `validitySeconds` or `issueWindowSeconds` of any policy, `$1` seconds, `$2` rows at a time. A younger row may still be consumed, or count toward a limit:
+
+```sql
+DELETE FROM verification_challenge
+WHERE id IN (
+  SELECT id
+  FROM verification_challenge
+  WHERE created_at < now() - make_interval(secs => $1)
+  ORDER BY created_at
+  LIMIT $2
+);
+```
+
+### Database summaries
+
+`readDatabaseSummary` and `listTableSizes` read what an admin dashboard or a health check shows about the database, and `diffTables` compares the tables with the ones a migration should have created:
+
+```ts
+import { diffTables, listTableSizes, readDatabaseSummary } from 'jg-postgres';
+
+const summary = await readDatabaseSummary(postgres.pool); // the public schema, or { schema }
+// { name, serverVersion, serverVersionNumber, sizeBytes, activeConnections, maxConnections, tableCount }
+
+const tables = await listTableSizes(postgres.pool); // [{ name, totalBytes }], sorted by name
+const { missing, unexpected } = diffTables(
+  tables.map(({ name }) => name),
+  ['app_user', 'session'],
+);
+```
+
+Sizes and counts are numbers, and sizes include indexes and TOAST data. `activeConnections` counts the connections to this database running a query. Without the `pg_read_all_stats` role, PostgreSQL shows a role only its own connections, so the count is lower than the server's.
+
+### Counter tables
+
+`defineCounterTable` builds the queries that change counter rows, such as an account's daily usage or a balance, quoting every name once and sending every value as a parameter. `applyCounterQueries` runs them in the caller's transaction, sorted by row, so two transactions that change the same rows lock them in the same order and never deadlock:
+
+```ts
+import { applyCounterQueries, defineCounterTable } from 'jg-postgres';
+
+const dailyUsage = defineCounterTable({
+  table: 'daily_usage',
+  keyColumns: ['account_id', 'day'],
+  counters: ['request_count', 'token_count'],
+});
+
+await postgres.transaction((client) =>
+  applyCounterQueries(client, [
+    // inserts the row, or adds to it
+    dailyUsage.buildIncrement(
+      { account_id: accountId, day },
+      { request_count: 1, token_count: tokens },
+    ),
+    // adds to a row that must exist, or throws COUNTER_ROW_NOT_FOUND
+    dailyUsage.buildAdjustment({ account_id: accountId, day }, { token_count: -refunded }),
+  ]),
+);
+```
+
+An increment is an `INSERT … ON CONFLICT (key columns) DO UPDATE`, so the table needs a unique constraint on exactly the key columns, and a default, such as 0, for every counter. Amounts are whole numbers or bigints within `BIGINT`: positive to increment, and non-zero to adjust. A counter that would leave `BIGINT`'s range fails with SQLSTATE 22003, which `isNumericValueOutOfRangeError` checks, and the transaction rolls back.
+
 ### Constraint errors
 
 ```ts
@@ -229,18 +361,24 @@ The defaults fill every missing or null field when the record is read, and are t
 
 ### Errors
 
-| Code                            | When                                                                                                             |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `TRANSACTION_OUTCOME_UNKNOWN`   | The connection was lost during `COMMIT`                                                                          |
-| `SESSION_LOCK_LOST`             | The connection that held a session lock was lost                                                                 |
-| `INVALID_IDENTIFIER`            | A name is empty, holds a null character, or is longer than 63 bytes                                              |
-| `ROW_NOT_FOUND`                 | The row to move doesn't exist in the ordered list                                                                |
-| `ROW_ALREADY_FIRST`             | The row to move up is already first                                                                              |
-| `ROW_ALREADY_LAST`              | The row to move down is already last                                                                             |
-| `MOVE_FAILED`                   | The move didn't update exactly two rows                                                                          |
-| `INVALID_TIMEOUT_PROFILE`       | A timeout profile's seconds aren't positive and finite, or its lock timeout is longer than its statement timeout |
-| `INVALID_OPTIONAL_READ_OPTIONS` | An optional reader's database, limits, or timeouts aren't valid                                                  |
-| `INVALID_USAGE_ADMISSION`       | A usage admission's ids, limit, or seconds aren't valid, or it has a cooldown without a scope                    |
+| Code                            | When                                                                                                                  |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `TRANSACTION_OUTCOME_UNKNOWN`   | The connection was lost during `COMMIT`                                                                               |
+| `SESSION_LOCK_LOST`             | The connection that held a session lock was lost                                                                      |
+| `INVALID_IDENTIFIER`            | A name is empty, holds a null character, or is longer than 63 bytes                                                   |
+| `ROW_NOT_FOUND`                 | The row to move doesn't exist in the ordered list                                                                     |
+| `ROW_ALREADY_FIRST`             | The row to move up is already first                                                                                   |
+| `ROW_ALREADY_LAST`              | The row to move down is already last                                                                                  |
+| `MOVE_FAILED`                   | The move didn't update exactly two rows                                                                               |
+| `INVALID_TIMEOUT_PROFILE`       | A timeout profile's seconds aren't positive and finite, or its lock timeout is longer than its statement timeout      |
+| `INVALID_OPTIONAL_READ_OPTIONS` | An optional reader's database, limits, or timeouts aren't valid                                                       |
+| `INVALID_USAGE_ADMISSION`       | A usage admission's ids, limit, or seconds aren't valid, or it has a cooldown without a scope                         |
+| `INVALID_VERIFICATION_POLICY`   | The verification policies or the code length aren't valid                                                             |
+| `INVALID_VERIFICATION_INPUT`    | A verification binding's ids aren't valid, its action has no policy, or issue has no delivery function                |
+| `VERIFICATION_DELIVERY_FAILED`  | The delivery function threw, after the challenge was committed                                                        |
+| `INVALID_COUNTER_TABLE`         | A counter table has no key column or no counter, or repeats a name                                                    |
+| `INVALID_COUNTER_CHANGE`        | A counter row's key doesn't have exactly the key columns, or an amount isn't a whole, non-zero amount within `BIGINT` |
+| `COUNTER_ROW_NOT_FOUND`         | A counter query changed no row, because the row to adjust doesn't exist                                               |
 
 A query's own error, such as a constraint violation, is node-postgres's `DatabaseError`, unchanged.
 

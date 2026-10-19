@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0
+
+### Added
+
+- `REDACTED_VALUE`, the `'[redacted]'` marker that replaces each redacted value, so other code, such as jg-utilities' `redactSecrets`, marks what it removes the same way.
+
 ## 1.4.0
 
 ### Added

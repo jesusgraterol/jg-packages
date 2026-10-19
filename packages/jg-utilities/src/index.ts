@@ -1,5 +1,5 @@
 // shared types
-export type { IJsonValue, IUuidVersion } from './shared/types.js';
+export type { IJsonValue, ISchema, IUuidVersion } from './shared/types.js';
 
 // error codes
 export { ERRORS } from './shared/errors.js';
@@ -27,6 +27,7 @@ export {
   isUrlValid,
   isUuidValid,
   isBigIntStringValid,
+  isYouTubeVideoIdValid,
 } from './validations/index.js';
 
 // transformers
@@ -35,6 +36,8 @@ export type {
   IDateTemplate,
   IDateValue,
   INumberFormatConfig,
+  IRedactSecretsOptions,
+  IRedactSecretsResult,
   ISubstitutionOptions,
   ITimeString,
 } from './transformers/index.js';
@@ -69,6 +72,9 @@ export {
   pruneJson,
   encodeCursor,
   decodeCursor,
+  redactSecrets,
+  redactUrlQueryParams,
+  SECRET_TOKEN_PATTERNS,
   ONE_SECOND_IN_MILLISECONDS,
   ONE_MINUTE_IN_MILLISECONDS,
   ONE_HOUR_IN_MILLISECONDS,
@@ -80,11 +86,16 @@ export {
 
 // utilities
 export type {
+  ICursorCodec,
+  ICursorCodecOptions,
   IDelayOptions,
   IEventBus,
   IEventBusOptions,
   IFilterByQueryOptions,
+  IRequestCoordinator,
+  IRequestCoordinatorOptions,
   IRetryAsyncFunctionOptions,
+  IRunRequestOptions,
   ISortDirection,
   IUtcDateRange,
   IWaitUntilOptions,
@@ -115,6 +126,8 @@ export {
   retryAsyncFunction,
   waitUntil,
   createEventBus,
+  createRequestCoordinator,
+  createCursorCodec,
   hasWindow,
   hasNavigator,
   isIndexedDbAvailable,
@@ -126,4 +139,7 @@ export {
   estimateReadingTime,
   extractFirstMarkdownHeadingName,
   extractSubstitutionPlaceholderNames,
+  parseYouTubeVideoId,
+  toYouTubeWatchUrl,
+  toYouTubeEmbedUrl,
 } from './utils/index.js';

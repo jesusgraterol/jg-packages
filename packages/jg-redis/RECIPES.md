@@ -1,6 +1,6 @@
 # jg-redis recipes
 
-Patterns for services that use Redis as a cache and for one-time claims: wiring the client into an app, caching a slow query, and stopping a one-time code's replay.
+Patterns for services that use Redis: wiring the client into an app, caching a slow query, stopping a one-time code's replay, and keeping an IP blocklist.
 
 ## A NestJS module
 
@@ -89,3 +89,56 @@ export const verifyOtp = async (userId: string, secret: string, code: string): P
 ```
 
 When Redis fails, `claimOnce` throws `COORDINATION_FAILED`, so the sign-in fails instead of accepting a code that may have been used.
+
+## An IP blocklist backed by a database
+
+Redis answers the check on every request, but a flush or an eviction would empty the list and let every blocked address back in. Keep the list in a table, the source of truth:
+
+```sql
+CREATE TABLE ip_blocklist (
+  ip varchar(64) NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT pk_ib__ip PRIMARY KEY (ip),
+  CONSTRAINT chk_ib__ip_non_empty CHECK (ip <> '')
+);
+```
+
+Write the table first, then Redis, and restore Redis from the table at boot and every few minutes:
+
+```ts
+import { createPostgres } from 'jg-postgres';
+import { connectRedis, createBlocklist } from 'jg-redis';
+
+declare const postgres: ReturnType<typeof createPostgres>;
+declare const redis: Awaited<ReturnType<typeof connectRedis>>;
+
+const ipBlocklist = createBlocklist(redis, { key: 'ip-blocklist' });
+
+// lowercased, and an IPv4-mapped IPv6 address as plain IPv4, the same as the check
+const normalizeIp = (ip: string): string => {
+  const lowered = ip.trim().toLowerCase();
+  return lowered.startsWith('::ffff:') && lowered.includes('.') ? lowered.slice(7) : lowered;
+};
+
+export const blockIp = async (ip: string): Promise<void> => {
+  const normalized = normalizeIp(ip);
+  await postgres.query('INSERT INTO ip_blocklist (ip) VALUES ($1) ON CONFLICT (ip) DO NOTHING;', [
+    normalized,
+  ]);
+  await ipBlocklist.add([normalized]);
+};
+
+export const unblockIp = async (ip: string): Promise<void> => {
+  const normalized = normalizeIp(ip);
+  await postgres.query('DELETE FROM ip_blocklist WHERE ip = $1;', [normalized]);
+  await ipBlocklist.remove([normalized]);
+};
+
+// at boot, and on a schedule, so a flush, an eviction, or a failed write heals
+export const syncIpBlocklist = async (): Promise<void> => {
+  const rows = await postgres.query<{ ip: string }>('SELECT ip FROM ip_blocklist;');
+  await ipBlocklist.replaceAll(rows.map(({ ip }) => ip));
+};
+```
+
+When the Redis write fails after the table's, the change reaches Redis with the next sync: a new block waits until then, and an unblocked address stays blocked until then, which errs on the safe side. jg-nestjs's `normalizeIp` normalizes the same way, for the guard that checks the list.

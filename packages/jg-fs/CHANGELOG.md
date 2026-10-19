@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.0
+
+### Added
+
+- `assertPrivateFile(path, { rootPath?, maxBytes? })` and `readPrivateFile(path, { maxBytes, rootPath? })`, in both entries, which check that a file is private to its owner before it's trusted: a regular file that isn't a symbolic link, with no symbolic link anywhere in its path, without group or other permissions on POSIX, no larger than `maxBytes`, and strictly inside `rootPath`. The checks run on the open file, which `readPrivateFile` then reads.
+- `writePrivateFile(path, data, { rootPath?, isExclusive? })`, which writes a file with `0o600` permissions: atomically, refusing to overwrite a symbolic link or a file others can access, or, with `isExclusive`, by creating it and throwing when anything is already at the path, removing a file it created when writing fails.
+- `assertPrivateDirectory(path)` and `createPrivateDirectory(path)`, which creates missing directories with `0o700` permissions and never changes an existing directory's permissions.
+- `IPrivateFileOptions`, `IReadPrivateFileOptions`, and `IWritePrivateFileOptions`, and the codes `FILE_NOT_PRIVATE`, `DIRECTORY_NOT_PRIVATE`, `PATH_NOT_CANONICAL`, `PATH_OUTSIDE_ROOT`, and `FILE_ALREADY_EXISTS`. A missing private file throws `NON_EXISTENT_FILE`.
+- A README section on private files, and on Windows, where the permission checks are skipped and privacy depends on the directory's access control list.
+
 ## 1.3.0
 
 ### Added

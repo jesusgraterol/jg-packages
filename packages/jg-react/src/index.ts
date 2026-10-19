@@ -1,5 +1,39 @@
 // types
 export type { IBreakpoint } from './breakpoint/index.js';
+export type { IUseCopyFeedbackOptions, IUseCopyFeedbackResult } from './copy-feedback/index.js';
+export type {
+  IFileUploadCanceledHandler,
+  IFileUploadCanceledItem,
+  IFileUploadControls,
+  IFileUploadErrorDetails,
+  IFileUploadErrorFeedback,
+  IFileUploadFailedItem,
+  IFileUploadFailureHandler,
+  IFileUploadHandler,
+  IFileUploadHandlerContext,
+  IFileUploadItem,
+  IFileUploadItemsChangeHandler,
+  IFileUploadMessages,
+  IFileUploadPolicy,
+  IFileUploadPolicyOptions,
+  IFileUploadProcessingItem,
+  IFileUploadProgress,
+  IFileUploadQueuedItem,
+  IFileUploadRejectedHandler,
+  IFileUploadRejectedItem,
+  IFileUploadStatus,
+  IFileUploadSucceededItem,
+  IFileUploadSuccessHandler,
+  IFileUploadSummary,
+  IFileUploadUploadingItem,
+  IFileUploadValidatingItem,
+  IFileUploadValidationIssue,
+  IFileUploadValidationReason,
+  IFileUploadValidator,
+  IFileUploadValidatorContext,
+  IUseFileUploadQueueOptions,
+  IUseFileUploadQueueResult,
+} from './file-upload/index.js';
 export type {
   IFormChangesComparable,
   IUseFormChangesOptions,
@@ -32,6 +66,20 @@ export { useIsWindowScrolledPast } from './window-scroll/index.js';
 // forms
 export { useFormChanges } from './form-changes/index.js';
 export { useResendCooldown } from './resend-cooldown/index.js';
+
+// file uploads
+export {
+  createFileUploadAcceptValue,
+  DEFAULT_FILE_UPLOAD_MESSAGES,
+  hasDraggedFiles,
+  isFileUploadItemCancelable,
+  resolveFileUploadPolicy,
+  useFileUploadQueue,
+  validateFileUploadCandidate,
+} from './file-upload/index.js';
+
+// feedback
+export { DEFAULT_COPY_FEEDBACK_SECONDS, useCopyFeedback } from './copy-feedback/index.js';
 
 // theme
 export {

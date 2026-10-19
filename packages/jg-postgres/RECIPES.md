@@ -1,6 +1,6 @@
 # jg-postgres recipes
 
-Patterns for PostgreSQL services: wiring pools into an app, turning constraint errors into app errors, paginating a list, and giving slow work its own timeouts.
+Patterns for PostgreSQL services: wiring pools, turning constraint errors into app errors, paginating, timeouts for slow work, and verification codes.
 
 ## A NestJS module with two databases
 
@@ -164,3 +164,73 @@ export const buildMonthlyReport = (month: string): Promise<void> =>
 ```
 
 The profile's statement and lock timeouts last only as long as the transaction, so the client goes back to the pool with the pool's own. Each query also needs `withQueryTimeout`, because node-postgres gives every query the pool's `query_timeout`, the statement timeout plus a grace of 15 seconds, unless the query sets its own. When the client stops waiting for a query, the transaction rolls back, and the client goes back to the pool only if `ROLLBACK` confirms the connection in time.
+
+## Answering verification requests
+
+Map each verification outcome to what the app answers, in one place, so every endpoint that issues or checks a code reports a limit, a wrong code, and a failed delivery the same way. The functions don't depend on a framework, so a controller only returns their result:
+
+```ts
+import { hasErrorCode } from 'jg-exception';
+import {
+  createPostgres,
+  createVerificationChallenges,
+  ERRORS,
+  type IVerificationAttempt,
+  type IVerificationBinding,
+} from 'jg-postgres';
+
+declare const postgres: ReturnType<typeof createPostgres>;
+declare const sendEmail: (to: string, text: string, idempotencyKey: string) => Promise<void>;
+
+// what the app answers: an HTTP status, and a code its client shows a message for
+type IVerificationResponse =
+  | { status: 200; code: 'CODE_SENT'; challengeToken: string; expiresAt: string }
+  | { status: 200; code: 'EMAIL_VERIFIED' }
+  | { status: 400; code: 'INVALID_CODE' }
+  | { status: 429; code: 'TOO_MANY_CODES'; retryAt: string }
+  | { status: 503; code: 'CODE_NOT_SENT' };
+
+const challenges = createVerificationChallenges(postgres, {
+  policies: {
+    'verify-email': {
+      validitySeconds: 600,
+      maxFailedAttempts: 5,
+      issueLimit: 5,
+      issueWindowSeconds: 3_600,
+    },
+  },
+});
+
+export const sendEmailCode = async (
+  binding: IVerificationBinding,
+): Promise<IVerificationResponse> => {
+  try {
+    const issued = await challenges.issue(binding, ({ code, targetId, challengeId }) =>
+      sendEmail(targetId, `Your code is ${code}`, challengeId),
+    );
+    return issued.outcome === 'issued'
+      ? {
+          status: 200,
+          code: 'CODE_SENT',
+          challengeToken: issued.challengeToken,
+          expiresAt: issued.expiresAt,
+        }
+      : { status: 429, code: 'TOO_MANY_CODES', retryAt: issued.retryAt };
+  } catch (error) {
+    // the code counts toward the limit, so the user waits as for any other code
+    if (hasErrorCode(error, ERRORS.VERIFICATION_DELIVERY_FAILED)) {
+      return { status: 503, code: 'CODE_NOT_SENT' };
+    }
+    throw error;
+  }
+};
+
+export const confirmEmailCode = async (
+  attempt: IVerificationAttempt,
+): Promise<IVerificationResponse> =>
+  (await challenges.consume(attempt))
+    ? { status: 200, code: 'EMAIL_VERIFIED' }
+    : { status: 400, code: 'INVALID_CODE' };
+```
+
+`consume` gives one `false` for a wrong, used, expired, or superseded code, and for another user's token, so `INVALID_CODE` tells an attacker nothing about which. Log the delivery failure before answering: its message names the challenge, with the code and the token redacted.

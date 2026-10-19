@@ -5,6 +5,14 @@ import {
   type ViteUserConfig,
 } from 'vitest/config';
 
+// imported by the package's own name, which works both when Node.js runs this file directly and
+// when a package's typecheck reaches it, unlike a relative './test-suite.ts'
+import {
+  FULL_TEST_TAG,
+  type ITestSuite,
+  readTestSuite,
+} from '@jg-packages/vitest-config/test-suite';
+
 // test categories a package can run, each discovered by its own file suffix
 export type ITestCategory = 'unit' | 'integration' | 'bench' | 'browser';
 
@@ -62,12 +70,14 @@ const COVERAGE_EXCLUDE = [
  * @param category The category the project runs.
  * @param environment The environment its tests run in, for every category but browser.
  * @param globalSetup The file the integration project runs once around its tests, if any.
+ * @param suite The suite the run selected, which decides whether tests tagged `full` are skipped.
  * @returns The inline project configuration.
  */
 const buildProject = (
   category: ITestCategory,
   environment: ITestEnvironment,
   globalSetup: string | undefined,
+  suite: ITestSuite,
 ): TestProjectInlineConfiguration => {
   const pattern = CATEGORY_FILE_PATTERNS[category];
   const shared = {
@@ -76,6 +86,13 @@ const buildProject = (
     unstubGlobals: true,
     testTimeout: TEST_TIMEOUT_MS,
     hookTimeout: TEST_TIMEOUT_MS,
+    tags: [
+      {
+        name: FULL_TEST_TAG,
+        description: 'Slow tests the essential suite skips.',
+        skip: suite === 'essential',
+      },
+    ],
   };
   if (category === 'browser') {
     return {
@@ -112,6 +129,9 @@ const buildProject = (
  * measures the source with V8 and prints a summary, failing below the thresholds when there are
  * any. A `globalSetup` file runs once around the integration project, such as to start a database
  * container for it, and the other projects never run it.
+ *
+ * Every project defines the `full` tag, for slow tests, such as ones that pack tarballs. They run
+ * unless the JG_TEST_SUITE environment variable selects the essential suite, which skips them.
  * @param options The categories the package has, the environment its tests run in, its coverage
  * thresholds, and the integration project's global setup.
  * @returns The Vitest configuration.
@@ -130,6 +150,7 @@ const buildProject = (
  * @throws
  * - createVitestConfig needs at least one test category.
  * - createVitestConfig received a duplicated test category: {categories}.
+ * - JG_TEST_SUITE must be "essential" or "full" when set.
  */
 export const createVitestConfig = ({
   categories,
@@ -145,9 +166,12 @@ export const createVitestConfig = ({
       `createVitestConfig received a duplicated test category: ${categories.join(', ')}.`,
     );
   }
+  const suite = readTestSuite();
   return defineConfig({
     test: {
-      projects: categories.map((category) => buildProject(category, environment, globalSetup)),
+      projects: categories.map((category) =>
+        buildProject(category, environment, globalSetup, suite),
+      ),
       coverage: {
         provider: 'v8',
         include: COVERAGE_INCLUDE,

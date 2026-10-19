@@ -1,5 +1,18 @@
 // types
+export type {
+  ICounterChanges,
+  ICounterKey,
+  ICounterQuery,
+  ICounterTable,
+  ICounterTableDefinition,
+} from './counters/index.js';
 export type { ICursorListingOptions, ICursorPage } from './cursor/index.js';
+export type {
+  IDatabaseSummary,
+  IIntrospectionOptions,
+  ITableDiff,
+  ITableSize,
+} from './introspection/index.js';
 export type { ISessionLock, ISessionLockResult } from './locks/index.js';
 export type {
   IOptionalRead,
@@ -11,6 +24,16 @@ export type { IColumnFilter, IQueryExecutor, IRowId } from './shared/index.js';
 export type { IMoveOptions, IOrderedList } from './sorting/index.js';
 export type { ITimeoutProfile } from './timeouts/index.js';
 export type { IUsageAdmission, IUsageAdmissionInput } from './usage-limits/index.js';
+export type {
+  IVerificationAttempt,
+  IVerificationBinding,
+  IVerificationChallenges,
+  IVerificationChallengesOptions,
+  IVerificationDeliver,
+  IVerificationDelivery,
+  IVerificationIssue,
+  IVerificationPolicy,
+} from './verification/index.js';
 
 // constants
 export { POSTGRES_BIGINT_MAX, POSTGRES_BIGINT_MIN } from './shared/index.js';
@@ -29,6 +52,15 @@ export { createOptionalReader } from './optional-reads/index.js';
 
 // usage limits
 export { admitUsage } from './usage-limits/index.js';
+
+// verification challenges
+export { createVerificationChallenges } from './verification/index.js';
+
+// introspection
+export { diffTables, listTableSizes, readDatabaseSummary } from './introspection/index.js';
+
+// counter tables
+export { applyCounterQueries, defineCounterTable } from './counters/index.js';
 
 // SQLSTATE checks
 export {

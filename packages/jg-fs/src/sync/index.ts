@@ -8,8 +8,11 @@ export type {
   IDirectoryPathElements,
   IFileLockOwner,
   IPathElement,
+  IPrivateFileOptions,
   IReadJsonFileOptions,
+  IReadPrivateFileOptions,
   ISchema,
+  IWritePrivateFileOptions,
 } from '../shared/index.js';
 
 // general actions
@@ -44,6 +47,15 @@ export {
   writeJsonFile,
   writeTextFile,
 } from './files/index.js';
+
+// private file actions
+export {
+  assertPrivateDirectory,
+  assertPrivateFile,
+  createPrivateDirectory,
+  readPrivateFile,
+  writePrivateFile,
+} from './private-files/index.js';
 
 // lock actions
 export { type IFileLock, acquireLock } from './locks/index.js';

@@ -65,6 +65,23 @@ try {
 
 The lock is a directory holding an `owner.json` that names the process. When its owner's process is gone, as after a crash, the next `acquireLock` on the same host takes it over. Use it on local filesystems only: a lock is never taken over from another host.
 
+Keep keys, tokens, and sessions private to the user who owns them:
+
+```ts
+import { createPrivateDirectory, readPrivateFile, writePrivateFile } from 'jg-fs';
+
+await createPrivateDirectory(configDirectory); // 0o700; DIRECTORY_NOT_PRIVATE if it exists and isn't
+await writePrivateFile(`${configDirectory}/token.json`, token, { rootPath: configDirectory }); // atomic, 0o600
+const saved = await readPrivateFile(`${configDirectory}/token.json`, {
+  maxBytes: 16 * 1024,
+  rootPath: configDirectory,
+});
+```
+
+A private file is a regular file, never a symbolic link, with no symbolic link anywhere in its path (`PATH_NOT_CANONICAL`), and without group or other permissions (`FILE_NOT_PRIVATE`). The checks run on the open file, so the content read is the content checked. A shared file is never overwritten, and permissions are never changed for you: fix them, or remove the file. `writePrivateFile` with `isExclusive` creates the file and throws `FILE_ALREADY_EXISTS` when anything is already at the path.
+
+On Windows, Node.js reports only a file's read-only attribute as its mode, so the permission checks are skipped there. A private file on Windows depends on its directory's access control list, such as a directory inside the user's profile.
+
 Failures throw `Exception`s from `jg-exception`, with the codes in `ERRORS`.
 
 ### Removing a stuck lock

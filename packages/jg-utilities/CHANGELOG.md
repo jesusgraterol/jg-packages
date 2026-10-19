@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.4.0
+
+### Added
+
+- `redactUrlQueryParams(url, names)`, which removes a URL's query and fragment when the query holds any of the named parameters, such as a token, matching names after decoding and as array parameters, so the URL can be logged. A name that can't be decoded, or a URL that is only a query, gives `[redacted]`.
+- `redactSecrets(text, { patterns?, replacement?, preserveLineBreaks? })`, which replaces complete PEM private key blocks, in one pass, and then every match of the token patterns, `SECRET_TOKEN_PATTERNS` by default: GitHub's tokens and `sk-` API keys. It returns the text and how many secrets it replaced, can keep a key's line breaks so line numbers stay the same, and never throws.
+- `SECRET_TOKEN_PATTERNS`, `IRedactSecretsOptions`, and `IRedactSecretsResult`.
+- `parseYouTubeVideoId(url)`, the id of the single video a youtu.be, youtube.com, m.youtube.com, or youtube-nocookie.com URL points at, or null for anything else, without throwing.
+- `toYouTubeWatchUrl(videoId)` and `toYouTubeEmbedUrl(videoId)`, the canonical watch page and privacy-enhanced embed URLs. An id that isn't 11 letters, digits, `-`, or `_` throws `INVALID_YOUTUBE_VIDEO_ID`.
+- `isYouTubeVideoIdValid(value)`.
+- `createRequestCoordinator({ maxConcurrent, maxQueued })`, which runs tasks, such as requests to a rate-limited API, within a concurrency limit and a bounded first-in, first-out queue, with an optional cap per caller. `deferUntil(deadline)` starts a cooldown, such as from `Retry-After`, that queued tasks wait out without holding a slot, while tasks run with `rejectDuringCooldown` reject at once. An aborted signal takes a task out of the queue, `isIdle()` says when nothing runs, waits, or cools down, and `close()` rejects what's waiting. Invalid limits throw `INVALID_CONCURRENCY_LIMIT` or `INVALID_QUEUE_LIMIT`, and runs reject with `REQUEST_QUEUE_FULL`, `REQUEST_COOLDOWN_ACTIVE`, or `REQUEST_COORDINATOR_CLOSED`.
+- `createCursorCodec({ schema, maxLength?, matchesScope? })`, a list's cursor codec: `encode` validates a continuation with the schema and encodes it, throwing `CURSOR_TOO_LONG` past `maxLength`, and `decode` accepts a cursor only when it decodes, fits the schema, and belongs to the list's scope, such as its filters, and otherwise throws `INVALID_CURSOR` with the reason in its data. A missing cursor decodes as the first page. Unlike `btoa`, it encodes text outside Latin-1.
+- `ISchema`, `IRequestCoordinator`, `IRequestCoordinatorOptions`, `IRunRequestOptions`, `ICursorCodec`, and `ICursorCodecOptions`.
+- A recipe for waiting out a rate limit across requests.
+
+### Changed
+
+- Depends on `jg-exception` 1.5.0, whose `REDACTED_VALUE` marks what the redaction functions remove.
+- The recipe for paginating with cursors uses `createCursorCodec`, which checks each cursor's shape and filter.
+
 ## 1.3.0
 
 ### Added

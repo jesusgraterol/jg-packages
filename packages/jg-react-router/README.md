@@ -53,6 +53,43 @@ export const App = () => (
 
 The router's root route renders `<DialogNavigationObserver />`, and its error element `<DialogNavigationObserver isErrorScreen />`, so a route error closes them too. Each dialog host calls `useDialogNavigationDismissal` with a reader for its open session, an object that stays the same while the dialog is open, and a function that closes it. Hosts that share a session close it once, and without a provider the hook does nothing.
 
+### Page routes with their metadata
+
+Keep each page's path, title, and description in one route map, and let `createPageRouteObject` build the router's routes from it. Each page component receives exactly `{ title, description }` as its props, and `usePageRouteMetadata` reads the deepest matched page's, such as for the document's title:
+
+```tsx
+import { createBrowserRouter } from 'react-router';
+import {
+  createLazyPageComponent,
+  createPageRouteObject,
+  type IPageRouteDefinition,
+  PageOutlet,
+} from 'jg-react-router';
+
+const PAGES: IPageRouteDefinition<{ navigationLabel: string }>[] = [
+  {
+    path: '/',
+    title: 'Home',
+    description: 'Your dashboard.',
+    navigationLabel: 'Home',
+    Component: HomePage,
+  },
+  {
+    path: '/settings',
+    title: 'Settings',
+    description: 'Your account and notifications.',
+    navigationLabel: 'Settings',
+    lazy: createLazyPageComponent(() => import('./settings.page.js')), // loads when visited
+  },
+];
+
+export const router = createBrowserRouter([
+  { element: <PageOutlet />, children: PAGES.map((page) => createPageRouteObject(page)) },
+]);
+```
+
+An eager page becomes `{ path, handle, element }`, and a lazy one `{ path, handle, HydrateFallback, lazy }`, whose `lazy` resolves to the element. The `wrapElement` option wraps every page's element, such as in an error boundary, and `HydrateFallback` shows while a lazy page loads during hydration. `usePageRouteMetadata` skips a handle without a string title and description, and gives `null` when no matched route is a page.
+
 ## Documentation
 
 The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-react-router/.

@@ -24,25 +24,30 @@
     "test:unit": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/internal/vitest-config/src/**"],
+      "env": ["JG_TEST_SUITE"],
       "outputs": []
     },
     "test:integration": {
       "dependsOn": ["^build", "build"],
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/internal/vitest-config/src/**"],
+      "env": ["JG_TEST_SUITE"],
       "outputs": []
     },
     "test:coverage": {
       "dependsOn": ["^build", "build"],
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/internal/vitest-config/src/**"],
+      "env": ["JG_TEST_SUITE"],
       "outputs": []
     },
     "test:browser": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/internal/vitest-config/src/**"],
+      "env": ["JG_TEST_SUITE"],
       "outputs": []
     },
     "test:e2e": {
       "dependsOn": ["build"],
+      "env": ["JG_TEST_SUITE"],
       "outputs": []
     },
     "dev": {

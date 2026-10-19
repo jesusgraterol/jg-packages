@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.3.0
+
+### Added
+
+- `resolvePackageManagerCommand(args, { packageManager?, env?, cwd? })`, the command that runs pnpm, npm, yarn, or bun without a shell on Windows, macOS, and Linux: the entry `npm_execpath` names, the project's own install, or PATH, running a JavaScript entry through the current Node.js and never spawning a Windows `.cmd` file. It throws `UNSUPPORTED_PACKAGE_MANAGER` or `PACKAGE_MANAGER_NOT_FOUND`.
+- `waitForPort(port, options)` and `waitForUrl(url, options)`, which probe until a port accepts connections or a URL answers, by default with a 2xx status and without following redirects, and reject with `PROCESS_NOT_READY` at the deadline, or with `PROCESS_EXITED_BEFORE_READY` or `PROCESS_START_FAILED` when a watched `child` can no longer become ready.
+- `startProcessAndWait(command, { readyWhen, timeoutSeconds, ... })`, which starts a process and resolves with it once its port, URL, or probe says it's ready, and otherwise stops its whole process tree before rejecting. Invalid options throw `INVALID_READINESS_OPTIONS` or `INVALID_PORT`.
+- `IPackageManager`, `IPackageManagerCommand`, `IResolvePackageManagerOptions`, `IReadinessWaitOptions`, `IReadyWhen`, `IWaitForPortOptions`, `IWaitForUrlOptions`, and `IStartProcessAndWaitOptions`.
+- A recipe for running a package script from your own script.
+
+### Changed
+
+- Depends on `jg-utilities` 1.4.0, for its `waitUntil`.
+- The recipe for starting a dev server on a free port waits until the server answers, with `startProcessAndWait`.
+
 ## 1.2.0
 
 ### Added

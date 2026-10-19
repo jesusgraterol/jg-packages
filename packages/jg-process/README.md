@@ -35,6 +35,25 @@ const server = startProcess({ command: 'node', args: ['server.js'], cwd: 'apps/a
 process.once('SIGINT', () => void stopProcessTree(server));
 ```
 
+Start a server and wait until it answers, or stop everything it started when it doesn't:
+
+```ts
+import { startProcessAndWait } from 'jg-process';
+
+const api = await startProcessAndWait(
+  { command: process.execPath, args: ['server.js'], cwd: 'apps/api' },
+  { readyWhen: { url: 'http://127.0.0.1:3000/health' }, timeoutSeconds: 60 },
+);
+```
+
+Run a package manager without a shell on every platform, including Windows, where its `.cmd` shim can't be spawned directly:
+
+```ts
+import { resolvePackageManagerCommand, runProcess } from 'jg-process';
+
+await runProcess({ ...resolvePackageManagerCommand(['run', 'build']), timeoutSeconds: 600 });
+```
+
 Reserve a free port before handing it to a server, keeping the preferred one when it's free:
 
 ```ts

@@ -155,7 +155,7 @@ const buildSignal = (kind: string): AbortSignal | undefined => {
 const isValidTimeout = (value: number): boolean =>
   Number.isFinite(value) && value > 0 && value <= MAX_TIMEOUT_SECONDS;
 
-describe('request', () => {
+describe('request', { tags: ['full'] }, () => {
   test('never rejects, and settles within its timeout, for any options', async () => {
     let reachedNetwork = 0;
     await fc.assert(

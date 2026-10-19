@@ -1,6 +1,6 @@
 {
   "name": "jg-utilities",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Validations, transformers, generators, and collection, async, and environment utilities for browsers and Node.js.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -67,6 +67,7 @@
     "eslint": "catalog:",
     "fast-check": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "zod": "4.6.7"
   }
 }

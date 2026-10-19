@@ -9,7 +9,7 @@ import type { IQueryClientOptions } from './types.js';
 const CLEARS = new WeakMap<QueryClient, Promise<void>>();
 
 /**
- * Creates a TanStack Query client with Moldea's defaults: queries and mutations never retry, a
+ * Creates a TanStack Query client with safe defaults: queries and mutations never retry, a
  * focused window doesn't refetch, and unused data stays in memory as long as it stays persisted.
  * Create it once, outside any component.
  * @param options How long unused data stays in memory.

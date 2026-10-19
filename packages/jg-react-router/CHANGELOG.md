@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0
+
+### Added
+
+- `createPageRouteObject(route, { HydrateFallback?, wrapElement? })`, which turns a page route's definition, with its path, title, description, and component or lazy loader, into a React Router route object whose element receives exactly `{ title, description }` and whose handle carries them. `createPageRouteMetadata`, `createPageRouteHandle`, `createPageRouteElement`, and `createLazyPageComponent` build its parts.
+- `usePageRouteMetadata()`, which gives the deepest matched page route's title and description, or `null`.
+- `IPageRouteMetadata`, `IPageRouteHandle`, `IPageRouteComponentProps`, `IPageRouteLazyFunction`, `IPageRouteDefinition`, and `ICreatePageRouteObjectOptions`.
+- A recipe for a document title from the route map.
+
 ## 0.1.1
 
 ### Changed

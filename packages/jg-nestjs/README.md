@@ -55,7 +55,7 @@ throw new ApiException('The project was not found.', {
 
 ### Logging and reporting
 
-The filter logs, through Nest's `Logger`, an error whose throw site set `shouldLog` or `severity: 'critical'`, and any error that is none of an `Exception`, an `HttpException`, and a client error Express's middleware built for clients, with the method, the redacted URL, and the status. A `report` option sends errors to an error tracker, except those with `severity: 'expected'`, the statuses in `ignoredStatuses` (401 and 429 by default), and the codes in `ignoredCodes` (`CORS_ORIGIN_NOT_ALLOWED` by default). Provide the options as `API_EXCEPTION_FILTER_OPTIONS`; `redactUrl` removes secrets from URLs before either sees them.
+The filter logs, through Nest's `Logger`, an error whose throw site set `shouldLog` or `severity: 'critical'`, and any error that is none of an `Exception`, an `HttpException`, and a client error Express's middleware built for clients, with the method, the redacted URL, and the status. A `report` option sends errors to an error tracker, except those with `severity: 'expected'`, the statuses in `ignoredStatuses` (401 and 429 by default), and the codes in `ignoredCodes` (`CORS_ORIGIN_NOT_ALLOWED`, `MAINTENANCE_MODE`, and `IP_BLOCKED` by default). Provide the options as `API_EXCEPTION_FILTER_OPTIONS`; `redactUrl` removes secrets from URLs before either sees them.
 
 ### Validating input
 
@@ -68,6 +68,38 @@ app.enableCors(createCorsOptions({ origins: ['https://app.example.com'] }));
 ```
 
 It allows the listed origins exactly, their `www.` variants, and requests without an `Origin` header, which servers and command-line clients send, unless `allowOriginless` is false. Any other origin gets a 403 with `CORS_ORIGIN_NOT_ALLOWED`, through the filter, and isn't reported.
+
+### Maintenance mode and IP blocklists
+
+`MaintenanceModeGuard` refuses requests with a 503, `MAINTENANCE_MODE`, while `getState` says maintenance is on, with the state's `message` as the error's data. `IpBlocklistGuard` refuses requests from blocked addresses with a 403, `IP_BLOCKED`, without echoing the address. Each reads its options from its own token, and the app fails to start without them:
+
+```ts
+import { Module } from '@nestjs/common';
+import {
+  IP_BLOCKLIST_GUARD_OPTIONS,
+  IpBlocklistGuard,
+  MAINTENANCE_MODE_GUARD_OPTIONS,
+  MaintenanceModeGuard,
+} from 'jg-nestjs';
+
+@Module({
+  providers: [
+    {
+      provide: MAINTENANCE_MODE_GUARD_OPTIONS,
+      useValue: { getState: () => ({ enabled: process.env['MAINTENANCE_MODE'] === 'true' }) },
+    },
+    {
+      provide: IP_BLOCKLIST_GUARD_OPTIONS,
+      useValue: { isBlocked: (ip: string) => ipBlocklist.has(ip) },
+    },
+  ],
+})
+export class AppModule {}
+```
+
+`IpBlocklistGuard` checks Express's `request.ip`, which follows `configureHttpApp`'s `trustProxyHops`, or what a `getIp` option returns, after `normalizeIp`: trimmed, lowercased, and `::ffff:203.0.113.7` as `203.0.113.7`. Normalize addresses the same way when adding them to the list. A request without an address goes through. Both guards fail closed: an error from `getState` or `isBlocked` refuses the request, which the filter answers with a 500 and reports. Other contexts, such as microservices, pass.
+
+Run the cheap refusals first, so a flood or a blocked client never reaches authentication: the rate limiter, then `IpBlocklistGuard`, then `MaintenanceModeGuard`, then authentication. Guards in one `@UseGuards(ThrottlerGuard, IpBlocklistGuard, MaintenanceModeGuard, AuthGuard)` run in that order, and so do `APP_GUARD` providers, in the order they're listed. A route that must stay up during maintenance, such as a health check, leaves `MaintenanceModeGuard` out.
 
 ### Bootstrapping an app
 
@@ -97,6 +129,8 @@ The request log writes `METHOD url status Nms` through Nest's `Logger` once each
 | `HTTP_EXCEPTION`          | A handler, guard, or Nest itself threw an `HttpException`, such as a 404, or Express's middleware refused the request with a client error, such as a body over the limit |
 | `INTERNAL_ERROR`          | An error the filter doesn't recognize, such as a failed database call, reached it                                                                                        |
 | `CORS_ORIGIN_NOT_ALLOWED` | A browser called from an origin the API doesn't allow                                                                                                                    |
+| `MAINTENANCE_MODE`        | `MaintenanceModeGuard` refused a request while maintenance is on, with a 503                                                                                             |
+| `IP_BLOCKED`              | `IpBlocklistGuard` refused a request from a blocked address, with a 403                                                                                                  |
 
 `ERROR_MESSAGES` holds each code's message.
 

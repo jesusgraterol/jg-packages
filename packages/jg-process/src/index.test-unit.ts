@@ -10,9 +10,13 @@ describe('public API', () => {
       'DEFAULT_MAX_OUTPUT_BYTES',
       'ERRORS',
       'reservePort',
+      'resolvePackageManagerCommand',
       'runProcess',
       'startProcess',
+      'startProcessAndWait',
       'stopProcessTree',
+      'waitForPort',
+      'waitForUrl',
     ]);
     expect(publicApi.DEFAULT_MAX_OUTPUT_BYTES).toBe(1048576);
     expect(publicApi.DEFAULT_GRACE_PERIOD_SECONDS).toBe(5);

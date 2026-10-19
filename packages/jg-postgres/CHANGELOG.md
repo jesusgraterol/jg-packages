@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- `createVerificationChallenges(postgres, { policies, codeLength? })`, which issues and consumes short codes bound to an actor, an action, and a target, storing only the SHA-256 hashes of the token and the code, in a `verification_challenge` table the README describes. `issue(binding, deliver)` resolves to `issued`, with the token and when it expires, or to `limit`, with a `retryAt`, once the actor reached the action's issue limit within its window; it supersedes the binding's active challenge, and delivers the code after the challenge is committed. `consume(attempt)` resolves to `true` once for the right code, counts a wrong one, and stops accepting codes after the policy's `maxFailedAttempts`. Policies that aren't valid throw `INVALID_VERIFICATION_POLICY`, input that isn't valid throws `INVALID_VERIFICATION_INPUT`, and a delivery that throws makes `issue` throw `VERIFICATION_DELIVERY_FAILED`, with the code and the token redacted.
+- `IVerificationAttempt`, `IVerificationBinding`, `IVerificationChallenges`, `IVerificationChallengesOptions`, `IVerificationDeliver`, `IVerificationDelivery`, `IVerificationIssue`, and `IVerificationPolicy`.
+- `readDatabaseSummary(executor, { schema? })`, which reads the database's name, the server's version, its size, its active connections out of the server's maximum, and the tables in a schema, and `listTableSizes(executor, { schema? })`, which lists a schema's tables with their total sizes, sorted by name. `diffTables(actual, expected)` gives the expected tables that are missing and the tables that aren't expected.
+- `defineCounterTable({ table, keyColumns, counters })`, which builds counter UPSERTs with `buildIncrement` and updates of existing rows with `buildAdjustment`, and `applyCounterQueries(client, queries)`, which runs them in a transaction sorted by row, so concurrent transactions never deadlock on the same rows. A definition that isn't valid throws `INVALID_COUNTER_TABLE`, a key or an amount that isn't valid throws `INVALID_COUNTER_CHANGE`, and an adjustment of a missing row throws `COUNTER_ROW_NOT_FOUND`.
+- `IDatabaseSummary`, `IIntrospectionOptions`, `ITableDiff`, `ITableSize`, `ICounterChanges`, `ICounterKey`, `ICounterQuery`, `ICounterTable`, and `ICounterTableDefinition`.
+- A recipe that maps verification outcomes to an app's responses.
+
 ## 0.2.0
 
 ### Added

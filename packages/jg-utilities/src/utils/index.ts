@@ -1,8 +1,13 @@
 // types
 export type {
+  ICursorCodec,
+  ICursorCodecOptions,
   IDelayOptions,
   IFilterByQueryOptions,
+  IRequestCoordinator,
+  IRequestCoordinatorOptions,
   IRetryAsyncFunctionOptions,
+  IRunRequestOptions,
   IEventBus,
   IEventBusOptions,
   ISortDirection,
@@ -65,11 +70,20 @@ export {
   extractSubstitutionPlaceholderNames,
 } from './markdown.js';
 
+// request coordination
+export { createRequestCoordinator } from './request-coordinator.js';
+
+// cursor codecs
+export { createCursorCodec } from './cursor-codec.js';
+
 // pagination utilities
 export { getNextPageParam } from './pagination.js';
 
 // reading utilities
 export { estimateReadingTime } from './reading.js';
+
+// YouTube utilities
+export { parseYouTubeVideoId, toYouTubeEmbedUrl, toYouTubeWatchUrl } from './youtube.js';
 
 // sorting utilities
 export {

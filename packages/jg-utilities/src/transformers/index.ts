@@ -3,6 +3,8 @@ export type {
   IDateTemplate,
   IDateValue,
   INumberFormatConfig,
+  IRedactSecretsOptions,
+  IRedactSecretsResult,
   ISubstitutionOptions,
   ITimeString,
 } from './types.js';
@@ -25,6 +27,7 @@ export {
   ONE_SECOND_IN_MILLISECONDS,
   ONE_WEEK_IN_MILLISECONDS,
   ONE_YEAR_IN_MILLISECONDS,
+  SECRET_TOKEN_PATTERNS,
 } from './constants.js';
 
 // JSON transformers
@@ -37,6 +40,9 @@ export {
   prettifyNumber,
   prettifyPercentage,
 } from './number.js';
+
+// redaction transformers
+export { redactSecrets, redactUrlQueryParams } from './redaction.js';
 
 // string transformers
 export {
