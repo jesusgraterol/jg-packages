@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+### Changed
+
+- The webhook recipe verifies any provider that sends the body's HMAC-SHA256 in a header. GitHub's deliveries, whose header puts `sha256=` before the signature, are verified with jg-github's `verifyGithubWebhookSignature` instead. The code is the same.
+
 ## 0.1.1
 
 ### Changed
