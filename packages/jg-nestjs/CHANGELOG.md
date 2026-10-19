@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.0
+
+### Added
+
+- `MaintenanceModeGuard`, which refuses HTTP requests with a 503 `MAINTENANCE_MODE` while the `getState` option, read on every request, says maintenance is on, with the state's message as the error's data. Its options come from `MAINTENANCE_MODE_GUARD_OPTIONS`.
+- `IpBlocklistGuard`, which refuses HTTP requests from blocked addresses with a 403 `IP_BLOCKED`, checking Express's `request.ip`, or a `getIp` option's address, normalized by `normalizeIp`. Its options come from `IP_BLOCKLIST_GUARD_OPTIONS`.
+- `normalizeIp(ip)`, which trims and lowercases an address, and turns an IPv4 address mapped into IPv6 into plain IPv4.
+- Both guards fail closed, refusing a request when their callback throws, and let other contexts, such as microservices, through.
+- `IMaintenanceModeGuardOptions`, `IMaintenanceModeState`, `IIpBlocklistGuardOptions`, and `IIpBlocklistRequest`.
+- README guidance on the guards' order, and recipes for maintenance mode from a flag or a stored record, and for an IP blocklist in Redis.
+
+### Changed
+
+- `ApiExceptionFilter` doesn't report `MAINTENANCE_MODE` and `IP_BLOCKED` by default, as it doesn't report `CORS_ORIGIN_NOT_ALLOWED`. An app that sets `ignoredCodes` lists every code it ignores.
+
 ## 0.1.1
 
 ### Changed

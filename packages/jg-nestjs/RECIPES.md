@@ -1,6 +1,6 @@
 # jg-nestjs recipes
 
-Wiring the envelope, validation, and error reporting into a NestJS API, starting it, and sending its failures to an error tracker.
+Wiring the envelope, validation, and error reporting into a NestJS API, starting it, reporting failures, and adding maintenance mode or an IP blocklist.
 
 ## Wiring the filter, interceptor, and pipe
 
@@ -135,3 +135,80 @@ export class AppModule {}
 ```
 
 Adding 404 to `ignoredStatuses` keeps requests for routes that don't exist, which crawlers send all day, out of the tracker. The URL is already redacted when `redactUrl` is set, and a tracker that throws is logged instead.
+
+## Maintenance mode from a flag or a stored record
+
+An environment flag is the simplest switch, but turning it on needs a redeploy. A stored record turns maintenance on and off at runtime; read it at most every few seconds, since the guard asks on every request:
+
+```ts
+import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { createPostgres } from 'jg-postgres';
+import {
+  type IMaintenanceModeState,
+  MAINTENANCE_MODE_GUARD_OPTIONS,
+  MaintenanceModeGuard,
+} from 'jg-nestjs';
+
+declare const postgres: ReturnType<typeof createPostgres>;
+
+// how long a read state is reused, so requests don't each query the database
+const STATE_MAX_AGE_MS = 5_000;
+
+let cached: { state: IMaintenanceModeState; readAt: number } | undefined;
+
+const getState = async (): Promise<IMaintenanceModeState> => {
+  // the flag wins, so maintenance can be forced on even with the database down
+  if (process.env['MAINTENANCE_MODE'] === 'true') {
+    return { enabled: true };
+  }
+  if (cached === undefined || Date.now() - cached.readAt > STATE_MAX_AGE_MS) {
+    const [row] = await postgres.query<{ is_enabled: boolean; message: string | null }>(
+      'SELECT is_enabled, message FROM maintenance_setting WHERE id = 1;',
+    );
+    cached = {
+      state: { enabled: row?.is_enabled === true, message: row?.message ?? undefined },
+      readAt: Date.now(),
+    };
+  }
+  return cached.state;
+};
+
+@Module({
+  providers: [
+    { provide: MAINTENANCE_MODE_GUARD_OPTIONS, useValue: { getState } },
+    { provide: APP_GUARD, useClass: MaintenanceModeGuard },
+  ],
+})
+export class AppModule {}
+```
+
+When the database can't be read, the guard fails closed and the filter answers with a reported 500, so set the flag for maintenance that takes the database down.
+
+## An IP blocklist in Redis
+
+jg-redis's `createBlocklist` keeps the blocked addresses in a Redis SET, which the guard checks on every request:
+
+```ts
+import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { IP_BLOCKLIST_GUARD_OPTIONS, IpBlocklistGuard, normalizeIp } from 'jg-nestjs';
+import { connectRedis, createBlocklist } from 'jg-redis';
+
+declare const redis: Awaited<ReturnType<typeof connectRedis>>;
+
+const ipBlocklist = createBlocklist(redis, { key: 'ip-blocklist' });
+
+// blocks an address, normalized the way the guard checks it
+export const blockIp = (ip: string): Promise<void> => ipBlocklist.add([normalizeIp(ip)]);
+
+@Module({
+  providers: [
+    { provide: IP_BLOCKLIST_GUARD_OPTIONS, useValue: { isBlocked: ipBlocklist.has } },
+    { provide: APP_GUARD, useClass: IpBlocklistGuard },
+  ],
+})
+export class AppModule {}
+```
+
+When Redis fails, `has` throws `BLOCKLIST_FAILED`, and the guard refuses the request, which the filter reports. A flush or an eviction empties the list instead, which lets everyone through, so keep the list in a database and restore it at boot, as jg-redis's recipe shows.

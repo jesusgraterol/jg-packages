@@ -4,6 +4,8 @@ export const ERRORS = {
   HTTP_EXCEPTION: 'HTTP_EXCEPTION',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
   CORS_ORIGIN_NOT_ALLOWED: 'CORS_ORIGIN_NOT_ALLOWED',
+  MAINTENANCE_MODE: 'MAINTENANCE_MODE',
+  IP_BLOCKED: 'IP_BLOCKED',
 } as const;
 
 /*
@@ -16,4 +18,7 @@ export const ERROR_MESSAGES: Record<keyof typeof ERRORS, string> = {
   HTTP_EXCEPTION: 'The request failed with an HTTP error.',
   INTERNAL_ERROR: 'The server failed to handle the request.',
   CORS_ORIGIN_NOT_ALLOWED: "The request's origin isn't allowed.",
+  MAINTENANCE_MODE: 'The service is temporarily unavailable for maintenance. Try again shortly.',
+  IP_BLOCKED:
+    'Requests from this IP address are blocked. Contact support if you believe this is an error.',
 };

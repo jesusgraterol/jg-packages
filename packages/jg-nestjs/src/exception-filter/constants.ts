@@ -6,5 +6,10 @@ export const API_EXCEPTION_FILTER_OPTIONS = Symbol('API_EXCEPTION_FILTER_OPTIONS
 // the statuses never reported: an unauthenticated request and a rate-limited one
 export const DEFAULT_IGNORED_STATUSES: readonly number[] = [401, 429];
 
-// the codes never reported: a browser on an origin the API doesn't serve
-export const DEFAULT_IGNORED_CODES: readonly string[] = [ERRORS.CORS_ORIGIN_NOT_ALLOWED];
+// the codes never reported: a browser on an origin the API doesn't serve, the API down for
+// maintenance on purpose, and a blocked IP address
+export const DEFAULT_IGNORED_CODES: readonly string[] = [
+  ERRORS.CORS_ORIGIN_NOT_ALLOWED,
+  ERRORS.MAINTENANCE_MODE,
+  ERRORS.IP_BLOCKED,
+];
