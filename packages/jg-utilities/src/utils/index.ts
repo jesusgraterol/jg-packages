@@ -7,6 +7,8 @@ export type {
   IDeadlineOptions,
   IDeadlineStopReason,
   IDelayOptions,
+  IDownloadBlobOptions,
+  IDownloadJsonOptions,
   IFilterByQueryOptions,
   IRequestCoordinator,
   IRequestCoordinatorOptions,
@@ -45,6 +47,9 @@ export {
 
 // deadlines
 export { createDeadline } from './deadline.js';
+
+// downloads
+export { downloadBlob, downloadJson } from './download.js';
 
 // events
 export { createEventBus } from './event-bus.js';

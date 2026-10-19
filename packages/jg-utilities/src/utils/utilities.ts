@@ -72,3 +72,14 @@ export const extractHeadingName = (line: string): string | null => {
 
   return headingName.length > 0 ? headingName : null;
 };
+
+/**
+ * Lets a timer end without keeping a Node.js process alive, where the runtime supports it; a
+ * browser's setTimeout returns a number, which is left as it is.
+ * @param timer The timer setTimeout returned.
+ */
+export const unrefTimer = (timer: unknown): void => {
+  if (typeof timer === 'object' && timer !== null && 'unref' in timer) {
+    (timer as { unref: () => void }).unref();
+  }
+};

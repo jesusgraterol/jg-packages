@@ -161,6 +161,17 @@ try {
 
 `run` claims its `key` before the task awaits anything, and another `run` with the key rejects with `TASK_RUNNER_BUSY`, or, with `ifBusy: 'join'`, resolves to the running task's result. `close` makes later runs reject with `TASK_RUNNER_CLOSED` and later triggers resolve to `false`, and never rejects. A deadline's `child({ timeoutSeconds })` bounds one step within it, and `stopReason()` says whether the caller's signal, `'cancelled'`, or the deadline, `'deadline'`, ended the work.
 
+Save a file from a browser, keeping the object URL long enough for the download to start:
+
+```ts
+import { downloadBlob, downloadJson } from 'jg-utilities';
+
+downloadBlob(new Blob([csv], { type: 'text/csv' }), 'payments.csv'); // false without a document
+downloadJson(settings, 'settings.json'); // pretty JSON ending in a newline
+```
+
+Both click a hidden link that's added to the page and removed, and revoke the file's object URL 40 seconds later, `revokeDelaySeconds` for `downloadBlob`, because revoking it at once can cancel the download. `downloadJson` serializes first, so a value JSON can't hold, such as a BigInt or a cycle, throws `UNABLE_TO_SERIALIZE_JSON` wherever it runs.
+
 ## Documentation
 
 The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-utilities/.

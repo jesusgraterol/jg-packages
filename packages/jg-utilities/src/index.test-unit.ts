@@ -11,6 +11,8 @@ import {
   createTimestamp,
   decodeBase64Url,
   decodeCursor,
+  downloadBlob,
+  downloadJson,
   encodeBase64Url,
   encodeCursor,
   ERRORS,
@@ -70,6 +72,12 @@ describe('public API', () => {
     deadline.dispose();
     expect(ERRORS.TASK_RUNNER_BUSY).toBe('TASK_RUNNER_BUSY');
     expect(ERRORS.DEADLINE_EXCEEDED).toBe('DEADLINE_EXCEEDED');
+  });
+
+  test('exports the downloads from the package entry point', () => {
+    // Node.js has no document, so neither starts a download
+    expect(downloadBlob(new Blob(['x']), 'x.txt')).toBe(false);
+    expect(downloadJson({ x: 1 }, 'x.json')).toBe(false);
   });
 
   test('exports applyDefaults from the package entry point', () => {

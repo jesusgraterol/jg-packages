@@ -47,8 +47,9 @@
   "scripts": {
     "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
-    "test": "pnpm test:unit && pnpm test:integration",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:browser",
     "test:bench": "vitest bench --run",
+    "test:browser": "vitest run --project browser",
     "test:coverage": "vitest run --coverage --project unit --project integration",
     "test:integration": "vitest run --project integration",
     "test:unit": "vitest run --project unit",

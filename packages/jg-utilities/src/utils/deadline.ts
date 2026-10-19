@@ -4,6 +4,7 @@ import { ERRORS } from '../shared/errors.js';
 
 import { MAX_TIMEOUT_MS } from './constants.js';
 import type { IDeadline, IDeadlineOptions, IDeadlineStopReason } from './types.js';
+import { unrefTimer } from './utilities.js';
 
 /**
  * Builds the exception for options that aren't valid.
@@ -48,16 +49,6 @@ const readDeadlineMs = ({ timeoutSeconds, deadlineAt }: IDeadlineOptions): numbe
     throw createInvalidDeadlineError();
   }
   return Math.min(...candidates);
-};
-
-/**
- * Lets a timer end without keeping a Node.js process alive, where the runtime supports it.
- * @param timer The timer setTimeout returned.
- */
-const unrefTimer = (timer: unknown): void => {
-  if (typeof timer === 'object' && timer !== null && 'unref' in timer) {
-    (timer as { unref: () => void }).unref();
-  }
 };
 
 /**

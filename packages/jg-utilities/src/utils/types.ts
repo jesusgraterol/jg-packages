@@ -228,3 +228,15 @@ export type IDeadline = {
   // stops the deadline's timer, such as once the work finished early
   dispose: () => void;
 };
+
+// how downloadBlob saves a file
+export type IDownloadBlobOptions = {
+  // the seconds the file's object URL stays valid after the click. Defaults to 40
+  revokeDelaySeconds?: number | undefined;
+};
+
+// how downloadJson formats a file
+export type IDownloadJsonOptions = {
+  // the spaces each level is indented by. Defaults to 2
+  space?: number | undefined;
+};
