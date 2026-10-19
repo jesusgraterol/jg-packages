@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- `useSearchParamState({ params, schema, defaultValue, unknownParams? })`, which keeps typed state in the URL's search parameters, each key held once or repeated. It reads them through the schema with the defaults filling missing keys, falling back to the defaults when the schema rejects them, replaces a URL that isn't canonical once, keeping the router state and the hash, and never loops on a schema that doesn't round-trip. Its setter keeps its identity, composes the changes of one tick into one navigation, pushes unless given `replace`, and skips a change that leaves the search as it is. A value the URL can't hold throws `INVALID_SEARCH_PARAM_VALUE`.
+- `createPageReturn({ stateKey?, excludedPaths?, resolveOrigin })`, the way back to the page a navigation came from, kept in the router state: `createState(href, state?)` records a safe internal origin that `resolveOrigin` accepts, without its hash, replacing an earlier one and keeping the rest of the state, and `resolve(state, currentHref, { parentHref? })` gives the page to return to with its label, and the state without the origin, offering none to the parent, the current page, or its pathname, or for state that isn't valid. `usePageReturn(pageReturn, { parentHref? })` resolves it from the current location.
+- `retainSearchParams(source, rules)`, which keeps only the parameters an origin's rules list, each at most once, valid for its schema, and left out at its default, or gives `null`.
+- `DEFAULT_PAGE_RETURN_STATE_KEY`.
+- `ERRORS`, `ISchema`, `ISearchParamKind`, `ISearchParamKinds`, `ISetSearchParamState`, `ISetSearchParamStateOptions`, `IUseSearchParamStateOptions`, `IPageReturn`, `IPageReturnOptions`, `IPageReturnOrigin`, `IPageReturnResolution`, `IResolvePageReturnOptions`, and `IRetainedSearchParamRule`.
+- A recipe for list filters in the URL, with a way back.
+
+### Changed
+
+- Depends on `jg-exception`, for its coded errors, and `jg-utilities`, for its safe internal paths.
+
 ## 0.2.0
 
 ### Added

@@ -7,6 +7,7 @@ import { Exception } from 'jg-exception';
 import { getErrorReporter } from '../postgres/postgres.js';
 import type { IPostgres } from '../postgres/index.js';
 import { ERRORS } from '../shared/index.js';
+import { isInTransaction, runTransaction } from '../transactions/index.js';
 import type { ISessionLock, ISessionLockResult } from './types.js';
 
 /**
@@ -44,10 +45,11 @@ export const lockTransaction = async (client: PoolClient, key: string): Promise<
 
 /**
  * Runs an operation while holding an advisory lock on one connection, across as many
- * transactions as it needs, or skips it when another session holds the lock. The lock lasts as
- * long as its connection, so the operation can check it's still held. Afterwards the lock is
- * released, and the client is destroyed instead of reused when the release fails or the
- * connection was lost, which releases the lock too.
+ * transactions as it needs, run with the lock's transaction, or skips it when another session
+ * holds the lock. The lock lasts as long as its connection, so the operation can check it's still
+ * held. Afterwards the lock is released, and the client is destroyed instead of reused when the
+ * release fails, the connection was lost, or a transaction on it is still open or ended in an
+ * unknown state, which releases the lock too.
  * @param postgres The database, from createPostgres.
  * @param key The lock's key, from createAdvisoryLockKey.
  * @param operation The work, given the lock.
@@ -62,6 +64,9 @@ export const lockTransaction = async (client: PoolClient, key: string): Promise<
  *   postgres,
  *   createAdvisoryLockKey('user-account-deletion:42'),
  *   async (lock) => {
+ *     await lock.transaction(async (client) => {
+ *       await client.query('DELETE FROM user_session WHERE user_account_id = $1;', ['42']);
+ *     });
  *     lock.assertActive();
  *     return 'deleted';
  *   },
@@ -71,6 +76,9 @@ export const lockTransaction = async (client: PoolClient, key: string): Promise<
  * }
  * @throws
  * - SESSION_LOCK_LOST: The connection that held the session lock was lost.
+ * - INVALID_TIMEOUT_PROFILE: The timeout profile needs positive, finite seconds, with the lock timeout no longer than the statement timeout.
+ * - TRANSACTION_ALREADY_ACTIVE: The client is already in a transaction, so another can't begin on it.
+ * - TRANSACTION_OUTCOME_UNKNOWN: The connection was lost during COMMIT, so the transaction may or may not have committed.
  */
 export const withSessionLock = async <T>(
   postgres: IPostgres,
@@ -114,6 +122,10 @@ export const withSessionLock = async <T>(
       destroyClient: () => {
         shouldDestroyClient = true;
       },
+      transaction: async (transactionOperation, options) => {
+        assertActive();
+        return runTransaction(client, transactionOperation, { ...options, onError: reportError });
+      },
     });
     return { acquired: true, result };
   } catch (error) {
@@ -121,6 +133,11 @@ export const withSessionLock = async <T>(
     shouldDestroyClient = shouldDestroyClient || !isHeld;
     throw error;
   } finally {
+    // a transaction still open, or one whose end is unknown, must not reach the pool, and closing
+    // its connection releases the lock without an unlock that would run inside it
+    if (isInTransaction(client) || client.getTransactionStatus() !== 'I') {
+      shouldDestroyClient = true;
+    }
     if (isHeld && !hasLostConnection && !shouldDestroyClient) {
       try {
         const { rows } = await client.query<{ released: boolean }>(

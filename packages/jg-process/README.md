@@ -29,11 +29,14 @@ A non-zero exit code resolves, so callers decide what counts as failure. A timeo
 Start a long-running process that you own, and stop it together with everything it started:
 
 ```ts
-import { startProcess, stopProcessTree } from 'jg-process';
+import { createShutdownSignal, startProcess, stopProcessTree } from 'jg-process';
 
 const server = startProcess({ command: 'node', args: ['server.js'], cwd: 'apps/api' });
-process.once('SIGINT', () => void stopProcessTree(server));
+const shutdown = createShutdownSignal(); // Ctrl+C or SIGTERM, which sets the exit code to 130 or 143
+shutdown.signal.addEventListener('abort', () => void stopProcessTree(server), { once: true });
 ```
+
+`createShutdownSignal` turns SIGINT and SIGTERM, or the `signals` you pass, into an `AbortSignal` that aborts with `PROCESS_INTERRUPTED` at the first one, so one signal stops a script's or a service's work. It sets `process.exitCode` to 128 plus the signal's number, as a shell reports a process the signal stopped, unless `setExitCode` is `false`, and calls `onSignal` once, ignoring what it throws. It never calls `process.exit`, so the process exits once its work stops. A second signal is ignored, or, with `forceOnRepeat`, stops the process at once, for a shutdown that hangs. `dispose` stops listening. On Windows, Ctrl+C sends SIGINT, but SIGTERM is never delivered.
 
 Start a server and wait until it answers, or stop everything it started when it doesn't:
 

@@ -1,6 +1,6 @@
 {
   "name": "jg-utilities",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Validations, transformers, generators, and collection, async, and environment utilities for browsers and Node.js.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -47,8 +47,9 @@
   "scripts": {
     "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
-    "test": "pnpm test:unit && pnpm test:integration",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:browser",
     "test:bench": "vitest bench --run",
+    "test:browser": "vitest run --project browser",
     "test:coverage": "vitest run --coverage --project unit --project integration",
     "test:integration": "vitest run --project integration",
     "test:unit": "vitest run --project unit",

@@ -24,6 +24,9 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 | [`jg-react-router`](packages/jg-react-router)     | A page outlet that focuses new pages and restores scroll on Back and Forward, and dialogs that close when the route changes.          |
 | [`jg-nestjs`](packages/jg-nestjs)                 | NestJS for HTTP APIs: an ApiException, a filter and an interceptor for one envelope, schema validation, CORS, and app bootstrap.      |
 | [`jg-crypto`](packages/jg-crypto)                 | Hashing, random bytes and digits, and HMAC signatures with constant-time verification, for Node.js.                                   |
+| [`jg-git`](packages/jg-git)                       | Git commands for Node.js that never prompt or inherit Git environment variables, with time and output limits and typed reads.         |
+| [`jg-docker`](packages/jg-docker)                 | Checks for Node.js scripts that Docker is local before using it, plus Compose service and container reads with loopback-only ports.   |
+| [`jg-github`](packages/jg-github)                 | GitHub App authentication for Node.js: app tokens, scoped installation tokens, webhook signatures, and rate-limit retry times.        |
 
 [`jg-personal-astro-ui`](packages/jg-personal-astro-ui) is also published from `packages/`: the Astro components and theme Jesus Graterol's own sites share. It isn't meant for general use, so the website doesn't list it.
 

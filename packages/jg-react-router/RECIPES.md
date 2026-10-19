@@ -158,3 +158,96 @@ export const router = createBrowserRouter([
 ```
 
 The page's heading and the document's title come from the same entry, so they can't drift apart, and a route without page metadata, such as a redirect, leaves the default title.
+
+## List filters in the URL, with a way back
+
+A payments list keeps its filters in the URL, so a reload and a shared link show the same list, and each payment it opens offers a link back to that exact list, with its filters, instead of the unfiltered one:
+
+```tsx
+import { Link, useLocation } from 'react-router';
+import {
+  createPageReturn,
+  retainSearchParams,
+  usePageReturn,
+  useSearchParamState,
+} from 'jg-react-router';
+import { z } from 'zod';
+
+const STATUSES = ['all', 'paid', 'failed'] as const;
+
+const PaymentFiltersSchema = z.object({
+  status: z.enum(STATUSES),
+  page: z.coerce.number().int().min(1),
+});
+
+export const pageReturn = createPageReturn({
+  resolveOrigin: (url) => {
+    if (url.pathname !== '/payments') {
+      return null;
+    }
+    // the same rules the list reads its filters with
+    const search = retainSearchParams(url.searchParams, {
+      status: { schema: z.enum(STATUSES), defaultValue: 'all' },
+      page: { schema: z.coerce.number().int().min(1), defaultValue: '1' },
+    });
+    return search === null
+      ? null
+      : { href: `/payments${search.size > 0 ? `?${search.toString()}` : ''}`, label: 'Payments' };
+  },
+});
+
+export const PaymentsPage = ({ paymentIds }: { paymentIds: string[] }) => {
+  const location = useLocation();
+  const [filters, setFilters] = useSearchParamState({
+    params: { status: 'one', page: 'one' },
+    schema: PaymentFiltersSchema,
+    defaultValue: { status: 'all', page: 1 },
+  });
+  // the link state records this exact list as the way back
+  const linkState = pageReturn.createState(
+    `${location.pathname}${location.search}`,
+    location.state,
+  );
+  return (
+    <section>
+      <select
+        aria-label="Status"
+        value={filters.status}
+        onChange={(event) => {
+          setFilters({ status: z.enum(STATUSES).parse(event.target.value), page: 1 });
+        }}
+      >
+        {STATUSES.map((status) => (
+          <option key={status}>{status}</option>
+        ))}
+      </select>
+      <ul>
+        {paymentIds.map((id) => (
+          <li key={id}>
+            <Link
+              to={`/payments/${id}`}
+              state={linkState}
+            >
+              Payment {id}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+};
+
+export const PaymentPage = () => {
+  const { returnTo, returnState } = usePageReturn(pageReturn, { parentHref: '/payments' });
+  return (
+    <Link
+      to={returnTo?.href ?? '/payments'}
+      state={returnState}
+    >
+      Back to {returnTo?.label ?? 'Payments'}
+    </Link>
+  );
+};
+```
+
+The way back is in the router state, so it lasts across a reload of the payment but not a shared link, which opens the payment with its plain back link. A status change resets the page, and pushes a history entry, so Back returns to the previous filters.

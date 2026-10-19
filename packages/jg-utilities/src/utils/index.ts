@@ -2,15 +2,24 @@
 export type {
   ICursorCodec,
   ICursorCodecOptions,
+  ICloseTaskRunnerOptions,
+  IDeadline,
+  IDeadlineOptions,
+  IDeadlineStopReason,
   IDelayOptions,
+  IDownloadBlobOptions,
+  IDownloadJsonOptions,
   IFilterByQueryOptions,
   IRequestCoordinator,
   IRequestCoordinatorOptions,
   IRetryAsyncFunctionOptions,
   IRunRequestOptions,
+  IRunTaskOptions,
   IEventBus,
   IEventBusOptions,
   ISortDirection,
+  ITaskRunner,
+  ITaskRunnerOptions,
   IUtcDateRange,
   IWaitUntilOptions,
 } from './types.js';
@@ -35,6 +44,12 @@ export {
   isIndexedDbAvailable,
   prefersReducedMotion,
 } from './environment.js';
+
+// deadlines
+export { createDeadline } from './deadline.js';
+
+// downloads
+export { downloadBlob, downloadJson } from './download.js';
 
 // events
 export { createEventBus } from './event-bus.js';
@@ -72,6 +87,9 @@ export {
 
 // request coordination
 export { createRequestCoordinator } from './request-coordinator.js';
+
+// background tasks
+export { createTaskRunner } from './task-runner.js';
 
 // cursor codecs
 export { createCursorCodec } from './cursor-codec.js';

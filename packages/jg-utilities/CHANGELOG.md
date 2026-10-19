@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.0
+
+### Added
+
+- `createTaskRunner({ onError })`, a runner for background tasks that a shutdown can drain. `run(task, { key?, ifBusy?, signal? })` starts a task now and passes its result or error through, after claiming its key, rejecting with `TASK_RUNNER_BUSY` while the key's task runs, or joining it with `ifBusy: 'join'`. `trigger(task, { key? })`, for timer ticks, skips a busy key, resolving to `false`, and sends a task's error to `onError`. `close({ abort?, reason? })` stops new tasks, which then reject with `TASK_RUNNER_CLOSED`, optionally aborts the runner's signal, which every task's signal follows, and resolves once every task settled. `isIdle(key?)` and `isClosing()` report its state.
+- `createDeadline({ timeoutSeconds?, deadlineAt?, signal? })`, the earlier of a timeout and a time, with a signal that aborts with a `TimeoutError` at the deadline, which jg-fetch reads as a timeout, or with the caller's reason. `throwIfStopped()` reads the clock and throws the caller's reason or `DEADLINE_EXCEEDED`, `stopReason()` says which ended the work, `child({ timeoutSeconds })` bounds one step within the deadline, and `dispose()` stops its timer. A deadline days away works, and `deadlineAt: Infinity` sets none. Options that aren't valid throw `INVALID_DEADLINE`.
+- `downloadBlob(blob, fileName, { revokeDelaySeconds? })`, which saves a Blob as a file in a browser through a temporary hidden link, revoking the object URL 40 seconds later by default, so the download isn't cancelled, and `downloadJson(value, fileName, { space? })`, which saves pretty JSON ending in a newline and throws `UNABLE_TO_SERIALIZE_JSON` for a value JSON can't hold. Both resolve to `false` without a document.
+- `ITaskRunner`, `ITaskRunnerOptions`, `IRunTaskOptions`, `ICloseTaskRunnerOptions`, `IDeadline`, `IDeadlineOptions`, `IDeadlineStopReason`, `IDownloadBlobOptions`, and `IDownloadJsonOptions`.
+
 ## 1.4.0
 
 ### Added

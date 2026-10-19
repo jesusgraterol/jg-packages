@@ -167,7 +167,7 @@ The profile's statement and lock timeouts last only as long as the transaction, 
 
 ## Answering verification requests
 
-Map each verification outcome to what the app answers, in one place, so every endpoint that issues or checks a code reports a limit, a wrong code, and a failed delivery the same way. The functions don't depend on a framework, so a controller only returns their result:
+Map each verification outcome to what the app answers, in one place, so every endpoint that issues, resends, or checks a code reports a limit, a wrong code, and a failed delivery the same way. The functions don't depend on a framework, so a controller only returns their result:
 
 ```ts
 import { hasErrorCode } from 'jg-exception';
@@ -177,6 +177,8 @@ import {
   ERRORS,
   type IVerificationAttempt,
   type IVerificationBinding,
+  type IVerificationDelivery,
+  type IVerificationResendRequest,
 } from 'jg-postgres';
 
 declare const postgres: ReturnType<typeof createPostgres>;
@@ -185,9 +187,12 @@ declare const sendEmail: (to: string, text: string, idempotencyKey: string) => P
 // what the app answers: an HTTP status, and a code its client shows a message for
 type IVerificationResponse =
   | { status: 200; code: 'CODE_SENT'; challengeToken: string; expiresAt: string }
+  | { status: 200; code: 'CODE_RESENT'; expiresAt: string }
   | { status: 200; code: 'EMAIL_VERIFIED' }
   | { status: 400; code: 'INVALID_CODE' }
+  | { status: 400; code: 'INVALID_CHALLENGE' }
   | { status: 429; code: 'TOO_MANY_CODES'; retryAt: string }
+  | { status: 429; code: 'TOO_MANY_RESENDS'; retryAt?: string }
   | { status: 503; code: 'CODE_NOT_SENT' };
 
 const challenges = createVerificationChallenges(postgres, {
@@ -197,17 +202,21 @@ const challenges = createVerificationChallenges(postgres, {
       maxFailedAttempts: 5,
       issueLimit: 5,
       issueWindowSeconds: 3_600,
+      resendLimit: 3,
+      resendCooldownSeconds: 60,
     },
   },
 });
+
+// each new code gets its own deliveryId, so the mailer never drops a resend as a duplicate
+const deliverCode = ({ code, targetId, deliveryId }: IVerificationDelivery): Promise<void> =>
+  sendEmail(targetId, `Your code is ${code}`, deliveryId);
 
 export const sendEmailCode = async (
   binding: IVerificationBinding,
 ): Promise<IVerificationResponse> => {
   try {
-    const issued = await challenges.issue(binding, ({ code, targetId, challengeId }) =>
-      sendEmail(targetId, `Your code is ${code}`, challengeId),
-    );
+    const issued = await challenges.issue(binding, deliverCode);
     return issued.outcome === 'issued'
       ? {
           status: 200,
@@ -225,6 +234,30 @@ export const sendEmailCode = async (
   }
 };
 
+export const resendEmailCode = async (
+  request: IVerificationResendRequest,
+): Promise<IVerificationResponse> => {
+  try {
+    const resent = await challenges.resend(request, deliverCode);
+    switch (resent.outcome) {
+      case 'resent':
+        return { status: 200, code: 'CODE_RESENT', expiresAt: resent.expiresAt };
+      case 'cooldown':
+        return { status: 429, code: 'TOO_MANY_RESENDS', retryAt: resent.retryAt };
+      case 'limit':
+        return { status: 429, code: 'TOO_MANY_RESENDS' };
+      default:
+        return { status: 400, code: 'INVALID_CHALLENGE' };
+    }
+  } catch (error) {
+    // the resend counts, and the earlier code no longer works, so the user asks for another
+    if (hasErrorCode(error, ERRORS.VERIFICATION_DELIVERY_FAILED)) {
+      return { status: 503, code: 'CODE_NOT_SENT' };
+    }
+    throw error;
+  }
+};
+
 export const confirmEmailCode = async (
   attempt: IVerificationAttempt,
 ): Promise<IVerificationResponse> =>
@@ -233,4 +266,4 @@ export const confirmEmailCode = async (
     : { status: 400, code: 'INVALID_CODE' };
 ```
 
-`consume` gives one `false` for a wrong, used, expired, or superseded code, and for another user's token, so `INVALID_CODE` tells an attacker nothing about which. Log the delivery failure before answering: its message names the challenge, with the code and the token redacted.
+`consume` gives one `false` for a wrong, used, expired, or superseded code, and for another user's token, so `INVALID_CODE` tells an attacker nothing about which. `resend`'s `invalid` is just as uniform, so `INVALID_CHALLENGE` asks the user to start over with a new code. `TOO_MANY_RESENDS` has a `retryAt` only while the challenge cools down; once it reached its resend limit, only a new `issue` sends another code. Log the delivery failure before answering: its message names the challenge, with the code and the token redacted.

@@ -80,9 +80,9 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
     for (const path of ROUTES) {
       test(`${path} has no axe violations`, async ({ page }) => {
-        // axe scans the whole page, and the largest API references, such as jg-utilities', take
-        // over 30 seconds while the suite's other workers run
-        test.setTimeout(60_000);
+        // axe scans the whole page, and the largest API references, jg-utilities' and
+        // jg-postgres', take close to a minute while the suite's other workers run
+        test.setTimeout(120_000);
         await page.goto(path);
         await expect(page.locator('html')).toHaveAttribute('data-resolved-theme', colorScheme);
 

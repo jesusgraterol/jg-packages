@@ -102,3 +102,35 @@ export const suppressTransitions = (target: Document): (() => void) => {
     });
   };
 };
+
+/**
+ * Reads the theme the page shows from `<html>`'s class, as useAppliedTheme and
+ * createThemeInitScript write it: `dark` wins, then `light`, then the system's color scheme.
+ * @returns `light` or `dark`.
+ */
+export const readDocumentTheme = (): IResolvedTheme => {
+  const { classList } = document.documentElement;
+  if (classList.contains('dark')) {
+    return 'dark';
+  }
+  if (classList.contains('light')) {
+    return 'light';
+  }
+  return getSystemDarkSchemeSnapshot() ? 'dark' : 'light';
+};
+
+/**
+ * Calls a listener whenever `<html>`'s class or the system's color scheme changes, as
+ * useSyncExternalStore's subscription.
+ * @param onChange The listener.
+ * @returns The function that stops listening.
+ */
+export const subscribeToDocumentTheme = (onChange: () => void): (() => void) => {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  const unsubscribeFromSystem = subscribeToSystemDarkScheme(onChange);
+  return () => {
+    observer.disconnect();
+    unsubscribeFromSystem();
+  };
+};

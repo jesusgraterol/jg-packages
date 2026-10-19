@@ -78,6 +78,30 @@ const onClick = () => void copy(() => navigator.clipboard.writeText(inviteLink))
 
 `isCopied` stays true for `durationSeconds`, `DEFAULT_COPY_FEEDBACK_SECONDS` (1.4) by default, and a new copy restarts it. A copy while another runs is ignored and resolves to `false`. A failed one resolves to `false` and calls the latest `onError`; `copy` never rejects. After unmount, a copy that settles changes nothing and calls nothing. A duration that isn't positive and finite throws `INVALID_COPY_FEEDBACK_DURATION`.
 
+### Dialog sessions
+
+`createDialogSession` keeps one dialog's state outside React, so any code can open it and await what the user chose, while one host component renders it with `useDialogSession`:
+
+```ts
+import { createDialogSession, useDialogSession } from 'jg-react';
+import { useDialogNavigationDismissal } from 'jg-react-router';
+
+export const confirmDialog = createDialogSession<{ title: string }, boolean>();
+
+// anywhere, such as a delete button's handler
+const isConfirmed = await confirmDialog.open({ title: 'Delete the project?' }); // true, false, or undefined
+
+// in the host component
+const session = useDialogSession(confirmDialog); // the open session, or null
+useDialogNavigationDismissal({
+  getSession: confirmDialog.getSnapshot, // a navigation closes the dialog
+  onDismiss: () => confirmDialog.close(),
+});
+const confirm = () => confirmDialog.close(true, session?.id);
+```
+
+At most one session is open. Opening another resolves the open one's caller with `undefined`, or, with `whileOpen: 'keep'`, resolves the new call with `undefined`, so no caller waits forever, and no promise rejects. A `close` that names its session's `id` does nothing once that session ended, so a late click on a closing dialog can't close a newer one. One frame after a close, focus returns to the element the session opened from, the focused one by default, when it's still in the page, enabled, and not inert, no other session opened, and focus is lost on the body; a session that replaces another returns focus where that one would have. A server render reads no open session.
+
 ### File uploads
 
 `useFileUploadQueue` runs a file upload queue without rendering anything, for a drop zone or a file input in the app's own markup:
@@ -131,6 +155,27 @@ export const ThemeRoot = ({ preference }: { preference: 'light' | 'dark' | 'syst
 ```
 
 Set `color-scheme` per class in your stylesheet, such as `:root.dark { color-scheme: dark; }`, so form controls and scrollbars follow the theme.
+
+A component far from the one applying the theme, such as a chart that picks its colors in script, reads the theme the page shows with `useDocumentTheme`, without the user's preference: `<html>`'s `dark` class, then `light`, then the system's color scheme. It re-renders only when that theme changes, not for another class, and reads `light` on a server and while hydrating, as the init script's fallback does:
+
+```ts
+import { useDocumentTheme } from 'jg-react';
+
+const lineColor = useDocumentTheme() === 'dark' ? '#93c5fd' : '#1d4ed8';
+```
+
+### Element width
+
+`useElementWidth` turns an element's width into the value a component needs, such as how many columns fit, and re-renders only when that value changes, not on every pixel:
+
+```ts
+import { useElementWidth } from 'jg-react';
+
+const { ref, value: columns } = useElementWidth((width) => Math.max(1, Math.floor(width / 280)));
+// <ul ref={ref}>, laid out in `columns ?? 1` columns
+```
+
+It measures the element's border box as soon as `ref` attaches it, before the browser paints, then follows it with a `ResizeObserver`, or the window's `resize` event where there's none. A width of 0, such as while the element is hidden with `display: none`, keeps the last value. Attaching another element measures that one, and detaching resets the value to `undefined`, as on a server. Return a primitive from the function, so an unchanged result never re-renders.
 
 ## Documentation
 

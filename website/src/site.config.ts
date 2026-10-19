@@ -151,6 +151,30 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['node'],
     order: 18,
   },
+  'jg-git': {
+    title: 'Git',
+    description:
+      'Git commands for Node.js that never prompt or inherit Git environment variables, with time and output limits and typed reads.',
+    icon: 'git-branch',
+    runtimes: ['node'],
+    order: 19,
+  },
+  'jg-docker': {
+    title: 'Docker',
+    description:
+      'Checks for Node.js scripts that Docker is local before using it, plus Compose service and container reads with loopback-only ports.',
+    icon: 'container',
+    runtimes: ['node'],
+    order: 20,
+  },
+  'jg-github': {
+    title: 'GitHub',
+    description:
+      'GitHub App authentication for Node.js: app tokens, scoped installation tokens, webhook signatures, and rate-limit retry times.',
+    icon: 'git-pull-request',
+    runtimes: ['node'],
+    order: 21,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/

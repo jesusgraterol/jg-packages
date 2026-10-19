@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.0
+
+### Added
+
+- `createShutdownSignal({ signals?, onSignal?, setExitCode?, forceOnRepeat? })`, which turns SIGINT and SIGTERM, `DEFAULT_SHUTDOWN_SIGNALS`, or the signals passed, into an `AbortSignal` that aborts with `PROCESS_INTERRUPTED` at the first one, sets `process.exitCode` to 128 plus its number, 130 or 143, and calls `onSignal` once. It never calls `process.exit`. Later signals are ignored, or, with `forceOnRepeat`, stop the process at once. `dispose()` stops listening, and `receivedSignal()` and `exitCode()` say what arrived. Signals that aren't valid, or SIGKILL and SIGSTOP, throw `INVALID_SIGNAL`.
+- `DEFAULT_SHUTDOWN_SIGNALS`, `IShutdownSignal`, and `IShutdownSignalOptions`.
+
+### Changed
+
+- The README and the recipe for stopping a dev server use `createShutdownSignal` instead of `process.once`.
+
 ## 1.3.0
 
 ### Added

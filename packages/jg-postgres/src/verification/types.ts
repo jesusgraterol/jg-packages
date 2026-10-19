@@ -12,6 +12,14 @@ export type IVerificationPolicy = {
 
   // the whole seconds the issue limit counts back from now, at least 1
   issueWindowSeconds: number;
+
+  // the times one challenge's code may be resent, each time as a new code: 1 to 32,767. Without
+  // it, resend refuses the action
+  resendLimit?: number | undefined;
+
+  // the whole seconds that must pass between two sends of one challenge, counted from its issue or
+  // its last resend, at least 1. Without it, a challenge may be resent at once
+  resendCooldownSeconds?: number | undefined;
 };
 
 // what createVerificationChallenges takes
@@ -40,14 +48,22 @@ export type IVerificationDelivery = IVerificationBinding & {
   // the code to send, and the only time it's available
   code: string;
 
-  // the challenge's id, the same for every attempt to send this code, as an idempotency key
+  // the challenge's id, the same for its issue and every resend
   challengeId: string;
 
-  // when the code stops working, as an ISO 8601 UTC timestamp
+  // this send's id, `${challengeId}:${resendCount}`, `:0` for the issue: the same for every attempt
+  // to send this code and different for each resend, so use it as the email's idempotency key
+  deliveryId: string;
+
+  // when the code stops working, as an ISO 8601 UTC timestamp. A resend keeps the issue's
   expiresAt: string;
 
   // the seconds the code is valid for, as the policy sets them
   validitySeconds: number;
+
+  // the whole seconds left before the code stops working: validitySeconds for an issue, and less
+  // for a resend, which keeps the issue's expiry
+  remainingSeconds: number;
 };
 
 // sends a challenge's code to its actor, such as by email
@@ -71,6 +87,24 @@ export type IVerificationAttempt = IVerificationBinding & {
   code: string;
 };
 
+// what resend takes: the binding the challenge was issued for, and its token
+export type IVerificationResendRequest = IVerificationBinding & {
+  // the token issue resolved to
+  challengeToken: string;
+};
+
+/*
+ * What resend resolves to: a new code was sent, under the challenge's original expiry; the
+ * challenge is cooling down until retryAt; it was resent as often as the policy allows; or there's
+ * no active challenge for the binding and token, because it was used, superseded, expired, or ran
+ * out of attempts.
+ */
+export type IVerificationResend =
+  | { outcome: 'resent'; expiresAt: string }
+  | { outcome: 'cooldown'; retryAt: string }
+  | { outcome: 'limit' }
+  | { outcome: 'invalid' };
+
 // issues and consumes verification challenges with the policies they were created with
 export type IVerificationChallenges = {
   // issues a challenge for a binding, superseding its active one, and delivers its code once it's
@@ -79,6 +113,13 @@ export type IVerificationChallenges = {
     binding: IVerificationBinding,
     deliver: IVerificationDeliver,
   ) => Promise<IVerificationIssue>;
+
+  // sends a new code for a binding's active challenge, keeping its token and expiry, which stops
+  // the earlier code from working, unless the challenge is cooling down or reached its resend limit
+  resend: (
+    request: IVerificationResendRequest,
+    deliver: IVerificationDeliver,
+  ) => Promise<IVerificationResend>;
 
   // uses a challenge when its code matches, or counts a failed attempt, and resolves to whether
   // it matched

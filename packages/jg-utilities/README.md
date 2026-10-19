@@ -133,6 +133,45 @@ const issues = await github.run(() => fetchIssues(), {
 github.deferUntil(retryAt); // queued requests wait out a Retry-After, without holding a slot
 ```
 
+Run a service's background passes through a task runner, so a shutdown waits for them, and bound a job with a deadline:
+
+```ts
+import { createDeadline, createTaskRunner } from 'jg-utilities';
+
+const runner = createTaskRunner({ onError: (error, { key }) => logger.error(key, error) });
+const interval = setInterval(() => {
+  void runner.trigger((signal) => syncInvoices(signal), { key: 'invoices' }); // skipped while one runs
+}, 60_000);
+const report = await runner.run(() => buildReport(), { key: 'report', ifBusy: 'join' }); // one at a time
+
+// at shutdown: no new tasks, the running ones aborted, and resolved once they all settle
+clearInterval(interval);
+await runner.close({ abort: true });
+
+const deadline = createDeadline({ timeoutSeconds: 55, signal: request.signal });
+try {
+  for (const file of files) {
+    deadline.throwIfStopped(); // the request's reason, or DEADLINE_EXCEEDED once 55 seconds passed
+    await uploadFile(file, deadline.signal); // aborts with a TimeoutError at the deadline
+  }
+} finally {
+  deadline.dispose();
+}
+```
+
+`run` claims its `key` before the task awaits anything, and another `run` with the key rejects with `TASK_RUNNER_BUSY`, or, with `ifBusy: 'join'`, resolves to the running task's result. `close` makes later runs reject with `TASK_RUNNER_CLOSED` and later triggers resolve to `false`, and never rejects. A deadline's `child({ timeoutSeconds })` bounds one step within it, and `stopReason()` says whether the caller's signal, `'cancelled'`, or the deadline, `'deadline'`, ended the work.
+
+Save a file from a browser, keeping the object URL long enough for the download to start:
+
+```ts
+import { downloadBlob, downloadJson } from 'jg-utilities';
+
+downloadBlob(new Blob([csv], { type: 'text/csv' }), 'payments.csv'); // false without a document
+downloadJson(settings, 'settings.json'); // pretty JSON ending in a newline
+```
+
+Both click a hidden link that's added to the page and removed, and revoke the file's object URL 40 seconds later, `revokeDelaySeconds` for `downloadBlob`, because revoking it at once can cancel the download. `downloadJson` serializes first, so a value JSON can't hold, such as a BigInt or a cycle, throws `UNABLE_TO_SERIALIZE_JSON` wherever it runs.
+
 ## Documentation
 
 The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-utilities/.

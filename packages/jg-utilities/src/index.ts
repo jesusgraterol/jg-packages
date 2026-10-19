@@ -86,9 +86,15 @@ export {
 
 // utilities
 export type {
+  ICloseTaskRunnerOptions,
   ICursorCodec,
   ICursorCodecOptions,
+  IDeadline,
+  IDeadlineOptions,
+  IDeadlineStopReason,
   IDelayOptions,
+  IDownloadBlobOptions,
+  IDownloadJsonOptions,
   IEventBus,
   IEventBusOptions,
   IFilterByQueryOptions,
@@ -96,7 +102,10 @@ export type {
   IRequestCoordinatorOptions,
   IRetryAsyncFunctionOptions,
   IRunRequestOptions,
+  IRunTaskOptions,
   ISortDirection,
+  ITaskRunner,
+  ITaskRunnerOptions,
   IUtcDateRange,
   IWaitUntilOptions,
 } from './utils/index.js';
@@ -127,6 +136,10 @@ export {
   waitUntil,
   createEventBus,
   createRequestCoordinator,
+  createTaskRunner,
+  createDeadline,
+  downloadBlob,
+  downloadJson,
   createCursorCodec,
   hasWindow,
   hasNavigator,

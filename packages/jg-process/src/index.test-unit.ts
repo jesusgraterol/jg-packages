@@ -8,7 +8,9 @@ describe('public API', () => {
     expect(Object.keys(publicApi).sort()).toStrictEqual([
       'DEFAULT_GRACE_PERIOD_SECONDS',
       'DEFAULT_MAX_OUTPUT_BYTES',
+      'DEFAULT_SHUTDOWN_SIGNALS',
       'ERRORS',
+      'createShutdownSignal',
       'reservePort',
       'resolvePackageManagerCommand',
       'runProcess',
@@ -20,5 +22,6 @@ describe('public API', () => {
     ]);
     expect(publicApi.DEFAULT_MAX_OUTPUT_BYTES).toBe(1048576);
     expect(publicApi.DEFAULT_GRACE_PERIOD_SECONDS).toBe(5);
+    expect(publicApi.DEFAULT_SHUTDOWN_SIGNALS).toStrictEqual(['SIGINT', 'SIGTERM']);
   });
 });

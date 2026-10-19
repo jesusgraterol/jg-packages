@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- `createPollingQueryOptions({ intervalSeconds, isEnabled? })`, query options that refetch every `intervalSeconds`, or an interval a function of the data gives, while enabled and the last fetch succeeded, pausing in a hidden tab and fetching once when the tab or the network comes back, on TanStack Query's own managers. An interval that isn't positive and finite throws `INVALID_POLLING_INTERVAL`.
+- `IPolledQuery`, `IPollingOptions`, and `IPollingQueryOptions`.
+
 ## 0.2.0
 
 ### Added

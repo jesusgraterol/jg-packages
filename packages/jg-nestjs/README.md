@@ -71,7 +71,7 @@ It allows the listed origins exactly, their `www.` variants, and requests withou
 
 ### Maintenance mode and IP blocklists
 
-`MaintenanceModeGuard` refuses requests with a 503, `MAINTENANCE_MODE`, while `getState` says maintenance is on, with the state's `message` as the error's data. `IpBlocklistGuard` refuses requests from blocked addresses with a 403, `IP_BLOCKED`, without echoing the address. Each reads its options from its own token, and the app fails to start without them:
+`MaintenanceModeGuard` refuses requests with a 503, `MAINTENANCE_MODE`, while `getState` says maintenance is on. The error's data is the state's `data`, as it is, such as `{ maintenanceMode: { content, updatedAt } }` for a client that shows the notice, or else `{ message }` when the state has only a `message`. `getState` receives the request's `ExecutionContext`, so one guard can keep some routes up, such as an admin sign-in, by reading their metadata with a `Reflector`, as [a recipe](RECIPES.md#maintenance-mode-from-a-flag-or-a-stored-record) shows. `IpBlocklistGuard` refuses requests from blocked addresses with a 403, `IP_BLOCKED`, without echoing the address. Each reads its options from its own token, and the app fails to start without them:
 
 ```ts
 import { Module } from '@nestjs/common';

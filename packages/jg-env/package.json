@@ -1,6 +1,6 @@
 {
   "name": "jg-env",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Strict environment variable readers for browsers and Node.js, plus secret files, with errors that name the key and never the value.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -57,7 +57,8 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json"
   },
   "dependencies": {
-    "jg-exception": "workspace:^"
+    "jg-exception": "workspace:^",
+    "jg-fs": "workspace:^"
   },
   "devDependencies": {
     "@jg-packages/eslint-config": "workspace:*",

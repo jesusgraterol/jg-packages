@@ -8,6 +8,8 @@ export type {
   IVerificationDelivery,
   IVerificationIssue,
   IVerificationPolicy,
+  IVerificationResend,
+  IVerificationResendRequest,
 } from './types.js';
 
 // verification challenges

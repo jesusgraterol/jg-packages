@@ -1,5 +1,7 @@
 import type { PoolClient } from 'pg';
 
+import type { ITransactionOptions } from '../postgres/index.js';
+
 // what withSessionLock gives the operation while it holds the lock
 export type ISessionLock = {
   // the client that holds the lock, for work that must stop when the lock does
@@ -10,6 +12,14 @@ export type ISessionLock = {
 
   // throws SESSION_LOCK_LOST when the lock's connection was lost
   assertActive: () => void;
+
+  // runs an operation in a transaction on the lock's client, after checking the lock is still
+  // held, as runTransaction does. Run as many as the work needs, one after another: one still
+  // open, or one whose end is unknown, makes the lock destroy its client instead of reusing it
+  transaction: <T>(
+    operation: (client: PoolClient) => Promise<T>,
+    options?: ITransactionOptions,
+  ) => Promise<T>;
 
   // marks the client as unsafe to reuse, such as after work on it ended in an unknown state, so
   // it's destroyed instead of returned to the pool

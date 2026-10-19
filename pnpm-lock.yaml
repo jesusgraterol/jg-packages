@@ -561,11 +561,48 @@ importers:
         specifier: 'catalog:'
         version: 5.0.5(@types/node@24.19.2)(@vitest/browser-playwright@5.0.5)(@vitest/coverage-v8@5.0.5)(@vitest/ui@5.0.5)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1))
 
+  packages/jg-docker:
+    dependencies:
+      jg-exception:
+        specifier: workspace:^
+        version: link:../jg-exception
+      jg-process:
+        specifier: workspace:^
+        version: link:../jg-process
+    devDependencies:
+      '@jg-packages/eslint-config':
+        specifier: workspace:*
+        version: link:../../internal/eslint-config
+      '@jg-packages/tsconfig':
+        specifier: workspace:*
+        version: link:../../internal/tsconfig
+      '@jg-packages/vitest-config':
+        specifier: workspace:*
+        version: link:../../internal/vitest-config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 5.0.5(@vitest/browser@5.0.5)(vitest@5.0.5)
+      eslint:
+        specifier: 'catalog:'
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.5(@types/node@24.19.2)(@vitest/browser-playwright@5.0.5)(@vitest/coverage-v8@5.0.5)(@vitest/ui@5.0.5)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1))
+
   packages/jg-env:
     dependencies:
       jg-exception:
         specifier: workspace:^
         version: link:../jg-exception
+      jg-fs:
+        specifier: workspace:^
+        version: link:../jg-fs
     devDependencies:
       '@jg-packages/eslint-config':
         specifier: workspace:*
@@ -707,6 +744,77 @@ importers:
       zod:
         specifier: 4.6.7
         version: 4.6.7
+
+  packages/jg-git:
+    dependencies:
+      jg-exception:
+        specifier: workspace:^
+        version: link:../jg-exception
+      jg-process:
+        specifier: workspace:^
+        version: link:../jg-process
+    devDependencies:
+      '@jg-packages/eslint-config':
+        specifier: workspace:*
+        version: link:../../internal/eslint-config
+      '@jg-packages/tsconfig':
+        specifier: workspace:*
+        version: link:../../internal/tsconfig
+      '@jg-packages/vitest-config':
+        specifier: workspace:*
+        version: link:../../internal/vitest-config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 5.0.5(@vitest/browser@5.0.5)(vitest@5.0.5)
+      eslint:
+        specifier: 'catalog:'
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.5(@types/node@24.19.2)(@vitest/browser-playwright@5.0.5)(@vitest/coverage-v8@5.0.5)(@vitest/ui@5.0.5)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1))
+
+  packages/jg-github:
+    dependencies:
+      jg-crypto:
+        specifier: workspace:^
+        version: link:../jg-crypto
+      jg-exception:
+        specifier: workspace:^
+        version: link:../jg-exception
+      jg-fetch:
+        specifier: workspace:^
+        version: link:../jg-fetch
+    devDependencies:
+      '@jg-packages/eslint-config':
+        specifier: workspace:*
+        version: link:../../internal/eslint-config
+      '@jg-packages/tsconfig':
+        specifier: workspace:*
+        version: link:../../internal/tsconfig
+      '@jg-packages/vitest-config':
+        specifier: workspace:*
+        version: link:../../internal/vitest-config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 5.0.5(@vitest/browser@5.0.5)(vitest@5.0.5)
+      eslint:
+        specifier: 'catalog:'
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.5(@types/node@24.19.2)(@vitest/browser-playwright@5.0.5)(@vitest/coverage-v8@5.0.5)(@vitest/ui@5.0.5)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/jg-nestjs:
     dependencies:
@@ -966,6 +1074,13 @@ importers:
         version: 5.0.5(@types/node@24.19.2)(@vitest/browser-playwright@5.0.5)(@vitest/coverage-v8@5.0.5)(@vitest/ui@5.0.5)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/jg-react-router:
+    dependencies:
+      jg-exception:
+        specifier: workspace:^
+        version: link:../jg-exception
+      jg-utilities:
+        specifier: workspace:^
+        version: link:../jg-utilities
     devDependencies:
       '@jg-packages/eslint-config':
         specifier: workspace:*
@@ -1012,6 +1127,9 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 5.0.5(@types/node@24.19.2)(@vitest/browser-playwright@5.0.5)(@vitest/coverage-v8@5.0.5)(@vitest/ui@5.0.5)(vite@8.3.4(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1))
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
 
   packages/jg-redis:
     dependencies:
@@ -1300,6 +1418,9 @@ importers:
       jg-crypto:
         specifier: workspace:*
         version: link:../packages/jg-crypto
+      jg-docker:
+        specifier: workspace:*
+        version: link:../packages/jg-docker
       jg-env:
         specifier: workspace:*
         version: link:../packages/jg-env
@@ -1312,6 +1433,12 @@ importers:
       jg-fs:
         specifier: workspace:*
         version: link:../packages/jg-fs
+      jg-git:
+        specifier: workspace:*
+        version: link:../packages/jg-git
+      jg-github:
+        specifier: workspace:*
+        version: link:../packages/jg-github
       jg-nestjs:
         specifier: workspace:*
         version: link:../packages/jg-nestjs

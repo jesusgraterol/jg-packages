@@ -7,26 +7,25 @@ import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vite
 
 import { createAdvisoryLockKey } from '../locks/index.js';
 import type { IPostgres } from '../postgres/index.js';
+import { deleteExpiredInBatches } from '../retention/index.js';
 import { connectTestPostgres } from '../test-utils/database.js';
 
 import type { IUsageAdmissionInput } from './types.js';
 import { admitUsage } from './usage-limits.js';
 
 /**
- * Reads the SQL blocks of the README's "Usage limits" section, so the tests run the schema and the
- * pruning query the README documents.
- * @returns The table's DDL and the pruning query.
+ * Reads the SQL block of the README's "Usage limits" section, so the tests run the schema the
+ * README documents.
+ * @returns The table's DDL.
  */
-const readDocumentedSql = (): { ddl: string; prune: string } => {
+const readDocumentedSql = (): { ddl: string } => {
   const readme = readFileSync(new URL('../../README.md', import.meta.url), 'utf8');
   const section = readme.slice(readme.indexOf('### Usage limits'));
-  const [ddl, prune] = [...section.matchAll(/```sql\n([\s\S]*?)```/g)].map(
-    (match) => match[1] ?? '',
-  );
-  if (ddl === undefined || prune === undefined) {
+  const [ddl] = [...section.matchAll(/```sql\n([\s\S]*?)```/g)].map((match) => match[1] ?? '');
+  if (ddl === undefined) {
     throw new Error('The README lost its usage-limit SQL.');
   }
-  return { ddl, prune };
+  return { ddl };
 };
 
 let postgres: IPostgres;
@@ -215,35 +214,25 @@ describe('admitUsage', () => {
   });
 });
 
-describe('the documented pruning query', () => {
-  test('deletes, oldest first, at most a batch of the rows older than the age', async () => {
-    // the query prunes the whole table, so the rows the other tests left would count
+describe('the documented pruning', () => {
+  test('deletes the rows older than the age, keeping the younger ones', async () => {
+    // the pruning covers the whole table, so the rows the other tests left would count
     await postgres.query('TRUNCATE usage_event;');
     const input = createInput({ scopeKey: 'prune' });
     for (const secondsAgo of [9_000, 8_000, 7_000, 60]) {
       await insertPastEvent(input, secondsAgo);
     }
-    const { prune } = readDocumentedSql();
-    const countOlderThan = async (seconds: number): Promise<number> => {
-      const [{ usage_count }] = (await postgres.query<{ usage_count: number }>(
-        `SELECT count(*)::integer AS usage_count FROM usage_event
-        WHERE created_at < clock_timestamp() - make_interval(secs => $1);`,
-        [seconds],
-      )) as [{ usage_count: number }];
-      return usage_count;
-    };
 
-    const first = await postgres.pool.query(prune, [3_600, 2]);
+    const { deletedCount } = await deleteExpiredInBatches(postgres, {
+      table: 'usage_event',
+      olderThan: { seconds: 3_600 },
+      batchSize: 2,
+    });
 
-    expect(first.rowCount).toBe(2);
-    expect(await countOlderThan(7_500)).toBe(0);
-    expect(await countOlderThan(0)).toBe(2);
-
-    const second = await postgres.pool.query(prune, [3_600, 2]);
-    const third = await postgres.pool.query(prune, [3_600, 2]);
-
-    expect(second.rowCount).toBe(1);
-    expect(third.rowCount).toBe(0);
-    expect(await countOlderThan(0)).toBe(1);
+    expect(deletedCount).toBe(3);
+    const rows = await postgres.query<{ usage_count: number }>(
+      'SELECT count(*)::integer AS usage_count FROM usage_event;',
+    );
+    expect(rows).toStrictEqual([{ usage_count: 1 }]);
   });
 });

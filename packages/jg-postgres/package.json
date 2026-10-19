@@ -1,6 +1,6 @@
 {
   "name": "jg-postgres",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "PostgreSQL helpers for node-postgres: safe transactions, advisory locks, SQLSTATE checks, cursor pages, and ordered lists.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./error-log": {
+      "types": "./dist/error-log/index.d.ts",
+      "default": "./dist/error-log/index.js"
     },
     "./record-store": {
       "types": "./dist/record-store/index.d.ts",

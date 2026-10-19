@@ -1,6 +1,6 @@
 # jg-react recipes
 
-Patterns for components that follow the browser: the network, the tab, the viewport, the theme, copying to the clipboard, and uploading files.
+Patterns for components that follow the browser: the network, the viewport, the theme, copying to the clipboard, and uploading files.
 
 ## An offline banner
 
@@ -26,36 +26,6 @@ export const OfflineBanner = () => {
 ```
 
 The browser's guess can be wrong both ways: a connected laptop can lack internet access, and a flaky network can report online. Use it to explain a failure, never to skip a request.
-
-## Polling only while the tab is visible
-
-Stop refreshing data nobody is looking at, and refresh once when the tab comes back:
-
-```tsx
-import { useEffect, useState } from 'react';
-import { useDocumentVisibility } from 'jg-react';
-
-declare const fetchPrice: (symbol: string) => Promise<number>;
-
-export const LivePrice = ({ symbol }: { symbol: string }) => {
-  const isVisible = useDocumentVisibility();
-  const [price, setPrice] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!isVisible) {
-      return undefined;
-    }
-    const refresh = (): void => {
-      void fetchPrice(symbol).then(setPrice);
-    };
-    refresh();
-    const timer = setInterval(refresh, 15_000);
-    return () => clearInterval(timer);
-  }, [isVisible, symbol]);
-
-  return <span>{price ?? '…'}</span>;
-};
-```
 
 ## A navigation that changes with the viewport
 

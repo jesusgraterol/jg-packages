@@ -44,3 +44,11 @@ export {
   waitForPort,
   waitForUrl,
 } from './readiness/index.js';
+
+// shutdown signals
+export {
+  DEFAULT_SHUTDOWN_SIGNALS,
+  type IShutdownSignal,
+  type IShutdownSignalOptions,
+  createShutdownSignal,
+} from './shutdown-signal/index.js';

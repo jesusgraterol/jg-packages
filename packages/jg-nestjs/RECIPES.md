@@ -136,13 +136,43 @@ export class AppModule {}
 
 Adding 404 to `ignoredStatuses` keeps requests for routes that don't exist, which crawlers send all day, out of the tracker. The URL is already redacted when `redactUrl` is set, and a tracker that throws is logged instead.
 
-## Maintenance mode from a flag or a stored record
-
-An environment flag is the simplest switch, but turning it on needs a redeploy. A stored record turns maintenance on and off at runtime; read it at most every few seconds, since the guard asks on every request:
+Without an external tracker, jg-postgres's error log keeps the errors in the app's own database, for an admin page to list. It never rejects, so `report` can await it:
 
 ```ts
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER } from '@nestjs/core';
+import { createPostgres } from 'jg-postgres';
+import { createErrorLog } from 'jg-postgres/error-log';
+import { API_EXCEPTION_FILTER_OPTIONS, ApiExceptionFilter, type IErrorReport } from 'jg-nestjs';
+
+declare const postgres: ReturnType<typeof createPostgres>;
+
+const errorLog = createErrorLog(postgres, {
+  origin: 'api',
+  redactKeys: ['password', 'token', 'authorization'],
+});
+
+const report = async ({ error, request }: IErrorReport): Promise<void> => {
+  const userId = (request as { user?: { id?: string } }).user?.id;
+  await errorLog.record({ error, userInfo: userId === undefined ? null : { userId } });
+};
+
+@Module({
+  providers: [
+    { provide: API_EXCEPTION_FILTER_OPTIONS, useValue: { report } },
+    { provide: APP_FILTER, useClass: ApiExceptionFilter },
+  ],
+})
+export class ErrorLogModule {}
+```
+
+## Maintenance mode from a flag or a stored record
+
+An environment flag is the simplest switch, but turning it on needs a redeploy. A stored record turns maintenance on and off at runtime; read it at most every few seconds, since the guard asks on every request. The state's `data` is what the client reads, and a route marked with `MaintenanceExempt()`, such as the admin's sign-in, stays up, because `getState` reads the route's metadata from its context:
+
+```ts
+import { type ExecutionContext, Module, SetMetadata } from '@nestjs/common';
+import { APP_GUARD, Reflector } from '@nestjs/core';
 import { createPostgres } from 'jg-postgres';
 import {
   type IMaintenanceModeState,
@@ -152,22 +182,31 @@ import {
 
 declare const postgres: ReturnType<typeof createPostgres>;
 
-// how long a read state is reused, so requests don't each query the database
+// how long a read record is reused, so requests don't each query the database
 const STATE_MAX_AGE_MS = 5_000;
+
+// the metadata a route sets to stay up during maintenance
+const MAINTENANCE_EXEMPT = 'maintenance-exempt';
+export const MaintenanceExempt = (): MethodDecorator & ClassDecorator =>
+  SetMetadata(MAINTENANCE_EXEMPT, true);
 
 let cached: { state: IMaintenanceModeState; readAt: number } | undefined;
 
-const getState = async (): Promise<IMaintenanceModeState> => {
-  // the flag wins, so maintenance can be forced on even with the database down
-  if (process.env['MAINTENANCE_MODE'] === 'true') {
-    return { enabled: true };
-  }
+const readStoredState = async (): Promise<IMaintenanceModeState> => {
   if (cached === undefined || Date.now() - cached.readAt > STATE_MAX_AGE_MS) {
-    const [row] = await postgres.query<{ is_enabled: boolean; message: string | null }>(
-      'SELECT is_enabled, message FROM maintenance_setting WHERE id = 1;',
-    );
+    const [row] = await postgres.query<{
+      is_enabled: boolean;
+      content: string | null;
+      updated_at: string;
+    }>('SELECT is_enabled, content, updated_at FROM maintenance_setting WHERE id = 1;');
     cached = {
-      state: { enabled: row?.is_enabled === true, message: row?.message ?? undefined },
+      state: {
+        enabled: row?.is_enabled === true,
+        // the client shows the notice and when it was set
+        data: {
+          maintenanceMode: { content: row?.content ?? null, updatedAt: row?.updated_at ?? null },
+        },
+      },
       readAt: Date.now(),
     };
   }
@@ -176,14 +215,33 @@ const getState = async (): Promise<IMaintenanceModeState> => {
 
 @Module({
   providers: [
-    { provide: MAINTENANCE_MODE_GUARD_OPTIONS, useValue: { getState } },
+    {
+      provide: MAINTENANCE_MODE_GUARD_OPTIONS,
+      useFactory: (reflector: Reflector) => ({
+        getState: async (context: ExecutionContext): Promise<IMaintenanceModeState> => {
+          const isExempt = reflector.getAllAndOverride<boolean | undefined>(MAINTENANCE_EXEMPT, [
+            context.getHandler(),
+            context.getClass(),
+          ]);
+          if (isExempt === true) {
+            return { enabled: false };
+          }
+          // the flag wins, so maintenance can be forced on even with the database down
+          if (process.env['MAINTENANCE_MODE'] === 'true') {
+            return { enabled: true, message: 'The service is down for maintenance.' };
+          }
+          return readStoredState();
+        },
+      }),
+      inject: [Reflector],
+    },
     { provide: APP_GUARD, useClass: MaintenanceModeGuard },
   ],
 })
 export class AppModule {}
 ```
 
-When the database can't be read, the guard fails closed and the filter answers with a reported 500, so set the flag for maintenance that takes the database down.
+When the database can't be read, the guard fails closed and the filter answers with a reported 500, so set the flag for maintenance that takes the database down. A second switch, such as a restore that takes every route down, fits in the same `getState`: return `enabled: true` before the exemption check while it's on.
 
 ## An IP blocklist in Redis
 
