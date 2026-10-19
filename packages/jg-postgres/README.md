@@ -306,6 +306,82 @@ ALTER TABLE verification_challenge
     CHECK (resent_at IS NULL OR resent_at >= created_at);
 ```
 
+### Error log
+
+`jg-postgres/error-log`'s `createErrorLog` records errors in a table, such as the ones an API's exception filter catches, for an admin page to list. It never rejects, so recording an error can't fail the request that hit it:
+
+```ts
+import { createErrorLog } from 'jg-postgres/error-log';
+
+const errorLog = createErrorLog(postgres, {
+  origin: 'api', // what reports the errors: 1 to 256 characters
+  table: 'error_log', // the default
+  redactKeys: ['password', 'token'], // replaced in an Exception's data, at any depth, any case
+  maxMessageLength: 8_192, // the default, the column's size
+  maxPayloadBytes: 1_024, // the default
+  maxBatchSize: 256, // the default: the rows each INSERT writes
+  onRecorded: ({ count }) => unreadErrors.increment(count), // optional, not awaited
+});
+
+await errorLog.record({ error, userInfo: { userId } }); // true when a row was inserted
+
+// one row per origin and key, however often the failure repeats
+await errorLog.recordMany(
+  failures.map((failure) => ({ error: failure.error, deduplicationKey: failure.jobId })),
+);
+```
+
+A row's `error` is the error's message, prefixed with its code, such as `NOT_FOUND: The user doesn't exist.`, without null characters, and cut to `maxMessageLength` characters, ending in ` [truncated]`. An `Exception`'s data, when it's an object, is its `payload`, with `redactKeys` replaced, cycles left out, and null characters removed; data larger than `maxPayloadBytes` as JSON is left out of that row alone. `userInfo` is stored as given, without its undefined fields. An entry's own `origin` overrides the log's, and an origin that isn't 1 to 256 characters falls back to it.
+
+A `deduplicationKey` is stored as its SHA-256 digest in lowercase hex, the same digest as Node.js's `createHash('sha256').update(key).digest('hex')`, and the table keeps one row per origin and digest: a repeat inserts nothing and resolves to `false`, or counts 0. An app moving digests it computed itself onto the log passes the strings it hashed, not the digests, so its stored rows keep their identity. Without a key, every record inserts a row.
+
+A write runs in one transaction with `timeouts`, 5 seconds per statement and 1 second for a lock by default, so a table another transaction locks stops it quickly. A write that fails, for a lock, a constraint, or a missing table, inserts nothing and goes to the database's `onError` as `ERROR_LOG_WRITE_FAILED`, with its SQLSTATE and its entry count but without the rows or the database's message, which can quote them; `record` then resolves to `false` and `recordMany` to `0`. `onRecorded` runs after a write that inserted rows commits; what it throws or rejects with goes to `onError` too.
+
+The app creates the table, under any name it passes as `table`:
+
+```sql
+CREATE TABLE error_log (
+  id bigint GENERATED ALWAYS AS IDENTITY,
+  origin varchar(256) NOT NULL,
+  error varchar(8192) NOT NULL,
+  user_info jsonb NULL,
+  payload jsonb NULL,
+  deduplication_hash char(64) NULL,
+  event_time timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT pk_el__id PRIMARY KEY (id),
+  CONSTRAINT chk_el__origin_non_empty CHECK (origin <> ''),
+  CONSTRAINT chk_el__error_non_empty CHECK (error <> ''),
+  CONSTRAINT chk_el__user_info_object
+    CHECK (user_info IS NULL OR jsonb_typeof(user_info) = 'object'),
+  CONSTRAINT chk_el__payload_object CHECK (payload IS NULL OR jsonb_typeof(payload) = 'object'),
+  CONSTRAINT chk_el__deduplication_hash_sha256
+    CHECK (deduplication_hash IS NULL OR deduplication_hash ~ '^[0-9a-f]{64}$'),
+  CONSTRAINT uq_el__origin_deduplication_hash UNIQUE (origin, deduplication_hash)
+);
+CREATE INDEX idx_el__origin_id_desc ON error_log (origin, id DESC);
+CREATE INDEX idx_el__event_time ON error_log (event_time);
+```
+
+List it for an admin page with `listByCursor`, newest first, and prune it with `deleteExpiredInBatches`:
+
+```ts
+import { deleteExpiredInBatches, listByCursor } from 'jg-postgres';
+
+const rows = await listByCursor(postgres.pool, {
+  table: 'error_log',
+  columns: ['id', 'origin', 'error', 'event_time'],
+  filters: [{ column: 'origin', value: 'api' }],
+  after: cursor,
+  limit: 51,
+});
+
+await deleteExpiredInBatches(postgres, {
+  table: 'error_log',
+  timestampColumn: 'event_time',
+  olderThan: { days: 90 },
+});
+```
+
 ### Database summaries
 
 `readDatabaseSummary` and `listTableSizes` read what an admin dashboard or a health check shows about the database, and `diffTables` compares the tables with the ones a migration should have created:
@@ -457,6 +533,8 @@ The defaults fill every missing or null field when the record is read, and are t
 | `INVALID_COUNTER_TABLE`         | A counter table has no key column or no counter, or repeats a name                                                                                                            |
 | `INVALID_COUNTER_CHANGE`        | A counter row's key doesn't have exactly the key columns, or an amount isn't a whole, non-zero amount within `BIGINT`                                                         |
 | `COUNTER_ROW_NOT_FOUND`         | A counter query changed no row, because the row to adjust doesn't exist                                                                                                       |
+| `INVALID_ERROR_LOG_OPTIONS`     | An error log's origin, redact keys, limits, or onRecorded aren't valid                                                                                                        |
+| `ERROR_LOG_WRITE_FAILED`        | An error log's write failed, so nothing was inserted; it's reported to `onError`, never thrown                                                                                |
 
 A query's own error, such as a constraint violation, is node-postgres's `DatabaseError`, unchanged.
 

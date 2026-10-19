@@ -12,6 +12,8 @@
 - The verification recipe answers resends.
 - `deleteExpiredInBatches(postgres, { table, timestampColumn?, keyColumn?, olderThan | cutoff, batchSize?, filters?, timeouts? })`, which deletes a table's rows older than a cutoff, computed once from the database's clock on the UTC calendar or given, one locked batch at a time, skipping rows other transactions hold, until a batch deletes nothing, and resolves to `{ deletedCount, cutoff }`. Options that aren't valid throw `INVALID_EXPIRED_DELETION`.
 - `IExpiredRowDeletion`, `IExpiredRowDeletionOptions`, and `IRetentionAge`.
+- `jg-postgres/error-log`'s `createErrorLog(postgres, { origin, table?, redactKeys?, maxMessageLength?, maxPayloadBytes?, maxBatchSize?, timeouts?, onRecorded? })`, which records errors in an `error_log` table the README describes, with `record(entry)` and `recordMany(entries)`, and never rejects. A row stores the error's message, prefixed with its code and cut to `maxMessageLength`; an `Exception`'s object data, redacted, as its payload; the user info; and one row per origin and `deduplicationKey`, by the key's SHA-256 digest. A write that fails inserts nothing and goes to the database's `onError` as `ERROR_LOG_WRITE_FAILED`, with its SQLSTATE but without the rows. Options that aren't valid throw `INVALID_ERROR_LOG_OPTIONS`.
+- `IErrorLog`, `IErrorLogEntry`, `IErrorLogOptions`, and `IErrorLogRecordedEvent`.
 
 ### Changed
 

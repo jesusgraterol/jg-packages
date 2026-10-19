@@ -10,6 +10,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./error-log": {
+      "types": "./dist/error-log/index.d.ts",
+      "default": "./dist/error-log/index.js"
+    },
     "./record-store": {
       "types": "./dist/record-store/index.d.ts",
       "default": "./dist/record-store/index.js"
