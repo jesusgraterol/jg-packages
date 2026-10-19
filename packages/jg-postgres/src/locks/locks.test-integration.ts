@@ -5,6 +5,7 @@ import {
   afterAll,
   afterEach,
   beforeAll,
+  beforeEach,
   describe,
   expect,
   test,
@@ -14,7 +15,8 @@ import {
 
 import type { IPostgres } from '../postgres/index.js';
 import { ERRORS } from '../shared/index.js';
-import { connectTestPostgres } from '../test-utils/database.js';
+import { connectTestPostgres, createTableName } from '../test-utils/database.js';
+import { isInTransaction } from '../transactions/index.js';
 import { createAdvisoryLockKey, lockTransaction, withSessionLock } from './locks.js';
 
 let postgres: IPostgres;
@@ -189,6 +191,118 @@ describe('withSessionLock', () => {
     expect(releaseSpy).toHaveBeenCalledExactlyOnceWith(true);
     await vi.waitFor(async () => {
       await expect(isLockHeld(key)).resolves.toBe(false);
+    });
+  });
+
+  describe('transaction', () => {
+    const table = createTableName('lock_transactions');
+
+    beforeAll(async () => {
+      await postgres.query(`CREATE TABLE ${table} (id INTEGER PRIMARY KEY);`);
+    });
+
+    beforeEach(async () => {
+      await postgres.query(`DELETE FROM ${table};`);
+    });
+
+    /**
+     * Lists the ids the table holds.
+     * @returns A promise that resolves to the ids.
+     */
+    const readIds = async (): Promise<number[]> =>
+      (await postgres.query<{ id: number }>(`SELECT id FROM ${table} ORDER BY id;`)).map(
+        ({ id }) => id,
+      );
+
+    test("runs one transaction after another on the lock's client, holding the lock between them", async () => {
+      const key = createAdvisoryLockKey(`test:${crypto.randomUUID()}`);
+      let releaseSpy: MockInstance | undefined;
+
+      const outcome = await withSessionLock(postgres, key, async (lock) => {
+        releaseSpy = vi.spyOn(lock.client, 'release');
+        await lock.transaction(async (client) => {
+          expect(client).toBe(lock.client);
+          await client.query(`INSERT INTO ${table} (id) VALUES (1);`);
+        });
+        expect(isInTransaction(lock.client)).toBe(false);
+        await expect(isLockHeld(key)).resolves.toBe(true);
+        return lock.transaction(async (client) => {
+          await client.query(`INSERT INTO ${table} (id) VALUES (2);`);
+          return 'both committed';
+        });
+      });
+
+      expect(outcome).toStrictEqual({ acquired: true, result: 'both committed' });
+      await expect(readIds()).resolves.toStrictEqual([1, 2]);
+      await expect(isLockHeld(key)).resolves.toBe(false);
+      expect(releaseSpy).toHaveBeenCalledExactlyOnceWith(false);
+    });
+
+    test("refuses to begin once the lock's connection was lost", async () => {
+      const key = createAdvisoryLockKey(`test:${crypto.randomUUID()}`);
+      const operation = vi.fn();
+
+      const outcome = withSessionLock(postgres, key, async (lock) => {
+        const [row] = (await lock.client.query<{ pid: number }>('SELECT pg_backend_pid() AS pid;'))
+          .rows;
+        await postgres.query('SELECT pg_terminate_backend($1);', [row?.pid]);
+        await vi.waitFor(() => {
+          expect(lock.isActive()).toBe(false);
+        });
+        await lock.transaction(operation);
+      });
+
+      await expectToRejectCode(outcome, ERRORS.SESSION_LOCK_LOST);
+      expect(operation).not.toHaveBeenCalled();
+    });
+
+    test('destroys the client when a transaction ends in an unknown state, which frees the lock without an unlock', async () => {
+      const key = createAdvisoryLockKey(`test:${crypto.randomUUID()}`);
+      const connectionError = new Error('Connection terminated unexpectedly');
+      let releaseSpy: MockInstance | undefined;
+      let querySpy: MockInstance | undefined;
+
+      const outcome = withSessionLock(postgres, key, async (lock) => {
+        releaseSpy = vi.spyOn(lock.client, 'release');
+        const realQuery = lock.client.query.bind(lock.client) as (...args: unknown[]) => unknown;
+        querySpy = vi
+          .spyOn(lock.client, 'query')
+          .mockImplementation((...args: unknown[]) =>
+            args[0] === 'COMMIT' ? Promise.reject(connectionError) : realQuery(...args),
+          );
+        await lock.transaction(async (client) => {
+          await client.query(`INSERT INTO ${table} (id) VALUES (10);`);
+        });
+      });
+
+      await expectToRejectCode(outcome, ERRORS.TRANSACTION_OUTCOME_UNKNOWN);
+      expect(releaseSpy).toHaveBeenCalledExactlyOnceWith(true);
+      expect(querySpy).not.toHaveBeenCalledWith(
+        'SELECT pg_advisory_unlock($1::bigint) AS released;',
+        [key],
+      );
+      await vi.waitFor(async () => {
+        await expect(isLockHeld(key)).resolves.toBe(false);
+      });
+      // closing the connection rolled the transaction back
+      await expect(readIds()).resolves.not.toContain(10);
+    });
+
+    test('destroys the client when the operation leaves its own transaction open', async () => {
+      const key = createAdvisoryLockKey(`test:${crypto.randomUUID()}`);
+      let releaseSpy: MockInstance | undefined;
+
+      await withSessionLock(postgres, key, async (lock) => {
+        releaseSpy = vi.spyOn(lock.client, 'release');
+        await lock.client.query('BEGIN;');
+        await lock.client.query(`INSERT INTO ${table} (id) VALUES (20);`);
+      });
+
+      expect(releaseSpy).toHaveBeenCalledExactlyOnceWith(true);
+      await vi.waitFor(async () => {
+        await expect(isLockHeld(key)).resolves.toBe(false);
+      });
+      await expect(readIds()).resolves.not.toContain(20);
     });
   });
 });

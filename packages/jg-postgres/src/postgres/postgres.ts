@@ -1,10 +1,7 @@
 import { Pool, type PoolClient, type QueryResultRow } from 'pg';
 
-import { Exception } from 'jg-exception';
-
-import { isDatabaseError } from '../database-errors/index.js';
-import { ERRORS } from '../shared/index.js';
-import { assertTimeoutProfile, buildTransactionTimeoutsQuery } from '../timeouts/index.js';
+import { assertTimeoutProfile } from '../timeouts/index.js';
+import { isInTransaction, runTransaction } from '../transactions/index.js';
 import { POOL_TYPES } from './parsers.js';
 import type { IPostgres, IPostgresConfig, ITransactionOptions } from './types.js';
 
@@ -18,20 +15,6 @@ const ERROR_REPORTERS = new WeakMap<IPostgres, (error: unknown) => void>();
  */
 export const getErrorReporter = (postgres: IPostgres): ((error: unknown) => void) =>
   ERROR_REPORTERS.get(postgres) ?? ((error: unknown): void => console.error(error));
-
-/**
- * Checks whether a failed COMMIT may still have committed: the server never answered, because the
- * connection broke or the server is shutting down, so nobody can tell.
- * @param error The error COMMIT failed with.
- * @param hasLostConnection Whether the client reported a connection error meanwhile.
- * @returns Whether the transaction's outcome is unknown.
- */
-const isCommitOutcomeUnknown = (error: unknown, hasLostConnection: boolean): boolean =>
-  hasLostConnection ||
-  !isDatabaseError(error) ||
-  error.code === undefined ||
-  error.code.startsWith('08') ||
-  error.code.startsWith('57P');
 
 /**
  * Creates a PostgreSQL pool with the helpers every query, transaction, and lock uses. The pool
@@ -77,6 +60,7 @@ export const createPostgres = ({ onError, ...poolConfig }: IPostgresConfig): IPo
     operation: (client: PoolClient) => Promise<T>,
     { timeouts }: ITransactionOptions = {},
   ): Promise<T> => {
+    // checked before connecting, so an invalid profile never checks out a client
     if (timeouts !== undefined) {
       assertTimeoutProfile(timeouts);
     }
@@ -87,41 +71,12 @@ export const createPostgres = ({ onError, ...poolConfig }: IPostgresConfig): IPo
       reportError(error);
     };
     client.on('error', onClientError);
-    // the client goes back to the pool only when its connection is known to be idle and healthy
-    let shouldDestroyClient = true;
-    let isCommitting = false;
     try {
-      await client.query('BEGIN');
-      if (timeouts !== undefined) {
-        await client.query(buildTransactionTimeoutsQuery(timeouts));
-      }
-      const result = await operation(client);
-      isCommitting = true;
-      await client.query('COMMIT');
-      shouldDestroyClient = hasLostConnection;
-      return result;
-    } catch (error) {
-      if (isCommitting) {
-        if (isCommitOutcomeUnknown(error, hasLostConnection)) {
-          throw new Exception(
-            'The connection was lost during COMMIT, so the transaction may or may not have committed.',
-            { code: ERRORS.TRANSACTION_OUTCOME_UNKNOWN, cause: error },
-          );
-        }
-        // the server answered, so it rolled the transaction back and the connection is reusable
-        shouldDestroyClient = hasLostConnection;
-        throw error;
-      }
-      try {
-        await client.query('ROLLBACK');
-        shouldDestroyClient = hasLostConnection;
-      } catch (rollbackError) {
-        reportError(rollbackError);
-      }
-      throw error;
+      return await runTransaction(client, operation, { timeouts, onError: reportError });
     } finally {
       client.off('error', onClientError);
-      client.release(shouldDestroyClient);
+      // the client goes back to the pool only when its connection is known to be idle and healthy
+      client.release(hasLostConnection || isInTransaction(client));
     }
   };
 

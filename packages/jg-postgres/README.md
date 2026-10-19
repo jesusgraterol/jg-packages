@@ -55,6 +55,30 @@ const orderId = await postgres.transaction(async (client) => {
 
 `transaction` commits when the operation resolves, rolls back when it throws, and rejects with the operation's own error. It always returns its client to the pool, or destroys it when its state is unknown. When the connection breaks during `COMMIT`, nobody can tell whether the transaction committed, so it rejects with `TRANSACTION_OUTCOME_UNKNOWN`: check the data before retrying anything that isn't idempotent. Run work inside a transaction on its `client`, and never start a transaction inside another.
 
+### Transactions on a client you already hold
+
+`runTransaction` runs the same kind of transaction on a client you checked out yourself, so several transactions can run one after another on one connection. It never releases the client: release it with `client.release(isInTransaction(client))`, which destroys a client whose transaction ended in an unknown state instead of returning it to the pool:
+
+```ts
+import { createPostgres, isInTransaction, runTransaction } from 'jg-postgres';
+
+declare const postgres: ReturnType<typeof createPostgres>;
+
+const client = await postgres.pool.connect();
+try {
+  await runTransaction(client, async (transactionClient) => {
+    await transactionClient.query('DELETE FROM user_session WHERE user_account_id = $1;', ['42']);
+  });
+  await runTransaction(client, async (transactionClient) => {
+    await transactionClient.query('DELETE FROM user_account WHERE id = $1;', ['42']);
+  });
+} finally {
+  client.release(isInTransaction(client));
+}
+```
+
+`isInTransaction` is true while a transaction `runTransaction` began is open, and stays true when its end is unknown: a `COMMIT` the server never answered, which rejects with `TRANSACTION_OUTCOME_UNKNOWN`, or a `ROLLBACK` that failed, which goes to `onError`, `console.error` by default. A client already in a transaction, whether `runTransaction`'s or one the caller began with its own `BEGIN`, is refused with `TRANSACTION_ALREADY_ACTIVE` before any query, so a transaction is never nested inside another. `runTransaction` takes the same `timeouts` as `transaction`. It tracks only the clients of the copy of jg-postgres that ran it, and a `postgres.transaction()` started inside its operation runs on another client.
+
 ### Timeouts
 
 A profile says how long a kind of work may run: a statement on the server, a wait for a lock, and the client's wait for the answer, which adds a grace, 15 seconds by default, so the server's own error arrives first. Give the pool the profile of everyday work, and a slow transaction one of its own:
@@ -312,12 +336,20 @@ const outcome = await withSessionLock(
   postgres,
   createAdvisoryLockKey('user-account-deletion:42'),
   async (lock) => {
+    await lock.transaction(async (client) => {
+      await client.query('DELETE FROM user_session WHERE user_account_id = $1;', ['42']);
+    });
     lock.assertActive(); // throws SESSION_LOCK_LOST once the lock's connection is gone
+    await lock.transaction(async (client) => {
+      await client.query('DELETE FROM user_account WHERE id = $1;', ['42']);
+    });
     return 'deleted';
   },
 );
 // { acquired: false } when another request holds the lock
 ```
+
+`lock.transaction` runs a transaction on the lock's client with `runTransaction`, after checking the lock is still held, and takes the same `timeouts`. Once the operation ends, the lock is released and its client returned to the pool, unless a transaction on it is still open, such as one the operation began with its own `BEGIN`, or ended in an unknown state: then the client is destroyed, which closes its connection and releases the lock with it.
 
 ### Cursor pages and ordered lists
 
@@ -364,6 +396,7 @@ The defaults fill every missing or null field when the record is read, and are t
 | Code                            | When                                                                                                                  |
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `TRANSACTION_OUTCOME_UNKNOWN`   | The connection was lost during `COMMIT`                                                                               |
+| `TRANSACTION_ALREADY_ACTIVE`    | `runTransaction` or a lock's `transaction` was given a client that's already in a transaction                         |
 | `SESSION_LOCK_LOST`             | The connection that held a session lock was lost                                                                      |
 | `INVALID_IDENTIFIER`            | A name is empty, holds a null character, or is longer than 63 bytes                                                   |
 | `ROW_NOT_FOUND`                 | The row to move doesn't exist in the ordered list                                                                     |

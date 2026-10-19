@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+
+- `runTransaction(client, operation, { timeouts?, onError? })`, which runs a transaction on a client the caller already holds and never releases it, and `isInTransaction(client)`, which is true while that transaction is open and after one whose end is unknown, so `client.release(isInTransaction(client))` destroys such a client. A client already in a transaction, including one the caller began with its own `BEGIN`, is refused with `TRANSACTION_ALREADY_ACTIVE` before any query. `postgres.transaction()` now runs on it.
+- `transaction(operation, options?)` on `withSessionLock`'s lock, which runs `runTransaction` on the lock's client after checking the lock is still held, so one lock can cover several transactions.
+- `IRunTransactionOptions`.
+
+### Fixed
+
+- `withSessionLock` no longer returns its client to the pool, or releases the lock inside a transaction, when the operation leaves a transaction open or one ends in an unknown state. It destroys the client instead, which releases the lock.
+
 ## 0.3.0
 
 ### Added

@@ -23,6 +23,7 @@ export type { IPostgres, IPostgresConfig, ITransactionOptions } from './postgres
 export type { IColumnFilter, IQueryExecutor, IRowId } from './shared/index.js';
 export type { IMoveOptions, IOrderedList } from './sorting/index.js';
 export type { ITimeoutProfile } from './timeouts/index.js';
+export type { IRunTransactionOptions } from './transactions/index.js';
 export type { IUsageAdmission, IUsageAdmissionInput } from './usage-limits/index.js';
 export type {
   IVerificationAttempt,
@@ -43,6 +44,9 @@ export { ERRORS } from './shared/index.js';
 
 // pools and transactions
 export { createPostgres } from './postgres/index.js';
+
+// transactions on a held client
+export { isInTransaction, runTransaction } from './transactions/index.js';
 
 // timeouts
 export { defineTimeoutProfile, toPoolTimeouts, withQueryTimeout } from './timeouts/index.js';
