@@ -15,8 +15,9 @@ export default defineConfig({
   use: { baseURL: `http://127.0.0.1:${String(PORT)}` },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    // in the foreground, apart from any background preview the developer started
-    command: `astro preview --host 127.0.0.1 --port ${String(PORT)} --ignore-lock`,
+    // astro preview, apart from any preview the developer started, which stops once this run ends,
+    // even when the run is killed
+    command: `node scripts/preview-for-e2e.ts --port ${String(PORT)}`,
     url: `http://127.0.0.1:${String(PORT)}/`,
     reuseExistingServer: false,
   },

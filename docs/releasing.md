@@ -77,7 +77,7 @@ Every push to `main`, which is every merged pull request, runs the same parallel
 
 `publish` installs no dependencies and holds `id-token: write` only so npm can verify the workflow. `tag` holds `contents: write` only to push its tags.
 
-The same push deploys the website: `e2e` also uploads the site its end-to-end tests ran against, and the `deploy` job publishes it to GitHub Pages once every check job passes, without waiting for `publish`. [`deployment.md`](deployment.md) covers it.
+The same push deploys the website: the first `e2e` shard also uploads the site it built and tested, and the `deploy` job publishes it to GitHub Pages once every check job passes, without waiting for `publish`. [`deployment.md`](deployment.md) covers it.
 
 ## The first publish of a new package
 

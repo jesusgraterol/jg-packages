@@ -103,10 +103,17 @@ jobs:
       - name: Run the browser tests
         run: node internal/vitest-config/src/run-test-suite.ts full run test:browser
 
+  # the end-to-end suites run in three Playwright shards on separate runners, because the website's
+  # axe scans of its largest pages are CPU-bound. Playwright splits the tests in order, so the shards
+  # aren't even: the slowest scans fall in the second
   e2e:
-    name: End-to-end tests
+    name: End-to-end tests (${{ matrix.shard }} of 3)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - name: Check out the repository
         uses: actions/checkout@v7
@@ -128,13 +135,15 @@ jobs:
       - name: Install the browsers
         run: pnpm --filter jg-sw exec playwright install --with-deps chromium firefox webkit
 
-      # builds the site, which verify-build checks, and runs the end-to-end suite against it
+      # builds the site, which verify-build checks, and runs this shard of each end-to-end suite;
+      # turbo passes the shard to the test:e2e tasks only, not to the builds they wait for
       - name: Run the end-to-end tests
-        run: node internal/vitest-config/src/run-test-suite.ts full run test:e2e
+        run: node internal/vitest-config/src/run-test-suite.ts full run test:e2e -- --shard=${{ matrix.shard }}/3
 
-      # on main, the site the end-to-end tests ran against is handed to the deploy job
+      # on main, the first shard hands the site it built to the deploy job, which waits for every
+      # shard
       - name: Upload the site
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: matrix.shard == 1 && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v5
         with:
           path: website/dist
