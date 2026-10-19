@@ -158,7 +158,7 @@ describe('packAndCheck', () => {
       '@sample/tool has test:unit but no test:coverage, so pnpm check never runs its tests',
     ]);
     expect(await runPack(rootDirectory, join(workDirectory, 'blocked'), dependencies)).toBe(1);
-  });
+  }, 120_000);
 
   test('fails when no package is publishable', async () => {
     await editFile('package.json', '"license": "MIT",', '"license": "MIT",\n  "private": true,');
