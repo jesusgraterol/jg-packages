@@ -55,6 +55,25 @@ export const DATABASE_PASSWORD = readSecret('DATABASE_PASSWORD'); // as it is, w
 export const ROOT_ACCOUNT = readSecretJson('ROOT_ACCOUNT', z.object({ email: z.email() }));
 ```
 
+### Environment files
+
+`jg-env/node`'s `readEnvFile` reads a `.env` file's variables into a record, without changing `process.env`, so a base file and a local overlay can be merged, in order, with `mergeEnvSources`, and then read as any other source:
+
+```ts
+import { createEnvironmentReader } from 'jg-env';
+import { mergeEnvSources, readEnvFile } from 'jg-env/node';
+
+const environment = createEnvironmentReader(
+  mergeEnvSources(
+    readEnvFile('.env'), // the shared defaults
+    readEnvFile('.env.local', { requirePrivate: true, isOptional: true }), // secrets, if present
+    process.env, // what the shell or the container sets wins
+  ),
+);
+```
+
+The file is read as UTF-8, at most `maxBytes`, 65,536 by default, without a byte-order mark, and parsed by Node.js's `util.parseEnv`: quotes, multiline values in double quotes, `export`, and comments, with a later key winning and no `${...}` expansion. `parseEnv` skips a line it can't parse, such as one without `=`, rather than failing. With `requirePrivate`, the file must be private to its owner, `0o600` on POSIX, not reached through a symbolic link, and strictly inside `rootPath` when one is given. With `isOptional`, a missing file reads as `{}`. In `mergeEnvSources`, a later source wins and an undefined value is skipped, so it never hides an earlier one.
+
 ### Errors
 
 | Code                         | When                                                                                                |
@@ -62,8 +81,12 @@ export const ROOT_ACCOUNT = readSecretJson('ROOT_ACCOUNT', z.object({ email: z.e
 | `ENV_VARIABLE_MISSING`       | A required variable is unset                                                                        |
 | `ENV_VARIABLE_INVALID`       | A value isn't a string, an allowed value, `true` or `false`, a plain integer, JSON, or its schema's |
 | `ENV_SECRET_FILE_UNREADABLE` | A secret's file is missing, unreadable, or empty                                                    |
+| `ENV_FILE_UNREADABLE`        | A `.env` file is missing, without `isOptional`, isn't a regular file, or can't be read              |
+| `ENV_FILE_NOT_PRIVATE`       | A `.env` file read with `requirePrivate` isn't private, goes through a link, or is outside its root |
+| `ENV_FILE_TOO_LARGE`         | A `.env` file is larger than `maxBytes`                                                             |
+| `ENV_FILE_INVALID`           | A `.env` file isn't valid UTF-8 text                                                                |
 
-An error's message and data name the variable, never its value. `ENV_VARIABLE_INVALID` has no `cause`, because a JSON parser's or a schema's error can quote the value. Inside a container, `ENV_SECRET_FILE_UNREADABLE` leaves out the path and the file system's error too, since a variable set to the secret itself by mistake would otherwise print it.
+An error's message and data name the variable or the file, never a value. `ENV_VARIABLE_INVALID` has no `cause`, because a JSON parser's or a schema's error can quote the value. Inside a container, `ENV_SECRET_FILE_UNREADABLE` leaves out the path and the file system's error too, since a variable set to the secret itself by mistake would otherwise print it. `ENV_FILE_INVALID` has no `cause` either, so no byte of the file reaches a log.
 
 ## Documentation
 

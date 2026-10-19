@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.0
+
+### Added
+
+- `jg-env/node`'s `readEnvFile(path, { requirePrivate?, maxBytes?, rootPath?, isOptional? })`, which reads a `.env` file's variables into a record with Node.js's `util.parseEnv`, without changing `process.env`: as UTF-8, at most 65,536 bytes by default, without a byte-order mark. With `requirePrivate`, the file must be private, not reached through a link, and inside `rootPath`; with `isOptional`, a missing file reads as `{}`. It throws `ENV_FILE_UNREADABLE`, `ENV_FILE_NOT_PRIVATE`, `ENV_FILE_TOO_LARGE`, or `ENV_FILE_INVALID`, naming the file and never a value.
+- `mergeEnvSources(...sources)`, which merges sources such as a base file, an overlay, and `process.env`, a later one winning and an undefined value skipped.
+- `IReadEnvFileOptions` and `IEnvSource`.
+- A recipe for a base `.env` with a private overlay.
+
+### Changed
+
+- Depends on `jg-fs`, for the bounded and private file reads, from `jg-env/node` only.
+
 ## 0.1.1
 
 ### Changed

@@ -566,6 +566,9 @@ importers:
       jg-exception:
         specifier: workspace:^
         version: link:../jg-exception
+      jg-fs:
+        specifier: workspace:^
+        version: link:../jg-fs
     devDependencies:
       '@jg-packages/eslint-config':
         specifier: workspace:*

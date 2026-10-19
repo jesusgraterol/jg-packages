@@ -79,3 +79,37 @@ export const FIREBASE_OPTIONS = readSecretJson(
 ```
 
 A secret is read as it is, so write its file without a trailing newline, as `printf '%s' "$KEY" > secrets/STRIPE_SECRET_KEY.txt` does. An empty file fails with `ENV_SECRET_FILE_UNREADABLE`.
+
+## A base `.env` with a private overlay
+
+Keep the settings every developer shares in a committed `.env`, and each developer's secrets in an uncommitted `.env.local` that only its owner can read. Read both without touching `process.env`, let the shell or the container override either, and read the merged variables once, at startup:
+
+```ts
+import { fileURLToPath } from 'node:url';
+
+import { createEnvironmentReader } from 'jg-env';
+import { mergeEnvSources, readEnvFile } from 'jg-env/node';
+
+const root = fileURLToPath(new URL('..', import.meta.url));
+
+const isRunningInContainer = process.env['IS_RUNNING_IN_CONTAINER'] === 'true';
+
+// a container gets its variables from its own configuration, so it reads no file
+const variables = isRunningInContainer
+  ? mergeEnvSources(process.env)
+  : mergeEnvSources(
+      readEnvFile(`${root}.env`),
+      // a missing overlay is fine; one that others can read stops the start, with its path
+      readEnvFile(`${root}.env.local`, { requirePrivate: true, rootPath: root, isOptional: true }),
+      process.env,
+    );
+
+const { readInteger, readString } = createEnvironmentReader(variables);
+
+export const CONFIG = {
+  port: readInteger('PORT'),
+  apiKey: readString('PAYMENTS_API_KEY'),
+} as const;
+```
+
+Create the overlay with `install -m 600 /dev/null .env.local` on POSIX, so it's private from the start, and add it to `.gitignore`. The base file can be read by anyone, so it holds no secrets.
