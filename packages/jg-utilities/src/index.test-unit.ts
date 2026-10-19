@@ -4,8 +4,10 @@ import { describe, expect, test } from 'vitest';
 import {
   applyDefaults,
   createCursorCodec,
+  createDeadline,
   createEventBus,
   createRequestCoordinator,
+  createTaskRunner,
   createTimestamp,
   decodeBase64Url,
   decodeCursor,
@@ -57,6 +59,17 @@ describe('public API', () => {
     expect(toYouTubeEmbedUrl('M7lc1UVf-VE')).toBe(
       'https://www.youtube-nocookie.com/embed/M7lc1UVf-VE',
     );
+  });
+
+  test('exports the task runner and the deadline from the package entry point', async () => {
+    const runner = createTaskRunner({ onError: () => undefined });
+    const deadline = createDeadline({ timeoutSeconds: 60 });
+
+    await expect(runner.run(() => Promise.resolve('ran'))).resolves.toBe('ran');
+    expect(deadline.isExpired()).toBe(false);
+    deadline.dispose();
+    expect(ERRORS.TASK_RUNNER_BUSY).toBe('TASK_RUNNER_BUSY');
+    expect(ERRORS.DEADLINE_EXCEEDED).toBe('DEADLINE_EXCEEDED');
   });
 
   test('exports applyDefaults from the package entry point', () => {
