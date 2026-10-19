@@ -6,10 +6,10 @@ How the site reaches [jg-packages.jesusgraterol.dev](https://jg-packages.jesusgr
 
 Every push to `main` runs `.github/workflows/ci.yml`:
 
-1. **`check`** runs `pnpm check`, which builds the site, runs `verify-build`, and runs the end-to-end suite against that build. It then uploads `website/dist` as the Pages artifact.
-2. **`deploy`** needs `check`, and publishes the artifact with `actions/deploy-pages`, in the `github-pages` environment. It has only `pages: write` and `id-token: write`, gives up after 10 minutes, and runs in the `pages-production` concurrency group without cancelling, so a newer deploy waits for the one in progress.
+1. **`e2e`** builds the site, which runs `verify-build`, and runs the end-to-end suite against that build. It then uploads `website/dist` as the Pages artifact.
+2. **`deploy`** needs every check job, `static`, `tests`, `browser`, `e2e`, `release`, and `floor`, and publishes the artifact with `actions/deploy-pages`, in the `github-pages` environment. It has only `pages: write` and `id-token: write`, gives up after 10 minutes, and runs in the `pages-production` concurrency group without cancelling, so a newer deploy waits for the one in progress.
 
-Pull requests run `check` without uploading anything, so only what reaches `main` is deployed. `deploy` doesn't wait for `publish`, so the site can name a version a minute before npm serves it.
+Pull requests run the same check jobs without uploading anything, so only what reaches `main` is deployed. `deploy` doesn't wait for `publish`, so the site can name a version a minute before npm serves it.
 
 ## GitHub Pages and the domain
 

@@ -58,7 +58,7 @@ pnpm check
 
 ```text
 .
-├── .github/workflows/ci.yml  # the check, floor, deploy, publish, and tag jobs
+├── .github/workflows/ci.yml  # the parallel check jobs, then the deploy, publish, and tag jobs
 ├── docs/
 │   ├── asset-attribution.md  # where the website's mark, fonts, and icons come from
 │   ├── creating-a-package.md # every step from a package's name to its first release

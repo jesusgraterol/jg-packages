@@ -14,10 +14,13 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  check:
-    name: Check
+  # pnpm check's tasks, split into jobs that run in parallel, so no job's tests compete with
+  # another's for the runner's CPU. No dependency caching anywhere in this workflow, because it
+  # publishes packages
+  static:
+    name: Lint, typecheck, build, and format
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 20
     steps:
       - name: Check out the repository
         uses: actions/checkout@v7
@@ -27,7 +30,6 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
-      # no dependency caching anywhere in this workflow, because it publishes packages
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
@@ -37,15 +39,136 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # the browser and end-to-end tests run in Chromium, Firefox, and WebKit, each with the
-      # system libraries it needs
+      - name: Lint, typecheck, and build
+        run: node internal/vitest-config/src/run-test-suite.ts full run lint typecheck build
+
+      - name: Check the formatting
+        run: pnpm format:check
+
+  tests:
+    name: Unit and integration tests, with coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # the React packages' coverage includes their browser tests' Chromium run; the integration
+      # tests start PostgreSQL and Redis containers in the runner's Docker
+      - name: Install Chromium
+        run: pnpm --filter jg-sw exec playwright install --with-deps chromium
+
+      - name: Run the tests with coverage
+        run: node internal/vitest-config/src/run-test-suite.ts full run test:coverage
+
+  browser:
+    name: Browser tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Install the browsers
         run: pnpm --filter jg-sw exec playwright install --with-deps chromium firefox webkit
 
-      - name: Run every check
-        run: pnpm check
+      - name: Run the browser tests
+        run: node internal/vitest-config/src/run-test-suite.ts full run test:browser
 
-      # on main, the checked tarballs are packed once and handed to the publish job
+  e2e:
+    name: End-to-end tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install the browsers
+        run: pnpm --filter jg-sw exec playwright install --with-deps chromium firefox webkit
+
+      # builds the site, which verify-build checks, and runs the end-to-end suite against it
+      - name: Run the end-to-end tests
+        run: node internal/vitest-config/src/run-test-suite.ts full run test:e2e
+
+      # on main, the site the end-to-end tests ran against is handed to the deploy job
+      - name: Upload the site
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: website/dist
+
+  release:
+    name: Release checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the packages
+        run: pnpm turbo run build --filter='./packages/*'
+
+      - name: Check the release
+        if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+        run: pnpm release:verify
+
+      # on main, the same checks run while packing, and the tarballs are handed to the publish job
       - name: Pack the release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: pnpm release:pack
@@ -59,13 +182,6 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
-
-      # on main, the site that passed every check is handed to the deploy job
-      - name: Upload the site
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: website/dist
 
   floor:
     name: Package tests on Node.js 24.0.0
@@ -95,7 +211,7 @@ jobs:
   deploy:
     name: Deploy the site
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: check
+    needs: [static, tests, browser, e2e, release, floor]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # one deploy at a time; a newer one waits for the one in progress instead of cancelling it
@@ -117,7 +233,7 @@ jobs:
   publish:
     name: Publish to npm
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [check, floor]
+    needs: [static, tests, browser, e2e, release, floor]
     runs-on: ubuntu-latest
     # npm takes a few minutes to serve each new version, which the job waits for
     timeout-minutes: 30
