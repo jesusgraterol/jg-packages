@@ -1,0 +1,29 @@
+/*
+ * The frame of PageOutlet. It sits in the `base` layer, so the app's own styles and Tailwind CSS
+ * utilities override it. Each new page fades in, without animating height, because pages often
+ * load their content asynchronously.
+ */
+@layer base {
+  .jg-page-outlet {
+    min-width: 0;
+    width: 100%;
+    /* the frame takes focus only so assistive technology starts reading at the new page */
+    outline: none;
+    animation: jg-page-outlet-fade 180ms ease-out;
+  }
+
+  @keyframes jg-page-outlet-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .jg-page-outlet {
+      animation: none;
+    }
+  }
+}

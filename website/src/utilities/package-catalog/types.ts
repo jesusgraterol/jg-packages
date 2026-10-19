@@ -16,6 +16,7 @@ export type IPackageIcon =
   | 'key-round'
   | 'octagon-alert'
   | 'refresh-cw'
+  | 'route'
   | 'table-2'
   | 'wrench'
   | 'zap';

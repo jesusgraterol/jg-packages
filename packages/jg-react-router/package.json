@@ -1,0 +1,78 @@
+{
+  "name": "jg-react-router",
+  "version": "0.1.0",
+  "description": "React Router helpers: a page outlet that focuses each new page and restores scroll on Back and Forward, and dialogs that close when the route changes.",
+  "author": "Jesus Graterol",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": {
+      "style": "./dist/page-outlet/styles.css",
+      "default": "./dist/page-outlet/styles.css"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "API.md",
+    "RECIPES.md"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesusgraterol/jg-packages.git",
+    "directory": "packages/jg-react-router"
+  },
+  "homepage": "https://jg-packages.jesusgraterol.dev/packages/jg-react-router/",
+  "bugs": {
+    "url": "https://github.com/jesusgraterol/jg-packages/issues"
+  },
+  "keywords": [
+    "react",
+    "react-router",
+    "scroll-restoration",
+    "focus-management",
+    "dialog"
+  ],
+  "scripts": {
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/build-tools/src/copy-assets.ts 'page-outlet/styles.css' && node ../../internal/api-reference/src/write-api-markdown.ts",
+    "lint": "eslint .",
+    "test": "pnpm test:browser",
+    "test:browser": "vitest run --project browser",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4",
+    "react-router": "^7.14.2"
+  },
+  "devDependencies": {
+    "@jg-packages/eslint-config": "workspace:*",
+    "@jg-packages/tsconfig": "workspace:*",
+    "@jg-packages/vitest-config": "workspace:*",
+    "@testing-library/dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "7.14.2",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

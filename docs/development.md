@@ -62,7 +62,7 @@ Prefer `pnpm turbo run <task> --filter=<package>` when the task needs other pack
 
 ## Tests
 
-Tests sit next to the file they test, and their suffix sets their category:
+Tests sit next to the file they test, and their suffix sets their category. A test of a `.tsx` file is `.tsx` too, such as `.test-browser.tsx`:
 
 | Category    | File suffix            | Script             | Runs in `pnpm check`         |
 | ----------- | ---------------------- | ------------------ | ---------------------------- |

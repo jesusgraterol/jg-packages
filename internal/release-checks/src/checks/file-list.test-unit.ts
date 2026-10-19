@@ -48,10 +48,16 @@ describe('checkFileList', () => {
     expect(
       checkFileList(
         MANIFEST,
-        toFiles([...SHIPPED, 'dist/index.test-unit.js', 'dist/tsconfig.tsbuildinfo']),
+        toFiles([
+          ...SHIPPED,
+          'dist/index.test-unit.js',
+          'dist/page.component.test-browser.tsx',
+          'dist/tsconfig.tsbuildinfo',
+        ]),
       ),
     ).toStrictEqual([
       'ships a test or build-info file: dist/index.test-unit.js',
+      'ships a test or build-info file: dist/page.component.test-browser.tsx',
       'ships a test or build-info file: dist/tsconfig.tsbuildinfo',
     ]);
   });

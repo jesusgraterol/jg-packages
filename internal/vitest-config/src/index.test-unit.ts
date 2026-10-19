@@ -15,7 +15,7 @@ describe('createVitestConfig', () => {
               unstubGlobals: true,
               testTimeout: 30_000,
               hookTimeout: 30_000,
-              include: ['src/**/*.test-unit.ts'],
+              include: ['src/**/*.test-unit.{ts,tsx}'],
             },
           },
           {
@@ -26,7 +26,7 @@ describe('createVitestConfig', () => {
               unstubGlobals: true,
               testTimeout: 30_000,
               hookTimeout: 30_000,
-              include: ['src/**/*.test-integration.ts'],
+              include: ['src/**/*.test-integration.{ts,tsx}'],
             },
           },
         ],
@@ -34,7 +34,7 @@ describe('createVitestConfig', () => {
           provider: 'v8',
           include: ['src/**/*.ts'],
           exclude: [
-            'src/**/*.test-*.ts',
+            'src/**/*.test-*.{ts,tsx}',
             'src/**/test-utils/**',
             'src/**/fixtures/**',
             'src/**/*.d.ts',
@@ -56,7 +56,7 @@ describe('createVitestConfig', () => {
           testTimeout: 30_000,
           hookTimeout: 30_000,
           include: [],
-          benchmark: { include: ['src/**/*.test-bench.ts'] },
+          benchmark: { include: ['src/**/*.test-bench.{ts,tsx}'] },
         },
       },
     ]);
@@ -84,7 +84,7 @@ describe('createVitestConfig', () => {
         unstubGlobals: true,
         testTimeout: 30_000,
         hookTimeout: 30_000,
-        include: ['src/**/*.test-browser.ts'],
+        include: ['src/**/*.test-browser.{ts,tsx}'],
         browser: {
           enabled: true,
           headless: true,
