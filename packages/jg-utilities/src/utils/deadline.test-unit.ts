@@ -95,6 +95,10 @@ describe('createDeadline', () => {
     const controller = new AbortController();
     const deadline = createDeadline({ timeoutSeconds: 5, signal: controller.signal });
     const reason = new Error('the request ended');
+    // a consumer listens, as fetch does; without one, Node.js 24.21 and later fill an
+    // AbortSignal.any signal's reason in only when it's read, from the first source in its list
+    const receivedReasons: unknown[] = [];
+    deadline.signal.addEventListener('abort', () => receivedReasons.push(deadline.signal.reason));
     vi.advanceTimersByTime(5_000);
 
     controller.abort(reason);
@@ -103,8 +107,9 @@ describe('createDeadline', () => {
     expect(() => {
       deadline.throwIfStopped();
     }).toThrow(reason);
-    // the deadline aborted first, so the combined signal keeps its reason
-    expect((deadline.signal.reason as DOMException).name).toBe('TimeoutError');
+    // the deadline aborted first, so the consumer heard its TimeoutError, once
+    expect(receivedReasons).toHaveLength(1);
+    expect((receivedReasons[0] as DOMException).name).toBe('TimeoutError');
   });
 
   test("aborts with the caller's reason when the caller's signal aborts first", () => {
