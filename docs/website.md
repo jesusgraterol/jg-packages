@@ -169,6 +169,7 @@ Every package has one icon, set as `icon` in its catalog entry. It leads the pac
 | `jg-react-router`   | `Route`        | Pages along a route.            |
 | `jg-nestjs`         | `Server`       | Services over HTTP.             |
 | `jg-crypto`         | `LockKeyhole`  | Hashes and signatures.          |
+| `jg-git`            | `GitBranch`    | Git repositories.               |
 
 To add one, confirm the icon exists as `website/node_modules/@lucide/astro/src/icons/<name>.ts`, add its key to `IPackageIcon` in `website/src/utilities/package-catalog/types.ts`, map it to its component in `website/src/components/package-icon/package-icon.astro`, set the package's `icon`, and add its row here.
 

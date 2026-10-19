@@ -151,6 +151,14 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['node'],
     order: 18,
   },
+  'jg-git': {
+    title: 'Git',
+    description:
+      'Git commands for Node.js that never prompt or inherit Git environment variables, with time and output limits and typed reads.',
+    icon: 'git-branch',
+    runtimes: ['node'],
+    order: 19,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/

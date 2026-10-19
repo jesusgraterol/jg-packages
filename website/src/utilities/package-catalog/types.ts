@@ -12,6 +12,7 @@ export type IPackageIcon =
   | 'cpu'
   | 'database'
   | 'folder-open'
+  | 'git-branch'
   | 'globe'
   | 'key-round'
   | 'lock-keyhole'
