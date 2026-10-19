@@ -14,6 +14,17 @@ export type {
   IPageRouteLazyFunction,
   IPageRouteMetadata,
 } from './page-route/index.js';
+export type {
+  ISearchParamKind,
+  ISearchParamKinds,
+  ISetSearchParamState,
+  ISetSearchParamStateOptions,
+  IUseSearchParamStateOptions,
+} from './search-param-state/index.js';
+export type { ISchema } from './shared/index.js';
+
+// error codes
+export { ERRORS } from './shared/index.js';
 
 // page outlet
 export { PageOutlet } from './page-outlet/index.js';
@@ -34,3 +45,6 @@ export {
   createPageRouteObject,
   usePageRouteMetadata,
 } from './page-route/index.js';
+
+// URL state
+export { useSearchParamState } from './search-param-state/index.js';

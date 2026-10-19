@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- `useSearchParamState({ params, schema, defaultValue, unknownParams? })`, which keeps typed state in the URL's search parameters, each key held once or repeated. It reads them through the schema with the defaults filling missing keys, falling back to the defaults when the schema rejects them, replaces a URL that isn't canonical once, keeping the router state and the hash, and never loops on a schema that doesn't round-trip. Its setter keeps its identity, composes the changes of one tick into one navigation, pushes unless given `replace`, and skips a change that leaves the search as it is. A value the URL can't hold throws `INVALID_SEARCH_PARAM_VALUE`.
+- `ERRORS`, `ISchema`, `ISearchParamKind`, `ISearchParamKinds`, `ISetSearchParamState`, `ISetSearchParamStateOptions`, and `IUseSearchParamStateOptions`.
+
+### Changed
+
+- Depends on `jg-exception`, for its coded errors.
+
 ## 0.2.0
 
 ### Added

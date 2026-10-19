@@ -90,6 +90,34 @@ export const router = createBrowserRouter([
 
 An eager page becomes `{ path, handle, element }`, and a lazy one `{ path, handle, HydrateFallback, lazy }`, whose `lazy` resolves to the element. The `wrapElement` option wraps every page's element, such as in an error boundary, and `HydrateFallback` shows while a lazy page loads during hydration. `usePageRouteMetadata` skips a handle without a string title and description, and gives `null` when no matched route is a page.
 
+### URL state
+
+`useSearchParamState` keeps typed state, such as a list's filters and page, in the URL's search parameters, so a reload, a shared link, and Back all show the same list:
+
+```ts
+import { useSearchParamState } from 'jg-react-router';
+import { z } from 'zod';
+
+const FiltersSchema = z.object({
+  query: z.string(),
+  page: z.coerce.number().int().min(1),
+  status: z.array(z.enum(['paid', 'refunded'])),
+});
+
+const [filters, setFilters] = useSearchParamState({
+  params: { query: 'one', page: 'one', status: 'many' }, // ?status=paid&status=refunded
+  schema: FiltersSchema, // a rejected URL reads as the defaults
+  defaultValue: { query: '', page: 1, status: [] }, // left out of the URL
+});
+
+setFilters((current) => ({ ...current, page: current.page + 1 })); // pushes ?page=2
+setFilters({ ...filters, query: 'card', page: 1 }, { replace: true }); // replaces the entry
+```
+
+The schema reads the URL's strings, with the defaults filling missing keys, so give numbers and booleans `z.coerce` or a preprocess step. The URL holds the canonical form, without keys at their defaults, and a URL that isn't canonical, such as an old bookmark, is replaced once, keeping the router state and the hash, so the way back to the previous page isn't lost. The value keeps its identity while its keys don't change, and the setter always keeps its identity. Changes made in the same tick compose, each updater seeing the one before, and navigate once; a change that leaves the search as it is navigates nowhere. Parameters the state doesn't own, such as `utm_source`, stay, unless `unknownParams` is `'remove'`. A value the URL can't hold, such as an object or `NaN`, throws `INVALID_SEARCH_PARAM_VALUE` where it's set.
+
+Each change is a navigation, so `DialogNavigationProvider` closes the dialogs open at the time, as for any other navigation.
+
 ## Documentation
 
 The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-react-router/.
