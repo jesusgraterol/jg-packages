@@ -238,6 +238,53 @@ WHERE id IN (
 );
 ```
 
+### Database summaries
+
+`readDatabaseSummary` and `listTableSizes` read what an admin dashboard or a health check shows about the database, and `diffTables` compares the tables with the ones a migration should have created:
+
+```ts
+import { diffTables, listTableSizes, readDatabaseSummary } from 'jg-postgres';
+
+const summary = await readDatabaseSummary(postgres.pool); // the public schema, or { schema }
+// { name, serverVersion, serverVersionNumber, sizeBytes, activeConnections, maxConnections, tableCount }
+
+const tables = await listTableSizes(postgres.pool); // [{ name, totalBytes }], sorted by name
+const { missing, unexpected } = diffTables(
+  tables.map(({ name }) => name),
+  ['app_user', 'session'],
+);
+```
+
+Sizes and counts are numbers, and sizes include indexes and TOAST data. `activeConnections` counts the connections to this database running a query. Without the `pg_read_all_stats` role, PostgreSQL shows a role only its own connections, so the count is lower than the server's.
+
+### Counter tables
+
+`defineCounterTable` builds the queries that change counter rows, such as an account's daily usage or a balance, quoting every name once and sending every value as a parameter. `applyCounterQueries` runs them in the caller's transaction, sorted by row, so two transactions that change the same rows lock them in the same order and never deadlock:
+
+```ts
+import { applyCounterQueries, defineCounterTable } from 'jg-postgres';
+
+const dailyUsage = defineCounterTable({
+  table: 'daily_usage',
+  keyColumns: ['account_id', 'day'],
+  counters: ['request_count', 'token_count'],
+});
+
+await postgres.transaction((client) =>
+  applyCounterQueries(client, [
+    // inserts the row, or adds to it
+    dailyUsage.buildIncrement(
+      { account_id: accountId, day },
+      { request_count: 1, token_count: tokens },
+    ),
+    // adds to a row that must exist, or throws COUNTER_ROW_NOT_FOUND
+    dailyUsage.buildAdjustment({ account_id: accountId, day }, { token_count: -refunded }),
+  ]),
+);
+```
+
+An increment is an `INSERT … ON CONFLICT (key columns) DO UPDATE`, so the table needs a unique constraint on exactly the key columns, and a default, such as 0, for every counter. Amounts are whole numbers or bigints within `BIGINT`: positive to increment, and non-zero to adjust. A counter that would leave `BIGINT`'s range fails with SQLSTATE 22003, which `isNumericValueOutOfRangeError` checks, and the transaction rolls back.
+
 ### Constraint errors
 
 ```ts
@@ -314,21 +361,24 @@ The defaults fill every missing or null field when the record is read, and are t
 
 ### Errors
 
-| Code                            | When                                                                                                             |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `TRANSACTION_OUTCOME_UNKNOWN`   | The connection was lost during `COMMIT`                                                                          |
-| `SESSION_LOCK_LOST`             | The connection that held a session lock was lost                                                                 |
-| `INVALID_IDENTIFIER`            | A name is empty, holds a null character, or is longer than 63 bytes                                              |
-| `ROW_NOT_FOUND`                 | The row to move doesn't exist in the ordered list                                                                |
-| `ROW_ALREADY_FIRST`             | The row to move up is already first                                                                              |
-| `ROW_ALREADY_LAST`              | The row to move down is already last                                                                             |
-| `MOVE_FAILED`                   | The move didn't update exactly two rows                                                                          |
-| `INVALID_TIMEOUT_PROFILE`       | A timeout profile's seconds aren't positive and finite, or its lock timeout is longer than its statement timeout |
-| `INVALID_OPTIONAL_READ_OPTIONS` | An optional reader's database, limits, or timeouts aren't valid                                                  |
-| `INVALID_USAGE_ADMISSION`       | A usage admission's ids, limit, or seconds aren't valid, or it has a cooldown without a scope                    |
-| `INVALID_VERIFICATION_POLICY`   | The verification policies or the code length aren't valid                                                        |
-| `INVALID_VERIFICATION_INPUT`    | A verification binding's ids aren't valid, its action has no policy, or issue has no delivery function           |
-| `VERIFICATION_DELIVERY_FAILED`  | The delivery function threw, after the challenge was committed                                                   |
+| Code                            | When                                                                                                                  |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `TRANSACTION_OUTCOME_UNKNOWN`   | The connection was lost during `COMMIT`                                                                               |
+| `SESSION_LOCK_LOST`             | The connection that held a session lock was lost                                                                      |
+| `INVALID_IDENTIFIER`            | A name is empty, holds a null character, or is longer than 63 bytes                                                   |
+| `ROW_NOT_FOUND`                 | The row to move doesn't exist in the ordered list                                                                     |
+| `ROW_ALREADY_FIRST`             | The row to move up is already first                                                                                   |
+| `ROW_ALREADY_LAST`              | The row to move down is already last                                                                                  |
+| `MOVE_FAILED`                   | The move didn't update exactly two rows                                                                               |
+| `INVALID_TIMEOUT_PROFILE`       | A timeout profile's seconds aren't positive and finite, or its lock timeout is longer than its statement timeout      |
+| `INVALID_OPTIONAL_READ_OPTIONS` | An optional reader's database, limits, or timeouts aren't valid                                                       |
+| `INVALID_USAGE_ADMISSION`       | A usage admission's ids, limit, or seconds aren't valid, or it has a cooldown without a scope                         |
+| `INVALID_VERIFICATION_POLICY`   | The verification policies or the code length aren't valid                                                             |
+| `INVALID_VERIFICATION_INPUT`    | A verification binding's ids aren't valid, its action has no policy, or issue has no delivery function                |
+| `VERIFICATION_DELIVERY_FAILED`  | The delivery function threw, after the challenge was committed                                                        |
+| `INVALID_COUNTER_TABLE`         | A counter table has no key column or no counter, or repeats a name                                                    |
+| `INVALID_COUNTER_CHANGE`        | A counter row's key doesn't have exactly the key columns, or an amount isn't a whole, non-zero amount within `BIGINT` |
+| `COUNTER_ROW_NOT_FOUND`         | A counter query changed no row, because the row to adjust doesn't exist                                               |
 
 A query's own error, such as a constraint violation, is node-postgres's `DatabaseError`, unchanged.
 

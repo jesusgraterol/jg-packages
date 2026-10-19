@@ -1,5 +1,18 @@
 // types
+export type {
+  ICounterChanges,
+  ICounterKey,
+  ICounterQuery,
+  ICounterTable,
+  ICounterTableDefinition,
+} from './counters/index.js';
 export type { ICursorListingOptions, ICursorPage } from './cursor/index.js';
+export type {
+  IDatabaseSummary,
+  IIntrospectionOptions,
+  ITableDiff,
+  ITableSize,
+} from './introspection/index.js';
 export type { ISessionLock, ISessionLockResult } from './locks/index.js';
 export type {
   IOptionalRead,
@@ -42,6 +55,12 @@ export { admitUsage } from './usage-limits/index.js';
 
 // verification challenges
 export { createVerificationChallenges } from './verification/index.js';
+
+// introspection
+export { diffTables, listTableSizes, readDatabaseSummary } from './introspection/index.js';
+
+// counter tables
+export { applyCounterQueries, defineCounterTable } from './counters/index.js';
 
 // SQLSTATE checks
 export {
