@@ -1,6 +1,6 @@
 {
   "name": "jg-tanstack-query",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "TanStack Query for React apps: a client with safe defaults, opt-in IndexedDB persistence, and a sign-out clear that waits for restore.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -48,12 +48,13 @@
     "lint": "eslint .",
     "test": "pnpm test:unit && pnpm test:browser",
     "test:browser": "vitest run --project browser",
-    "test:coverage": "vitest run --coverage --project unit",
+    "test:coverage": "vitest run --coverage --project unit --project \"browser (chromium)\"",
     "test:unit": "vitest run --project unit",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json"
   },
   "dependencies": {
-    "idb-keyval": "^6.2.2"
+    "idb-keyval": "^6.2.2",
+    "jg-exception": "workspace:^"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.100.14",

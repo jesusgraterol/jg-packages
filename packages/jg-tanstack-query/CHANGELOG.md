@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0
+
+### Added
+
+- `useSeededInfiniteQuery(options)`, which pages through a list whose first page another query already fetched, publishing that page into an infinite query and fetching only the pages after it with `continuationQueryFn`. A new `firstPageUpdatedAt` or first page starts a new generation, aborting a page in flight, and components using the same key share one. Its `fetchNextPage` and `refetch` keep their identity, and a fetch forced before the first page arrives rejects with `FIRST_PAGE_NOT_READY`.
+- `isQueryLoading`, `isQueryReadyForInitialDisplay`, `canQueryLoadMore`, `isQueryLoadingMore`, and `isQueryResultDataAvailable`, which read a query's flags.
+- `ERRORS`, `IUseSeededInfiniteQueryOptions`, `ISeededInfiniteQueryResult`, `IQueryExecutionState`, and `IQueryInitialResolutionState`.
+
 ## 0.1.1
 
 ### Changed

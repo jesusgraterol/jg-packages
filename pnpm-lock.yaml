@@ -1144,6 +1144,9 @@ importers:
       idb-keyval:
         specifier: ^6.2.2
         version: 6.3.0
+      jg-exception:
+        specifier: workspace:^
+        version: link:../jg-exception
     devDependencies:
       '@jg-packages/eslint-config':
         specifier: workspace:*
