@@ -7,6 +7,7 @@ import { extractMessage } from 'jg-exception';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import type { IPostgres } from '../postgres/index.js';
+import { deleteExpiredInBatches } from '../retention/index.js';
 import { ERRORS } from '../shared/index.js';
 import { connectTestPostgres, createTableName } from '../test-utils/database.js';
 
@@ -81,22 +82,22 @@ CREATE INDEX idx_vc__created_at ON verification_challenge (created_at);
 
 /**
  * Reads the SQL blocks of the README's "Verification challenges" section, so the tests run the
- * schema, the pruning query, and the migration the README documents.
- * @returns The table's DDL, the pruning query, and the migration from 0.3.0's table.
+ * schema and the migration the README documents.
+ * @returns The table's DDL, and the migration from 0.3.0's table.
  */
-const readDocumentedSql = (): { ddl: string; prune: string; migration: string } => {
+const readDocumentedSql = (): { ddl: string; migration: string } => {
   const readme = readFileSync(new URL('../../README.md', import.meta.url), 'utf8');
   const section = readme.slice(
     readme.indexOf('### Verification challenges'),
     readme.indexOf('### Database summaries'),
   );
-  const [ddl, prune, migration] = [...section.matchAll(/```sql\n([\s\S]*?)```/g)].map(
+  const [ddl, migration] = [...section.matchAll(/```sql\n([\s\S]*?)```/g)].map(
     (match) => match[1] ?? '',
   );
-  if (ddl === undefined || prune === undefined || migration === undefined) {
+  if (ddl === undefined || migration === undefined) {
     throw new Error('The README lost its verification SQL.');
   }
-  return { ddl, prune, migration };
+  return { ddl, migration };
 };
 
 let postgres: IPostgres;
@@ -779,35 +780,22 @@ describe('the documented migration', () => {
   });
 });
 
-describe('the documented pruning query', () => {
-  test('deletes, oldest first, at most a batch of the rows older than the age', async () => {
-    // the query prunes the whole table, so the rows the other tests left would count
+describe('the documented pruning', () => {
+  test('deletes the rows older than the age, keeping the younger ones', async () => {
+    // the pruning covers the whole table, so the rows the other tests left would count
     await postgres.query('TRUNCATE verification_challenge;');
     const binding = createBinding();
     for (const secondsAgo of [9_000, 8_000, 7_000, 60]) {
       await insertPastChallenge(binding, secondsAgo);
     }
-    const { prune } = readDocumentedSql();
-    const countOlderThan = async (seconds: number): Promise<number> => {
-      const [{ challenge_count }] = (await postgres.query<{ challenge_count: number }>(
-        `SELECT count(*)::integer AS challenge_count FROM verification_challenge
-        WHERE created_at < clock_timestamp() - make_interval(secs => $1);`,
-        [seconds],
-      )) as [{ challenge_count: number }];
-      return challenge_count;
-    };
 
-    const first = await postgres.pool.query(prune, [3_600, 2]);
+    const { deletedCount } = await deleteExpiredInBatches(postgres, {
+      table: 'verification_challenge',
+      olderThan: { seconds: 3_600 },
+      batchSize: 2,
+    });
 
-    expect(first.rowCount).toBe(2);
-    expect(await countOlderThan(7_500)).toBe(0);
-    expect(await countOlderThan(0)).toBe(2);
-
-    const second = await postgres.pool.query(prune, [3_600, 2]);
-    const third = await postgres.pool.query(prune, [3_600, 2]);
-
-    expect(second.rowCount).toBe(1);
-    expect(third.rowCount).toBe(0);
-    expect(await countOlderThan(0)).toBe(1);
+    expect(deletedCount).toBe(3);
+    expect(await readChallenges(binding.actorId)).toHaveLength(1);
   });
 });

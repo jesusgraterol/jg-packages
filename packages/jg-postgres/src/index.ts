@@ -15,6 +15,11 @@ export type {
 } from './introspection/index.js';
 export type { ISessionLock, ISessionLockResult } from './locks/index.js';
 export type {
+  IExpiredRowDeletion,
+  IExpiredRowDeletionOptions,
+  IRetentionAge,
+} from './retention/index.js';
+export type {
   IOptionalRead,
   IOptionalReader,
   IOptionalReaderOptions,
@@ -55,6 +60,9 @@ export { defineTimeoutProfile, toPoolTimeouts, withQueryTimeout } from './timeou
 
 // optional reads
 export { createOptionalReader } from './optional-reads/index.js';
+
+// retention
+export { deleteExpiredInBatches } from './retention/index.js';
 
 // usage limits
 export { admitUsage } from './usage-limits/index.js';

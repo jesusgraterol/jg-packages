@@ -125,6 +125,27 @@ const unread = counters.read(
 const count = await unread.completion; // a number, or null
 ```
 
+### Deleting expired rows
+
+`deleteExpiredInBatches` deletes a table's rows older than a cutoff, such as audit events past their retention, a batch at a time, so no statement holds many locks or runs long:
+
+```ts
+import { deleteExpiredInBatches } from 'jg-postgres';
+
+const { deletedCount, cutoff } = await deleteExpiredInBatches(postgres, {
+  table: 'audit_event',
+  timestampColumn: 'created_at', // the default
+  keyColumn: 'id', // the default
+  olderThan: { months: 6 }, // or cutoff: a Date or an ISO string
+  batchSize: 1_024, // the default, at most 8,192
+  filters: [{ column: 'tenant_id', value: tenantId }], // optional
+});
+```
+
+`olderThan` takes months and days, subtracted on the UTC calendar, so six months before August 31 is the last day of February, and then seconds. It's counted once from the database's clock, and a row exactly at the cutoff is kept. Each batch is one statement that locks the oldest expired rows, skipping rows another transaction holds, which the next run deletes, and deletes them by `keyColumn`; batches repeat until one deletes nothing, so concurrent runs share the work without deleting a row twice. With `timeouts`, a profile from `defineTimeoutProfile`, each batch runs as a transaction of its own with them. Every name is quoted.
+
+`keyColumn` must be unique and not null, such as the primary key: a key shared by an expired and an unexpired row would delete both. Index the timestamp and the key together, such as `CREATE INDEX idx_ae__created_at_id ON audit_event (created_at, id);`, so each batch reads only the rows it deletes.
+
 ### Usage limits
 
 `admitUsage` decides, atomically, whether an actor may do a rate-limited action now, such as sending an invitation, and records it when they may. It refuses with `cooldown` while the same action on the same scope was accepted less than `cooldownSeconds` ago, by any actor, and with `limit` once the actor did the action `limit` times within `windowSeconds`:
@@ -164,17 +185,12 @@ CREATE INDEX idx_ue__action_id_scope_key_created_at_scoped
 CREATE INDEX idx_ue__created_at ON usage_event (created_at);
 ```
 
-The table grows with every accepted action. Prune it on a schedule, deleting in batches the rows older than the longest window or cooldown, `$1` seconds, `$2` rows at a time, such as 1024, and running it again while it deletes a whole batch. It compares with `now()`, which in a statement of its own is the statement's start, because the index can bound a scan by `now()` but not by `clock_timestamp()`:
+The table grows with every accepted action. Prune it on a schedule with [`deleteExpiredInBatches`](#deleting-expired-rows), deleting the rows older than the longest window or cooldown of any action:
 
-```sql
-DELETE FROM usage_event
-WHERE id IN (
-  SELECT id
-  FROM usage_event
-  WHERE created_at < now() - make_interval(secs => $1)
-  ORDER BY created_at
-  LIMIT $2
-);
+```ts
+import { deleteExpiredInBatches } from 'jg-postgres';
+
+await deleteExpiredInBatches(postgres, { table: 'usage_event', olderThan: { seconds: 86_400 } });
 ```
 
 ### Verification challenges
@@ -268,17 +284,15 @@ CREATE INDEX idx_vc__actor_id_action_id_created_at
 CREATE INDEX idx_vc__created_at ON verification_challenge (created_at);
 ```
 
-Prune it on a schedule as `usage_event` is pruned, deleting in batches the rows older than the longest `validitySeconds` or `issueWindowSeconds` of any policy, `$1` seconds, `$2` rows at a time. A younger row may still be consumed, or count toward a limit:
+Prune it on a schedule with [`deleteExpiredInBatches`](#deleting-expired-rows), deleting the rows older than the longest `validitySeconds` or `issueWindowSeconds` of any policy. A younger row may still be consumed, or count toward a limit:
 
-```sql
-DELETE FROM verification_challenge
-WHERE id IN (
-  SELECT id
-  FROM verification_challenge
-  WHERE created_at < now() - make_interval(secs => $1)
-  ORDER BY created_at
-  LIMIT $2
-);
+```ts
+import { deleteExpiredInBatches } from 'jg-postgres';
+
+await deleteExpiredInBatches(postgres, {
+  table: 'verification_challenge',
+  olderThan: { seconds: 3_600 },
+});
 ```
 
 A table created from jg-postgres 0.3.0's README lacks the two columns `resend` uses. `issue` and `consume` keep working without them, but add them before deploying code that calls `resend`. Both are filled for every existing row, `0` and `NULL`, so the checks hold:
@@ -423,25 +437,26 @@ The defaults fill every missing or null field when the record is read, and are t
 
 ### Errors
 
-| Code                            | When                                                                                                                                                  |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TRANSACTION_OUTCOME_UNKNOWN`   | The connection was lost during `COMMIT`                                                                                                               |
-| `TRANSACTION_ALREADY_ACTIVE`    | `runTransaction` or a lock's `transaction` was given a client that's already in a transaction                                                         |
-| `SESSION_LOCK_LOST`             | The connection that held a session lock was lost                                                                                                      |
-| `INVALID_IDENTIFIER`            | A name is empty, holds a null character, or is longer than 63 bytes                                                                                   |
-| `ROW_NOT_FOUND`                 | The row to move doesn't exist in the ordered list                                                                                                     |
-| `ROW_ALREADY_FIRST`             | The row to move up is already first                                                                                                                   |
-| `ROW_ALREADY_LAST`              | The row to move down is already last                                                                                                                  |
-| `MOVE_FAILED`                   | The move didn't update exactly two rows                                                                                                               |
-| `INVALID_TIMEOUT_PROFILE`       | A timeout profile's seconds aren't positive and finite, or its lock timeout is longer than its statement timeout                                      |
-| `INVALID_OPTIONAL_READ_OPTIONS` | An optional reader's database, limits, or timeouts aren't valid                                                                                       |
-| `INVALID_USAGE_ADMISSION`       | A usage admission's ids, limit, or seconds aren't valid, or it has a cooldown without a scope                                                         |
-| `INVALID_VERIFICATION_POLICY`   | The verification policies or the code length aren't valid                                                                                             |
-| `INVALID_VERIFICATION_INPUT`    | A verification binding's ids aren't valid, its action has no policy, issue or resend has no delivery function, or resend's policy has no resend limit |
-| `VERIFICATION_DELIVERY_FAILED`  | The delivery function threw, after the challenge or its resend was committed                                                                          |
-| `INVALID_COUNTER_TABLE`         | A counter table has no key column or no counter, or repeats a name                                                                                    |
-| `INVALID_COUNTER_CHANGE`        | A counter row's key doesn't have exactly the key columns, or an amount isn't a whole, non-zero amount within `BIGINT`                                 |
-| `COUNTER_ROW_NOT_FOUND`         | A counter query changed no row, because the row to adjust doesn't exist                                                                               |
+| Code                            | When                                                                                                                                                                          |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TRANSACTION_OUTCOME_UNKNOWN`   | The connection was lost during `COMMIT`                                                                                                                                       |
+| `TRANSACTION_ALREADY_ACTIVE`    | `runTransaction` or a lock's `transaction` was given a client that's already in a transaction                                                                                 |
+| `SESSION_LOCK_LOST`             | The connection that held a session lock was lost                                                                                                                              |
+| `INVALID_IDENTIFIER`            | A name is empty, holds a null character, or is longer than 63 bytes                                                                                                           |
+| `ROW_NOT_FOUND`                 | The row to move doesn't exist in the ordered list                                                                                                                             |
+| `ROW_ALREADY_FIRST`             | The row to move up is already first                                                                                                                                           |
+| `ROW_ALREADY_LAST`              | The row to move down is already last                                                                                                                                          |
+| `MOVE_FAILED`                   | The move didn't update exactly two rows                                                                                                                                       |
+| `INVALID_EXPIRED_DELETION`      | `deleteExpiredInBatches` was given both `olderThan` and `cutoff` or neither, an age or a date that isn't valid, a batch size outside 1 to 8,192, or a filter without a column |
+| `INVALID_TIMEOUT_PROFILE`       | A timeout profile's seconds aren't positive and finite, or its lock timeout is longer than its statement timeout                                                              |
+| `INVALID_OPTIONAL_READ_OPTIONS` | An optional reader's database, limits, or timeouts aren't valid                                                                                                               |
+| `INVALID_USAGE_ADMISSION`       | A usage admission's ids, limit, or seconds aren't valid, or it has a cooldown without a scope                                                                                 |
+| `INVALID_VERIFICATION_POLICY`   | The verification policies or the code length aren't valid                                                                                                                     |
+| `INVALID_VERIFICATION_INPUT`    | A verification binding's ids aren't valid, its action has no policy, issue or resend has no delivery function, or resend's policy has no resend limit                         |
+| `VERIFICATION_DELIVERY_FAILED`  | The delivery function threw, after the challenge or its resend was committed                                                                                                  |
+| `INVALID_COUNTER_TABLE`         | A counter table has no key column or no counter, or repeats a name                                                                                                            |
+| `INVALID_COUNTER_CHANGE`        | A counter row's key doesn't have exactly the key columns, or an amount isn't a whole, non-zero amount within `BIGINT`                                                         |
+| `COUNTER_ROW_NOT_FOUND`         | A counter query changed no row, because the row to adjust doesn't exist                                                                                                       |
 
 A query's own error, such as a constraint violation, is node-postgres's `DatabaseError`, unchanged.
 
