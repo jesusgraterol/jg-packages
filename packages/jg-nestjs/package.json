@@ -1,6 +1,6 @@
 {
   "name": "jg-nestjs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "NestJS for HTTP APIs: an ApiException, a filter and an interceptor for the jg-api-response envelope, schema validation, CORS, and app bootstrap.",
   "author": "Jesus Graterol",
   "license": "MIT",

@@ -155,7 +155,9 @@ describe('PageOutlet', () => {
       growPage(3000);
     });
 
-    await expect.poll(() => window.scrollY).toBe(1500);
+    // the restore waits for a resize observation, which a slow headless Firefox in CI can take more
+    // than the poll's default second to deliver
+    await expect.poll(() => window.scrollY, { timeout: 5_000 }).toBe(1500);
   });
 
   test.each([
