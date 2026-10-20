@@ -14,8 +14,11 @@ describe('public API', () => {
       'isLocalDockerEndpoint',
       'listComposeServices',
       'parseComposePs',
+      'removeContainer',
       'resolveLocalDockerHost',
       'runDocker',
+      'startContainer',
+      'startOwnedContainer',
     ]);
   });
 });

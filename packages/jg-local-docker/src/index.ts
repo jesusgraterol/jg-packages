@@ -34,3 +34,13 @@ export {
   type IInspectContainerOptions,
   inspectContainer,
 } from './inspect/index.js';
+
+// container lifecycles
+export {
+  type IOwnedContainer,
+  type IRemoveContainerOptions,
+  type IStartContainerOptions,
+  removeContainer,
+  startContainer,
+  startOwnedContainer,
+} from './container/index.js';

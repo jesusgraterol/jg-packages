@@ -107,3 +107,31 @@ export const checkTestStack = async (): Promise<Map<string, number>> => {
 ```
 
 `listComposeServices` lists stopped containers too, so a service that crashed shows up as `exited` instead of disappearing, and `health` is `''` for a service without a healthcheck. A Compose file that publishes `6379:6379` without an address binds every interface, `0.0.0.0` and `::`, which `findPublicPorts` reports as two ports; write `127.0.0.1:6379:6379` instead.
+
+## A container for one test run
+
+A test runner's global setup that starts Redis for the run and removes it afterwards, even when the run is stopped with Ctrl+C, which can end the runner before its teardown:
+
+```ts
+import { randomUUID } from 'node:crypto';
+import { resolveLocalDockerHost, startOwnedContainer } from 'jg-local-docker';
+
+// what the setup hands the tests: where Redis listens
+declare const provide: (key: 'redisUrl', value: string) => void;
+
+export default async function setup(): Promise<() => Promise<void>> {
+  const host = await resolveLocalDockerHost();
+  const { container, release } = await startOwnedContainer({
+    host,
+    name: `app-test-redis-${randomUUID()}`,
+    labels: { 'app.test.run': randomUUID() },
+    image: 'redis:8.6.2-alpine',
+    ports: [6379],
+    createArgs: ['--memory', '256m'],
+  });
+  provide('redisUrl', `redis://127.0.0.1:${String(container.ports[0]?.hostPort)}`);
+  return release;
+}
+```
+
+The container's random name lets several runs share one machine, and its random label is the proof `removeContainer` would check. The owner process outlives the runner: when the runner exits, crashes, or is interrupted, the owner still removes the container, and `release` in the teardown removes it on a normal finish.
