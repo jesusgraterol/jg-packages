@@ -1,6 +1,6 @@
 # jg-crypto recipes
 
-Patterns for Node.js services that verify webhooks, keep tokens out of their database, and sign the values they hand to clients.
+Patterns for Node.js services that verify webhooks, keep tokens out of their database, sign the values they hand to clients, and check authenticator codes.
 
 ## Verifying a signed webhook
 
@@ -93,3 +93,56 @@ export const readCursor = (value: string): { lastId: string } | undefined => {
 ```
 
 The signature proves the server made the value; it doesn't hide it. Anyone can decode the cursor's JSON, so put nothing in it the client shouldn't see.
+
+## Checking authenticator app codes
+
+Use this for two-factor sign-in with an authenticator app. Generate the user's secret once with `generateTotpSecret`, show it to them as a QR code, and store it as you would any credential. Then verify each code they type with `verifyTotp`, which needs a `claimStep` that records the code's time step, so a code someone sees over the user's shoulder can't be used again within its 150-second window.
+
+When more than one server verifies codes, or claims must survive a restart, claim in Redis with jg-redis's `claimOnce`, which sets a key only when it's missing, for the window's 150 seconds:
+
+```ts
+import { verifyTotp } from 'jg-crypto';
+import { connectRedis } from 'jg-redis';
+import { claimOnce } from 'jg-redis/coordination';
+
+declare const redis: Awaited<ReturnType<typeof connectRedis>>;
+
+// verifies a user's code, claiming its time step for that user in Redis
+export const verifyCode = (userId: string, secret: string, code: string): Promise<void> =>
+  verifyTotp(secret, code, {
+    claimStep: (step) => claimOnce(redis, `totp:${userId}`, String(step), 150),
+  });
+```
+
+A single process can keep its claims in memory instead:
+
+```ts
+import { verifyTotp } from 'jg-crypto';
+
+// each claimed step, by user and step, with when its claim expires in milliseconds
+const claimedSteps = new Map<string, number>();
+
+// claims a user's step for 150 seconds, and returns false when it's already claimed
+const claimStepInMemory = (userId: string, step: number): boolean => {
+  const now = Date.now();
+  for (const [key, expiresAt] of claimedSteps) {
+    if (expiresAt <= now) {
+      claimedSteps.delete(key);
+    }
+  }
+  const key = `${userId}:${step}`;
+  if (claimedSteps.has(key)) {
+    return false;
+  }
+  claimedSteps.set(key, now + 150_000);
+  return true;
+};
+
+// verifies a user's code, claiming its time step for that user in this process's memory
+export const verifyCode = (userId: string, secret: string, code: string): Promise<void> =>
+  verifyTotp(secret, code, { claimStep: (step) => claimStepInMemory(userId, step) });
+```
+
+The in-memory claims belong to one process and are lost when it restarts, so a code used just before a restart, or on another server, can be used once more within its window. Expired claims are removed on each call, so the map holds only the codes used in the last 150 seconds.
+
+A wrong or malformed code throws `TOTP_INVALID`, and a code whose step was claimed throws `TOTP_ALREADY_USED`; answer both the same way, so the response doesn't tell which. A secret that isn't base32 of at least 16 bytes throws `INVALID_TOTP_SECRET`, which means the stored secret is broken, not that the user typed something wrong.

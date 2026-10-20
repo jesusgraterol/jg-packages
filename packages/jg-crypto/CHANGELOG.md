@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- `generateTotpSecret()`, a secret for an authenticator app: 20 random bytes as 32 characters of base32.
+- `verifyTotp(secret, code, { claimStep })`, which checks a 6-digit code as RFC 6238 computes it, with HMAC-SHA1 and 30-second steps, accepting up to 2 steps before or after the current one, and compares every step in constant time. The required `claimStep` records the matched step and resolves to whether this call recorded it, so a code can't be used twice; it works with any store, such as Redis or a process's memory. A secret that isn't base32 of at least 16 bytes throws `INVALID_TOTP_SECRET`, a malformed or wrong code `TOTP_INVALID`, and a claimed step `TOTP_ALREADY_USED`.
+- `TOTP_PARAMETERS` and `IVerifyTotpOptions`.
+- A recipe for claiming steps in Redis or in memory.
+
 ## 0.2.0
 
 ### Changed

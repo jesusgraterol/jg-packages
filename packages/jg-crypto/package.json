@@ -1,7 +1,7 @@
 {
   "name": "jg-crypto",
-  "version": "0.2.0",
-  "description": "Hashing, random bytes and digits, and HMAC signatures with constant-time verification, for Node.js.",
+  "version": "0.3.0",
+  "description": "Hashing, random bytes and digits, HMAC signatures with constant-time verification, and authenticator app codes, for Node.js.",
   "author": "Jesus Graterol",
   "license": "MIT",
   "type": "module",
@@ -64,6 +64,7 @@
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
     "fast-check": "catalog:",
+    "otplib": "13.5.0",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
