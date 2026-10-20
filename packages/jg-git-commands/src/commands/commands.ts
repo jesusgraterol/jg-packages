@@ -25,6 +25,7 @@ import {
   parseIndexEntries,
   parseRemoteRefs,
   parseStatus,
+  readCompleteOutput,
   readSuccessfulOutput,
 } from './utilities.js';
 
@@ -460,7 +461,7 @@ export const readChangedPaths = async (
 /**
  * Lists the index's entries, with `git ls-files --cached --stage -z`: each tracked path's file
  * mode and merge stage, 0 unless it's in a conflict, which lists a path once per stage. A path
- * that isn't valid UTF-8 fails the read.
+ * that isn't valid UTF-8, or a warning from Git, fails the read.
  * @param cwd The repository's directory.
  * @param options The paths to limit the list to, read literally, and runGit's options.
  * @returns A promise that resolves to the entries, paths from the repository's root.
@@ -486,7 +487,7 @@ export const readIndexEntries = async (
   { paths, ...options }: IListPathsOptions = {},
 ): Promise<IIndexEntry[]> => {
   const pathspec = toPathspecArgs(paths);
-  const output = readSuccessfulOutput(
+  const output = readCompleteOutput(
     await runGit(['ls-files', '--cached', '--stage', '--full-name', '-z', ...pathspec], {
       ...options,
       cwd,
@@ -499,7 +500,9 @@ export const readIndexEntries = async (
 
 /**
  * Lists the untracked files that aren't ignored, with `git ls-files --others --exclude-standard
- * -z`, each file in an untracked directory included. A path that isn't valid UTF-8 fails the read.
+ * -z`, each file in an untracked directory included. A path that isn't valid UTF-8 fails the read,
+ * and so does a warning from Git, such as for a directory it couldn't open, which it otherwise
+ * leaves out of the list while still succeeding.
  * @param cwd The repository's directory.
  * @param options The paths to limit the list to, read literally, and runGit's options.
  * @returns A promise that resolves to the paths from the repository's root.
@@ -525,7 +528,7 @@ export const listUntrackedFiles = async (
   { paths, ...options }: IListPathsOptions = {},
 ): Promise<string[]> => {
   const pathspec = toPathspecArgs(paths);
-  const output = readSuccessfulOutput(
+  const output = readCompleteOutput(
     await runGit(['ls-files', '--others', '--exclude-standard', '--full-name', '-z', ...pathspec], {
       ...options,
       cwd,

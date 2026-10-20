@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { existsSync, realpathSync } from 'node:fs';
-import { mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -628,6 +628,23 @@ describe('git commands', () => {
         listUntrackedFiles(local, { ...ISOLATED, paths: ['notes'] }),
       ).resolves.toStrictEqual(['notes/deep/todo.md']);
     });
+
+    // a directory's permissions stop neither Windows' owner nor root from reading it
+    test.skipIf(IS_WINDOWS || process.getuid?.() === 0)(
+      'listUntrackedFiles fails instead of leaving out a directory Git could not open',
+      async () => {
+        const locked = join(local, 'locked');
+        await mkdir(locked);
+        await writeFile(join(locked, 'secret.txt'), 'x\n');
+        await chmod(locked, 0o000);
+
+        try {
+          await expectToRejectCode(listUntrackedFiles(local, ISOLATED), ERRORS.GIT_OUTPUT_INVALID);
+        } finally {
+          await chmod(locked, 0o755);
+        }
+      },
+    );
 
     // on Windows, Git prints the long name with forward slashes, where the temporary directory may
     // have a short (8.3) one, so both sides are compared by their real path

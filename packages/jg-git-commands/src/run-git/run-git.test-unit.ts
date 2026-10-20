@@ -4,7 +4,7 @@ import { Exception } from 'jg-exception';
 import { expectToRejectCode } from 'jg-exception/testing';
 import type * as ProcessModule from 'jg-process';
 import { ERRORS as PROCESS_ERRORS, runProcess } from 'jg-process';
-import { afterEach, describe, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { ERRORS } from '../shared/index.js';
 
@@ -57,5 +57,35 @@ describe('runGit on Windows', () => {
     failToStart();
 
     await expectToRejectCode(runGit(['status'], { cwd: 'C:\\repo' }), ERRORS.GIT_NOT_FOUND);
+  });
+});
+
+describe('runGit environment', () => {
+  test('ignores the prompt variables the caller passes, whatever their case', async () => {
+    vi.mocked(runProcess).mockResolvedValueOnce({
+      stdout: '',
+      stderr: '',
+      exitCode: 0,
+      signalCode: null,
+      durationMs: 1,
+    });
+
+    await runGit(['status'], {
+      cwd: '/srv/app',
+      env: {
+        git_askpass: '/bin/askpass',
+        Git_Terminal_Prompt: '1',
+        ssh_askpass: '/bin/ssh-askpass',
+        GIT_SSL_CAINFO: '/certs/ca.pem',
+      },
+    });
+
+    const env = vi.mocked(runProcess).mock.calls[0]?.[0].env ?? {};
+    expect(env['git_askpass']).toBeUndefined();
+    expect(env['Git_Terminal_Prompt']).toBeUndefined();
+    expect(env['ssh_askpass']).toBeUndefined();
+    expect(env['GIT_SSL_CAINFO']).toBe('/certs/ca.pem');
+    expect(env['GIT_ASKPASS']).toBe('');
+    expect(env['GIT_TERMINAL_PROMPT']).toBe('0');
   });
 });

@@ -49,8 +49,13 @@ const areArgsValid = (args: unknown): boolean =>
  * @param key The variable's name.
  * @returns Whether it may.
  */
-const isCallerVariable = (key: string): boolean =>
-  key !== 'GIT_ASKPASS' && key !== 'GIT_TERMINAL_PROMPT' && !key.startsWith('SSH_ASKPASS');
+const isCallerVariable = (key: string): boolean => {
+  // Windows compares names without case
+  const name = key.toUpperCase();
+  return (
+    name !== 'GIT_ASKPASS' && name !== 'GIT_TERMINAL_PROMPT' && !name.startsWith('SSH_ASKPASS')
+  );
+};
 
 /**
  * Runs a git command that never prompts: without a terminal prompt or an askpass program, in an

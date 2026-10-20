@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1
+
+### Fixed
+
+- `listUntrackedFiles` and `readIndexEntries` throw `GIT_OUTPUT_INVALID` when Git warns while listing, such as about a directory it couldn't open. Git still exits with 0 then, and left the directory's files out of the list.
+- The environment leaves out the inherited Git, askpass, and locale variables whatever their case. On Windows, where Git reads `git_dir` as `GIT_DIR`, a variable spelled in another case reached Git. The prompt variables passed in `env` are ignored in any case too.
+
 ## 0.3.0
 
 ### Added
