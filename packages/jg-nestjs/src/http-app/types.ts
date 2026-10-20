@@ -34,3 +34,13 @@ export type IHttpAppOptions = {
   // SIGTERM
   shutdownSignals?: readonly string[] | undefined;
 };
+
+// what listenHttpApp takes
+export type IListenHttpAppOptions = {
+  // the port to listen on, or 0 for any free port
+  port: number;
+
+  // the address to bind, such as `'127.0.0.1'` to accept only local connections. Defaults to every
+  // interface
+  host?: string | undefined;
+};

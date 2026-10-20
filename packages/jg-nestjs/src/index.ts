@@ -1,26 +1,30 @@
 // types
+export type { IApiErrorCatalog, IApiErrorCatalogEntry } from './api-error-catalog/index.js';
 export type { IApiExceptionOptions } from './api-exception/index.js';
 export type { ICorsOptionsInput } from './cors/index.js';
 export type { IApiExceptionFilterOptions, IErrorReport } from './exception-filter/index.js';
-export type { IHttpAppOptions } from './http-app/index.js';
+export type { IHttpAppOptions, IListenHttpAppOptions } from './http-app/index.js';
 export type { IIpBlocklistGuardOptions, IIpBlocklistRequest } from './ip-blocklist/index.js';
 export type {
   IMaintenanceModeGuardOptions,
   IMaintenanceModeState,
 } from './maintenance-mode/index.js';
 export type { IRequestLoggingOptions } from './request-logging/index.js';
+export type { IUploadInterceptorOptions } from './upload/index.js';
 
 // error codes and messages
 export { ERROR_MESSAGES, ERRORS } from './shared/index.js';
 
 // exceptions
 export { ApiException } from './api-exception/index.js';
+export { defineApiErrorCatalog } from './api-error-catalog/index.js';
 
 // exception filter
 export { API_EXCEPTION_FILTER_OPTIONS, ApiExceptionFilter } from './exception-filter/index.js';
 
-// response interceptor
+// interceptors
 export { ApiResponseInterceptor } from './response-interceptor/index.js';
+export { createUploadInterceptor } from './upload/index.js';
 
 // guards
 export { MAINTENANCE_MODE_GUARD_OPTIONS, MaintenanceModeGuard } from './maintenance-mode/index.js';
@@ -36,4 +40,5 @@ export { createCorsOptions } from './cors/index.js';
 export { createRequestLoggingMiddleware } from './request-logging/index.js';
 
 // HTTP app
-export { configureHttpApp } from './http-app/index.js';
+export { configureHttpApp, listenHttpApp } from './http-app/index.js';
+export { PingModule } from './ping/index.js';

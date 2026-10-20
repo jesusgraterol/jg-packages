@@ -1,6 +1,6 @@
 # jg-nestjs recipes
 
-Wiring the envelope, validation, and error reporting into a NestJS API, starting it, reporting failures, and adding maintenance mode or an IP blocklist.
+Wiring the envelope, validation, and error reporting into a NestJS API, starting it, reporting failures, building the filter's options from the app's services, and adding maintenance mode or an IP blocklist.
 
 ## Wiring the filter, interceptor, and pipe
 
@@ -165,6 +165,47 @@ const report = async ({ error, request }: IErrorReport): Promise<void> => {
 })
 export class ErrorLogModule {}
 ```
+
+## Building the filter's options from injected services
+
+`API_EXCEPTION_FILTER_OPTIONS` can come from any provider. When the reporter needs a service the app provides, such as its own error store, build the options with `useFactory` and list the service in `inject`:
+
+```ts
+import { Injectable, Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
+import {
+  API_EXCEPTION_FILTER_OPTIONS,
+  ApiExceptionFilter,
+  type IApiExceptionFilterOptions,
+} from 'jg-nestjs';
+
+// the app's own storage for errors
+@Injectable()
+class ErrorStore {
+  public async save(entry: { code: string; status: number; url: string }): Promise<void> {
+    await Promise.resolve(entry);
+  }
+}
+
+@Module({
+  providers: [
+    ErrorStore,
+    {
+      provide: API_EXCEPTION_FILTER_OPTIONS,
+      inject: [ErrorStore],
+      useFactory: (store: ErrorStore): IApiExceptionFilterOptions => ({
+        report: ({ error, status, url }) =>
+          store.save({ code: (error as { code?: string }).code ?? 'UNKNOWN', status, url }),
+        ignoredStatuses: [401, 404, 429],
+      }),
+    },
+    { provide: APP_FILTER, useClass: ApiExceptionFilter },
+  ],
+})
+export class AppModule {}
+```
+
+The filter is created once, when the module starts, so the factory runs once and the reporter keeps the store it was given.
 
 ## Maintenance mode from a flag or a stored record
 
