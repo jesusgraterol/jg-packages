@@ -12,6 +12,10 @@ const NON_INTERACTIVE = {
   GIT_NO_REPLACE_OBJECTS: '1',
   GIT_NO_LAZY_FETCH: '1',
   GIT_LITERAL_PATHSPECS: '1',
+  GIT_ALLOW_PROTOCOL: '',
+  LC_ALL: 'C',
+  LANG: 'C',
+  LANGUAGE: 'C',
   GIT_SSH_COMMAND: DEFAULT_GIT_SSH_COMMAND,
 };
 
@@ -35,6 +39,9 @@ describe('createGitEnvironment', () => {
         GIT_TERMINAL_PROMPT: '1',
         SSH_ASKPASS: '/bin/ssh-askpass',
         SSH_ASKPASS_REQUIRE: 'force',
+        GIT_ALLOW_PROTOCOL: 'file:ext',
+        LC_ALL: 'de_DE.UTF-8',
+        LANG: 'de_DE.UTF-8',
       },
     });
 
@@ -42,11 +49,12 @@ describe('createGitEnvironment', () => {
   });
 
   // Git for Windows reads /dev/null as its null device, but can't open Node.js's os.devNull there
-  test('isolates the config only when asked, with the null device as Git names it everywhere', () => {
+  test('isolates the config and system attributes only when asked, with the null device as Git names it everywhere', () => {
     expect(createGitEnvironment({ baseEnv: {}, isolateConfig: true })).toStrictEqual({
       ...NON_INTERACTIVE,
       GIT_CONFIG_NOSYSTEM: '1',
       GIT_CONFIG_GLOBAL: '/dev/null',
+      GIT_ATTR_NOSYSTEM: '1',
     });
     expect(createGitEnvironment({ baseEnv: {} })).toStrictEqual(NON_INTERACTIVE);
   });

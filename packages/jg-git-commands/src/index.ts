@@ -13,6 +13,7 @@ export {
   DEFAULT_GIT_MAX_OUTPUT_BYTES,
   DEFAULT_GIT_TIMEOUT_SECONDS,
   type IRunGitOptions,
+  assertGitSucceeded,
   runGit,
 } from './run-git/index.js';
 
@@ -20,14 +21,25 @@ export {
 export {
   type IFetchCommitOptions,
   type IGitCommandOptions,
+  type IGitStatus,
+  type IGitVersion,
+  type IIndexEntry,
+  type IListPathsOptions,
+  type IReadChangedPathsOptions,
   type IReadFileAtRevisionOptions,
   type IStatusEntry,
   fetchCommit,
   getRemoteUrl,
   isWorkingTreeClean,
+  listUntrackedFiles,
+  readChangedPaths,
+  readConfigBoolean,
   readFileAtRevision,
+  readGitVersion,
+  readIndexEntries,
   readRemoteRefs,
   readStatus,
+  readTopLevel,
   resolveCommit,
 } from './commands/index.js';
 

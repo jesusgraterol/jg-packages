@@ -6,9 +6,11 @@ import { describe, expect, test } from 'vitest';
 import { ERRORS } from '../shared/index.js';
 
 import {
+  decodeRecords,
   isRefName,
   isRepositoryPathValid,
   isRevisionValid,
+  parseIndexEntries,
   parseRemoteRefs,
   parseStatus,
   readSuccessfulOutput,
@@ -81,48 +83,101 @@ describe('parseRemoteRefs', () => {
 });
 
 describe('parseStatus', () => {
-  test('reads empty output as a clean working tree', () => {
-    expect(parseStatus('')).toStrictEqual([]);
+  const COMMIT = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+  const HEADERS = [`# branch.oid ${COMMIT}`, '# branch.head main'];
+  // the modes and object IDs between the status letters and the path
+  const CHANGED = `N... 100644 100644 100644 ${'b'.repeat(40)} ${'c'.repeat(40)}`;
+
+  test('reads the commit, and no entries for a clean working tree', () => {
+    expect(parseStatus(HEADERS)).toStrictEqual({ commit: COMMIT, entries: [] });
   });
 
-  test('reads changes, renames with their original path, and untracked paths', () => {
-    const output = [
-      ' M src/index.ts',
-      'R  docs/new name.md',
+  test('reads a null commit before the first one', () => {
+    expect(parseStatus(['# branch.oid (initial)', '# branch.head main', '? new.ts'])).toStrictEqual(
+      {
+        commit: null,
+        entries: [{ index: '?', workingTree: '?', path: 'new.ts', originalPath: null }],
+      },
+    );
+  });
+
+  test('reads changes, renames and copies with their original paths, conflicts, and untracked files', () => {
+    const records = [
+      ...HEADERS,
+      `1 .M ${CHANGED} src/index.ts`,
+      `2 R. ${CHANGED} R100 docs/new name.md`,
       'docs/old name.md',
-      'A  added.ts',
-      'RM moved.ts',
-      'original.ts',
-      '?? notes/',
-      '',
-    ].join('\0');
+      `2 .C ${CHANGED} C75 copy.ts`,
+      'source.ts',
+      `u UU N... 100644 100644 100644 100644 ${'d'.repeat(40)} ${'e'.repeat(40)} ${'f'.repeat(40)} both changed.ts`,
+      '? notes/todo.md',
+    ];
 
-    expect(parseStatus(output)).toStrictEqual([
-      { index: ' ', workingTree: 'M', path: 'src/index.ts', originalPath: null },
-      { index: 'R', workingTree: ' ', path: 'docs/new name.md', originalPath: 'docs/old name.md' },
-      { index: 'A', workingTree: ' ', path: 'added.ts', originalPath: null },
-      { index: 'R', workingTree: 'M', path: 'moved.ts', originalPath: 'original.ts' },
-      { index: '?', workingTree: '?', path: 'notes/', originalPath: null },
-    ]);
+    expect(parseStatus(records)).toStrictEqual({
+      commit: COMMIT,
+      entries: [
+        { index: ' ', workingTree: 'M', path: 'src/index.ts', originalPath: null },
+        {
+          index: 'R',
+          workingTree: ' ',
+          path: 'docs/new name.md',
+          originalPath: 'docs/old name.md',
+        },
+        { index: ' ', workingTree: 'C', path: 'copy.ts', originalPath: 'source.ts' },
+        { index: 'U', workingTree: 'U', path: 'both changed.ts', originalPath: null },
+        { index: '?', workingTree: '?', path: 'notes/todo.md', originalPath: null },
+      ],
+    });
   });
 
-  test('reads a copy and a rename in the working tree', () => {
+  test.each([
+    ['records without the commit header', ['? new.ts']],
+    ['a commit that is not an object ID', ['# branch.oid main']],
+    ['an unknown kind of record', [...HEADERS, '! ignored.ts']],
+    ['a changed record without its path', [...HEADERS, `1 .M ${CHANGED}`]],
+    ['a record whose status is not two letters', [...HEADERS, `1 M ${CHANGED} a.ts`]],
+    ['an untracked record without a path', [...HEADERS, '?']],
+    ['a rename without its original path', [...HEADERS, `2 R. ${CHANGED} R100 new.ts`]],
+    ['a rename with an empty original path', [...HEADERS, `2 R. ${CHANGED} R100 new.ts`, '']],
+  ])('rejects %s', (_description, records) => {
+    expectToThrowCode(() => parseStatus(records), ERRORS.GIT_OUTPUT_INVALID);
+  });
+});
+
+describe('parseIndexEntries', () => {
+  test('reads each entry mode, stage, and path', () => {
     expect(
-      parseStatus(['C  copy.ts', 'source.ts', ' R renamed.ts', 'before.ts', ''].join('\0')),
+      parseIndexEntries([
+        `100644 ${'a'.repeat(40)} 0\tsrc/with space.ts`,
+        `120000 ${'b'.repeat(64)} 2\tlink`,
+      ]),
     ).toStrictEqual([
-      { index: 'C', workingTree: ' ', path: 'copy.ts', originalPath: 'source.ts' },
-      { index: ' ', workingTree: 'R', path: 'renamed.ts', originalPath: 'before.ts' },
+      { mode: '100644', stage: 0, path: 'src/with space.ts' },
+      { mode: '120000', stage: 2, path: 'link' },
     ]);
   });
 
   test.each([
-    ['output that does not end its last record', ' M src/index.ts'],
-    ['a record too short to hold a path', ' M \0'],
-    ['a record without the space after its status', ' MXsrc/index.ts\0'],
-    ['a rename without its original path', 'R  new.ts\0'],
-    ['a rename with an empty original path', 'R  new.ts\0\0'],
+    ['a record without a tab', `100644 ${'a'.repeat(40)} 0 file.ts`],
+    ['a record without a path', `100644 ${'a'.repeat(40)} 0\t`],
+    ['a stage past 3', `100644 ${'a'.repeat(40)} 4\tfile.ts`],
+    ['a short object ID', `100644 ${'a'.repeat(12)} 0\tfile.ts`],
+  ])('rejects %s', (_description, record) => {
+    expectToThrowCode(() => parseIndexEntries([record]), ERRORS.GIT_OUTPUT_INVALID);
+  });
+});
+
+describe('decodeRecords', () => {
+  test('splits NUL-terminated records, and reads empty output as none', () => {
+    expect(decodeRecords(Buffer.from('a b\0c\0'), 'ls-files')).toStrictEqual(['a b', 'c']);
+    expect(decodeRecords(Buffer.alloc(0), 'ls-files')).toStrictEqual([]);
+  });
+
+  test.each([
+    ['output whose last record has no NUL', Buffer.from('a\0b')],
+    ['bytes that are not valid UTF-8', Buffer.from([0x61, 0xff, 0x00])],
   ])('rejects %s', (_description, output) => {
-    expectToThrowCode(() => parseStatus(output), ERRORS.GIT_OUTPUT_INVALID);
+    expectToThrowCode(() => decodeRecords(output, 'ls-files'), ERRORS.GIT_OUTPUT_INVALID);
   });
 });
 
@@ -132,6 +187,50 @@ describe('readSuccessfulOutput', () => {
   test('gives the stdout of a command that exited with 0', () => {
     expect(readSuccessfulOutput({ ...result, exitCode: 0, signalCode: null }, 'status')).toBe(
       'out',
+    );
+  });
+
+  test.each([
+    [
+      'fatal: not a git repository (or any of the parent directories): .git\n',
+      ERRORS.GIT_REPOSITORY_NOT_FOUND,
+    ],
+    ["warning: x\nfatal: not a git repository: '/srv/app'\n", ERRORS.GIT_REPOSITORY_NOT_FOUND],
+    ["fatal: detected dubious ownership in repository at '/srv/app'\n", ERRORS.GIT_ACCESS_DENIED],
+    ["fatal: could not open '.git/HEAD': Permission denied\r\n", ERRORS.GIT_ACCESS_DENIED],
+    [
+      'git@github.com: Permission denied (publickey).\nfatal: Could not read from remote repository.\n',
+      ERRORS.GIT_COMMAND_FAILED,
+    ],
+    ['fatal: bad revision\n', ERRORS.GIT_COMMAND_FAILED],
+  ])('classifies stderr %j as %s, from a Buffer too', (stderr, code) => {
+    for (const output of [stderr, Buffer.from(stderr)]) {
+      expectToThrowCode(
+        () =>
+          readSuccessfulOutput(
+            { stdout: '', stderr: output, exitCode: 128, signalCode: null, durationMs: 1 },
+            'status',
+          ),
+        code,
+      );
+    }
+  });
+
+  test('throws GIT_ACCESS_DENIED for a repository Git refuses for its ownership', () => {
+    expectToThrowCode(
+      () =>
+        readSuccessfulOutput(
+          {
+            stdout: '',
+            stderr: "fatal: detected dubious ownership in repository at '/srv/app'\n",
+            exitCode: 128,
+            signalCode: null,
+            durationMs: 1,
+          },
+          'status',
+        ),
+      ERRORS.GIT_ACCESS_DENIED,
+      "Git can't access the repository.",
     );
   });
 

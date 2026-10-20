@@ -1,5 +1,7 @@
+import type { IProcessOutputEncoding } from 'jg-process';
+
 // what runGit takes
-export type IRunGitOptions = {
+export type IRunGitOptions<TEncoding extends IProcessOutputEncoding = 'utf-8'> = {
   // the directory git runs in, such as the repository's working tree
   cwd: string;
 
@@ -24,6 +26,11 @@ export type IRunGitOptions = {
 
   // more variables, such as GIT_SSL_CAINFO, set after the inherited Git variables are removed; an
   // undefined value unsets one. GIT_ASKPASS, GIT_TERMINAL_PROMPT, SSH_ASKPASS, and
-  // SSH_ASKPASS_REQUIRE are ignored, so nothing the caller passes lets a prompt through
+  // SSH_ASKPASS_REQUIRE are ignored, so nothing the caller passes lets a prompt through. Set
+  // GIT_ALLOW_PROTOCOL to allow a transport, such as `file` or `https`, which every command
+  // refuses by default
   env?: NodeJS.ProcessEnv | undefined;
+
+  // whether stdout and stderr are decoded as UTF-8 or returned as bytes. Defaults to 'utf-8'
+  encoding?: TEncoding | undefined;
 };
