@@ -26,6 +26,32 @@ export const notADirectory = (path: string): Exception =>
   new Exception(`The path '${path}' is not a directory.`, { code: ERRORS.NOT_A_DIRECTORY });
 
 /**
+ * Builds the exception for a file that doesn't exist.
+ * @param path The path.
+ * @param cause The error that showed the path is missing, if any.
+ * @returns The NON_EXISTENT_FILE exception.
+ */
+export const nonExistentFile = (path: string, cause?: unknown): Exception =>
+  new Exception(`The file '${path}' does not exist.`, {
+    code: ERRORS.NON_EXISTENT_FILE,
+    data: { path },
+    cause,
+  });
+
+/**
+ * Builds the exception for a directory that doesn't exist.
+ * @param path The path.
+ * @param cause The error that showed the path is missing, if any.
+ * @returns The NON_EXISTENT_DIRECTORY exception.
+ */
+export const nonExistentDirectory = (path: string, cause?: unknown): Exception =>
+  new Exception(`The directory '${path}' does not exist.`, {
+    code: ERRORS.NON_EXISTENT_DIRECTORY,
+    data: { path },
+    cause,
+  });
+
+/**
  * Builds the exception for a file larger than a bounded read allows.
  * @param path The path.
  * @param maxBytes The limit.
@@ -127,6 +153,15 @@ export const isNotFoundError = (error: unknown): boolean =>
   error instanceof Error && 'code' in error && error.code === 'ENOENT';
 
 /**
+ * Checks whether an error means a path doesn't exist: it, or a directory on its way, is missing
+ * (ENOENT), or a file sits where a directory should be (ENOTDIR).
+ * @param error The error.
+ * @returns Whether the path doesn't exist.
+ */
+export const isMissingPathError = (error: unknown): boolean =>
+  isNotFoundError(error) || (error instanceof Error && 'code' in error && error.code === 'ENOTDIR');
+
+/**
  * Checks whether a rename failed only because another process holds the file for now, which
  * Windows reports as EACCES, EBUSY, or EPERM, so the rename is worth another attempt.
  * @param error The rename's error.
@@ -143,24 +178,22 @@ export const isBusyRenameError = (
   (error.code === 'EACCES' || error.code === 'EBUSY' || error.code === 'EPERM');
 
 /**
- * Builds the exception for a bounded read whose path doesn't exist or ends in a symbolic link.
+ * Builds the exception for a bounded read whose path ends in a symbolic link.
  * @param path The path.
  * @param error The error opening it.
  * @returns The NOT_A_FILE exception.
  */
 export const notARegularFile = (path: string, error: unknown): Exception =>
-  new Exception(`The file '${path}' doesn't exist or is a symbolic link.`, {
+  new Exception(`The file '${path}' is a symbolic link.`, {
     code: ERRORS.NOT_A_FILE,
     cause: error,
   });
 
 /**
- * Checks whether opening a path without following links failed because it doesn't exist or its
- * last component is a link (ELOOP, or EMLINK on some BSDs).
+ * Checks whether opening a path without following links failed because its last component is a
+ * link (ELOOP, or EMLINK on some BSDs).
  * @param error The error.
  * @returns Whether it means the path isn't a regular file to read.
  */
 export const isNoFollowError = (error: unknown): boolean =>
-  error instanceof Error &&
-  'code' in error &&
-  (error.code === 'ENOENT' || error.code === 'ELOOP' || error.code === 'EMLINK');
+  error instanceof Error && 'code' in error && (error.code === 'ELOOP' || error.code === 'EMLINK');

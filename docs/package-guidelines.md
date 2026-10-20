@@ -130,6 +130,8 @@ Each package says which runtimes it supports, and typechecks against only their 
 
 A package with entries for different runtimes typechecks each entry's directory against its own runtime.
 
+Packages support Node.js 22.17.0 and later, and typecheck with the newest Node.js 22 types, `@types/node` 22, so their types offer no API that only Node.js 24 has. CI's `floor` job runs their tests on 22.17.0. A package whose dependencies need a later Node.js, such as `jg-personal-astro-ui`, declares that floor instead.
+
 ## Documentation
 
 - Every exported function and class has a TSDoc summary and at least one `@example`. Exported types and constants have a summary.

@@ -6,7 +6,6 @@ import {
   lstatSync,
   mkdirSync,
   openSync,
-  realpathSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -26,8 +25,9 @@ import {
   type IReadPrivateFileOptions,
   isNotFoundError,
   isPathWithin,
+  listPathAncestry,
   type IWritePrivateFileOptions,
-  mapPrivateOpenError,
+  nonExistentDirectory,
   notADirectory,
   notAFile,
   pathNotCanonical,
@@ -36,16 +36,20 @@ import {
   PRIVATE_FILE_MODE,
 } from '../../shared/index.js';
 import { openWithoutFollowing, readOpenFile, writeFileAtomic } from '../files/index.js';
+import { getPathElement } from '../general/index.js';
 
 /**
- * Checks that a path has no symbolic link in it: its real path is the path itself.
+ * Checks that a path has no symbolic link in it, or, on Windows, a junction, which Node.js reports
+ * as one: no part of it, from its first directory down to the path itself, is a link. Each part is
+ * checked with lstat, because comparing the path with its real path fails on Windows for a short
+ * (8.3) name or another letter case, without any link.
  * @param path The path, which must exist.
  * @param original The path as the caller gave it, for the error.
  * @throws
  * - PATH_NOT_CANONICAL: if the path goes through a symbolic link
  */
 const assertCanonical = (path: string, original: string): void => {
-  if (realpathSync(path) !== resolve(path)) {
+  if (listPathAncestry(path).some((part) => lstatSync(part).isSymbolicLink())) {
     throw pathNotCanonical(original);
   }
 };
@@ -55,7 +59,8 @@ const assertCanonical = (path: string, original: string): void => {
  * @param path The directory's path.
  * @param original The path to name when it goes through a symbolic link.
  * @throws
- * - NOT_A_DIRECTORY: if the directory doesn't exist or isn't a directory
+ * - NON_EXISTENT_DIRECTORY: if the directory doesn't exist
+ * - NOT_A_DIRECTORY: if the path isn't a directory
  * - PATH_NOT_CANONICAL: if the directory goes through a symbolic link
  */
 const assertCanonicalDirectory = (path: string, original: string): void => {
@@ -63,7 +68,7 @@ const assertCanonicalDirectory = (path: string, original: string): void => {
   try {
     isDirectory = statSync(path).isDirectory();
   } catch (error) {
-    throw isMissingPathError(error) ? notADirectory(path) : error;
+    throw isMissingPathError(error) ? nonExistentDirectory(path, error) : error;
   }
   if (!isDirectory) {
     throw notADirectory(path);
@@ -77,7 +82,8 @@ const assertCanonicalDirectory = (path: string, original: string): void => {
  * @param path The path.
  * @param rootPath The root, if any.
  * @throws
- * - NOT_A_DIRECTORY: if the root doesn't exist or isn't a directory
+ * - NON_EXISTENT_DIRECTORY: if the root doesn't exist
+ * - NOT_A_DIRECTORY: if the root isn't a directory
  * - PATH_NOT_CANONICAL: if the root goes through a symbolic link
  * - PATH_OUTSIDE_ROOT: if the path isn't strictly inside the root
  */
@@ -103,16 +109,12 @@ const assertInsideRoot = (path: string, rootPath: string | undefined): void => {
  * - FILE_TOO_LARGE: if the file holds more than maxBytes bytes
  * - PATH_NOT_CANONICAL: if the path or the root goes through a symbolic link
  * - PATH_OUTSIDE_ROOT: if the file isn't strictly inside the root
- * - NOT_A_DIRECTORY: if the root doesn't exist or isn't a directory
+ * - NON_EXISTENT_DIRECTORY: if the root doesn't exist
+ * - NOT_A_DIRECTORY: if the root isn't a directory
  */
 const openPrivateFile = (path: string, { rootPath, maxBytes }: IPrivateFileOptions): number => {
   assertInsideRoot(path, rootPath);
-  let descriptor: number;
-  try {
-    descriptor = openWithoutFollowing(path);
-  } catch (error) {
-    throw mapPrivateOpenError(path, error);
-  }
+  const descriptor = openWithoutFollowing(path);
   try {
     const stats = fstatSync(descriptor);
     if (!stats.isFile()) {
@@ -154,7 +156,8 @@ const openPrivateFile = (path: string, { rootPath, maxBytes }: IPrivateFileOptio
  * - FILE_TOO_LARGE: if the file holds more than maxBytes bytes
  * - PATH_NOT_CANONICAL: if the path or the root goes through a symbolic link
  * - PATH_OUTSIDE_ROOT: if the file isn't strictly inside the root
- * - NOT_A_DIRECTORY: if the root doesn't exist or isn't a directory
+ * - NON_EXISTENT_DIRECTORY: if the root doesn't exist
+ * - NOT_A_DIRECTORY: if the root isn't a directory
  */
 export const assertPrivateFile = (path: string, options: IPrivateFileOptions = {}): void => {
   closeSync(openPrivateFile(path, options));
@@ -178,7 +181,8 @@ export const assertPrivateFile = (path: string, options: IPrivateFileOptions = {
  * - FILE_TOO_LARGE: if the file holds more than maxBytes bytes
  * - PATH_NOT_CANONICAL: if the path or the root goes through a symbolic link
  * - PATH_OUTSIDE_ROOT: if the file isn't strictly inside the root
- * - NOT_A_DIRECTORY: if the root doesn't exist or isn't a directory
+ * - NON_EXISTENT_DIRECTORY: if the root doesn't exist
+ * - NOT_A_DIRECTORY: if the root isn't a directory
  */
 export const readPrivateFile = (
   path: string,
@@ -202,9 +206,14 @@ export const readPrivateFile = (
  * - FILE_NOT_PRIVATE: if the new file isn't private
  */
 const writeExclusive = (path: string, data: string | NodeJS.ArrayBufferView): void => {
+  // anything at the path, a dangling symbolic link included, is refused first, because on Windows
+  // 'wx' creates a dangling link's target; elsewhere it fails on any existing entry, which also
+  // catches one created after this check
+  if (getPathElement(path) !== null) {
+    throw fileAlreadyExists(path);
+  }
   let descriptor: number;
   try {
-    // 'wx' fails on any existing entry, even a dangling symbolic link
     descriptor = openSync(path, 'wx', PRIVATE_FILE_MODE);
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'EEXIST') {
@@ -249,7 +258,8 @@ const writeExclusive = (path: string, data: string | NodeJS.ArrayBufferView): vo
  * - FILE_NOT_PRIVATE: if other users can access the file at the path, or the file written
  * - PATH_NOT_CANONICAL: if the file's directory or the root goes through a symbolic link
  * - PATH_OUTSIDE_ROOT: if the file isn't strictly inside the root
- * - NOT_A_DIRECTORY: if the root or the file's directory doesn't exist or isn't a directory
+ * - NON_EXISTENT_DIRECTORY: if the root or the file's directory doesn't exist
+ * - NOT_A_DIRECTORY: if the root or the file's directory isn't a directory
  */
 export const writePrivateFile = (
   path: string,
@@ -287,7 +297,8 @@ export const writePrivateFile = (
  *
  * assertPrivateDirectory('/home/ada/.config/app');
  * @throws
- * - NOT_A_DIRECTORY: if the path doesn't exist, is a symbolic link, or isn't a directory
+ * - NON_EXISTENT_DIRECTORY: if the path doesn't exist
+ * - NOT_A_DIRECTORY: if the path is a symbolic link or isn't a directory
  * - PATH_NOT_CANONICAL: if the path goes through a symbolic link
  * - DIRECTORY_NOT_PRIVATE: if other users can access the directory
  */
@@ -296,7 +307,7 @@ export const assertPrivateDirectory = (path: string): void => {
   try {
     stats = lstatSync(path);
   } catch (error) {
-    throw isMissingPathError(error) ? notADirectory(path) : error;
+    throw isMissingPathError(error) ? nonExistentDirectory(path, error) : error;
   }
   if (!stats.isDirectory()) {
     throw notADirectory(path);

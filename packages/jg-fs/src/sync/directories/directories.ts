@@ -6,12 +6,15 @@ import {
   buildDirectoryElementsOptions,
   ERRORS,
   groupDirectoryElements,
+  nonExistentDirectory,
   notADirectory,
   type IDirectoryElementsOptions,
   type IDirectoryPathElements,
   type IPathElement,
 } from '../../shared/index.js';
 import { getPathElement } from '../general/index.js';
+
+import { assertExistingDirectory } from './utilities.js';
 
 /**
  * Checks whether a path exists and is a directory.
@@ -70,12 +73,11 @@ export const createDirectory = (path: string, deleteIfExists?: boolean): void =>
  *
  * copyDirectory('templates', 'dist/templates');
  * @throws
+ * - NON_EXISTENT_DIRECTORY: if the srcPath doesn't exist
  * - NOT_A_DIRECTORY: if the srcPath is not a directory
  */
 export const copyDirectory = (srcPath: string, destPath: string): void => {
-  if (!isDirectory(srcPath)) {
-    throw notADirectory(srcPath);
-  }
+  assertExistingDirectory(srcPath);
   deleteDirectory(destPath);
   cpSync(srcPath, destPath, { recursive: true });
 };
@@ -95,9 +97,7 @@ export const copyDirectory = (srcPath: string, destPath: string): void => {
 export const createDirectorySymLink = (target: string, path: string): void => {
   const element = getPathElement(target);
   if (element === null) {
-    throw new Exception(`The target directory '${target}' does not exist.`, {
-      code: ERRORS.NON_EXISTENT_DIRECTORY,
-    });
+    throw nonExistentDirectory(target);
   }
   if (!element.isDirectory) {
     throw notADirectory(target);
@@ -116,12 +116,11 @@ export const createDirectorySymLink = (target: string, path: string): void => {
  * readDirectory('dist'); // ['dist/index.js', 'dist/assets']
  * readDirectory('dist', true); // includes the contents of dist/assets
  * @throws
- * - NOT_A_DIRECTORY: if the path doesn't exist or is not a directory
+ * - NON_EXISTENT_DIRECTORY: if the path doesn't exist
+ * - NOT_A_DIRECTORY: if the path is not a directory
  */
 export const readDirectory = (path: string, recursive: boolean = false): string[] => {
-  if (!isDirectory(path)) {
-    throw notADirectory(path);
-  }
+  assertExistingDirectory(path);
   return readdirSync(path, { encoding: 'utf-8', recursive }).map((contentPath) =>
     join(path, contentPath),
   );
@@ -138,7 +137,8 @@ export const readDirectory = (path: string, recursive: boolean = false): string[
  *
  * const { files } = getDirectoryElements('content', { includeExts: ['.md'], sortByKey: 'creation', sortOrder: 'desc' });
  * @throws
- * - NOT_A_DIRECTORY: if the path doesn't exist or is not a directory
+ * - NON_EXISTENT_DIRECTORY: if the path doesn't exist
+ * - NOT_A_DIRECTORY: if the path is not a directory
  */
 export const getDirectoryElements = (
   path: string,

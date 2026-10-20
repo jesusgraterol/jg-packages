@@ -1,5 +1,13 @@
 // @vitest-environment node
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -18,7 +26,9 @@ const IS_POSIX = process.platform !== 'win32';
 let directory: string;
 
 beforeAll(() => {
-  directory = mkdtempSync(join(tmpdir(), 'jg-env-files-'));
+  // the real path, because the private reads refuse a root reached through a symbolic link, as
+  // macOS's temporary directory is
+  directory = realpathSync(mkdtempSync(join(tmpdir(), 'jg-env-files-')));
 });
 
 afterAll(() => {
@@ -124,6 +134,34 @@ describe('readEnvFile', () => {
     expectToThrowCode(() => readEnvFile(path), ERRORS.ENV_FILE_UNREADABLE);
     expect(readEnvFile(path, { isOptional: true })).toStrictEqual({});
     expect(readEnvFile(path, { isOptional: true, requirePrivate: true })).toStrictEqual({});
+  });
+
+  test('treats a missing rootPath as a missing file: ENV_FILE_UNREADABLE, or {} with isOptional', () => {
+    const rootPath = join(directory, 'missing-root');
+    const path = join(rootPath, 'secrets.env');
+
+    const error = catchError(() => readEnvFile(path, { requirePrivate: true, rootPath }));
+
+    expect(error).toMatchObject({ code: ERRORS.ENV_FILE_UNREADABLE, data: { path } });
+    expect(readEnvFile(path, { requirePrivate: true, rootPath, isOptional: true })).toStrictEqual(
+      {},
+    );
+  });
+
+  test('throws ENV_FILE_NOT_PRIVATE for a rootPath that is a file, even with isOptional', () => {
+    const rootPath = writeEnvFile('root-file.env', 'A=1\n');
+
+    for (const isOptional of [false, true]) {
+      expectToThrowCode(
+        () =>
+          readEnvFile(join(rootPath, 'secrets.env'), {
+            requirePrivate: true,
+            rootPath,
+            isOptional,
+          }),
+        ERRORS.ENV_FILE_NOT_PRIVATE,
+      );
+    }
   });
 
   test('still throws for an optional file that exists but cannot be read', () => {

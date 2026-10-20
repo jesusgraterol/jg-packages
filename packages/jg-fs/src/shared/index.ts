@@ -29,7 +29,7 @@ export {
 } from './constants.js';
 
 // paths
-export { isPathWithin, toPathElement } from './paths.js';
+export { isPathWithin, listPathAncestry, toPathElement } from './paths.js';
 
 // directory elements
 export { buildDirectoryElementsOptions, groupDirectoryElements } from './directory-elements.js';
@@ -40,8 +40,11 @@ export {
   assertTextData,
   fileTooLarge,
   isBusyRenameError,
+  isMissingPathError,
   isNoFollowError,
   isNotFoundError,
+  nonExistentDirectory,
+  nonExistentFile,
   notADirectory,
   notAFile,
   notARegularFile,
@@ -56,8 +59,6 @@ export {
   fileNotPrivate,
   hasSharedAccess,
   HAS_POSIX_PERMISSIONS,
-  isMissingPathError,
-  mapPrivateOpenError,
   pathNotCanonical,
   pathOutsideRoot,
   PRIVATE_DIRECTORY_MODE,

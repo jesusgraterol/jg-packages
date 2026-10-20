@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+
+### Changed
+
+- Depends on `jg-clipboard` 0.3.0 and `jg-exception` 1.6.0, which support Node.js 22.17.0 and later. The package itself still needs Node.js 24.
+
 ## 0.3.1
 
 ### Fixed

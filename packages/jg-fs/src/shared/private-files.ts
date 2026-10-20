@@ -1,7 +1,6 @@
 import { Exception } from 'jg-exception';
 
 import { ERRORS } from './errors.js';
-import { isNotFoundError } from './validations.js';
 
 /*
  * The checks and exceptions the async and sync private file functions share. Windows reports only
@@ -86,30 +85,3 @@ export const fileAlreadyExists = (path: string): Exception =>
     code: ERRORS.FILE_ALREADY_EXISTS,
     data: { path },
   });
-
-/**
- * Checks whether an error means a path doesn't exist: it, or a directory on its way, is missing
- * (ENOENT), or a file sits where a directory should be (ENOTDIR).
- * @param error The error.
- * @returns Whether the path doesn't exist.
- */
-export const isMissingPathError = (error: unknown): boolean =>
-  isNotFoundError(error) || (error instanceof Error && 'code' in error && error.code === 'ENOTDIR');
-
-/**
- * Maps a failure to open a private file without following links: a file that doesn't exist throws
- * NON_EXISTENT_FILE, so callers can tell it from a path that isn't a regular file.
- * @param path The file's path.
- * @param error The error opening it, which wraps a missing path's ENOENT as its cause.
- * @returns The error to throw.
- */
-export const mapPrivateOpenError = (path: string, error: unknown): unknown => {
-  const openError = error instanceof Error && isNotFoundError(error.cause) ? error.cause : error;
-  return isMissingPathError(openError)
-    ? new Exception(`The file '${path}' does not exist.`, {
-        code: ERRORS.NON_EXISTENT_FILE,
-        data: { path },
-        cause: openError,
-      })
-    : error;
-};

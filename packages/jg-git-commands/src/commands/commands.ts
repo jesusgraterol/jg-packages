@@ -1,7 +1,11 @@
-import { devNull } from 'node:os';
-
 import { DEFAULT_GIT_MAX_OUTPUT_BYTES, runGit } from '../run-git/index.js';
-import { invalidArgument, invalidOutput, isArgumentValid, isObjectId } from '../shared/index.js';
+import {
+  GIT_NULL_DEVICE,
+  invalidArgument,
+  invalidOutput,
+  isArgumentValid,
+  isObjectId,
+} from '../shared/index.js';
 import type {
   IFetchCommitOptions,
   IGitCommandOptions,
@@ -301,7 +305,7 @@ export const fetchCommit = async (
     await runGit(
       [
         '-c',
-        `core.hooksPath=${devNull}`,
+        `core.hooksPath=${GIT_NULL_DEVICE}`,
         '-c',
         'maintenance.auto=false',
         '-c',

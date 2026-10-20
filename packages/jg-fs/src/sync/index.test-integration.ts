@@ -200,8 +200,11 @@ describe('Filesystem', () => {
     });
 
     describe('copyDirectory', () => {
-      test('throws an error if the source path is not a directory', () => {
-        expectToThrowCode(() => copyDirectory(p('dir-a'), p('dir-b')), ERRORS.NOT_A_DIRECTORY);
+      test('throws if the source directory does not exist', () => {
+        expectToThrowCode(
+          () => copyDirectory(p('dir-a'), p('dir-b')),
+          ERRORS.NON_EXISTENT_DIRECTORY,
+        );
       });
 
       test('can copy a directory with some files and sub directories in it', () => {
@@ -268,7 +271,7 @@ describe('Filesystem', () => {
 
     describe('readDirectory', () => {
       test('throws if the directory doesnt exist', () => {
-        expectToThrowCode(() => readDirectory(p()), ERRORS.NOT_A_DIRECTORY);
+        expectToThrowCode(() => readDirectory(p()), ERRORS.NON_EXISTENT_DIRECTORY);
       });
 
       test('can read all the contents of a directory', () => {
@@ -294,7 +297,7 @@ describe('Filesystem', () => {
 
     describe('getDirectoryElements', () => {
       test('throws if attempting to read a non-existent directory', () => {
-        expectToThrowCode(() => getDirectoryElements(p()), ERRORS.NOT_A_DIRECTORY);
+        expectToThrowCode(() => getDirectoryElements(p()), ERRORS.NON_EXISTENT_DIRECTORY);
       });
 
       test('reading an empty directory returns empty element lists', () => {
@@ -373,7 +376,7 @@ describe('Filesystem', () => {
       });
 
       test('attempting to read a text file that doesnt exist throws an error', () => {
-        expectToThrowCode(() => readTextFile(p('file.txt')), ERRORS.NOT_A_FILE);
+        expectToThrowCode(() => readTextFile(p('file.txt')), ERRORS.NON_EXISTENT_FILE);
       });
 
       test('reads an empty text file as an empty string', () => {
@@ -402,7 +405,7 @@ describe('Filesystem', () => {
       });
 
       test('attempting to read a JSON file that doesnt exist throws an error', () => {
-        expectToThrowCode(() => readJsonFile(p('file.json')), ERRORS.NOT_A_FILE);
+        expectToThrowCode(() => readJsonFile(p('file.json')), ERRORS.NON_EXISTENT_FILE);
       });
 
       test('attempting to read an empty/invalid json file throws an error', () => {
@@ -431,7 +434,7 @@ describe('Filesystem', () => {
       });
 
       test('attempting to read a Buffer file that doesnt exist throws an error', () => {
-        expectToThrowCode(() => readBufferFile(p('file')), ERRORS.NOT_A_FILE);
+        expectToThrowCode(() => readBufferFile(p('file')), ERRORS.NON_EXISTENT_FILE);
       });
 
       test('reads an empty file as an empty Buffer, and writes an empty Buffer', () => {
@@ -444,8 +447,8 @@ describe('Filesystem', () => {
     });
 
     describe('copyFile', () => {
-      test('throws if the source path is not a file', () => {
-        expectToThrowCode(() => copyFile(p('file.txt'), p('file-b.txt')), ERRORS.NOT_A_FILE);
+      test('throws if the source file does not exist', () => {
+        expectToThrowCode(() => copyFile(p('file.txt'), p('file-b.txt')), ERRORS.NON_EXISTENT_FILE);
       });
 
       test('can copy a text file from a to b', () => {
@@ -478,8 +481,8 @@ describe('Filesystem', () => {
         expect(isFile(p('some-file.txt'))).toBeFalsy();
       });
 
-      test("throws if the file does not exist or if it isn't a file", () => {
-        expectToThrowCode(() => deleteFile(p('some-file.txt')), ERRORS.NOT_A_FILE);
+      test('throws if the file does not exist', () => {
+        expectToThrowCode(() => deleteFile(p('some-file.txt')), ERRORS.NON_EXISTENT_FILE);
       });
 
       test('throws if attempting to delete a directory', () => {
@@ -595,7 +598,7 @@ describe('Filesystem', () => {
       });
 
       test('throws when the path does not exist', () => {
-        expectToThrowCode(() => readBoundedFile(p('missing.txt'), 4), ERRORS.NOT_A_FILE);
+        expectToThrowCode(() => readBoundedFile(p('missing.txt'), 4), ERRORS.NON_EXISTENT_FILE);
       });
 
       test('throws when the path is a directory', () => {
@@ -606,7 +609,11 @@ describe('Filesystem', () => {
       test.skipIf(IS_WINDOWS)('throws when the final path component is a symbolic link', () => {
         writeTextFile(p('file.txt'), 'abcd');
         createFileSymLink(resolve(p('file.txt')), p('link.txt'));
-        expectToThrowCode(() => readBoundedFile(p('link.txt'), 4), ERRORS.NOT_A_FILE);
+        expectToThrowCode(
+          () => readBoundedFile(p('link.txt'), 4),
+          ERRORS.NOT_A_FILE,
+          'is a symbolic link',
+        );
       });
 
       test.skipIf(IS_WINDOWS)('throws for a named pipe without blocking', () => {

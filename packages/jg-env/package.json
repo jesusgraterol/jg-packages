@@ -1,6 +1,6 @@
 {
   "name": "jg-env",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Strict environment variable readers for browsers and Node.js, plus secret files, with errors that name the key and never the value.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -25,7 +25,7 @@
   ],
   "sideEffects": false,
   "engines": {
-    "node": ">=24"
+    "node": ">=22.17.0"
   },
   "publishConfig": {
     "access": "public"

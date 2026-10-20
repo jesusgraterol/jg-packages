@@ -102,7 +102,8 @@ describe('5minutes packages/app/api-request', () => {
     const { data, error } = await request(fiveMinutesSessionPath, {
       baseUrl: server.origin,
       parseAs: 'envelope',
-      init: { credentials: 'include', cache: 'no-store' },
+      // @types/node 22's RequestInit leaves out cache, which Node.js's fetch and browsers accept
+      init: { credentials: 'include', cache: 'no-store' } as RequestInit,
       attemptTimeoutSeconds: 10,
     });
 

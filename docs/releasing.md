@@ -67,7 +67,7 @@ The release commands run on Linux and macOS.
 
 ## What CI does on `main`
 
-Every push to `main`, which is every merged pull request, runs the same parallel check jobs as a pull request, `static`, `tests`, `browser`, `e2e`, `release`, and `floor`, with these differences and additions:
+Every push to `main`, which is every merged pull request, runs the same parallel check jobs as a pull request, `static`, `tests`, `browser`, `e2e`, `release`, `floor`, and `platforms`, with these differences and additions:
 
 | Job       | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

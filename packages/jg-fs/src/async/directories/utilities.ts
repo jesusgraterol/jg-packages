@@ -1,3 +1,28 @@
+import type { Stats } from 'node:fs';
+import { lstat } from 'node:fs/promises';
+
+import { isMissingPathError, nonExistentDirectory, notADirectory } from '../../shared/index.js';
+
+/**
+ * Ensures a path is an existing directory, without following a symbolic link at the path.
+ * @param path The path.
+ * @returns A promise that resolves once the path is known to be a directory.
+ * @throws
+ * - NON_EXISTENT_DIRECTORY: if the path doesn't exist
+ * - NOT_A_DIRECTORY: if the path is not a directory
+ */
+export const assertExistingDirectory = async (path: string): Promise<void> => {
+  let stats: Stats;
+  try {
+    stats = await lstat(path);
+  } catch (error) {
+    throw isMissingPathError(error) ? nonExistentDirectory(path, error) : notADirectory(path);
+  }
+  if (!stats.isDirectory()) {
+    throw notADirectory(path);
+  }
+};
+
 /**
  * Maps items with an async function, running at most a fixed number of calls at once, and keeps
  * the results in the items' order.
