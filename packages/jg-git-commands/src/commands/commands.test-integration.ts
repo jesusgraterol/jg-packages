@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -629,9 +629,16 @@ describe('git commands', () => {
       ).resolves.toStrictEqual(['notes/deep/todo.md']);
     });
 
+    // on Windows, Git prints the long name with forward slashes, where the temporary directory may
+    // have a short (8.3) one, so both sides are compared by their real path
     test('readTopLevel reads the root of the working tree from any directory in it', async () => {
-      await expect(readTopLevel(join(local, 'docs'), ISOLATED)).resolves.toBe(local);
-      await expect(readTopLevel(local, ISOLATED)).resolves.toBe(local);
+      const expected = realpathSync.native(local);
+
+      for (const directory of [join(local, 'docs'), local]) {
+        const root = await readTopLevel(directory, ISOLATED);
+
+        expect(root === null ? null : realpathSync.native(root)).toBe(expected);
+      }
     });
 
     test('readTopLevel is null inside .git and in a bare repository', async () => {
