@@ -13,6 +13,7 @@ import {
   parseIndexEntries,
   parseRemoteRefs,
   parseStatus,
+  readCompleteOutput,
   readSuccessfulOutput,
 } from './utilities.js';
 
@@ -294,5 +295,41 @@ describe('argument checks', () => {
     [null, false],
   ])('isRepositoryPathValid(%o) -> %s', (value, expected) => {
     expect(isRepositoryPathValid(value)).toBe(expected);
+  });
+});
+
+describe('readCompleteOutput', () => {
+  const result = { stdout: Buffer.from('a.txt\0'), signalCode: null, durationMs: 1 };
+
+  test('gives the stdout of a listing that exited with 0 without a warning', () => {
+    expect(
+      readCompleteOutput({ ...result, stderr: Buffer.alloc(0), exitCode: 0 }, 'ls-files'),
+    ).toStrictEqual(Buffer.from('a.txt\0'));
+  });
+
+  test('refuses a listing that warned it skipped something, though it exited with 0', () => {
+    expectToThrowCode(
+      () =>
+        readCompleteOutput(
+          {
+            ...result,
+            stderr: Buffer.from("warning: could not open directory 'locked/': Permission denied\n"),
+            exitCode: 0,
+          },
+          'ls-files',
+        ),
+      ERRORS.GIT_OUTPUT_INVALID,
+    );
+  });
+
+  test('classifies a listing that failed as readSuccessfulOutput does', () => {
+    expectToThrowCode(
+      () =>
+        readCompleteOutput(
+          { ...result, stderr: Buffer.from('fatal: bad revision\n'), exitCode: 128 },
+          'ls-files',
+        ),
+      ERRORS.GIT_COMMAND_FAILED,
+    );
   });
 });

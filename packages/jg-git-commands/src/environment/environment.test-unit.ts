@@ -48,6 +48,22 @@ describe('createGitEnvironment', () => {
     expect(env).toStrictEqual({ PATH: '/usr/bin', HOME: '/home/user', ...NON_INTERACTIVE });
   });
 
+  // Windows compares variable names without case, so Git reads git_dir as GIT_DIR there
+  test('removes the Git, askpass, and locale variables whatever their case', () => {
+    const env = createGitEnvironment({
+      baseEnv: {
+        Path: 'C:\\Windows',
+        git_dir: 'C:\\elsewhere\\.git',
+        Git_Config_Parameters: "'core.askpass'='C:\\askpass.exe'",
+        ssh_askpass: 'C:\\ssh-askpass.exe',
+        Lc_All: 'de_DE.UTF-8',
+        lang: 'de_DE.UTF-8',
+      },
+    });
+
+    expect(env).toStrictEqual({ Path: 'C:\\Windows', ...NON_INTERACTIVE });
+  });
+
   // Git for Windows reads /dev/null as its null device, but can't open Node.js's os.devNull there
   test('isolates the config and system attributes only when asked, with the null device as Git names it everywhere', () => {
     expect(createGitEnvironment({ baseEnv: {}, isolateConfig: true })).toStrictEqual({

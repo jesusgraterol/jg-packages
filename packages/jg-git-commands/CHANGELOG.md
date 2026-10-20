@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1
+
+### Fixed
+
+- `listUntrackedFiles` and `readIndexEntries` throw `GIT_OUTPUT_INVALID` when Git warns while listing, such as about a directory it couldn't open. Git still exits with 0 then, and left the directory's files out of the list.
+- `readGitVersion` reads every build's version line: a suffix such as Microsoft's `.vfs.0.0`, a release candidate's `.rc1`, or a source build's `.123.gabcdef0`, and a line that ends with CRLF. It refused them with `GIT_OUTPUT_INVALID`. It still refuses a component with a leading zero or past `Number.MAX_SAFE_INTEGER`.
+- The environment leaves out the inherited Git, askpass, and locale variables whatever their case. On Windows, where Git reads `git_dir` as `GIT_DIR`, a variable spelled in another case reached Git. The prompt variables passed in `env` are ignored in any case too.
+
 ## 0.3.0
 
 ### Added

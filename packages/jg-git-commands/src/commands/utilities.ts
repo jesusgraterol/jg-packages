@@ -29,6 +29,27 @@ export const readSuccessfulOutput = <TOutput extends string | Buffer>(
 };
 
 /**
+ * Gives the stdout of a listing command that exited with 0 without a warning. Git still exits with
+ * 0 when it warns on stderr that it skipped something, such as a directory it couldn't open, so
+ * the list would be incomplete.
+ * @param result The command's result, as bytes.
+ * @param subcommand The git subcommand that ran, such as `ls-files`.
+ * @returns The stdout.
+ * @throws
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
+ * - GIT_COMMAND_FAILED: The git command failed.
+ * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
+ */
+export const readCompleteOutput = (result: IProcessResult<Buffer>, subcommand: string): Buffer => {
+  const stdout = readSuccessfulOutput(result, subcommand);
+  if (result.stderr.length > 0) {
+    throw invalidOutput(subcommand);
+  }
+  return stdout;
+};
+
+/**
  * Decodes output as UTF-8, refusing bytes that aren't, such as a path Git wrote as it is.
  * @param output The command's stdout, as bytes.
  * @param subcommand The git subcommand that wrote it.

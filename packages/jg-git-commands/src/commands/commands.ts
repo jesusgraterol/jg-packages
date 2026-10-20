@@ -25,8 +25,17 @@ import {
   parseIndexEntries,
   parseRemoteRefs,
   parseStatus,
+  readCompleteOutput,
   readSuccessfulOutput,
 } from './utilities.js';
+
+/*
+ * The line `git version` writes: three numbers, then any suffixes a build adds, such as Git for
+ * Windows' `.windows.1`, Microsoft's `.vfs.0.0`, a release candidate's `.rc1`, or a source build's
+ * `.123.gabcdef0`, and a vendor's note in parentheses, such as `(Apple Git-154)`.
+ */
+const GIT_VERSION_PATTERN =
+  /^git version (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:[.-][0-9A-Za-z]+)*(?: \([0-9A-Za-z](?:[0-9A-Za-z ._+/-]*[0-9A-Za-z])?\))?\r?\n$/;
 
 // the transports a command that reaches a remote allows unless the caller's env says otherwise
 const REMOTE_PROTOCOLS = 'https:ssh';
@@ -460,7 +469,7 @@ export const readChangedPaths = async (
 /**
  * Lists the index's entries, with `git ls-files --cached --stage -z`: each tracked path's file
  * mode and merge stage, 0 unless it's in a conflict, which lists a path once per stage. A path
- * that isn't valid UTF-8 fails the read.
+ * that isn't valid UTF-8, or a warning from Git, fails the read.
  * @param cwd The repository's directory.
  * @param options The paths to limit the list to, read literally, and runGit's options.
  * @returns A promise that resolves to the entries, paths from the repository's root.
@@ -486,7 +495,7 @@ export const readIndexEntries = async (
   { paths, ...options }: IListPathsOptions = {},
 ): Promise<IIndexEntry[]> => {
   const pathspec = toPathspecArgs(paths);
-  const output = readSuccessfulOutput(
+  const output = readCompleteOutput(
     await runGit(['ls-files', '--cached', '--stage', '--full-name', '-z', ...pathspec], {
       ...options,
       cwd,
@@ -499,7 +508,9 @@ export const readIndexEntries = async (
 
 /**
  * Lists the untracked files that aren't ignored, with `git ls-files --others --exclude-standard
- * -z`, each file in an untracked directory included. A path that isn't valid UTF-8 fails the read.
+ * -z`, each file in an untracked directory included. A path that isn't valid UTF-8 fails the read,
+ * and so does a warning from Git, such as for a directory it couldn't open, which it otherwise
+ * leaves out of the list while still succeeding.
  * @param cwd The repository's directory.
  * @param options The paths to limit the list to, read literally, and runGit's options.
  * @returns A promise that resolves to the paths from the repository's root.
@@ -525,7 +536,7 @@ export const listUntrackedFiles = async (
   { paths, ...options }: IListPathsOptions = {},
 ): Promise<string[]> => {
   const pathspec = toPathspecArgs(paths);
-  const output = readSuccessfulOutput(
+  const output = readCompleteOutput(
     await runGit(['ls-files', '--others', '--exclude-standard', '--full-name', '-z', ...pathspec], {
       ...options,
       cwd,
@@ -640,8 +651,9 @@ export const readConfigBoolean = async (
 };
 
 /**
- * Reads the installed Git's version, with `git version`, including the forms Git for Windows,
- * such as `2.45.1.windows.1`, and Apple's, such as `2.39.5 (Apple Git-154)`, write.
+ * Reads the installed Git's version, with `git version`, whatever suffixes the build adds, such as
+ * Git for Windows' `2.45.1.windows.1`, Microsoft's `2.45.2.vfs.0.0`, a release candidate's
+ * `2.48.0.rc1`, or Apple's `2.39.5 (Apple Git-154)`.
  * @param cwd The directory git runs in.
  * @param options runGit's options, such as the timeout.
  * @returns A promise that resolves to the version.
@@ -670,10 +682,14 @@ export const readGitVersion = async (
   options: IGitCommandOptions = {},
 ): Promise<IGitVersion> => {
   const output = readSuccessfulOutput(await runGit(['version'], { ...options, cwd }), 'version');
-  const match =
-    /^git version (\d+)\.(\d+)\.(\d+)(?:\.windows\.\d+)?(?: \(Apple Git-\d+\))?\n$/.exec(output);
-  if (match === null) {
+  const match = GIT_VERSION_PATTERN.exec(output);
+  const version = {
+    major: Number(match?.[1]),
+    minor: Number(match?.[2]),
+    patch: Number(match?.[3]),
+  };
+  if (!Object.values(version).every(Number.isSafeInteger)) {
     throw invalidOutput('version');
   }
-  return { major: Number(match[1]), minor: Number(match[2]), patch: Number(match[3]) };
+  return version;
 };

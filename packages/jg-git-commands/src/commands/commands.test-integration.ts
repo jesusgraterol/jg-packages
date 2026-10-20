@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { existsSync, realpathSync } from 'node:fs';
-import { mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -456,19 +456,29 @@ describe('git commands', () => {
       ['git version 2.45.1\n', { major: 2, minor: 45, patch: 1 }],
       ['git version 2.39.2.windows.1\n', { major: 2, minor: 39, patch: 2 }],
       ['git version 2.39.5 (Apple Git-154)\n', { major: 2, minor: 39, patch: 5 }],
+      ['git version 2.45.2.vfs.0.0\n', { major: 2, minor: 45, patch: 2 }],
+      ['git version 2.48.0.rc1\n', { major: 2, minor: 48, patch: 0 }],
+      ['git version 2.45.1-rc1\n', { major: 2, minor: 45, patch: 1 }],
+      ['git version 2.47.0.123.gabcdef0\n', { major: 2, minor: 47, patch: 0 }],
+      ['git version 2.53.0\r\n', { major: 2, minor: 53, patch: 0 }],
     ])('readGitVersion(%j) -> %o', async (output, version) => {
       await expect(readGitVersion(remote, fakeOutput(output))).resolves.toStrictEqual(version);
     });
 
-    test.each(['git version 2.45\n', 'git version 2.45.1-rc1\n', 'version 2.45.1\n', ''])(
-      'readGitVersion(%j) -> GIT_OUTPUT_INVALID',
-      async (output) => {
-        await expectToRejectCode(
-          readGitVersion(remote, fakeOutput(output)),
-          ERRORS.GIT_OUTPUT_INVALID,
-        );
-      },
-    );
+    test.each([
+      'git version 2.45\n',
+      'version 2.45.1\n',
+      '',
+      'git version 02.45.1\n',
+      'git version 2.45.1 arbitrary prose\n',
+      'git version 2.45.1_windows\n',
+      'git version 9007199254740992.0.0\n',
+    ])('readGitVersion(%j) -> GIT_OUTPUT_INVALID', async (output) => {
+      await expectToRejectCode(
+        readGitVersion(remote, fakeOutput(output)),
+        ERRORS.GIT_OUTPUT_INVALID,
+      );
+    });
 
     test('readConfigBoolean and readTopLevel reject what they cannot parse', async () => {
       await expectToRejectCode(
@@ -628,6 +638,23 @@ describe('git commands', () => {
         listUntrackedFiles(local, { ...ISOLATED, paths: ['notes'] }),
       ).resolves.toStrictEqual(['notes/deep/todo.md']);
     });
+
+    // a directory's permissions stop neither Windows' owner nor root from reading it
+    test.skipIf(IS_WINDOWS || process.getuid?.() === 0)(
+      'listUntrackedFiles fails instead of leaving out a directory Git could not open',
+      async () => {
+        const locked = join(local, 'locked');
+        await mkdir(locked);
+        await writeFile(join(locked, 'secret.txt'), 'x\n');
+        await chmod(locked, 0o000);
+
+        try {
+          await expectToRejectCode(listUntrackedFiles(local, ISOLATED), ERRORS.GIT_OUTPUT_INVALID);
+        } finally {
+          await chmod(locked, 0o755);
+        }
+      },
+    );
 
     // on Windows, Git prints the long name with forward slashes, where the temporary directory may
     // have a short (8.3) one, so both sides are compared by their real path
