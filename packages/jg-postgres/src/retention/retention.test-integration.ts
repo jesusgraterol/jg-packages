@@ -121,6 +121,66 @@ describe('deleteExpiredInBatches', () => {
     }
   });
 
+  test('stops between batches once the signal aborts, rejecting with its reason, and a later call finishes', async () => {
+    const table = await createEventTable();
+    await insertEvents(table, 5, 1);
+    const controller = new AbortController();
+    const reason = new Error('The app is shutting down.');
+    const realQuery = postgres.pool.query.bind(postgres.pool) as (
+      text: string,
+      params: unknown[],
+    ) => Promise<QueryResult>;
+    const deletions: number[] = [];
+    // the abort arrives while the first batch is in flight, as a shutdown would
+    vi.spyOn(postgres.pool, 'query').mockImplementation((async (
+      text: string,
+      params: unknown[],
+    ) => {
+      if (text.startsWith('WITH expired')) {
+        controller.abort(reason);
+      }
+      const result = await realQuery(text, params);
+      if (text.startsWith('WITH expired')) {
+        deletions.push(Number(result.rowCount));
+      }
+      return result;
+    }) as never);
+
+    await expect(
+      deleteExpiredInBatches(postgres, {
+        table,
+        cutoff: CUTOFF,
+        batchSize: 2,
+        signal: controller.signal,
+      }),
+    ).rejects.toBe(reason);
+    expect(deletions).toStrictEqual([2]);
+    expect(await countRows(table)).toBe(3);
+
+    vi.restoreAllMocks();
+    await expect(
+      deleteExpiredInBatches(postgres, { table, cutoff: CUTOFF, batchSize: 2 }),
+    ).resolves.toStrictEqual({ deletedCount: 3, cutoff: CUTOFF });
+    expect(await countRows(table)).toBe(0);
+  });
+
+  test('runs no statement when the signal has already aborted', async () => {
+    const table = await createEventTable();
+    await insertEvents(table, 2, 1);
+    const querySpy = vi.spyOn(postgres.pool, 'query');
+    const reason = new Error('Already stopped.');
+
+    await expect(
+      deleteExpiredInBatches(postgres, {
+        table,
+        olderThan: { days: 1 },
+        signal: AbortSignal.abort(reason),
+      }),
+    ).rejects.toBe(reason);
+    expect(querySpy).not.toHaveBeenCalled();
+    expect(await countRows(table)).toBe(2);
+  });
+
   test('subtracts months, then days, then seconds', async () => {
     await expect(
       readRetentionCutoff(

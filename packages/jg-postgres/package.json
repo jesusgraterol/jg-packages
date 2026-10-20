@@ -17,6 +17,14 @@
     "./record-store": {
       "types": "./dist/record-store/index.d.ts",
       "default": "./dist/record-store/index.js"
+    },
+    "./delivery-inbox": {
+      "types": "./dist/delivery-inbox/index.d.ts",
+      "default": "./dist/delivery-inbox/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "default": "./dist/testing/index.js"
     }
   },
   "main": "./dist/index.js",

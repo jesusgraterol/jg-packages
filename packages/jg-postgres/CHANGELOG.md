@@ -2,9 +2,18 @@
 
 ## 0.6.0
 
+### Added
+
+- `jg-postgres/delivery-inbox`: `createDeliveryInbox(postgres, { table, schema, leaseSeconds, retrySeconds, expirySeconds })`, an inbox for deliveries processed exactly once, such as webhook events, in a table the README defines. `receive` stores a delivery and recognizes a replay, throwing `DELIVERY_REPLAY_MISMATCH` for a key received with another digest or payload; `listDue` lists the due keys, oldest first; `claim` takes a lease, or closes a delivery past its expiry; and `finish` and `defer` act only under the current lease. Invalid options throw `INVALID_DELIVERY_INBOX_OPTIONS`, and an invalid delivery or lease `INVALID_DELIVERY`.
+- `ensureDatabase(config)`, which creates a missing database through the maintenance database, counting another process's creation as success.
+- `initializeSchemaOnce(postgres, { statements, markerTable, timeouts? })`, which creates a schema once, in one transaction under an advisory lock: it skips when the marker table exists, refuses any other object in the public schema with `SCHEMA_NOT_EMPTY`, and rolls back with `SCHEMA_MARKER_MISSING` when the statements don't create the marker. `IInitializeSchemaOptions`.
+- `jg-postgres/testing`: `createTestDatabaseName(name)`, `test_<pid>_<name>`, and `dropTestDatabase(config)`, which drops only this process's test databases, ending their connections, and refuses any other name with `INVALID_TEST_DATABASE_NAME`.
+- `deleteExpiredInBatches`'s `signal`, which stops the deletion between batches: no further statement starts once it aborts, and the call rejects with its reason after the batch in flight settles.
+
 ### Changed
 
 - Depends on `jg-crypto` 0.3.0.
+- `ISchema`, which `jg-postgres/record-store` and `jg-postgres/delivery-inbox` both export, is one type.
 
 ## 0.5.0
 

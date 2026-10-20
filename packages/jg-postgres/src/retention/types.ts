@@ -34,6 +34,11 @@ export type IExpiredRowDeletionOptions = {
 
   // the statement and lock timeouts of each batch, which then runs as a transaction of its own
   timeouts?: ITimeoutProfile | undefined;
+
+  // stops the deletion between batches, such as on shutdown: no batch starts after it aborts, and
+  // the call rejects with its reason once the batch in flight settles. The rows left stay for a
+  // later call
+  signal?: AbortSignal | undefined;
 };
 
 // what deleteExpiredInBatches resolves to: the rows it deleted, and the cutoff it deleted them by,
