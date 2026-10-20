@@ -37,4 +37,4 @@ export { FetchException, type IFetchExceptionInit } from './fetch-exception/inde
 export { parseRetryAfterMs } from './retry-after/index.js';
 
 // requests
-export { request } from './request/index.js';
+export { readResponseBytes, request } from './request/index.js';
