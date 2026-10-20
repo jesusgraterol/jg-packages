@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
+import { buildLlmsText } from 'jg-site';
 
 import { PACKAGE_CATALOG, PACKAGES_DIRECTORY, SITE_CONFIG } from '../site.config.ts';
-import { buildLlmsText } from 'jg-personal-astro-ui/llms-text';
 import { toMarkdownPath } from '../utilities/markdown-pages/index.ts';
 import { loadListedPackages } from '../utilities/package-catalog/index.ts';
 import {

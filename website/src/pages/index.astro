@@ -11,6 +11,7 @@ import Button from 'jg-personal-astro-ui/button';
 import HeroBackdrop from 'jg-personal-astro-ui/hero-backdrop';
 import Section from 'jg-personal-astro-ui/section';
 import TextLink from 'jg-personal-astro-ui/text-link';
+import { buildStructuredData } from 'jg-site';
 
 import AgentSetup from '../components/agent-setup/agent-setup.astro';
 import PackageCard from '../components/package-card/package-card.astro';
@@ -25,7 +26,6 @@ import {
 } from '../utilities/home-content/index.ts';
 import { toMarkdownPath } from '../utilities/markdown-pages/index.ts';
 import { groupPackagesByRuntime, loadListedPackages } from '../utilities/package-catalog/index.ts';
-import { buildStructuredData } from 'jg-personal-astro-ui/seo';
 
 // the icon of each benefit, by its id
 const BENEFIT_ICONS: Record<(typeof HOME_BENEFITS)[number]['id'], typeof Minimize2> = {

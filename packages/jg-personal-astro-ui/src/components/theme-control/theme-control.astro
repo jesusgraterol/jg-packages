@@ -33,11 +33,9 @@ const { class: className, storageKey } = Astro.props;
 </button>
 
 <script>
-  import {
-    THEME_APPLIED_EVENT,
-    THEME_CHANGE_EVENT,
-    writeThemePreference,
-  } from '../../theme-preference/index.ts';
+  import { writeThemePreference } from 'jg-site';
+
+  import { THEME_APPLIED_EVENT, THEME_CHANGE_EVENT } from '../theme-init-script/constants.ts';
 
   const getResolvedTheme = (): 'light' | 'dark' =>
     document.documentElement.dataset['resolvedTheme'] === 'dark' ? 'dark' : 'light';

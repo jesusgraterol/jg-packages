@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0
+
+### Removed
+
+- The `./seo`, `./llms-text`, and `./theme-preference` subpaths. Import `buildStructuredData`, `serializeStructuredData`, `SEARCH_TEXT_LIMITS`, `buildLlmsText`, `buildLlmsFullText`, `escapeMarkdownLabel`, `normalizeDescription`, and the theme preference's types and functions from `jg-site` 0.1.0, which has the same contracts; its `buildStructuredData` takes the breadcrumbs' items as `{ name, path }` without the `IBreadcrumbItem` name. The theme events, `THEME_CHANGE_EVENT` and `THEME_APPLIED_EVENT`, are no longer exported: only `theme-control` and `theme-init-script` use them.
+
+### Changed
+
+- Depends on `jg-site`, which `document-head` and `theme-control` use.
+
 ## 0.3.2
 
 ### Changed
