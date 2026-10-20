@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -120,7 +120,8 @@ describe('runGit', () => {
       env: homeEnv,
     });
 
-    expect(topLevel.stdout.trim()).toBe(repository);
+    // Git prints the long name with forward slashes on Windows, where the temp path is short (8.3)
+    expect(realpathSync.native(topLevel.stdout.trim())).toBe(realpathSync.native(repository));
     expect(name).toMatchObject({ exitCode: 1, stdout: '' });
     expect(email).toMatchObject({ exitCode: 1, stdout: '' });
   });
