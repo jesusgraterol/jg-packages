@@ -86,8 +86,8 @@ describe('startContainer', () => {
     expect(await findByName(options.name)).toStrictEqual([]);
   });
 
-  test('removes the container when a port ends up published beyond 127.0.0.1', async () => {
-    const options = { ...containerOptions(), createArgs: ['--publish', '6380'] };
+  test('removes the container when it ends up publishing another port', async () => {
+    const options = { ...containerOptions(), createArgs: ['--publish', '127.0.0.1::6380'] };
 
     await expectToRejectCode(
       startContainer(options),
@@ -253,6 +253,28 @@ describe.skipIf(IS_WINDOWS)('startContainer and removeContainer with a scripted 
     image: TEST_IMAGE,
     ports: [6379],
   };
+
+  test.each([
+    ['beyond 127.0.0.1', [{ HostIp: '0.0.0.0', HostPort: '49153' }]],
+    [
+      'twice',
+      [
+        { HostIp: '127.0.0.1', HostPort: '49153' },
+        { HostIp: '127.0.0.1', HostPort: '49154' },
+      ],
+    ],
+  ])('refuses a started container whose port is published %s', async (_, bindings) => {
+    await expectToRejectCode(
+      startContainer({
+        ...scripted,
+        env: await scriptedEnv({
+          FAKE_CREATE_OUT: FAKE_ID,
+          FAKE_INSPECT_OUT_1: inspectionJson({ ports: { '6379/tcp': bindings } }),
+        }),
+      }),
+      ERRORS.DOCKER_PORTS_NOT_LOOPBACK,
+    );
+  });
 
   test('refuses output from create that is no container ID', async () => {
     await expectToRejectCode(

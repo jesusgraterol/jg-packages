@@ -88,7 +88,7 @@ describe('startOwnedContainer', () => {
   });
 
   test('has its owner remove the container when a check after the creation fails', async () => {
-    const options = { ...containerOptions(), createArgs: ['--publish', '6380'] };
+    const options = { ...containerOptions(), createArgs: ['--publish', '127.0.0.1::6380'] };
 
     await expectToRejectCode(startOwnedContainer(options), ERRORS.DOCKER_PORTS_NOT_LOOPBACK);
     expect(await findByName(options.name)).toStrictEqual([]);
