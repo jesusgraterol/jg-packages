@@ -9,6 +9,7 @@
   - `readDirectory`, `getDirectoryElements`, and `copyDirectory` for its source throw `NON_EXISTENT_DIRECTORY` for a missing directory, where they threw `NOT_A_DIRECTORY`.
   - `assertPrivateFile`, `readPrivateFile`, and `writePrivateFile` throw `NON_EXISTENT_DIRECTORY` for a missing `rootPath`, as `writePrivateFile` does for a missing parent directory, and `assertPrivateDirectory` for a missing directory, where they threw `NOT_A_DIRECTORY`.
   - `createFileSymLink` and `createDirectorySymLink` name the missing target as "The file '…' does not exist." and "The directory '…' does not exist.", with its path in `data.path`.
+- Supports Node.js 22.17.0 and later, down from 24.
 
 ## 1.4.0
 

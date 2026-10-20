@@ -5,6 +5,7 @@
 ### Changed
 
 - A missing config file's error, `FAILED_TO_READ_BASE_CONFIG`, has `jg-fs` 1.5.0's `NON_EXISTENT_FILE` as its cause, "The file '…' does not exist.", where the cause was `NOT_A_FILE`, and the CLI prints Node.js's `ENOENT` error after it, as that error's own cause.
+- Supports Node.js 22.17.0 and later, down from 24.
 
 ## 1.4.0
 

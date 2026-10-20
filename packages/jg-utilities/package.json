@@ -1,6 +1,6 @@
 {
   "name": "jg-utilities",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Validations, transformers, generators, and collection, async, and environment utilities for browsers and Node.js.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -21,7 +21,7 @@
   ],
   "sideEffects": false,
   "engines": {
-    "node": ">=24"
+    "node": ">=22.17.0"
   },
   "publishConfig": {
     "access": "public"

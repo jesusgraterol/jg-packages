@@ -34,7 +34,7 @@ Each package gets a row here when it's added to `packages/`.
 
 ## Quick start
 
-You need Node.js 24 or later and pnpm, which switches itself to the version pinned in `package.json`.
+Developing needs Node.js 24 or later and pnpm, which switches itself to the version pinned in `package.json`. The published packages support Node.js 22.17.0 and later, except `jg-personal-astro-ui`, which needs 24.
 
 ```bash
 pnpm install

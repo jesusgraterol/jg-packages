@@ -6,6 +6,7 @@
 
 - `readEnvFile` with `requirePrivate` and a `rootPath` that doesn't exist throws `ENV_FILE_UNREADABLE`, where it threw `ENV_FILE_NOT_PRIVATE`, and reads as `{}` with `isOptional`, as a missing file does. A `rootPath` that is a file still throws `ENV_FILE_NOT_PRIVATE`.
 - Depends on `jg-fs` 1.5.0, which reports a missing path as `NON_EXISTENT_FILE` or `NON_EXISTENT_DIRECTORY`.
+- Supports Node.js 22.17.0 and later, down from 24.
 
 ## 0.2.0
 

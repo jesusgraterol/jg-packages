@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+### Changed
+
+- Supports Node.js 22.17.0 and later, down from 24.
+
 ## 0.2.0
 
 ### Added

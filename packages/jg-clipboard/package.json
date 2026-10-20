@@ -1,6 +1,6 @@
 {
   "name": "jg-clipboard",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Copy and read text, HTML, and images on the browser clipboard, with support detection and coded errors that say why the browser refused.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -21,7 +21,7 @@
   ],
   "sideEffects": false,
   "engines": {
-    "node": ">=24"
+    "node": ">=22.17.0"
   },
   "publishConfig": {
     "access": "public"
