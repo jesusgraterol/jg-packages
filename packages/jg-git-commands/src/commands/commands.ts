@@ -29,6 +29,14 @@ import {
   readSuccessfulOutput,
 } from './utilities.js';
 
+/*
+ * The line `git version` writes: three numbers, then any suffixes a build adds, such as Git for
+ * Windows' `.windows.1`, Microsoft's `.vfs.0.0`, a release candidate's `.rc1`, or a source build's
+ * `.123.gabcdef0`, and a vendor's note in parentheses, such as `(Apple Git-154)`.
+ */
+const GIT_VERSION_PATTERN =
+  /^git version (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:[.-][0-9A-Za-z]+)*(?: \([0-9A-Za-z](?:[0-9A-Za-z ._+/-]*[0-9A-Za-z])?\))?\r?\n$/;
+
 // the transports a command that reaches a remote allows unless the caller's env says otherwise
 const REMOTE_PROTOCOLS = 'https:ssh';
 
@@ -643,8 +651,9 @@ export const readConfigBoolean = async (
 };
 
 /**
- * Reads the installed Git's version, with `git version`, including the forms Git for Windows,
- * such as `2.45.1.windows.1`, and Apple's, such as `2.39.5 (Apple Git-154)`, write.
+ * Reads the installed Git's version, with `git version`, whatever suffixes the build adds, such as
+ * Git for Windows' `2.45.1.windows.1`, Microsoft's `2.45.2.vfs.0.0`, a release candidate's
+ * `2.48.0.rc1`, or Apple's `2.39.5 (Apple Git-154)`.
  * @param cwd The directory git runs in.
  * @param options runGit's options, such as the timeout.
  * @returns A promise that resolves to the version.
@@ -673,10 +682,14 @@ export const readGitVersion = async (
   options: IGitCommandOptions = {},
 ): Promise<IGitVersion> => {
   const output = readSuccessfulOutput(await runGit(['version'], { ...options, cwd }), 'version');
-  const match =
-    /^git version (\d+)\.(\d+)\.(\d+)(?:\.windows\.\d+)?(?: \(Apple Git-\d+\))?\n$/.exec(output);
-  if (match === null) {
+  const match = GIT_VERSION_PATTERN.exec(output);
+  const version = {
+    major: Number(match?.[1]),
+    minor: Number(match?.[2]),
+    patch: Number(match?.[3]),
+  };
+  if (!Object.values(version).every(Number.isSafeInteger)) {
     throw invalidOutput('version');
   }
-  return { major: Number(match[1]), minor: Number(match[2]), patch: Number(match[3]) };
+  return version;
 };

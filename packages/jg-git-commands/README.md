@@ -47,7 +47,7 @@ const changed = await readChangedPaths('/srv/app', 'origin/main', { to: 'HEAD' }
 const entries = await readIndexEntries('/srv/app'); // [{ mode: '100644', stage: 0, path: 'README.md' }]
 const untracked = await listUntrackedFiles('/srv/app', { paths: ['docs'] });
 const hasSymlinks = await readConfigBoolean('/srv/app', 'core.symlinks', true);
-const { major, minor } = await readGitVersion('/srv/app'); // also reads 2.45.1.windows.1 and Apple's
+const { major, minor } = await readGitVersion('/srv/app'); // also reads suffixes such as .windows.1
 ```
 
 Run any other command with `runGit`, which resolves with the exit code, whatever it is, and the output, as bytes with `encoding: 'buffer'`. `assertGitSucceeded` throws the same classified errors as the typed helpers:

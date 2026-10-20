@@ -456,19 +456,29 @@ describe('git commands', () => {
       ['git version 2.45.1\n', { major: 2, minor: 45, patch: 1 }],
       ['git version 2.39.2.windows.1\n', { major: 2, minor: 39, patch: 2 }],
       ['git version 2.39.5 (Apple Git-154)\n', { major: 2, minor: 39, patch: 5 }],
+      ['git version 2.45.2.vfs.0.0\n', { major: 2, minor: 45, patch: 2 }],
+      ['git version 2.48.0.rc1\n', { major: 2, minor: 48, patch: 0 }],
+      ['git version 2.45.1-rc1\n', { major: 2, minor: 45, patch: 1 }],
+      ['git version 2.47.0.123.gabcdef0\n', { major: 2, minor: 47, patch: 0 }],
+      ['git version 2.53.0\r\n', { major: 2, minor: 53, patch: 0 }],
     ])('readGitVersion(%j) -> %o', async (output, version) => {
       await expect(readGitVersion(remote, fakeOutput(output))).resolves.toStrictEqual(version);
     });
 
-    test.each(['git version 2.45\n', 'git version 2.45.1-rc1\n', 'version 2.45.1\n', ''])(
-      'readGitVersion(%j) -> GIT_OUTPUT_INVALID',
-      async (output) => {
-        await expectToRejectCode(
-          readGitVersion(remote, fakeOutput(output)),
-          ERRORS.GIT_OUTPUT_INVALID,
-        );
-      },
-    );
+    test.each([
+      'git version 2.45\n',
+      'version 2.45.1\n',
+      '',
+      'git version 02.45.1\n',
+      'git version 2.45.1 arbitrary prose\n',
+      'git version 2.45.1_windows\n',
+      'git version 9007199254740992.0.0\n',
+    ])('readGitVersion(%j) -> GIT_OUTPUT_INVALID', async (output) => {
+      await expectToRejectCode(
+        readGitVersion(remote, fakeOutput(output)),
+        ERRORS.GIT_OUTPUT_INVALID,
+      );
+    });
 
     test('readConfigBoolean and readTopLevel reject what they cannot parse', async () => {
       await expectToRejectCode(
