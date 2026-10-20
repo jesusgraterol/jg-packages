@@ -59,6 +59,7 @@
     "jg-git-commands": "workspace:*",
     "jg-github": "workspace:*",
     "jg-process": "workspace:*",
+    "jg-site": "workspace:*",
     "jg-storage": "workspace:*",
     "jg-sw": "workspace:*",
     "jg-utilities": "workspace:*",

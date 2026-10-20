@@ -19,6 +19,7 @@ export type IPackageIcon =
   | 'key-round'
   | 'lock-keyhole'
   | 'octagon-alert'
+  | 'panels-top-left'
   | 'refresh-cw'
   | 'route'
   | 'server'
