@@ -219,6 +219,10 @@ export const runProcess = async <TEncoding extends IProcessOutputEncoding = 'utf
     };
     child.stdout.on('data', collect(stdout));
     child.stderr.on('data', collect(stderr));
+    // the pipes fail too when the child can't start, such as on Windows for a working directory
+    // past its path limit; the child's own error or exit decides the run, so theirs is ignored
+    child.stdout.on('error', () => undefined);
+    child.stderr.on('error', () => undefined);
     child.on('error', (error) => settle({ kind: 'failed', error: startFailed(command, error) }));
     child.once('exit', (exitCode, signalCode) => settle({ kind: 'exited', exitCode, signalCode }));
     child.stdin.on('error', (error: NodeJS.ErrnoException) => {

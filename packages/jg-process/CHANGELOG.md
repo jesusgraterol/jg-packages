@@ -16,6 +16,10 @@
 
 - `runProcess` rejects with `INVALID_PROCESS_OPTIONS` before starting when the timeout isn't a positive number of at most 2,147,483 seconds, the longest a Node.js timer waits, or the output limit isn't a positive safe integer. A zero output limit used to fail on the first byte.
 
+### Fixed
+
+- `runProcess` no longer leaves an uncaught `ENOTCONN` error on Windows when a child can't start, such as for a working directory past the path limit; it rejects with `PROCESS_START_FAILED` as on other systems.
+
 ## 1.5.0
 
 ### Changed

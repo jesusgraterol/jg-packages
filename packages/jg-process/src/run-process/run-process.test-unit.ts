@@ -96,6 +96,24 @@ describe('runProcess stdin failures', () => {
   );
 });
 
+describe('runProcess when the child cannot start', () => {
+  test("rejects with the child's start error when its pipes fail too, as on Windows", async () => {
+    const child = createFakeChild();
+    const missing = Object.assign(new Error('spawn git ENOENT'), { code: 'ENOENT' });
+
+    const running = runProcess({ command: 'git', args: ['status'] });
+    // Windows reports the pipes of a child that never started as not connected
+    child.stdout.emit('error', streamError('ENOTCONN'));
+    child.stderr.emit('error', streamError('ENOTCONN'));
+    child.emit('error', missing);
+
+    await expect(running).rejects.toMatchObject({
+      code: ERRORS.PROCESS_START_FAILED,
+      cause: missing,
+    });
+  });
+});
+
 describe('runProcess after the child exits', () => {
   test('waits for the output streams to close after the exit', async () => {
     const child = createFakeChild();
