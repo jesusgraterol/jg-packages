@@ -102,6 +102,26 @@ const boundary = useQueryBoundary({
 
 The content waits until every query has data for the key that's fresh, or fetched since mount, so cached data from an earlier visit never shows as current. Once it shows, refetches, pagination, and background errors keep it on screen, with `errorPresentation: 'retained'`; an error before then, or one that leaves a query without data, is `blocking`. A new key, or an error `isAccessDenied` recognizes, hides the content in the same render, and after an access loss it returns only once every query settles with current data, even when `isInitialResolutionApproved` says the app approved the key's data before. `loadMoreQuery` is the first query when it pages and the content shows, and `retryFailed` refetches every failed query; it and the result keep their identity while nothing changes. RECIPES.md has an unstyled boundary component.
 
+### Data bound to the signed-in user
+
+`useIdentityBoundQueryApproval` decides whether an app may show the data of a query bound to the signed-in user, such as the current account, so a change of user never shows the previous one's data:
+
+```ts
+import { useIdentityBoundQueryApproval } from 'jg-tanstack-query';
+
+const { shouldPublishQueryData, isIdentityApproved, hasConfirmedIdentityMismatch } =
+  useIdentityBoundQueryApproval({
+    authenticatedIdentityKey: session?.key ?? null, // changes with each sign-in
+    authenticatedSubjectId: session?.accountId,
+    approvedSubjectId: storedAccount?.id, // the data the app already shows
+    querySubjectId: accountQuery.data?.id,
+    isQueryReady: accountQuery.isSuccess,
+    isQueryError: accountQuery.isError,
+  });
+```
+
+Store the query's data only while `shouldPublishQueryData`, when it belongs to the signed-in subject. `isIdentityApproved` turns true once the stored data matches the signed-in identity, stays true through refetches and failed fetches, resets for a new identity, even of the same subject, until its own data matches, and clears on sign-out. `hasConfirmedIdentityMismatch` means a settled query returned another subject's data, so sign out or reset. The result keeps its identity while its decisions don't change.
+
 ### Polling
 
 `createPollingQueryOptions` makes a query refetch on an interval while it's useful, built on TanStack Query's own focus and online managers:

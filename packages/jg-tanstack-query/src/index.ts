@@ -1,5 +1,9 @@
 // types
 export type { IQueryClientOptions } from './client/index.js';
+export type {
+  IIdentityBoundQueryApproval,
+  IUseIdentityBoundQueryApprovalOptions,
+} from './identity-approval/index.js';
 export type { IIndexedDbPersisterOptions } from './persister/index.js';
 export type { IPolledQuery, IPollingOptions, IPollingQueryOptions } from './polling/index.js';
 export type { IPersistedQueryProviderProps } from './provider/index.js';
@@ -47,3 +51,6 @@ export { useQueryBoundary } from './query-boundary/index.js';
 
 // polling
 export { createPollingQueryOptions } from './polling/index.js';
+
+// identity-bound queries
+export { useIdentityBoundQueryApproval } from './identity-approval/index.js';

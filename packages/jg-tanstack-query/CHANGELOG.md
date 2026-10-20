@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+
+- `useIdentityBoundQueryApproval({ authenticatedIdentityKey, authenticatedSubjectId, approvedSubjectId, querySubjectId, isQueryReady, isQueryError })`, which decides whether to publish a query's data bound to the signed-in user, whether the identity is approved, which lasts through refetches and failed fetches and resets for a new identity, and whether a settled query returned another subject's data. `IUseIdentityBoundQueryApprovalOptions` and `IIdentityBoundQueryApproval`.
+
 ## 0.4.0
 
 ### Changed
