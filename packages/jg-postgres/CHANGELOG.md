@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0
+
+### Changed
+
+- Depends on `jg-crypto` 0.3.0.
+
 ## 0.5.0
 
 ### Changed
