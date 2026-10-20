@@ -154,8 +154,8 @@ export const findAssertedCodes = (
 };
 
 /**
- * Lists a package's test files: every `.test-*.ts` under `src`, besides shared test utilities and
- * benchmarks.
+ * Lists a package's test files: every `.test-*.ts` under `src`, end-to-end tests included, besides
+ * shared test utilities and benchmarks.
  * @param directory The package directory.
  * @returns A promise that resolves to the files' paths.
  */
@@ -165,7 +165,7 @@ const listTestFiles = async (directory: string): Promise<string[]> => {
     .filter(
       (entry) =>
         entry.isFile() &&
-        /\.test-[a-z]+\.ts$/.test(entry.name) &&
+        /\.test-[a-z0-9]+\.ts$/.test(entry.name) &&
         !/\.test-(?:utils|bench)\.ts$/.test(entry.name),
     )
     .map((entry) => join(entry.parentPath, entry.name));
