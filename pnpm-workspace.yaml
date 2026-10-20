@@ -32,8 +32,10 @@ catalog:
 
 # install scripts the dependencies ask for, each declined: Testcontainers works without them
 # (cpu-features and ssh2 build optional native speedups for SSH, which a local Docker socket never
-# uses, and protobufjs only checks its version)
+# uses, and protobufjs only checks its version), and esbuild, which jg-sw's Vite 7 tests use,
+# finds its binary through its optional platform package without its own check
 allowBuilds:
   cpu-features: false
+  esbuild: false
   protobufjs: false
   ssh2: false

@@ -15,6 +15,7 @@ import {
   CACHE_NAME_CHARACTERS,
   CACHE_NAME_LENGTH,
   CACHE_NAME_SEPARATOR,
+  DEVELOPMENT_CACHE_NAME_SUFFIX,
   ERRORS,
   type IBuildServiceWorkerOptions,
 } from '../shared/index.js';
@@ -53,7 +54,11 @@ const generateServiceWorker = async (
   const source = await renderServiceWorker({
     template: validConfig.template,
     cacheNamePrefix: validConfig.cacheNamePrefix,
-    cacheName: `${validConfig.cacheNamePrefix}${CACHE_NAME_SEPARATOR}${generateRandomString(CACHE_NAME_LENGTH, CACHE_NAME_CHARACTERS)}`,
+    cacheName: `${validConfig.cacheNamePrefix}${CACHE_NAME_SEPARATOR}${
+      caching
+        ? generateRandomString(CACHE_NAME_LENGTH, CACHE_NAME_CHARACTERS)
+        : DEVELOPMENT_CACHE_NAME_SUFFIX
+    }`,
     precacheAssets,
     excludeMIMETypes: validConfig.excludeMIMETypesFromCache,
     caching,
@@ -77,7 +82,8 @@ const generateServiceWorker = async (
 /**
  * Generates the service worker's source from a config, without writing it. Every generated worker
  * gets a new cache name, `<cacheNamePrefix>--<10 random characters>`, so a new deployment
- * replaces the previous one's cache when it activates.
+ * replaces the previous one's cache when it activates. A worker generated with `caching: false`,
+ * for development, is named `<cacheNamePrefix>--development` instead, so it's the same each time.
  * @param config The service worker config, as read by readServiceWorkerConfig or written inline.
  * @param options The environment the firebase-fcm template reads its Firebase config from,
  * whether the worker caches (false for development), and the directory paths are resolved from.

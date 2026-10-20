@@ -4,8 +4,8 @@ export type IBuildServiceWorkerOptions = {
   // .env.staging, or .env.production. The firebase-fcm template requires it
   environment?: 'development' | 'staging' | 'production';
 
-  // false leaves out precaching, cache cleanup, and the fetch handler, for development. Defaults
-  // to true
+  // false leaves out precaching, cache cleanup, and the fetch handler, for development, and fixes
+  // the cache name, so the worker is the same each time it's generated. Defaults to true
   caching?: boolean;
 
   // the directory outDir and the environment files are resolved from. Defaults to process.cwd()
