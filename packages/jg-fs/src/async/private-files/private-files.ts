@@ -1,6 +1,6 @@
 import type { Buffer } from 'node:buffer';
 import type { Stats } from 'node:fs';
-import { lstat, mkdir, open, realpath, rm, stat, type FileHandle } from 'node:fs/promises';
+import { lstat, mkdir, open, rm, stat, type FileHandle } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
 import {
@@ -15,6 +15,7 @@ import {
   type IReadPrivateFileOptions,
   isNotFoundError,
   isPathWithin,
+  listPathAncestry,
   type IWritePrivateFileOptions,
   nonExistentDirectory,
   notADirectory,
@@ -25,9 +26,13 @@ import {
   PRIVATE_FILE_MODE,
 } from '../../shared/index.js';
 import { openWithoutFollowing, readOpenFile, writeFileAtomic } from '../files/index.js';
+import { getPathElement } from '../general/index.js';
 
 /**
- * Checks that a path has no symbolic link in it: its real path is the path itself.
+ * Checks that a path has no symbolic link in it, or, on Windows, a junction, which Node.js reports
+ * as one: no part of it, from its first directory down to the path itself, is a link. Each part is
+ * checked with lstat, because comparing the path with its real path fails on Windows for a short
+ * (8.3) name or another letter case, without any link.
  * @param path The path, which must exist.
  * @param original The path as the caller gave it, for the error.
  * @returns A promise that resolves once the path is checked.
@@ -35,7 +40,8 @@ import { openWithoutFollowing, readOpenFile, writeFileAtomic } from '../files/in
  * - PATH_NOT_CANONICAL: if the path goes through a symbolic link
  */
 const assertCanonical = async (path: string, original: string): Promise<void> => {
-  if ((await realpath(path)) !== resolve(path)) {
+  const parts = await Promise.all(listPathAncestry(path).map((part) => lstat(part)));
+  if (parts.some((stats) => stats.isSymbolicLink())) {
     throw pathNotCanonical(original);
   }
 };
@@ -208,9 +214,14 @@ const writeExclusive = async (
   path: string,
   data: string | NodeJS.ArrayBufferView,
 ): Promise<void> => {
+  // anything at the path, a dangling symbolic link included, is refused first, because on Windows
+  // 'wx' creates a dangling link's target; elsewhere it fails on any existing entry, which also
+  // catches one created after this check
+  if ((await getPathElement(path)) !== null) {
+    throw fileAlreadyExists(path);
+  }
   let handle: FileHandle;
   try {
-    // 'wx' fails on any existing entry, even a dangling symbolic link
     handle = await open(path, 'wx', PRIVATE_FILE_MODE);
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'EEXIST') {

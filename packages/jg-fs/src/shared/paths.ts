@@ -1,5 +1,14 @@
 import type { Stats } from 'node:fs';
-import { basename, extname, isAbsolute, relative, resolve, sep } from 'node:path';
+import * as platformPath from 'node:path';
+import {
+  basename,
+  extname,
+  isAbsolute,
+  relative,
+  resolve,
+  sep,
+  type PlatformPath,
+} from 'node:path';
 
 import type { IPathElement } from './types.js';
 
@@ -24,6 +33,24 @@ export const isPathWithin = (rootPath: string, targetPath: string): boolean => {
     relativePath === '' ||
     (relativePath !== '..' && !relativePath.startsWith(`..${sep}`) && !isAbsolute(relativePath))
   );
+};
+
+/**
+ * Lists every path from a path's first component down to the path itself, leaving out the
+ * filesystem's root, such as `/srv`, `/srv/app`, and `/srv/app/token` for `/srv/app/token`.
+ * @param path The path, which is resolved first.
+ * @param pathApi The path functions of the system the path belongs to. Defaults to the current
+ * system's.
+ * @returns The paths, from the shortest to the path itself.
+ */
+export const listPathAncestry = (path: string, pathApi: PlatformPath = platformPath): string[] => {
+  const resolvedPath = pathApi.resolve(path);
+  const { root } = pathApi.parse(resolvedPath);
+  const parts = resolvedPath
+    .slice(root.length)
+    .split(pathApi.sep)
+    .filter((part) => part !== '');
+  return parts.map((_, index) => pathApi.join(root, ...parts.slice(0, index + 1)));
 };
 
 /**

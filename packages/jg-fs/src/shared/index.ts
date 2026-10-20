@@ -29,7 +29,7 @@ export {
 } from './constants.js';
 
 // paths
-export { isPathWithin, toPathElement } from './paths.js';
+export { isPathWithin, listPathAncestry, toPathElement } from './paths.js';
 
 // directory elements
 export { buildDirectoryElementsOptions, groupDirectoryElements } from './directory-elements.js';
