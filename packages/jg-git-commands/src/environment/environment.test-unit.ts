@@ -1,6 +1,4 @@
 // @vitest-environment node
-import { devNull } from 'node:os';
-
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { DEFAULT_GIT_SSH_COMMAND } from './constants.js';
@@ -43,11 +41,12 @@ describe('createGitEnvironment', () => {
     expect(env).toStrictEqual({ PATH: '/usr/bin', HOME: '/home/user', ...NON_INTERACTIVE });
   });
 
-  test('isolates the config only when asked', () => {
+  // Git for Windows reads /dev/null as its null device, but can't open Node.js's os.devNull there
+  test('isolates the config only when asked, with the null device as Git names it everywhere', () => {
     expect(createGitEnvironment({ baseEnv: {}, isolateConfig: true })).toStrictEqual({
       ...NON_INTERACTIVE,
       GIT_CONFIG_NOSYSTEM: '1',
-      GIT_CONFIG_GLOBAL: devNull,
+      GIT_CONFIG_GLOBAL: '/dev/null',
     });
     expect(createGitEnvironment({ baseEnv: {} })).toStrictEqual(NON_INTERACTIVE);
   });

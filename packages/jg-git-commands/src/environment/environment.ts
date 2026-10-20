@@ -1,4 +1,4 @@
-import { devNull } from 'node:os';
+import { GIT_NULL_DEVICE } from '../shared/index.js';
 
 import { DEFAULT_GIT_SSH_COMMAND, NON_INTERACTIVE_VARIABLES } from './constants.js';
 import type { IGitEnvironmentOptions } from './types.js';
@@ -34,5 +34,5 @@ export const createGitEnvironment = ({
   ),
   ...NON_INTERACTIVE_VARIABLES,
   GIT_SSH_COMMAND: sshCommand,
-  ...(isolateConfig ? { GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: devNull } : {}),
+  ...(isolateConfig ? { GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: GIT_NULL_DEVICE } : {}),
 });

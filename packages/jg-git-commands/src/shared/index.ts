@@ -1,3 +1,6 @@
+// constants
+export { GIT_NULL_DEVICE } from './constants.js';
+
 // error codes
 export { ERRORS } from './errors.js';
 

@@ -6,6 +6,10 @@
 
 - Supports Node.js 22.17.0 and later, down from 24.
 
+### Fixed
+
+- Git commands with `isolateConfig`, and `fetchCommit`, work on Windows. They pointed Git's global config and hooks path at Node.js's null device, `\\.\nul`, which Git for Windows can't open, so every such command failed; they now use `/dev/null`, which Git reads as its null device on every system.
+
 ## 0.1.0
 
 ### Added
