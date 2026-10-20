@@ -1,6 +1,6 @@
 # jg-nestjs recipes
 
-Wiring the envelope, validation, and error reporting into a NestJS API, starting it, reporting failures, building the filter's options from the app's services, and adding maintenance mode or an IP blocklist.
+Wiring the envelope, validation, and error reporting into a NestJS API, starting it, reporting failures, and adding maintenance mode or an IP blocklist.
 
 ## Wiring the filter, interceptor, and pipe
 
