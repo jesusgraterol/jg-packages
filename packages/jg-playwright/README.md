@@ -81,6 +81,7 @@ await waitForRecordedAudio(page);
 
 - Headless Chromium hides scrollbars unless its `--hide-scrollbars` default argument is dropped with `launchOptions: { ignoreDefaultArgs: ['--hide-scrollbars'] }`, and WebKit and Firefox may draw overlay scrollbars, which take no width.
 - Playwright's WebKit on Linux has no MediaRecorder, so a page there can use the fake microphone but can't record it.
+- The fake microphone's tone plays through an audio context, which needs an audio output device. Without one, such as Firefox on a Linux CI runner, the microphone's track is live but silent, so `waitForRecordedAudio` times out.
 
 ## Documentation
 

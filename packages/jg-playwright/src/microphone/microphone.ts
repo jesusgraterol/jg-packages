@@ -45,32 +45,36 @@ const installInPage = ({
   let shouldReject = rejectFirstRequest;
   Object.defineProperty(navigator.mediaDevices, 'getUserMedia', {
     configurable: true,
-    value: async (): Promise<MediaStream> => {
-      if (shouldReject) {
-        shouldReject = false;
-        throw new DOMException('Permission denied', 'NotAllowedError');
-      }
-      const context = new AudioContext();
-      const oscillator = context.createOscillator();
-      const destination = context.createMediaStreamDestination();
-      oscillator.connect(destination);
-      oscillator.start();
-      await context.resume();
-      // stopping a track, as an app does when it's done, also stops the tone
-      for (const track of destination.stream.getTracks()) {
-        const stop = track.stop.bind(track);
-        track.stop = () => {
-          // a second stop is a no-op, as it is on a real track
-          if (track.readyState === 'ended') {
-            return;
-          }
-          stop();
-          oscillator.stop();
-          void context.close();
-        };
-      }
-      return destination.stream;
-    },
+    // a promise executor turns anything thrown into a rejection, as getUserMedia reports failures
+    value: (): Promise<MediaStream> =>
+      new Promise((resolve) => {
+        if (shouldReject) {
+          shouldReject = false;
+          throw new DOMException('Permission denied', 'NotAllowedError');
+        }
+        const context = new AudioContext();
+        const oscillator = context.createOscillator();
+        const destination = context.createMediaStreamDestination();
+        oscillator.connect(destination);
+        oscillator.start();
+        // not awaited: without an audio output device, such as Firefox on a CI runner, resume never
+        // settles, and the track stays live but silent
+        void context.resume();
+        // stopping a track, as an app does when it's done, also stops the tone
+        for (const track of destination.stream.getTracks()) {
+          const stop = track.stop.bind(track);
+          track.stop = () => {
+            // a second stop is a no-op, as it is on a real track
+            if (track.readyState === 'ended') {
+              return;
+            }
+            stop();
+            oscillator.stop();
+            void context.close();
+          };
+        }
+        resolve(destination.stream);
+      }),
   });
 };
 
@@ -78,7 +82,8 @@ const installInPage = ({
  * Gives the page a fake microphone in every document it loads from now on: `getUserMedia` returns
  * a steady tone from an oscillator, while the page's own MediaRecorder still records and encodes
  * it, so a test exercises the real recording path without a device or a permission prompt. Call it
- * before `page.goto`.
+ * before `page.goto`. The tone needs an audio output device: without one, such as Firefox on a
+ * Linux CI runner, the track is live but silent.
  * @param page The page.
  * @param options Whether to refuse the first request, to test the page's permission error.
  * @returns A promise that resolves once the fake is installed for later navigations.

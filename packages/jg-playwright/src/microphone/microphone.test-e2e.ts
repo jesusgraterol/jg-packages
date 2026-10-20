@@ -43,6 +43,26 @@ test.afterAll(async () => {
 });
 
 /**
+ * Reads whether the browser can run an audio context, which needs an audio output device.
+ * @param page The page.
+ * @returns A promise that resolves to whether a new context starts within a second.
+ */
+const canPlayAudio = (page: Page): Promise<boolean> =>
+  page.evaluate(async () => {
+    const context = new AudioContext();
+    const isRunning = await Promise.race([
+      context.resume().then(() => true),
+      new Promise<boolean>((resolve) => {
+        setTimeout(() => {
+          resolve(false);
+        }, 1_000);
+      }),
+    ]);
+    void context.close();
+    return isRunning;
+  });
+
+/**
  * Presses the page's record button.
  * @param page The page.
  */
@@ -56,6 +76,10 @@ test('gives the page a microphone whose audio the recorder captures', async ({ p
   test.skip(
     await page.evaluate(() => typeof MediaRecorder === 'undefined'),
     'This browser build has no MediaRecorder, so its pages cannot record',
+  );
+  test.skip(
+    !(await canPlayAudio(page)),
+    'This browser has no audio output device, so the tone never plays, as in Firefox on CI runners',
   );
 
   await pressRecord(page);
