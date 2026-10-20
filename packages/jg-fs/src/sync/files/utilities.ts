@@ -9,17 +9,40 @@ import {
   realpathSync,
   renameSync,
   statSync,
+  type Stats,
 } from 'node:fs';
 
 import {
   BOUNDED_READ_CHUNK_SIZE,
   fileTooLarge,
   isBusyRenameError,
+  isMissingPathError,
   isNoFollowError,
   isNotFoundError,
+  nonExistentFile,
+  notAFile,
   notARegularFile,
   RENAME_RETRY_DELAYS_MS,
 } from '../../shared/index.js';
+
+/**
+ * Ensures a path is an existing regular file, without following a symbolic link at the path.
+ * @param path The path.
+ * @throws
+ * - NON_EXISTENT_FILE: if the path doesn't exist
+ * - NOT_A_FILE: if the path is not a file
+ */
+export const assertExistingFile = (path: string): void => {
+  let stats: Stats;
+  try {
+    stats = lstatSync(path);
+  } catch (error) {
+    throw isMissingPathError(error) ? nonExistentFile(path, error) : notAFile(path);
+  }
+  if (!stats.isFile()) {
+    throw notAFile(path);
+  }
+};
 
 /**
  * Reads the permission bits of an existing file.
@@ -94,7 +117,8 @@ export const syncDirectory = (path: string): void => {
  * @param path The file's path.
  * @returns The file descriptor.
  * @throws
- * - NOT_A_FILE: if the path doesn't exist or its final component is a symbolic link
+ * - NON_EXISTENT_FILE: if the path doesn't exist
+ * - NOT_A_FILE: if its final component is a symbolic link
  */
 export const openWithoutFollowing = (path: string): number => {
   try {
@@ -108,6 +132,9 @@ export const openWithoutFollowing = (path: string): number => {
     // O_NONBLOCK keeps a named pipe at the path from blocking the open
     return openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   } catch (error) {
+    if (isMissingPathError(error)) {
+      throw nonExistentFile(path, error);
+    }
     if (isNoFollowError(error)) {
       throw notARegularFile(path, error);
     }

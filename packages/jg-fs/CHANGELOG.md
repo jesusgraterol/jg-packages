@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.5.0
+
+### Changed
+
+- A missing path throws `NON_EXISTENT_FILE` or `NON_EXISTENT_DIRECTORY`, in both entries, and `NOT_A_FILE` and `NOT_A_DIRECTORY` mean a path that exists but is the wrong kind. A path under a file counts as missing. Both new errors carry the path as `data.path`, and the error that showed it missing as their cause.
+  - `readFile`, `readTextFile`, `readJsonFile`, `readBufferFile`, `readBoundedFile`, `copyFile` for its source, and `deleteFile` throw `NON_EXISTENT_FILE` for a missing file, where they threw `NOT_A_FILE`. `readBoundedFile` reports a symbolic link as "The file '…' is a symbolic link."
+  - `readDirectory`, `getDirectoryElements`, and `copyDirectory` for its source throw `NON_EXISTENT_DIRECTORY` for a missing directory, where they threw `NOT_A_DIRECTORY`.
+  - `assertPrivateFile`, `readPrivateFile`, and `writePrivateFile` throw `NON_EXISTENT_DIRECTORY` for a missing `rootPath`, as `writePrivateFile` does for a missing parent directory, and `assertPrivateDirectory` for a missing directory, where they threw `NOT_A_DIRECTORY`.
+  - `createFileSymLink` and `createDirectorySymLink` name the missing target as "The file '…' does not exist." and "The directory '…' does not exist.", with its path in `data.path`.
+
 ## 1.4.0
 
 ### Added

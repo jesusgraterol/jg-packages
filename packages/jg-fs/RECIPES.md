@@ -25,7 +25,7 @@ export const loadConfig = async (): Promise<IConfig> => {
     return await readJsonFile(CONFIG_PATH, { schema: Config });
   } catch (error) {
     // nothing was saved yet
-    if (hasErrorCode(error, ERRORS.NOT_A_FILE)) {
+    if (hasErrorCode(error, ERRORS.NON_EXISTENT_FILE)) {
       return DEFAULT_CONFIG;
     }
     throw error;
@@ -102,8 +102,8 @@ export const readUpload = async (name: string): Promise<Buffer> => {
   try {
     return await readBoundedFile(path, MAX_UPLOAD_BYTES);
   } catch (error) {
-    // a missing file, a directory, or a symbolic link someone planted
-    if (hasErrorCode(error, ERRORS.NOT_A_FILE)) {
+    // a missing file, or a directory or a symbolic link someone planted
+    if (hasErrorCode(error, ERRORS.NON_EXISTENT_FILE) || hasErrorCode(error, ERRORS.NOT_A_FILE)) {
       throw new Exception('The upload was not found.', {
         code: 'UPLOAD_NOT_FOUND',
         data: { name },

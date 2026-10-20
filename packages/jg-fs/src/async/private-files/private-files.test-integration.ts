@@ -109,24 +109,24 @@ describe.each(ENTRIES)('private files, %s', (_, api) => {
       );
     });
 
-    test('refuse a path through a file as non-existent, and a root or directory under one', async () => {
+    test('refuse a path through a file as non-existent, and the file itself as a directory', async () => {
       const file = await writeFixture('file', '', 0o600);
+      const rootPath = join(file, 'root');
 
       await expectToRejectCode(
         api.assertPrivateFile(join(file, 'token')),
         ERRORS.NON_EXISTENT_FILE,
       );
-      await expectToRejectCode(
-        api.assertPrivateFile(join(file, 'root', 'token'), { rootPath: join(file, 'root') }),
-        ERRORS.NOT_A_DIRECTORY,
-      );
+      await expect(
+        api.assertPrivateFile(join(rootPath, 'token'), { rootPath }),
+      ).rejects.toMatchObject({ code: ERRORS.NON_EXISTENT_DIRECTORY, data: { path: rootPath } });
       await expectToRejectCode(
         api.writePrivateFile(join(file, 'token'), 'x'),
         ERRORS.NOT_A_DIRECTORY,
       );
       await expectToRejectCode(
         api.assertPrivateDirectory(join(file, 'child')),
-        ERRORS.NOT_A_DIRECTORY,
+        ERRORS.NON_EXISTENT_DIRECTORY,
       );
     });
 
@@ -184,10 +184,13 @@ describe.each(ENTRIES)('private files, %s', (_, api) => {
       const token = await writeFixture('token', 'secret', 0o600);
       await symlink(directory, join(directory, 'linked-root'));
 
-      await expectToRejectCode(
+      await expect(
         api.assertPrivateFile(token, { rootPath: join(directory, 'missing') }),
-        ERRORS.NOT_A_DIRECTORY,
-      );
+      ).rejects.toMatchObject({
+        code: ERRORS.NON_EXISTENT_DIRECTORY,
+        message: `The directory '${join(directory, 'missing')}' does not exist.`,
+        data: { path: join(directory, 'missing') },
+      });
       await expectToRejectCode(
         api.assertPrivateFile(token, { rootPath: token }),
         ERRORS.NOT_A_DIRECTORY,
@@ -238,7 +241,7 @@ describe.each(ENTRIES)('private files, %s', (_, api) => {
 
       await expectToRejectCode(
         api.writePrivateFile(join(directory, 'missing', 'token'), 'x'),
-        ERRORS.NOT_A_DIRECTORY,
+        ERRORS.NON_EXISTENT_DIRECTORY,
       );
       await expectToRejectCode(
         api.writePrivateFile(join(directory, 'alias', 'token'), 'x'),
@@ -327,7 +330,7 @@ describe.each(ENTRIES)('private files, %s', (_, api) => {
 
       await expectToRejectCode(
         api.assertPrivateDirectory(join(directory, 'missing')),
-        ERRORS.NOT_A_DIRECTORY,
+        ERRORS.NON_EXISTENT_DIRECTORY,
       );
       await expectToRejectCode(api.assertPrivateDirectory(file), ERRORS.NOT_A_DIRECTORY);
       await expectToRejectCode(

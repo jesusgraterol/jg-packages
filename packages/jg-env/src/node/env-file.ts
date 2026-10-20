@@ -19,18 +19,14 @@ const NOT_PRIVATE_CODES: ReadonlySet<string | null> = new Set([
 ]);
 
 /**
- * Checks whether a read failed because the file doesn't exist. The private read reports it as
- * NON_EXISTENT_FILE, and the bounded read as NOT_A_FILE, with the open's ENOENT as its cause.
+ * Checks whether a read failed because the file doesn't exist. Both reads report a missing file as
+ * NON_EXISTENT_FILE, and the private read reports a missing `rootPath` as NON_EXISTENT_DIRECTORY.
  * @param error What the read threw.
  * @returns Whether the file is missing.
  */
 const isMissingFileError = (error: unknown): boolean => {
   const code = getErrorCode(error);
-  return (
-    code === FS_ERRORS.NON_EXISTENT_FILE ||
-    (code === FS_ERRORS.NOT_A_FILE &&
-      getErrorCode((error as { cause?: unknown }).cause) === 'ENOENT')
-  );
+  return code === FS_ERRORS.NON_EXISTENT_FILE || code === FS_ERRORS.NON_EXISTENT_DIRECTORY;
 };
 
 /**
@@ -67,8 +63,8 @@ const toReadError = (error: unknown, path: string): Exception => {
  * `util.parseEnv`: quotes, multiline values in double quotes, `export`, and comments, with a later
  * key winning and no `${...}` expansion. A line it can't parse is skipped. With `requirePrivate`,
  * the file must be private, inside `rootPath` when one is given, and not reached through a symbolic
- * link, such as an overlay holding secrets. A missing file reads as `{}` with `isOptional`. Errors
- * name the file and never a value.
+ * link, such as an overlay holding secrets. A missing file, or a missing `rootPath`, reads as `{}`
+ * with `isOptional`. Errors name the file and never a value.
  * @param path The file's path.
  * @param options Whether it must be private, its size limit and root, and whether it may be missing.
  * @returns The variables.

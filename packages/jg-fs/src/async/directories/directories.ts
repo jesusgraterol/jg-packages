@@ -7,6 +7,7 @@ import {
   DIRECTORY_ELEMENTS_CONCURRENCY,
   ERRORS,
   groupDirectoryElements,
+  nonExistentDirectory,
   notADirectory,
   type IDirectoryElementsOptions,
   type IDirectoryPathElements,
@@ -14,7 +15,7 @@ import {
 } from '../../shared/index.js';
 import { getPathElement } from '../general/index.js';
 
-import { mapWithConcurrency } from './utilities.js';
+import { assertExistingDirectory, mapWithConcurrency } from './utilities.js';
 
 /**
  * Checks whether a path exists and is a directory.
@@ -77,12 +78,11 @@ export const createDirectory = async (path: string, deleteIfExists?: boolean): P
  *
  * await copyDirectory('templates', 'dist/templates');
  * @throws
+ * - NON_EXISTENT_DIRECTORY: if the srcPath doesn't exist
  * - NOT_A_DIRECTORY: if the srcPath is not a directory
  */
 export const copyDirectory = async (srcPath: string, destPath: string): Promise<void> => {
-  if (!(await isDirectory(srcPath))) {
-    throw notADirectory(srcPath);
-  }
+  await assertExistingDirectory(srcPath);
   await deleteDirectory(destPath);
   await cp(srcPath, destPath, { recursive: true });
 };
@@ -103,9 +103,7 @@ export const copyDirectory = async (srcPath: string, destPath: string): Promise<
 export const createDirectorySymLink = async (target: string, path: string): Promise<void> => {
   const element = await getPathElement(target);
   if (element === null) {
-    throw new Exception(`The target directory '${target}' does not exist.`, {
-      code: ERRORS.NON_EXISTENT_DIRECTORY,
-    });
+    throw nonExistentDirectory(target);
   }
   if (!element.isDirectory) {
     throw notADirectory(target);
@@ -124,15 +122,14 @@ export const createDirectorySymLink = async (target: string, path: string): Prom
  * await readDirectory('dist'); // ['dist/index.js', 'dist/assets']
  * await readDirectory('dist', true); // includes the contents of dist/assets
  * @throws
- * - NOT_A_DIRECTORY: if the path doesn't exist or is not a directory
+ * - NON_EXISTENT_DIRECTORY: if the path doesn't exist
+ * - NOT_A_DIRECTORY: if the path is not a directory
  */
 export const readDirectory = async (
   path: string,
   recursive: boolean = false,
 ): Promise<string[]> => {
-  if (!(await isDirectory(path))) {
-    throw notADirectory(path);
-  }
+  await assertExistingDirectory(path);
   const contentPaths = await readdir(path, { encoding: 'utf-8', recursive });
   return contentPaths.map((contentPath) => join(path, contentPath));
 };
@@ -149,7 +146,8 @@ export const readDirectory = async (
  *
  * const { files } = await getDirectoryElements('content', { includeExts: ['.md'], sortByKey: 'creation', sortOrder: 'desc' });
  * @throws
- * - NOT_A_DIRECTORY: if the path doesn't exist or is not a directory
+ * - NON_EXISTENT_DIRECTORY: if the path doesn't exist
+ * - NOT_A_DIRECTORY: if the path is not a directory
  */
 export const getDirectoryElements = async (
   path: string,

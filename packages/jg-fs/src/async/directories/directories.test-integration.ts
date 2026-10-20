@@ -91,8 +91,11 @@ describe('Directory Actions', () => {
   });
 
   describe('copyDirectory', () => {
-    test('rejects if the source path is not a directory', async () => {
-      await expectToRejectCode(copyDirectory(p('dir-a'), p('dir-b')), ERRORS.NOT_A_DIRECTORY);
+    test('rejects if the source directory does not exist', async () => {
+      await expectToRejectCode(
+        copyDirectory(p('dir-a'), p('dir-b')),
+        ERRORS.NON_EXISTENT_DIRECTORY,
+      );
     });
 
     test('can copy a directory with some files and sub directories in it', async () => {
@@ -152,7 +155,7 @@ describe('Directory Actions', () => {
 
   describe('readDirectory', () => {
     test('rejects if the directory does not exist', async () => {
-      await expectToRejectCode(readDirectory(p()), ERRORS.NOT_A_DIRECTORY);
+      await expectToRejectCode(readDirectory(p()), ERRORS.NON_EXISTENT_DIRECTORY);
     });
 
     test('can read the contents of a directory', async () => {
@@ -184,7 +187,7 @@ describe('Directory Actions', () => {
 
   describe('getDirectoryElements', () => {
     test('rejects if attempting to read a non-existent directory', async () => {
-      await expectToRejectCode(getDirectoryElements(p()), ERRORS.NOT_A_DIRECTORY);
+      await expectToRejectCode(getDirectoryElements(p()), ERRORS.NON_EXISTENT_DIRECTORY);
     });
 
     test('reading an empty directory resolves to empty element lists', async () => {

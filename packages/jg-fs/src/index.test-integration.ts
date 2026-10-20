@@ -28,6 +28,31 @@ const promisifiedSyncApi = Object.fromEntries(
   ]),
 ) as unknown as IFsApi;
 
+// an operation on a path that must be an existing file, or directory, with a second path to copy to
+type IPathOperation = [
+  name: string,
+  operation: (fs: IFsApi, path: string, destPath: string) => Promise<unknown>,
+];
+
+// every function that reads, copies, or deletes a file it's given
+const FILE_OPERATIONS: IPathOperation[] = [
+  ['readFile', (fs, path) => fs.readFile(path)],
+  ['readTextFile', (fs, path) => fs.readTextFile(path)],
+  ['readJsonFile', (fs, path) => fs.readJsonFile(path)],
+  ['readJsonFile with maxBytes', (fs, path) => fs.readJsonFile(path, { maxBytes: 64 })],
+  ['readBufferFile', (fs, path) => fs.readBufferFile(path)],
+  ['readBoundedFile', (fs, path) => fs.readBoundedFile(path, 64)],
+  ['copyFile', (fs, path, destPath) => fs.copyFile(path, destPath)],
+  ['deleteFile', (fs, path) => fs.deleteFile(path)],
+];
+
+// every function that reads or copies a directory it's given
+const DIRECTORY_OPERATIONS: IPathOperation[] = [
+  ['readDirectory', (fs, path) => fs.readDirectory(path)],
+  ['getDirectoryElements', (fs, path) => fs.getDirectoryElements(path)],
+  ['copyDirectory', (fs, path, destPath) => fs.copyDirectory(path, destPath)],
+];
+
 describe.each([
   ['jg-fs', asyncApi],
   ['jg-fs/sync', promisifiedSyncApi],
@@ -133,25 +158,75 @@ describe.each([
 
     expect((await fs.readBoundedFile(p('small.txt'), 5)).toString()).toBe('12345');
     await expectToRejectCode(fs.readBoundedFile(p('small.txt'), 4), fs.ERRORS.FILE_TOO_LARGE);
-    await expectToRejectCode(fs.readBoundedFile(p('missing.txt'), 4), fs.ERRORS.NOT_A_FILE);
+    await expectToRejectCode(fs.readBoundedFile(p('missing.txt'), 4), fs.ERRORS.NON_EXISTENT_FILE);
   });
 
-  test('reports the same codes for missing and mismatched paths', async () => {
+  test.each(FILE_OPERATIONS)(
+    '%s reports a missing file, or a path under a file, as NON_EXISTENT_FILE',
+    async (_name, operation) => {
+      await fs.writeTextFile(p('file.txt'), 'x');
+
+      for (const path of [p('missing.txt'), p('file.txt', 'child.txt')]) {
+        await expect(operation(fs, path, p('copy.txt'))).rejects.toMatchObject({
+          code: fs.ERRORS.NON_EXISTENT_FILE,
+          message: `The file '${path}' does not exist.`,
+          data: { path },
+        });
+      }
+      expect(await fs.pathExists(p('copy.txt'))).toBe(false);
+    },
+  );
+
+  test.each(FILE_OPERATIONS)('%s reports a directory as NOT_A_FILE', async (_name, operation) => {
     await fs.createDirectory(p('dir'));
 
-    await expectToRejectCode(fs.readTextFile(p('missing.txt')), fs.ERRORS.NOT_A_FILE);
-    await expectToRejectCode(fs.readTextFile(p('dir')), fs.ERRORS.NOT_A_FILE);
-    await expectToRejectCode(fs.readDirectory(p('missing')), fs.ERRORS.NOT_A_DIRECTORY);
-    await expectToRejectCode(fs.copyDirectory(p('missing'), p('copy')), fs.ERRORS.NOT_A_DIRECTORY);
+    await expectToRejectCode(operation(fs, p('dir'), p('copy.txt')), fs.ERRORS.NOT_A_FILE);
+    expect(await fs.isDirectory(p('dir'))).toBe(true);
+  });
+
+  test.each(DIRECTORY_OPERATIONS)(
+    '%s reports a missing directory, or a path under a file, as NON_EXISTENT_DIRECTORY',
+    async (_name, operation) => {
+      await fs.writeTextFile(p('file.txt'), 'x');
+
+      for (const path of [p('missing'), p('file.txt', 'child')]) {
+        await expect(operation(fs, path, p('copy'))).rejects.toMatchObject({
+          code: fs.ERRORS.NON_EXISTENT_DIRECTORY,
+          message: `The directory '${path}' does not exist.`,
+          data: { path },
+        });
+      }
+    },
+  );
+
+  test.each(DIRECTORY_OPERATIONS)(
+    '%s reports a file as NOT_A_DIRECTORY, and leaves the destination alone',
+    async (_name, operation) => {
+      await fs.writeTextFile(p('file.txt'), 'x');
+      await fs.writeTextFile(p('copy', 'kept.txt'), 'kept');
+
+      await expectToRejectCode(operation(fs, p('file.txt'), p('copy')), fs.ERRORS.NOT_A_DIRECTORY);
+      expect(await fs.readTextFile(p('copy', 'kept.txt'))).toBe('kept');
+    },
+  );
+
+  test('reports a missing symbolic link target as non-existent, and one of the wrong kind', async () => {
+    await fs.writeTextFile(p('file.txt'), 'x');
+    await fs.createDirectory(p('dir'));
+
+    await expect(fs.createDirectorySymLink(p('missing'), p('link'))).rejects.toMatchObject({
+      code: fs.ERRORS.NON_EXISTENT_DIRECTORY,
+      data: { path: p('missing') },
+    });
+    await expect(fs.createFileSymLink(p('missing.txt'), p('link'))).rejects.toMatchObject({
+      code: fs.ERRORS.NON_EXISTENT_FILE,
+      data: { path: p('missing.txt') },
+    });
     await expectToRejectCode(
-      fs.createDirectorySymLink(p('missing'), p('link')),
-      fs.ERRORS.NON_EXISTENT_DIRECTORY,
+      fs.createDirectorySymLink(p('file.txt'), p('link')),
+      fs.ERRORS.NOT_A_DIRECTORY,
     );
-    await expectToRejectCode(
-      fs.createFileSymLink(p('missing.txt'), p('link')),
-      fs.ERRORS.NON_EXISTENT_FILE,
-    );
-    await expectToRejectCode(fs.deleteFile(p('dir')), fs.ERRORS.NOT_A_FILE);
+    await expectToRejectCode(fs.createFileSymLink(p('dir'), p('link')), fs.ERRORS.NOT_A_FILE);
   });
 
   test('writes files atomically, keeping no temporary file', async () => {
@@ -213,6 +288,22 @@ describe.each([
         fs.readBoundedFile('/proc/self/status', 10),
         asyncApi.ERRORS.FILE_TOO_LARGE,
       );
+    },
+  );
+
+  test.runIf(CAN_TEST_PERMISSIONS)(
+    "reports a path in a directory it can't search as the wrong kind, not as missing",
+    async () => {
+      await mkdir(p('unsearchable'));
+      await chmod(p('unsearchable'), 0o600);
+      const path = p('unsearchable', 'entry');
+      try {
+        await expectToRejectCode(fs.readTextFile(path), fs.ERRORS.NOT_A_FILE);
+        await expectToRejectCode(fs.deleteFile(path), fs.ERRORS.NOT_A_FILE);
+        await expectToRejectCode(fs.readDirectory(path), fs.ERRORS.NOT_A_DIRECTORY);
+      } finally {
+        await chmod(p('unsearchable'), 0o700);
+      }
     },
   );
 

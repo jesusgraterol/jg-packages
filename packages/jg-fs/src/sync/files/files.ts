@@ -16,13 +16,12 @@ import {
   type WriteFileOptions,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { Exception } from 'jg-exception';
 
 import {
   assertBufferData,
   assertTextData,
-  ERRORS,
   fileTooLarge,
+  nonExistentFile,
   notAFile,
   parseJsonContent,
   serializeJsonData,
@@ -34,6 +33,7 @@ import {
 import { getPathElement } from '../general/index.js';
 
 import {
+  assertExistingFile,
   openWithoutFollowing,
   readOpenFile,
   readPermissionBits,
@@ -140,15 +140,14 @@ export const writeBufferFile = (path: string, data: Buffer): void => {
  * readFile('notes.md', 'utf-8'); // a string
  * readFile('avatar.png'); // a Buffer
  * @throws
- * - NOT_A_FILE: if the path doesn't exist or is not a file
+ * - NON_EXISTENT_FILE: if the path doesn't exist
+ * - NOT_A_FILE: if the path is not a file
  */
 export function readFile(path: string, options: IReadStringFileOptions): string;
 export function readFile(path: string, options?: IReadBufferFileOptions): Buffer;
 export function readFile(path: string, options?: IReadFileOptions): string | Buffer;
 export function readFile(path: string, options: IReadFileOptions = null): string | Buffer {
-  if (!isFile(path)) {
-    throw notAFile(path);
-  }
+  assertExistingFile(path);
   return readFileSync(path, options as Parameters<typeof readFileSync>[1]);
 }
 
@@ -161,7 +160,8 @@ export function readFile(path: string, options: IReadFileOptions = null): string
  *
  * const markdown = readTextFile('README.md');
  * @throws
- * - NOT_A_FILE: if the path doesn't exist or is not a file
+ * - NON_EXISTENT_FILE: if the path doesn't exist
+ * - NOT_A_FILE: if the path is not a file
  */
 export const readTextFile = (path: string): string => readFile(path, { encoding: 'utf-8' });
 
@@ -182,7 +182,8 @@ export const readTextFile = (path: string): string => readFile(path, { encoding:
  *
  * const value = readJsonFile('data.json'); // unknown
  * @throws
- * - NOT_A_FILE: if the path doesn't exist or is not a file
+ * - NON_EXISTENT_FILE: if the path doesn't exist
+ * - NOT_A_FILE: if the path is not a file
  * - FILE_TOO_LARGE: if the file holds more than maxBytes bytes
  * - FILE_CONTENT_IS_EMPTY_OR_INVALID: if the file's JSON content cannot be parsed
  */
@@ -204,7 +205,8 @@ export const readJsonFile = <T = unknown>(path: string, options: IReadJsonFileOp
  *
  * const image = readBufferFile('avatar.png');
  * @throws
- * - NOT_A_FILE: if the path doesn't exist or is not a file
+ * - NON_EXISTENT_FILE: if the path doesn't exist
+ * - NOT_A_FILE: if the path is not a file
  */
 export const readBufferFile = (path: string): Buffer => readFile(path, null);
 
@@ -217,12 +219,11 @@ export const readBufferFile = (path: string): Buffer => readFile(path, null);
  *
  * copyFile('config.example.json', 'config.json');
  * @throws
- * - NOT_A_FILE: if the srcPath doesn't exist or is not a file
+ * - NON_EXISTENT_FILE: if the srcPath doesn't exist
+ * - NOT_A_FILE: if the srcPath is not a file
  */
 export const copyFile = (srcPath: string, destPath: string): void => {
-  if (!isFile(srcPath)) {
-    throw notAFile(srcPath);
-  }
+  assertExistingFile(srcPath);
   copyFileSync(srcPath, destPath);
 };
 
@@ -234,12 +235,11 @@ export const copyFile = (srcPath: string, destPath: string): void => {
  *
  * deleteFile('cache.json');
  * @throws
- * - NOT_A_FILE: if the path doesn't exist or is not a file
+ * - NON_EXISTENT_FILE: if the path doesn't exist
+ * - NOT_A_FILE: if the path is not a file
  */
 export const deleteFile = (path: string): void => {
-  if (!isFile(path)) {
-    throw notAFile(path);
-  }
+  assertExistingFile(path);
   unlinkSync(path);
 };
 
@@ -258,9 +258,7 @@ export const deleteFile = (path: string): void => {
 export const createFileSymLink = (target: string, path: string): void => {
   const element = getPathElement(target);
   if (element === null) {
-    throw new Exception(`The target file '${target}' does not exist.`, {
-      code: ERRORS.NON_EXISTENT_FILE,
-    });
+    throw nonExistentFile(target);
   }
   if (!element.isFile) {
     throw notAFile(target);
@@ -335,7 +333,8 @@ export const writeFileAtomic = (
  *
  * const upload = readBoundedFile(join('uploads', 'avatar.png'), 5 * 1024 * 1024); // at most 5 MB
  * @throws
- * - NOT_A_FILE: if the path doesn't exist, its final component is a symbolic link, or it isn't a regular file
+ * - NON_EXISTENT_FILE: if the path doesn't exist
+ * - NOT_A_FILE: if its final component is a symbolic link, or it isn't a regular file
  * - FILE_TOO_LARGE: if the file holds more than maxBytes bytes
  */
 export const readBoundedFile = (path: string, maxBytes: number): Buffer => {

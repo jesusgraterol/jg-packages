@@ -86,8 +86,8 @@ describe('File Actions', () => {
       expect(await readFile(p('a/b/two.txt'))).toStrictEqual(Buffer.from('two'));
     });
 
-    test('rejects when reading a path that is not a file', async () => {
-      await expectToRejectCode(readFile(p('missing.txt')), ERRORS.NOT_A_FILE);
+    test('rejects when reading a path that does not exist', async () => {
+      await expectToRejectCode(readFile(p('missing.txt')), ERRORS.NON_EXISTENT_FILE);
     });
   });
 
@@ -110,7 +110,7 @@ describe('File Actions', () => {
     });
 
     test('attempting to read a text file that doesnt exist rejects', async () => {
-      await expectToRejectCode(readTextFile(p('file.txt')), ERRORS.NOT_A_FILE);
+      await expectToRejectCode(readTextFile(p('file.txt')), ERRORS.NON_EXISTENT_FILE);
     });
 
     test('reads an empty text file as an empty string', async () => {
@@ -143,7 +143,7 @@ describe('File Actions', () => {
     });
 
     test('attempting to read a JSON file that doesnt exist rejects', async () => {
-      await expectToRejectCode(readJsonFile(p('file.json')), ERRORS.NOT_A_FILE);
+      await expectToRejectCode(readJsonFile(p('file.json')), ERRORS.NON_EXISTENT_FILE);
     });
 
     test('attempting to read an invalid JSON file rejects', async () => {
@@ -169,7 +169,7 @@ describe('File Actions', () => {
     });
 
     test('attempting to read a Buffer file that doesnt exist rejects', async () => {
-      await expectToRejectCode(readBufferFile(p('file')), ERRORS.NOT_A_FILE);
+      await expectToRejectCode(readBufferFile(p('file')), ERRORS.NON_EXISTENT_FILE);
     });
 
     test('reads an empty file as an empty Buffer, and writes an empty Buffer', async () => {
@@ -182,8 +182,8 @@ describe('File Actions', () => {
   });
 
   describe('copyFile', () => {
-    test('rejects if the source path is not a file', async () => {
-      await expectToRejectCode(copyFile(p('file.txt'), p('file-b.txt')), ERRORS.NOT_A_FILE);
+    test('rejects if the source file does not exist', async () => {
+      await expectToRejectCode(copyFile(p('file.txt'), p('file-b.txt')), ERRORS.NON_EXISTENT_FILE);
     });
 
     test('can copy a file, overriding the destination if it exists', async () => {
@@ -203,8 +203,8 @@ describe('File Actions', () => {
       expect(await isFile(p('some-file.txt'))).toBe(false);
     });
 
-    test("rejects if the file does not exist or if it isn't a file", async () => {
-      await expectToRejectCode(deleteFile(p('some-file.txt')), ERRORS.NOT_A_FILE);
+    test("rejects if the file does not exist, or if it isn't a file", async () => {
+      await expectToRejectCode(deleteFile(p('some-file.txt')), ERRORS.NON_EXISTENT_FILE);
       await createDirectory(p());
       await expectToRejectCode(deleteFile(p()), ERRORS.NOT_A_FILE);
     });
@@ -313,7 +313,7 @@ describe('File Actions', () => {
     });
 
     test('rejects when the path does not exist', async () => {
-      await expectToRejectCode(readBoundedFile(p('missing.txt'), 4), ERRORS.NOT_A_FILE);
+      await expectToRejectCode(readBoundedFile(p('missing.txt'), 4), ERRORS.NON_EXISTENT_FILE);
     });
 
     test('rejects when the path is a directory', async () => {
@@ -326,7 +326,11 @@ describe('File Actions', () => {
       async () => {
         await writeTextFile(p('file.txt'), 'abcd');
         await createFileSymLink(p('file.txt'), p('link.txt'));
-        await expectToRejectCode(readBoundedFile(p('link.txt'), 4), ERRORS.NOT_A_FILE);
+        await expectToRejectCode(
+          readBoundedFile(p('link.txt'), 4),
+          ERRORS.NOT_A_FILE,
+          'is a symbolic link',
+        );
       },
     );
 

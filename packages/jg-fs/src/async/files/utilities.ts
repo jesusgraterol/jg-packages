@@ -1,15 +1,39 @@
 import { Buffer } from 'node:buffer';
+import type { Stats } from 'node:fs';
 import { constants, lstat, open, realpath, rename, stat, type FileHandle } from 'node:fs/promises';
 
 import {
   BOUNDED_READ_CHUNK_SIZE,
   fileTooLarge,
   isBusyRenameError,
+  isMissingPathError,
   isNoFollowError,
   isNotFoundError,
+  nonExistentFile,
+  notAFile,
   notARegularFile,
   RENAME_RETRY_DELAYS_MS,
 } from '../../shared/index.js';
+
+/**
+ * Ensures a path is an existing regular file, without following a symbolic link at the path.
+ * @param path The path.
+ * @returns A promise that resolves once the path is known to be a file.
+ * @throws
+ * - NON_EXISTENT_FILE: if the path doesn't exist
+ * - NOT_A_FILE: if the path is not a file
+ */
+export const assertExistingFile = async (path: string): Promise<void> => {
+  let stats: Stats;
+  try {
+    stats = await lstat(path);
+  } catch (error) {
+    throw isMissingPathError(error) ? nonExistentFile(path, error) : notAFile(path);
+  }
+  if (!stats.isFile()) {
+    throw notAFile(path);
+  }
+};
 
 /**
  * Reads the permission bits of an existing file.
@@ -87,7 +111,8 @@ export const syncDirectory = async (path: string): Promise<void> => {
  * @param path The file's path.
  * @returns A promise that resolves to the open file.
  * @throws
- * - NOT_A_FILE: if the path doesn't exist or its final component is a symbolic link
+ * - NON_EXISTENT_FILE: if the path doesn't exist
+ * - NOT_A_FILE: if its final component is a symbolic link
  */
 export const openWithoutFollowing = async (path: string): Promise<FileHandle> => {
   try {
@@ -101,6 +126,9 @@ export const openWithoutFollowing = async (path: string): Promise<FileHandle> =>
     // O_NONBLOCK keeps a named pipe at the path from blocking the open
     return await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   } catch (error) {
+    if (isMissingPathError(error)) {
+      throw nonExistentFile(path, error);
+    }
     if (isNoFollowError(error)) {
       throw notARegularFile(path, error);
     }
