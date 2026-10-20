@@ -172,6 +172,8 @@ Every package has one icon, set as `icon` in its catalog entry. It leads the pac
 | `jg-git-commands`   | `GitBranch`      | Git repositories.               |
 | `jg-local-docker`   | `Container`      | Containers on this machine.     |
 | `jg-github`         | `GitPullRequest` | A GitHub App's access.          |
+| `jg-site`           | `PanelsTopLeft`  | Web pages.                      |
+| `jg-playwright`     | `Drama`          | Browser tests.                  |
 
 To add one, confirm the icon exists as `website/node_modules/@lucide/astro/src/icons/<name>.ts`, add its key to `IPackageIcon` in `website/src/utilities/package-catalog/types.ts`, map it to its component in `website/src/components/package-icon/package-icon.astro`, set the package's `icon`, and add its row here.
 

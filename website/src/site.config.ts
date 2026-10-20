@@ -175,6 +175,22 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['node'],
     order: 21,
   },
+  'jg-site': {
+    title: 'Site metadata',
+    description:
+      'Structured data, llms.txt files, and theme preferences for websites, as small functions that run in browsers and Node.js.',
+    icon: 'panels-top-left',
+    runtimes: ['universal'],
+    order: 22,
+  },
+  'jg-playwright': {
+    title: 'Browser tests',
+    description:
+      'Playwright helpers for end-to-end tests: horizontal overflow, loaded assets, motion, accessibility scans, secrets, and a fake microphone.',
+    icon: 'drama',
+    runtimes: ['node'],
+    order: 23,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/

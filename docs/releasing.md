@@ -147,7 +147,7 @@ Expected result: `npm view jg-fs@1.0.1 deprecated` prints the message, and `npm 
 
 ## Troubleshooting
 
-- **The publish job failed halfway.** Re-run the failed jobs. Versions already on npm are skipped, so it publishes only what's missing, and the tag job also tags what the failed run published.
+- **The publish job failed halfway**, such as with a passing `E401 … token is invalid` from the trusted publisher. Wait until `npm view <name>@<version> version` prints every version the run published, then re-run the failed jobs. Versions already on npm are skipped, so it publishes only what's missing, and the tag job also tags what the failed run published. Re-run sooner and the job can try a version npm accepted but doesn't list yet, which fails with `403 … You cannot publish over the previously published versions`; wait, then re-run again.
 - **The publish job fails with "npm accepted … but didn't serve them within 15 minutes".** npm accepted the versions but is still releasing them. Once `npm view <name>@<version> version` prints each one, re-run the failed jobs to tag them.
 - **`release:pack` fails with "npm pack <name>@<version> failed" and a 404, right after a release.** npm lists a new version a few minutes before it serves its tarball. Wait until `curl -s -o /dev/null -w '%{http_code}' https://registry.npmjs.org/<name>/-/<name>-<version>.tgz` prints `200`, remove `.release/`, which the failed run left its tarballs in, and pack again.
 - **`npm publish` fails in CI with a bare `404 Not Found - PUT`.** The package has no trusted publisher, or it names another repository or workflow. Check its settings against step 4 of the first publish.

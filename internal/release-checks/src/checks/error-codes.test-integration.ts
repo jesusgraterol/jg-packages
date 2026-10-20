@@ -36,16 +36,20 @@ export const ERRORS = {
  * Builds and packs the fixture copy, installs it, writes its test file, which check 9 reads from
  * the source and never ships, and runs check 9.
  * @param test The test file's text, or undefined for none.
+ * @param testFileName The test file's name, which sets its category.
  * @returns A promise that resolves to the fixture's problems.
  */
-const checkFixtureCodes = async (test?: string): Promise<string[]> => {
+const checkFixtureCodes = async (
+  test?: string,
+  testFileName = 'index.test-unit.ts',
+): Promise<string[]> => {
   const tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc');
   const build = await runCommand(process.execPath, [tsc, '-p', 'tsconfig.json'], {
     cwd: packageDirectory,
   });
   expect(build).toMatchObject({ exitCode: 0 });
   if (test !== undefined) {
-    await writeFile(join(packageDirectory, 'src', 'index.test-unit.ts'), test);
+    await writeFile(join(packageDirectory, 'src', testFileName), test);
   }
   const output = join(workDirectory, 'tarballs');
   await mkdir(output, { recursive: true });
@@ -103,6 +107,21 @@ describe('checkErrorCodes', { tags: ['full'] }, () => {
         'await expect(promise).rejects.toMatchObject({ code: ERRORS.NAME_MISSING });',
         '',
       ].join('\n'),
+    );
+
+    expect(problems).toStrictEqual([]);
+  }, 180_000);
+
+  test('reads the assertions in end-to-end tests too', async () => {
+    await addErrors();
+
+    const problems = await checkFixtureCodes(
+      [
+        "await expectToRejectCode(promise, ERRORS.GREETING_TOO_LONG, 'Greeting');",
+        "expect(error).toMatchObject({ code: 'NAME_MISSING' });",
+        '',
+      ].join('\n'),
+      'index.test-e2e.ts',
     );
 
     expect(problems).toStrictEqual([]);

@@ -1,0 +1,25 @@
+// one link of an llms.txt section, with what the reader finds there when the title alone doesn't
+// say
+export type ILlmsTextLink = { description?: string | undefined; title: string; url: string };
+
+// one `##` section of an llms.txt: a list of links, or a Markdown body, such as an install command
+// in a code block
+export type ILlmsTextSection =
+  { heading: string; links: readonly ILlmsTextLink[] } | { body: string; heading: string };
+
+// what an llms.txt says, in the llmstxt.org format
+export type ILlmsTextOptions = {
+  // paragraphs after the summary, before the sections
+  details?: readonly string[] | undefined;
+  name: string;
+  sections: readonly ILlmsTextSection[];
+  // one sentence on what the site is, the blockquote under the title
+  summary: string;
+};
+
+// a site's documents gathered into one file for a context window
+export type ILlmsFullTextOptions = {
+  documents: readonly string[];
+  name: string;
+  summary: string;
+};
