@@ -82,6 +82,7 @@ const buildProject = (
   const pattern = CATEGORY_FILE_PATTERNS[category];
   const shared = {
     name: category,
+    fsModuleCache: false,
     unstubEnvs: true,
     unstubGlobals: true,
     testTimeout: TEST_TIMEOUT_MS,
@@ -125,7 +126,7 @@ const buildProject = (
  * the category, so `vitest run --project unit` runs exactly that category. Benchmarks live in a
  * `bench` project that runs no regular tests, and `vitest bench --run` runs them. The `browser`
  * project runs its tests in headless Chromium, Firefox, and WebKit. Tests and hooks fail after 30
- * seconds unless they set their own timeout. `vitest run --coverage`
+ * seconds unless they set their own timeout, and no run uses Vitest's file module cache. `vitest run --coverage`
  * measures the source with V8 and prints a summary, failing below the thresholds when there are
  * any. A `globalSetup` file runs once around the integration project, such as to start a database
  * container for it, and the other projects never run it.
@@ -169,6 +170,12 @@ export const createVitestConfig = ({
   const suite = readTestSuite();
   return defineConfig({
     test: {
+      /*
+       * Vitest's file module cache is one directory in the workspace's node_modules. A lockfile
+       * change makes every run clear it, and runs turbo starts together then race, failing with
+       * ENOTEMPTY. It saved no measurable time here, so neither the root nor any project uses it.
+       */
+      fsModuleCache: false,
       projects: categories.map((category) =>
         buildProject(category, environment, globalSetup, suite),
       ),

@@ -15,13 +15,15 @@ describe('createVitestConfig', () => {
     vi.stubEnv('JG_TEST_SUITE', undefined);
   });
 
-  test('creates one isolated project per category, named after it', () => {
+  test('creates one isolated project per category, named after it, none caching modules on disk', () => {
     expect(createVitestConfig({ categories: ['unit', 'integration'] })).toStrictEqual({
       test: {
+        fsModuleCache: false,
         projects: [
           {
             test: {
               name: 'unit',
+              fsModuleCache: false,
               environment: 'node',
               unstubEnvs: true,
               unstubGlobals: true,
@@ -34,6 +36,7 @@ describe('createVitestConfig', () => {
           {
             test: {
               name: 'integration',
+              fsModuleCache: false,
               environment: 'node',
               unstubEnvs: true,
               unstubGlobals: true,
@@ -64,6 +67,7 @@ describe('createVitestConfig', () => {
       {
         test: {
           name: 'bench',
+          fsModuleCache: false,
           environment: 'node',
           unstubEnvs: true,
           unstubGlobals: true,
@@ -95,6 +99,7 @@ describe('createVitestConfig', () => {
     expect(project).toMatchObject({
       test: {
         name: 'browser',
+        fsModuleCache: false,
         unstubEnvs: true,
         unstubGlobals: true,
         testTimeout: 30_000,

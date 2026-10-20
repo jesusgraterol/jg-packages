@@ -6,10 +6,13 @@ import { defineConfig } from 'vitest/config';
  */
 export default defineConfig({
   test: {
+    // off in the root and the project, as in @jg-packages/vitest-config
+    fsModuleCache: false,
     projects: [
       {
         test: {
           name: 'integration',
+          fsModuleCache: false,
           environment: 'node',
           unstubEnvs: true,
           unstubGlobals: true,
