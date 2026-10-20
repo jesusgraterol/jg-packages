@@ -1,4 +1,4 @@
-import type { Buffer } from 'node:buffer';
+import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
 import { hostname } from 'node:os';
 import { Exception, getErrorCode } from 'jg-exception';
@@ -26,12 +26,14 @@ const LOCK_OWNER_VERSION = 1;
 
 /**
  * Names the calling process as a lock's owner, with a nonce of its own.
+ * @param metadata What the owner writes about itself, if anything.
  * @returns The owner.
  */
-export const createLockOwner = (): IFileLockOwner => ({
+export const createLockOwner = (metadata?: Record<string, string>): IFileLockOwner => ({
   pid: process.pid,
   nonce: randomUUID(),
   hostname: hostname(),
+  ...(metadata === undefined ? {} : { metadata: { ...metadata } }),
 });
 
 /**
@@ -45,7 +47,34 @@ export const serializeLockOwner = (owner: IFileLockOwner): string =>
     pid: owner.pid,
     nonce: owner.nonce,
     hostname: owner.hostname,
+    ...(owner.metadata === undefined ? {} : { metadata: owner.metadata }),
   });
+
+/**
+ * Checks that an owner's metadata holds only strings, and that the owner fits owner.json.
+ * @param path The lock's path, for the error.
+ * @param owner The owner.
+ * @throws
+ * - LOCK_ACQUISITION_FAILED: The lock '<path>' could not be acquired.
+ */
+export const assertLockOwnerFits = (path: string, owner: IFileLockOwner): void => {
+  const { metadata } = owner;
+  const isMetadataValid =
+    metadata === undefined ||
+    (typeof metadata === 'object' &&
+      metadata !== null &&
+      !Array.isArray(metadata) &&
+      Object.values(metadata).every((value) => typeof value === 'string'));
+  if (
+    !isMetadataValid ||
+    Buffer.byteLength(serializeLockOwner(owner), 'utf8') > LOCK_OWNER_MAX_BYTES
+  ) {
+    throw new Exception(
+      `The lock '${path}' could not be acquired: its metadata must hold only strings and fit owner.json's ${LOCK_OWNER_MAX_BYTES} bytes.`,
+      { code: ERRORS.LOCK_ACQUISITION_FAILED, data: { path } },
+    );
+  }
+};
 
 /**
  * Reads owner.json's content, accepting only a complete record of the current version.
@@ -62,7 +91,13 @@ export const parseLockOwner = (content: Buffer | undefined): IFileLockOwner | un
   if (typeof record !== 'object' || record === null) {
     return undefined;
   }
-  const { version, pid, nonce, hostname: host } = record as Record<string, unknown>;
+  const { version, pid, nonce, hostname: host, metadata } = record as Record<string, unknown>;
+  const isMetadataValid =
+    metadata === undefined ||
+    (typeof metadata === 'object' &&
+      metadata !== null &&
+      !Array.isArray(metadata) &&
+      Object.values(metadata).every((value) => typeof value === 'string'));
   const isValid =
     version === LOCK_OWNER_VERSION &&
     typeof pid === 'number' &&
@@ -71,8 +106,14 @@ export const parseLockOwner = (content: Buffer | undefined): IFileLockOwner | un
     typeof nonce === 'string' &&
     nonce.length > 0 &&
     typeof host === 'string' &&
-    host.length > 0;
-  return isValid ? { pid, nonce, hostname: host } : undefined;
+    host.length > 0 &&
+    isMetadataValid;
+  if (!isValid) {
+    return undefined;
+  }
+  return metadata === undefined
+    ? { pid, nonce, hostname: host }
+    : { pid, nonce, hostname: host, metadata: metadata as Record<string, string> };
 };
 
 /**
@@ -101,14 +142,18 @@ export const isProcessGone = (pid: number): boolean => {
 
 /**
  * Judges a lock that already exists: why it's busy, or that it can be taken over, which needs a
- * valid owner on this host whose process is gone, and nothing in the directory but owner.json.
+ * valid owner on this host whose process is gone, nothing in the directory but owner.json, and
+ * the caller naming that exact owner in recoverFrom, so a dead owner is never taken over by
+ * accident.
  * @param entries The names in the lock's directory.
  * @param owner Its owner.json's record, or `undefined` when missing or invalid.
+ * @param recoverFrom The owner the caller asked to take the lock over from, if any.
  * @returns Why it's busy, or the dead owner it can be taken over from.
  */
 export const judgeExistingLock = (
   entries: readonly string[],
   owner: IFileLockOwner | undefined,
+  recoverFrom?: IFileLockOwner,
 ): ILockJudgement => {
   const busy = (reason: ILockBusyReason): ILockJudgement => ({ isRecoverable: false, reason });
   if (entries.includes(LOCK_RECOVERY_DIRECTORY)) {
@@ -123,9 +168,14 @@ export const judgeExistingLock = (
   if (!isProcessGone(owner.pid)) {
     return busy('held');
   }
-  return entries.every((entry) => entry === LOCK_OWNER_FILE)
+  if (!entries.every((entry) => entry === LOCK_OWNER_FILE)) {
+    return busy('unexpected-entries');
+  }
+  return recoverFrom !== undefined &&
+    isSameLockOwner(owner, recoverFrom) &&
+    owner.hostname === recoverFrom.hostname
     ? { isRecoverable: true, owner }
-    : busy('unexpected-entries');
+    : busy('owner-gone');
 };
 
 /**

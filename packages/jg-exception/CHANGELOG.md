@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.0
+
+### Added
+
+- `defineErrorCatalog(entries)`, a module's errors defined once by kind, each with its code, message, and severity. `create(kind, { cause?, data? })` builds the kind's Exception, and `is(error, kind?)` tells whether an error is one of that kind, or, without a kind, any of the catalog's, comparing codes, so it also recognizes an Exception from another installed copy of the package.
+- `IErrorCatalog`, `IErrorCatalogEntry`, and `IErrorCatalogOptions`.
+
 ## 1.6.0
 
 ### Changed

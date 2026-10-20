@@ -1,9 +1,8 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { type IResolvedTheme, type IThemePreference, resolveThemePreference } from 'jg-site';
 
-import type { IResolvedTheme, IThemePreference } from './types.js';
 import {
   getSystemDarkSchemeSnapshot,
-  resolveThemePreference,
   subscribeToNothing,
   subscribeToSystemDarkScheme,
 } from './utilities.js';

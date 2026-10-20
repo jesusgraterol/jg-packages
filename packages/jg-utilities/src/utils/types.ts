@@ -240,3 +240,100 @@ export type IDownloadJsonOptions = {
   // the spaces each level is indented by. Defaults to 2
   space?: number | undefined;
 };
+
+// how runInOrder runs and commits items
+export type IRunInOrderOptions<TItem, TResult> = {
+  // the most items running at once, an integer of at least 1
+  concurrency: number;
+
+  // runs one item, possibly at the same time as others
+  execute: (item: TItem, index: number) => Promise<TResult>;
+
+  // records one item's result, one at a time and in the items' order, such as to a checkpoint
+  commit?: ((result: TResult, item: TItem, index: number) => Promise<void> | void) | undefined;
+};
+
+// the lines that open and close a marked region of a document, each a whole line
+export type IRegionMarkers = {
+  start: string;
+  end: string;
+};
+
+// where a marked region sits in a document: from its start marker through its end marker's line
+// break, and the line break its start marker's line ends with
+export type IMarkedRegion = {
+  start: number;
+  end: number;
+  lineEnding: '\n' | '\r\n';
+};
+
+// how runWhileCurrent tells whether its work still belongs to the current state, such as the
+// signed-in account it was started for
+export type IRunWhileCurrentOptions = {
+  // whether the work still belongs to the current state
+  isCurrent: () => boolean;
+
+  // the stores whose changes may make the work stale, each a subscribe function that returns its
+  // unsubscribe function, such as a Zustand store's subscribe
+  subscriptions: readonly ((listener: () => void) => () => void)[];
+
+  // the error thrown when the work went stale, with the work's own error as the cause when it failed
+  createStaleError: (cause: unknown) => Error;
+
+  // the caller's signal, which aborts the work with its reason
+  signal?: AbortSignal | undefined;
+};
+
+// the mouse event fields isPrimaryClick reads, which DOM and React mouse events both have
+export type IClickEvent = {
+  button: number;
+  altKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+};
+
+// how createByteCache limits what it keeps
+export type IByteCacheOptions = {
+  // the most bytes the cache keeps, a non-negative safe integer
+  maxBytes: number;
+
+  // the most entries the cache keeps, a positive safe integer. Without it, only bytes limit it
+  maxEntries?: number | undefined;
+};
+
+// a pin on a cached entry, which keeps it from being evicted or replaced until released
+export type IByteCacheRetention = {
+  // a copy of the entry's bytes, or undefined after release
+  copyBytes: () => Uint8Array | undefined;
+
+  // releases the pin; later calls do nothing
+  release: () => void;
+};
+
+// a least-recently-used cache of bytes, limited by their total size
+export type IByteCache = {
+  // a copy of the bytes under the key, which becomes the most recently used, or undefined
+  get: (key: string) => Uint8Array | undefined;
+
+  // stores a copy of the bytes, evicting the least recently used entries that aren't retained, and
+  // returns whether it did; it doesn't when the bytes exceed maxBytes, the key's entry is retained,
+  // or retained entries leave no room
+  set: (key: string, bytes: Uint8Array) => boolean;
+
+  // pins the key's entry without changing its order, or returns undefined when there's none
+  retain: (key: string) => IByteCacheRetention | undefined;
+
+  // the bytes the cache holds
+  readonly byteLength: number;
+};
+
+// how takeWithinByteBudget measures a page
+export type ITakeWithinByteBudgetOptions<T> = {
+  // the most bytes a page may take, a non-negative safe integer
+  maxBytes: number;
+
+  // the size of the page holding these items, given the size of the items as a JSON array, such as
+  // the array plus the envelope and cursor around it
+  measurePage: (page: readonly T[], itemsBytes: number) => number;
+};

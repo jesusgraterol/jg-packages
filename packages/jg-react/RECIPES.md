@@ -57,7 +57,8 @@ export const AppHeader = () => {
 Use this in a server-rendered React app that offers light, dark, and system themes. React applies the theme only once it runs, so without a script in `<head>` the page shows the default theme first, then flashes to the user's. `createThemeInitScript` builds that script from where the preference is stored, and `useAppliedTheme` takes over once React runs:
 
 ```tsx
-import { createThemeInitScript, type IThemePreference, useAppliedTheme } from 'jg-react';
+import { createThemeInitScript, useAppliedTheme } from 'jg-react';
+import type { IThemePreference } from 'jg-site';
 
 // the localStorage key the app keeps the user's preferences under, as jg-storage's
 // createLocalStore('preferences') writes it, with the theme in its `theme` field

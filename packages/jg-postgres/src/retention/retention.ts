@@ -8,7 +8,9 @@ import { readDeletionPlan, readRetentionCutoff } from './utilities.js';
  * exactly at it is kept. Each batch is one statement that locks the oldest expired rows, skipping
  * rows another transaction holds, and deletes them by `keyColumn`, which must be unique and not
  * null: a key that repeats would delete rows that haven't expired. With `timeouts`, each batch runs
- * as a transaction of its own with them.
+ * as a transaction of its own with them. A `signal` stops the deletion between batches: once it
+ * aborts, no further statement starts, and the call rejects with its reason after the batch in
+ * flight settles, leaving the remaining rows for a later call.
  * @param postgres The database.
  * @param options The table, its timestamp and key columns, how old a row must be, and the batches.
  * @returns A promise that resolves to the rows deleted and the cutoff.
@@ -26,13 +28,15 @@ import { readDeletionPlan, readRetentionCutoff } from './utilities.js';
  * - INVALID_IDENTIFIER: The identifier is empty, holds a null character, or is longer than 63 bytes.
  * - INVALID_TIMEOUT_PROFILE: The timeout profile needs positive, finite seconds, with the lock timeout no longer than the statement timeout.
  * - TRANSACTION_OUTCOME_UNKNOWN: The connection was lost during COMMIT, so the transaction may or may not have committed.
+ * - The signal's reason when the signal aborts.
  */
 export const deleteExpiredInBatches = async (
   postgres: IPostgres,
   options: IExpiredRowDeletionOptions,
 ): Promise<IExpiredRowDeletion> => {
   const plan = readDeletionPlan(options);
-  const { timeouts } = options;
+  const { timeouts, signal } = options;
+  signal?.throwIfAborted();
   const cutoff =
     plan.olderThan === undefined
       ? (plan.cutoff as string)
@@ -58,6 +62,7 @@ WHERE ${qualifiedKey} IN (SELECT expired.${plan.quotedKey} FROM expired);`;
   let deletedCount = 0;
   let batchCount: number;
   do {
+    signal?.throwIfAborted();
     batchCount =
       timeouts === undefined
         ? Number((await postgres.pool.query(text, params)).rowCount)

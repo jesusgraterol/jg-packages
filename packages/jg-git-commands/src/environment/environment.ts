@@ -6,10 +6,13 @@ import type { IGitEnvironmentOptions } from './types.js';
 /**
  * Builds the environment a git command runs in: the base environment without the variables that
  * change what Git does, every `GIT_*` one, such as `GIT_DIR` or `GIT_CONFIG_PARAMETERS`, and
- * `SSH_ASKPASS` with `SSH_ASKPASS_REQUIRE`, then the variables that keep it from prompting: `GIT_TERMINAL_PROMPT=0`, an empty
- * `GIT_ASKPASS`, which ends Git's askpass lookup before `core.askPass` and `SSH_ASKPASS`, and an
- * SSH command in batch mode. With `isolateConfig`, Git also ignores the system config and the
- * user's global config, which otherwise still apply.
+ * `SSH_ASKPASS` with `SSH_ASKPASS_REQUIRE`, then the variables that keep it from prompting:
+ * `GIT_TERMINAL_PROMPT=0`, an empty `GIT_ASKPASS`, which ends Git's askpass lookup before
+ * `core.askPass` and `SSH_ASKPASS`, and an SSH command in batch mode. It also allows no transport,
+ * with an empty `GIT_ALLOW_PROTOCOL`, so reading a partial clone never fetches a missing object,
+ * and sets the C locale, so Git's messages are in English. With `isolateConfig`, Git also ignores
+ * the system config, the user's global config, and the system attributes file, which otherwise
+ * still apply.
  * @param options Whether to isolate the config, the SSH command, and the base environment.
  * @returns The environment.
  * @example
@@ -21,6 +24,7 @@ import type { IGitEnvironmentOptions } from './types.js';
  * });
  * env['GIT_DIR']; // undefined
  * env['GIT_CONFIG_NOSYSTEM']; // '1'
+ * env['GIT_ALLOW_PROTOCOL']; // ''
  */
 export const createGitEnvironment = ({
   isolateConfig = false,
@@ -34,5 +38,7 @@ export const createGitEnvironment = ({
   ),
   ...NON_INTERACTIVE_VARIABLES,
   GIT_SSH_COMMAND: sshCommand,
-  ...(isolateConfig ? { GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: GIT_NULL_DEVICE } : {}),
+  ...(isolateConfig
+    ? { GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: GIT_NULL_DEVICE, GIT_ATTR_NOSYSTEM: '1' }
+    : {}),
 });

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- `startContainer({ host, name, labels, image, ports, createArgs?, command?, env?, timeoutSeconds?, signal? })`, which creates and starts a container with its ports on random ports of `127.0.0.1`, and reads it back with `inspectContainer`: it must be the container created, with the name and every label, and publish each port exactly once on `127.0.0.1`, or it throws `DOCKER_CONTAINER_NOT_OWNED` or `DOCKER_PORTS_NOT_LOOPBACK`. Any failure after the creation removes the container.
+- `removeContainer(name, { host, labels, env?, timeoutSeconds?, signal? })`, which removes a container only when it has the exact name and every label, throwing `DOCKER_CONTAINER_NOT_OWNED` otherwise, and confirms it's gone. It resolves to false when there was no container.
+- `startOwnedContainer(options)`, `startContainer` through an owner process that removes the container on `release`, when the calling process exits or crashes, and on SIGINT and SIGTERM. A failing owner throws `DOCKER_OWNER_FAILED`.
+- `IStartContainerOptions`, `IRemoveContainerOptions`, and `IOwnedContainer`.
+- A recipe for a container that lasts one test run.
+
 ## 0.2.0
 
 ### Changed

@@ -12,3 +12,11 @@ export { generateRandomBytes, generateRandomDigits } from './random/index.js';
 
 // signatures
 export { signHmac, verifyHmac } from './hmac/index.js';
+
+// one-time passwords
+export {
+  type IVerifyTotpOptions,
+  TOTP_PARAMETERS,
+  generateTotpSecret,
+  verifyTotp,
+} from './totp/index.js';

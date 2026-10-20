@@ -94,7 +94,7 @@ Every page has a Markdown version at `index.md` in its directory, which its head
 
 The sitemap lists the HTML pages only. A recipes page's description is the sentence under its `RECIPES.md` title when it fits search results, 70 to 160 characters, and otherwise names the recipes.
 
-**Head data.** `base-layout` gives every page its canonical URL, its Markdown version, the `llms.txt` link, the open-graph image, and the JSON-LD from `buildStructuredData` in `jg-personal-astro-ui/seo`: the home page is the `WebSite`, with an `ItemList` of the package pages; every other page is a `WebPage` with its `BreadcrumbList`, and a package page adds its `SoftwareSourceCode`.
+**Head data.** `base-layout` gives every page its canonical URL, its Markdown version, the `llms.txt` link, the open-graph image, and the JSON-LD from jg-site's `buildStructuredData`: the home page is the `WebSite`, with an `ItemList` of the package pages; every other page is a `WebPage` with its `BreadcrumbList`, and a package page adds its `SoftwareSourceCode`.
 
 **The open-graph image** is `public/og/jg-packages.png`, 1200 by 630, committed. `pnpm --filter @jg-packages/website assets:generate` writes it again from `scripts/open-graph-template.html`, in Chromium, listing every package in the catalog. Run it after changing the template or the catalog.
 

@@ -103,10 +103,35 @@ describe('judgeExistingLock', () => {
     expect(judgeExistingLock(entries, owner)).toStrictEqual({ isRecoverable: false, reason });
   });
 
-  test('takes over from a dead owner on this host when only owner.json remains', () => {
+  test('never takes over from a dead owner by itself', () => {
     expect(judgeExistingLock(['owner.json'], dead)).toStrictEqual({
+      isRecoverable: false,
+      reason: 'owner-gone',
+    });
+  });
+
+  test('takes over from a dead owner on this host when recoverFrom names it and only owner.json remains', () => {
+    expect(judgeExistingLock(['owner.json'], dead, { ...dead })).toStrictEqual({
       isRecoverable: true,
       owner: dead,
+    });
+  });
+
+  test.each([
+    ['another nonce', { nonce: 'another-nonce' }],
+    ['another process', { pid: 1 }],
+    ['another host', { hostname: 'another-host' }],
+  ])('stays busy when recoverFrom names an owner with %s', (_, change) => {
+    expect(judgeExistingLock(['owner.json'], dead, { ...dead, ...change })).toStrictEqual({
+      isRecoverable: false,
+      reason: 'owner-gone',
+    });
+  });
+
+  test('stays held when recoverFrom names a live owner', () => {
+    expect(judgeExistingLock(['owner.json'], alive, { ...alive })).toStrictEqual({
+      isRecoverable: false,
+      reason: 'held',
     });
   });
 });

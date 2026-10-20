@@ -46,7 +46,9 @@ const readSignals = (signals: unknown): NodeJS.Signals[] => {
  * number, 130 for SIGINT and 143 for SIGTERM, as a shell reports it, and calls `onSignal`. It
  * never calls `process.exit`: the process exits once the work stops. Later signals are ignored,
  * or, with `forceOnRepeat`, stop the process at once, as they would without a listener. On
- * Windows, Ctrl+C sends SIGINT, but SIGTERM is never delivered. `dispose` stops listening.
+ * Windows, Ctrl+C sends SIGINT, but SIGTERM is never delivered. With `disconnect`, a child started
+ * with an IPC channel, such as by `fork`, also shuts down as with SIGTERM when its parent closes
+ * the channel or dies, at once when it's already closed. `dispose` stops listening.
  * @param options The signals, what runs at the first one, and how later ones behave.
  * @returns The shutdown signal.
  * @example
@@ -65,6 +67,7 @@ export const createShutdownSignal = ({
   onSignal,
   setExitCode = true,
   forceOnRepeat = false,
+  disconnect = false,
 }: IShutdownSignalOptions = {}): IShutdownSignal => {
   if (onSignal !== undefined && typeof onSignal !== 'function') {
     throw createInvalidSignalError();
@@ -75,6 +78,11 @@ export const createShutdownSignal = ({
   let isDisposed = false;
 
   const toExitCode = (signal: NodeJS.Signals): number => 128 + constants.signals[signal];
+
+  // the parent closing the IPC channel shuts down as SIGTERM does
+  const onDisconnect = (): void => {
+    onProcessSignal('SIGTERM');
+  };
 
   // starts the shutdown at the first signal, and ignores the rest
   const onProcessSignal = (signal: NodeJS.Signals): void => {
@@ -111,10 +119,19 @@ export const createShutdownSignal = ({
     for (const signal of listenedSignals) {
       process.off(signal, onProcessSignal);
     }
+    process.off('disconnect', onDisconnect);
   };
 
   for (const signal of listenedSignals) {
     process.on(signal, onProcessSignal);
+  }
+  // a process started without an IPC channel has no process.send, so there's nothing to watch
+  if (disconnect && process.send !== undefined) {
+    if (process.connected) {
+      process.on('disconnect', onDisconnect);
+    } else {
+      onDisconnect();
+    }
   }
 
   return {

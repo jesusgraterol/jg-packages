@@ -1,6 +1,6 @@
 # jg-crypto
 
-Hashing, random bytes and digits, and HMAC signatures with constant-time verification, for Node.js.
+Hashing, random bytes and digits, HMAC signatures with constant-time verification, and authenticator app codes, for Node.js.
 
 ## Install
 
@@ -45,6 +45,17 @@ verifyHmac(cursorJson, signature, secret, { domain: 'checkpoint' }); // false
 ```
 
 `verifyHmac` returns false for any signature but the exact one, and never throws for a bad signature. An empty secret or domain throws, because it's the program's own mistake.
+
+Check a code from an authenticator app, claiming its time step so it can't be used twice. `claimStep` is required, and works with any store that can record a step once, such as Redis for several servers:
+
+```ts
+import { generateTotpSecret, verifyTotp } from 'jg-crypto';
+
+const secret = generateTotpSecret(); // 32 base32 characters, shown to the user as a QR code
+await verifyTotp(secret, code, { claimStep: (step) => claimForUser(userId, step) });
+```
+
+A wrong code throws `TOTP_INVALID`, and a code already used throws `TOTP_ALREADY_USED`. Codes follow RFC 6238 as every authenticator app does: HMAC-SHA1, 6 digits, and 30-second steps, accepted up to 2 steps early or late.
 
 ## Documentation
 

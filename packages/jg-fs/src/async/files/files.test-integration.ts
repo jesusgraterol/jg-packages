@@ -35,6 +35,7 @@ import {
   writeBufferFile,
   writeFile,
   writeFileAtomic,
+  writeFileAtomicIfUnchanged,
   writeJsonFile,
   writeTextFile,
 } from './files.js';
@@ -142,6 +143,14 @@ describe('File Actions', () => {
       expect(await readJsonFile(p('file.json'))).toStrictEqual({ foo: 'bar', baz: true, tan: 123 });
     });
 
+    test('ends a stringified value with a line feed, and writes a string as given', async () => {
+      await writeJsonFile(p('object.json'), { a: 1 });
+      await writeJsonFile(p('string.json'), '{"a":1}');
+
+      expect(await readRaw(p('object.json'), 'utf-8')).toBe('{\n  "a": 1\n}\n');
+      expect(await readRaw(p('string.json'), 'utf-8')).toBe('{"a":1}');
+    });
+
     test('attempting to read a JSON file that doesnt exist rejects', async () => {
       await expectToRejectCode(readJsonFile(p('file.json')), ERRORS.NON_EXISTENT_FILE);
     });
@@ -238,6 +247,81 @@ describe('File Actions', () => {
         ERRORS.NOT_A_FILE,
       );
     });
+  });
+
+  describe('writeFileAtomicIfUnchanged', () => {
+    test('replaces the file when it still holds the expected bytes, keeping its mode', async () => {
+      await writeTextFile(p('config.txt'), 'before');
+      if (process.platform !== 'win32') {
+        await chmod(p('config.txt'), 0o640);
+      }
+
+      await writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before'));
+
+      expect(await readRaw(p('config.txt'), 'utf-8')).toBe('after');
+      if (process.platform !== 'win32') {
+        expect((await stat(p('config.txt'))).mode & 0o777).toBe(0o640);
+      }
+      expect(await listTemporaryFiles(p())).toStrictEqual([]);
+    });
+
+    test('creates the file when expected is null and nothing exists', async () => {
+      await writeFileAtomicIfUnchanged(p('nested/new.txt'), 'created', null);
+
+      expect(await readRaw(p('nested/new.txt'), 'utf-8')).toBe('created');
+    });
+
+    test.each([
+      ['other bytes of the same length', 'BEFORE'],
+      ['fewer bytes', 'befor'],
+      ['more bytes', 'before and more'],
+    ])('throws FILE_CHANGED, leaving the file, when it holds %s', async (_, current) => {
+      await writeTextFile(p('config.txt'), current);
+
+      await expectToRejectCode(
+        writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before')),
+        ERRORS.FILE_CHANGED,
+      );
+      expect(await readRaw(p('config.txt'), 'utf-8')).toBe(current);
+      expect(await listTemporaryFiles(p())).toStrictEqual([]);
+    });
+
+    test('throws FILE_CHANGED when something now exists where expected is null', async () => {
+      await writeTextFile(p('new.txt'), '');
+
+      await expectToRejectCode(
+        writeFileAtomicIfUnchanged(p('new.txt'), 'created', null),
+        ERRORS.FILE_CHANGED,
+      );
+      expect(await readRaw(p('new.txt'), 'utf-8')).toBe('');
+    });
+
+    test('throws FILE_CHANGED when the file is gone, or the path is a directory', async () => {
+      await mkdir(p('directory'), { recursive: true });
+
+      await expectToRejectCode(
+        writeFileAtomicIfUnchanged(p('missing.txt'), 'after', Buffer.from('before')),
+        ERRORS.FILE_CHANGED,
+      );
+      await expectToRejectCode(
+        writeFileAtomicIfUnchanged(p('directory'), 'after', Buffer.from('')),
+        ERRORS.FILE_CHANGED,
+      );
+    });
+
+    test.skipIf(process.platform === 'win32')(
+      'throws FILE_CHANGED when the path is now a symbolic link, even to the expected bytes',
+      async () => {
+        await writeTextFile(p('target.txt'), 'before');
+        await symlink(p('target.txt'), p('config.txt'));
+
+        await expectToRejectCode(
+          writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before')),
+          ERRORS.FILE_CHANGED,
+        );
+        expect(await readRaw(p('target.txt'), 'utf-8')).toBe('before');
+      },
+    );
   });
 
   describe('writeFileAtomic', () => {

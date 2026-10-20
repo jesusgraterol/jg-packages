@@ -22,3 +22,7 @@ export const CACHE_NAME_SEPARATOR = '--';
 // the characters and length of the random version suffix
 export const CACHE_NAME_CHARACTERS = 'abcdefghijklmnopqrstuvwxyz0123456789';
 export const CACHE_NAME_LENGTH = 10;
+
+// the version suffix of a worker generated without caching, fixed so a development worker is the
+// same on every request
+export const DEVELOPMENT_CACHE_NAME_SUFFIX = 'development';

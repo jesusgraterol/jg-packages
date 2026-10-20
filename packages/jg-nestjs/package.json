@@ -1,6 +1,6 @@
 {
   "name": "jg-nestjs",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "NestJS for HTTP APIs: an ApiException, a filter and an interceptor for the jg-api-response envelope, schema validation, CORS, and app bootstrap.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./turnstile": {
+      "types": "./dist/turnstile/index.d.ts",
+      "default": "./dist/turnstile/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -54,7 +58,8 @@
   },
   "dependencies": {
     "jg-api-response": "workspace:^",
-    "jg-exception": "workspace:^"
+    "jg-exception": "workspace:^",
+    "jg-fetch": "workspace:^"
   },
   "peerDependencies": {
     "@nestjs/common": "^12.0.1",

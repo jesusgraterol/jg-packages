@@ -1,26 +1,6 @@
-import { DARK_COLOR_SCHEME_QUERY, NO_TRANSITIONS_STYLE } from './constants.js';
-import type { IResolvedTheme, IThemePreference } from './types.js';
+import type { IResolvedTheme } from 'jg-site';
 
-/**
- * Resolves a preference to the theme a page shows: the system's color scheme for `system`.
- * @param preference The preference.
- * @param systemPrefersDark Whether the system uses a dark color scheme.
- * @returns `light` or `dark`.
- * @example
- * import { resolveThemePreference } from 'jg-react';
- *
- * resolveThemePreference('system', true); // 'dark'
- * resolveThemePreference('light', true); // 'light'
- */
-export const resolveThemePreference = (
-  preference: IThemePreference,
-  systemPrefersDark: boolean,
-): IResolvedTheme => {
-  if (preference === 'system') {
-    return systemPrefersDark ? 'dark' : 'light';
-  }
-  return preference;
-};
+import { DARK_COLOR_SCHEME_QUERY, NO_TRANSITIONS_STYLE } from './constants.js';
 
 /**
  * Reads the system's dark color scheme media query, when the browser has matchMedia.

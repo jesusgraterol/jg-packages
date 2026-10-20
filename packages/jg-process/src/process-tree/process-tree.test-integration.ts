@@ -1,14 +1,18 @@
 // @vitest-environment node
 import { spawn, type ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { once } from 'node:events';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { expectToThrowCode } from 'jg-exception/testing';
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
 
-import { startProcess, stopProcessTree } from './process-tree.js';
+import { ERRORS } from '../shared/index.js';
+
+import { isProcessRunning, startProcess, stopProcessTree } from './process-tree.js';
 
 // process groups exist only on POSIX
 const IS_WINDOWS = process.platform === 'win32';
@@ -166,4 +170,26 @@ describe.skipIf(IS_WINDOWS)('startProcess & stopProcessTree', () => {
     expect(child.signalCode).toBe('SIGKILL');
     expect(isGone(child.pid!)).toBe(true);
   });
+});
+
+describe('isProcessRunning', () => {
+  test('tells a running process from one that exited', async () => {
+    const child = spawn(process.execPath, ['--eval', 'setTimeout(() => undefined, 60_000)']);
+    const pid = child.pid as number;
+
+    expect(isProcessRunning(process.pid)).toBe(true);
+    expect(isProcessRunning(pid)).toBe(true);
+
+    child.kill('SIGKILL');
+    await once(child, 'exit');
+
+    await expect.poll(() => isProcessRunning(pid)).toBe(false);
+  });
+
+  test.each([[0], [-1], [1.5], [Number.NaN], [Number.MAX_SAFE_INTEGER + 1]])(
+    'isProcessRunning(%d) -> throws INVALID_PROCESS_ID',
+    (pid) => {
+      expectToThrowCode(() => isProcessRunning(pid), ERRORS.INVALID_PROCESS_ID);
+    },
+  );
 });

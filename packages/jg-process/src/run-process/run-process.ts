@@ -6,8 +6,11 @@ import {
   DEFAULT_GRACE_PERIOD_SECONDS,
   DEFAULT_MAX_OUTPUT_BYTES,
   ERRORS,
+  type IProcessOutput,
+  type IProcessOutputEncoding,
   type IProcessResult,
   type IRunProcessOptions,
+  MAX_TIMEOUT_SECONDS,
 } from '../shared/index.js';
 
 import type { IRunOutcome } from './types.js';
@@ -35,6 +38,42 @@ const outputTooLarge = (command: string, maxOutputBytes: number): Exception =>
   new Exception(`The process '${command}' wrote more than ${maxOutputBytes} bytes of output.`, {
     code: ERRORS.PROCESS_OUTPUT_TOO_LARGE,
   });
+
+/**
+ * Ensures the run's limits are usable, such as a remaining budget a caller computed.
+ * @param timeoutSeconds The timeout, when given.
+ * @param maxOutputBytes The output limit.
+ * @throws
+ * - INVALID_PROCESS_OPTIONS: The timeout must be a positive number of at most 2,147,483 seconds, and the output limit a positive safe integer.
+ */
+const validateLimits = (timeoutSeconds: number | undefined, maxOutputBytes: number): void => {
+  const isTimeoutValid =
+    timeoutSeconds === undefined ||
+    (typeof timeoutSeconds === 'number' &&
+      Number.isFinite(timeoutSeconds) &&
+      timeoutSeconds > 0 &&
+      timeoutSeconds <= MAX_TIMEOUT_SECONDS);
+  if (!isTimeoutValid || !Number.isSafeInteger(maxOutputBytes) || maxOutputBytes <= 0) {
+    throw new Exception(
+      'The timeout must be a positive number of at most 2,147,483 seconds, and the output limit a positive safe integer.',
+      {
+        code: ERRORS.INVALID_PROCESS_OPTIONS,
+        data: { timeoutSeconds: String(timeoutSeconds), maxOutputBytes: String(maxOutputBytes) },
+      },
+    );
+  }
+};
+
+/**
+ * Joins a stream's chunks, decoded as UTF-8 or kept as bytes.
+ * @param chunks The chunks.
+ * @param encoding How to return them.
+ * @returns The output.
+ */
+const decodeOutput = (chunks: Buffer[], encoding: IProcessOutputEncoding): string | Buffer => {
+  const output = Buffer.concat(chunks);
+  return encoding === 'buffer' ? output : output.toString('utf-8');
+};
 
 /**
  * Destroys the child's stdio streams, so pipes held by an unreachable process can't keep the
@@ -92,8 +131,9 @@ const stopTree = async (child: ChildProcess): Promise<void> => {
 };
 
 /**
- * Runs a command to completion and resolves with its exit code, signal and output. It runs
- * without a shell and, on POSIX, as the leader of its own process group.
+ * Runs a command to completion and resolves with its exit code, signal and output, decoded as UTF-8,
+ * or as the bytes the process wrote with `encoding: 'buffer'`. It runs without a shell and, on
+ * POSIX, as the leader of its own process group.
  *
  * Every exit resolves, whatever its code: callers decide which codes are acceptable, so process
  * output never ends up in an error message. The call rejects only when the command can't start,
@@ -118,13 +158,16 @@ const stopTree = async (child: ChildProcess): Promise<void> => {
  *   // handle the failure
  * }
  * @throws
+ * - INVALID_PROCESS_OPTIONS: The timeout must be a positive number of at most 2,147,483 seconds, and the output limit a positive safe integer.
  * - PROCESS_START_FAILED: Unable to start the command
  * - PROCESS_TIMED_OUT: The process didn't finish within the timeout
  * - PROCESS_OUTPUT_TOO_LARGE: The process wrote more output than allowed
  * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped
  * - The signal's reason when the signal aborts.
  */
-export const runProcess = async (options: IRunProcessOptions): Promise<IProcessResult> => {
+export const runProcess = async <TEncoding extends IProcessOutputEncoding = 'utf-8'>(
+  options: IRunProcessOptions<TEncoding>,
+): Promise<IProcessResult<IProcessOutput<TEncoding>>> => {
   const {
     command,
     args,
@@ -134,7 +177,9 @@ export const runProcess = async (options: IRunProcessOptions): Promise<IProcessR
     timeoutSeconds,
     maxOutputBytes = DEFAULT_MAX_OUTPUT_BYTES,
     signal,
+    encoding = 'utf-8',
   } = options;
+  validateLimits(timeoutSeconds, maxOutputBytes);
   signal?.throwIfAborted();
   const startedAt = performance.now();
   const child = spawn(command, args, {
@@ -174,6 +219,10 @@ export const runProcess = async (options: IRunProcessOptions): Promise<IProcessR
     };
     child.stdout.on('data', collect(stdout));
     child.stderr.on('data', collect(stderr));
+    // the pipes fail too when the child can't start, such as on Windows for a working directory
+    // past its path limit; the child's own error or exit decides the run, so theirs is ignored
+    child.stdout.on('error', () => undefined);
+    child.stderr.on('error', () => undefined);
     child.on('error', (error) => settle({ kind: 'failed', error: startFailed(command, error) }));
     child.once('exit', (exitCode, signalCode) => settle({ kind: 'exited', exitCode, signalCode }));
     child.stdin.on('error', (error: NodeJS.ErrnoException) => {
@@ -219,8 +268,8 @@ export const runProcess = async (options: IRunProcessOptions): Promise<IProcessR
   return {
     exitCode: outcome.exitCode,
     signalCode: outcome.signalCode,
-    stdout: Buffer.concat(stdout).toString('utf-8'),
-    stderr: Buffer.concat(stderr).toString('utf-8'),
+    stdout: decodeOutput(stdout, encoding) as IProcessOutput<TEncoding>,
+    stderr: decodeOutput(stderr, encoding) as IProcessOutput<TEncoding>,
     durationMs: Math.round(performance.now() - startedAt),
   };
 };

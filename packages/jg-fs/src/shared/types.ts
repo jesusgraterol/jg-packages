@@ -91,18 +91,37 @@ export type IFileLockOwner = {
 
   // the host the process runs on; a lock is never recovered from another host
   hostname: string;
+
+  // what the owner wrote about itself when it acquired the lock, such as the command it runs
+  metadata?: Record<string, string> | undefined;
+};
+
+// what acquireLock takes
+export type IAcquireLockOptions = {
+  // what to write about the owner in owner.json, such as the command it runs, returned on the
+  // owner readLockOwner gives; it must fit owner.json's 4 KiB with the rest of the owner
+  metadata?: Record<string, string> | undefined;
+
+  // the owner, as readLockOwner gave it, whose lock to take over once its process is gone
+  recoverFrom?: IFileLockOwner | undefined;
 };
 
 /*
  * Why a lock that already exists can't be acquired:
  * - held: its owner is alive, or can't be checked
+ * - owner-gone: its owner's process is gone, and recoverFrom didn't name that owner
  * - other-host: its owner runs on another host
  * - ownerless: its owner.json is missing or invalid
  * - recovery-in-progress: another process is taking it over, or crashed while doing so
  * - unexpected-entries: it holds files besides owner.json, such as an interrupted write's
  */
 export type ILockBusyReason =
-  'held' | 'other-host' | 'ownerless' | 'recovery-in-progress' | 'unexpected-entries';
+  | 'held'
+  | 'owner-gone'
+  | 'other-host'
+  | 'ownerless'
+  | 'recovery-in-progress'
+  | 'unexpected-entries';
 
 // what judging an existing lock decides: why it's busy, or the dead owner it can be taken over from
 export type ILockJudgement =

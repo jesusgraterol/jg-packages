@@ -397,7 +397,7 @@ describe('runGit', () => {
       });
 
       expect(result.stdout).toBe(
-        '0||unset|/etc/ssl/internal.pem|-c core.fsmonitor= -c core.askPass= -c core.pager=cat -c credential.helper= --no-pager status',
+        '0||unset|/etc/ssl/internal.pem|-c core.fsmonitor= -c core.askPass= -c core.pager=cat -c color.ui=false -c submodule.recurse=false -c credential.helper= --no-pager status',
       );
     },
   );
@@ -414,5 +414,51 @@ describe('runGit', () => {
       runGit(args as string[], { cwd: cwd(), env: homeEnv }),
       ERRORS.GIT_INVALID_ARGUMENT,
     );
+  });
+
+  test("returns the output as bytes with encoding 'buffer'", async () => {
+    const result = await runGit(['hash-object', '--stdin'], {
+      cwd: repository,
+      env: homeEnv,
+      input: 'hello\n',
+      encoding: 'buffer',
+    });
+
+    expect(Buffer.isBuffer(result.stdout)).toBe(true);
+    expect(result.stdout.toString('utf8')).toBe('ce013625030ba8dba906f756967f9e9ca394464a\n');
+  });
+
+  test.skipIf(IS_WINDOWS)(
+    'adds the null attributes file with isolateConfig, and leaves it out otherwise',
+    async () => {
+      const bin = join(directory, 'bin');
+      await mkdir(bin);
+      await writeFile(join(bin, 'git'), '#!/bin/sh\nprintf "%s" "$*"\n', { mode: 0o755 });
+
+      const isolated = await runGit(['status'], {
+        cwd: repository,
+        env: { PATH: bin },
+        isolateConfig: true,
+      });
+      const shared = await runGit(['status'], { cwd: repository, env: { PATH: bin } });
+
+      expect(isolated.stdout).toContain('-c core.attributesFile=/dev/null');
+      expect(shared.stdout).not.toContain('core.attributesFile');
+    },
+  );
+
+  test('runs in a working directory of 260 characters or more, or refuses it as an argument', async () => {
+    let long = directory;
+    while (long.length < 280) {
+      long = join(long, 'a-long-directory-name');
+    }
+    await mkdir(long, { recursive: true });
+
+    const outcome = await runGit(['version'], { cwd: long, env: homeEnv }).then(
+      (result) => result.exitCode,
+      (error: unknown) => getErrorCode(error),
+    );
+
+    expect([0, ERRORS.GIT_INVALID_ARGUMENT]).toContain(outcome);
   });
 });

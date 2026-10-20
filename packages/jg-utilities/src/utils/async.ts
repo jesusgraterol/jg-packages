@@ -57,6 +57,28 @@ const race = <T>(
   });
 
 /**
+ * Settles with a promise unless the signal aborts first, such as to stop waiting for a step that
+ * can't be cancelled when the user leaves the page. It rejects with the signal's reason, at once
+ * when the signal was already aborted, and removes its listener either way. The promise itself
+ * keeps running, because a promise can't be cancelled.
+ * @param promise The promise.
+ * @param options The signal that stops the wait.
+ * @returns A promise that settles as the promise does, unless the signal aborts first.
+ * @example
+ * import { abortable, delay } from 'jg-utilities';
+ *
+ * await abortable(Promise.resolve('done'), { signal: new AbortController().signal }); // => 'done'
+ * await abortable(delay(10), { signal: AbortSignal.abort('left') }).catch((reason) => reason); // => 'left'
+ * @throws
+ * - The signal's reason, when it aborts before the promise settles.
+ * - The promise's own error.
+ */
+export const abortable = <T>(
+  promise: Promise<T>,
+  { signal }: { signal: AbortSignal },
+): Promise<T> => race(promise, signal);
+
+/**
  * Creates an asynchronous delay that resolves once the provided seconds have passed.
  * @param seconds The number of seconds to delay before the promise resolves.
  * @param options? The signal that cancels the delay.

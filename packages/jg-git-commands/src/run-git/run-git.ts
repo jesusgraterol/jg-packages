@@ -1,15 +1,22 @@
 import { stat } from 'node:fs/promises';
 
 import { Exception, getErrorCode } from 'jg-exception';
-import { ERRORS as PROCESS_ERRORS, type IProcessResult, runProcess } from 'jg-process';
+import {
+  type IProcessOutput,
+  type IProcessOutputEncoding,
+  type IProcessResult,
+  ERRORS as PROCESS_ERRORS,
+  runProcess,
+} from 'jg-process';
 
 import { createGitEnvironment } from '../environment/index.js';
-import { ERRORS, invalidArgument, isArgumentValid } from '../shared/index.js';
+import { ERRORS, GIT_NULL_DEVICE, invalidArgument, isArgumentValid } from '../shared/index.js';
 import {
   DEFAULT_GIT_MAX_OUTPUT_BYTES,
   DEFAULT_GIT_TIMEOUT_SECONDS,
   FIXED_CONFIG_ARGS,
   NO_CREDENTIAL_HELPERS_ARGS,
+  WINDOWS_MAX_PATH,
 } from './constants.js';
 import type { IRunGitOptions } from './types.js';
 
@@ -50,9 +57,12 @@ const isCallerVariable = (key: string): boolean =>
  * environment without inherited Git variables, with an SSH command in batch mode, without a file
  * system monitor or a pager, and, unless `useCredentialHelpers`, without credential helpers, the
  * repository's included. Without credential helpers, authenticate with SSH keys or credentials
- * you pass yourself, such as a header set as config in `env`. It resolves with the exit code,
- * whatever it is, and the output decoded as UTF-8; a timeout or too much output rejects as
- * jg-process's runProcess does.
+ * you pass yourself, such as a header set as config in `env`. It also runs without colors or
+ * recursing into submodules, in the C locale, and allows no transport unless `env` sets
+ * `GIT_ALLOW_PROTOCOL`, so reading a partial clone never fetches. It resolves with the exit code,
+ * whatever it is, and the output, decoded as UTF-8 or as bytes with `encoding: 'buffer'`; a
+ * timeout or too much output rejects as jg-process's runProcess does. `assertGitSucceeded` throws
+ * the classified error for a failed command.
  * @param args The command's arguments, such as `['status', '--porcelain=v1']`.
  * @param options The working directory, the limits, and how much of the user's setup applies.
  * @returns A promise that resolves with the exit code and the output.
@@ -69,7 +79,7 @@ const isCallerVariable = (key: string): boolean =>
  * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped
  * - The signal's reason when the signal aborts.
  */
-export const runGit = async (
+export const runGit = async <TEncoding extends IProcessOutputEncoding = 'utf-8'>(
   args: readonly string[],
   {
     cwd,
@@ -80,8 +90,9 @@ export const runGit = async (
     isolateConfig = false,
     useCredentialHelpers = false,
     env,
-  }: IRunGitOptions,
-): Promise<IProcessResult> => {
+    encoding,
+  }: IRunGitOptions<TEncoding>,
+): Promise<IProcessResult<IProcessOutput<TEncoding>>> => {
   if (!areArgsValid(args)) {
     throw invalidArgument('args');
   }
@@ -94,10 +105,11 @@ export const runGit = async (
     ...Object.fromEntries(Object.entries(env ?? {}).filter(([key]) => isCallerVariable(key))),
   };
   try {
-    return await runProcess({
+    return await runProcess<TEncoding>({
       command: 'git',
       args: [
         ...FIXED_CONFIG_ARGS,
+        ...(isolateConfig ? ['-c', `core.attributesFile=${GIT_NULL_DEVICE}`] : []),
         ...(useCredentialHelpers ? [] : NO_CREDENTIAL_HELPERS_ARGS),
         '--no-pager',
         ...args,
@@ -108,13 +120,18 @@ export const runGit = async (
       maxOutputBytes,
       ...(input === undefined ? {} : { input }),
       ...(signal === undefined ? {} : { signal }),
+      ...(encoding === undefined ? {} : { encoding }),
     });
   } catch (error) {
-    // the working directory exists, so a start that can't find a file means git is missing
-    if (
+    const isNotFound =
       getErrorCode(error) === PROCESS_ERRORS.PROCESS_START_FAILED &&
-      getErrorCode((error as { cause?: unknown }).cause) === 'ENOENT'
-    ) {
+      getErrorCode((error as { cause?: unknown }).cause) === 'ENOENT';
+    // Windows can report a working directory past its path limit as a missing program
+    if (isNotFound && process.platform === 'win32' && cwd.length >= WINDOWS_MAX_PATH) {
+      throw invalidArgument('cwd');
+    }
+    // the working directory exists, so a start that can't find a file means git is missing
+    if (isNotFound) {
       throw new Exception("Git isn't installed, or isn't on the PATH.", {
         code: ERRORS.GIT_NOT_FOUND,
         cause: error,

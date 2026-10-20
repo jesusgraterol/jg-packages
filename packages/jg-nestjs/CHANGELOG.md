@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+
+- `listenHttpApp(app, { port, host? })`, which starts the app listening and, when it can't, closes it before rethrowing, so the modules' shutdown hooks release what they opened. A failure to close is logged.
+- `PingModule`, which adds `GET /ping`, answering 204 with no body whatever version the request asks for.
+- `createUploadInterceptor({ field, maxBytes, maxConcurrent, uploadTimeoutSeconds })`, an interceptor that receives one file into memory, as `FileInterceptor` does, accepting a file of at most `maxBytes` and no other part. Each call has its own slots, held from the upload's start until the handler ends; a request beyond them gets a 503 `UPLOAD_CAPACITY_FULL`. A file over the limit gets a 413, and another part or a malformed body a 400, with `UPLOAD_REJECTED`. An upload still arriving after the timeout has its connection closed. Invalid options throw `INVALID_UPLOAD_OPTIONS`.
+- `defineApiErrorCatalog(entries)`, jg-exception's `defineErrorCatalog` with a status per kind, whose `create` builds `ApiException`s. `IApiErrorCatalog` and `IApiErrorCatalogEntry`.
+- `jg-nestjs/turnstile`: `TurnstileGuard`, which verifies the Cloudflare Turnstile token in the `x-turnstile-token` header (`TURNSTILE_TOKEN_HEADER`) with siteverify, checking the allowed hostnames and the action a route sets with `@TurnstileAction(action)`. A token that doesn't verify gets a 403 `TURNSTILE_FAILED`, and a siteverify failure a 503 `TURNSTILE_UNAVAILABLE`, without anything Cloudflare answered. Its options, `ITurnstileGuardOptions`, come from `TURNSTILE_GUARD_OPTIONS`.
+- A recipe for building the filter's options with `useFactory` from injected services.
+
+### Changed
+
+- Depends on `jg-fetch`, for the Turnstile guard's siteverify calls, and on `jg-exception` 1.7.0, for `defineErrorCatalog`.
+- `ApiExceptionFilter` doesn't report `UPLOAD_REJECTED` and `TURNSTILE_FAILED` by default. An app that sets `ignoredCodes` lists every code it ignores.
+
 ## 0.4.0
 
 ### Changed

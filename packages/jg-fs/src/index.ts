@@ -3,6 +3,7 @@ export { ERRORS } from './shared/index.js';
 
 // types
 export type {
+  IAcquireLockOptions,
   IDirectoryElementsKeySort,
   IDirectoryElementsOptions,
   IDirectoryPathElements,
@@ -17,7 +18,7 @@ export type {
 
 // general actions
 export { isPathWithin } from './shared/index.js';
-export { getPathElement, pathExists } from './async/general/index.js';
+export { assertNoLinksBelow, getPathElement, pathExists } from './async/general/index.js';
 
 // directory actions
 export {
@@ -44,6 +45,7 @@ export {
   writeBufferFile,
   writeFile,
   writeFileAtomic,
+  writeFileAtomicIfUnchanged,
   writeJsonFile,
   writeTextFile,
 } from './async/files/index.js';
@@ -58,4 +60,4 @@ export {
 } from './async/private-files/index.js';
 
 // lock actions
-export { type IFileLock, acquireLock } from './async/locks/index.js';
+export { type IFileLock, acquireLock, readLockOwner } from './async/locks/index.js';

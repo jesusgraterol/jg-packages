@@ -107,7 +107,11 @@ export const assertBufferData = (path: string, data: unknown): void => {
 export const serializeJsonData = (path: string, data: unknown, space: number): string => {
   let text: unknown;
   try {
-    text = typeof data === 'string' ? data : JSON.stringify(data, undefined, space);
+    // a stringified value ends with a line feed, as text files do
+    text =
+      typeof data === 'string'
+        ? data
+        : (JSON.stringify(data, undefined, space) as string | undefined)?.concat('\n');
   } catch (error) {
     throw new Exception(`The JSON data for the file '${path}' could not be stringified.`, {
       code: ERRORS.FILE_CONTENT_IS_EMPTY_OR_INVALID,
@@ -197,3 +201,14 @@ export const notARegularFile = (path: string, error: unknown): Exception =>
  */
 export const isNoFollowError = (error: unknown): boolean =>
   error instanceof Error && 'code' in error && (error.code === 'ELOOP' || error.code === 'EMLINK');
+
+/**
+ * Builds the exception for a file that changed since the caller read it.
+ * @param path The file's path.
+ * @returns The FILE_CHANGED exception.
+ */
+export const fileChanged = (path: string): Exception =>
+  new Exception(`The file '${path}' changed since it was read.`, {
+    code: ERRORS.FILE_CHANGED,
+    data: { path },
+  });

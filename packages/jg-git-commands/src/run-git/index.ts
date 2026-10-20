@@ -6,3 +6,6 @@ export { DEFAULT_GIT_MAX_OUTPUT_BYTES, DEFAULT_GIT_TIMEOUT_SECONDS } from './con
 
 // git commands
 export { runGit } from './run-git.js';
+
+// failures
+export { assertGitSucceeded } from './assert-succeeded.js';

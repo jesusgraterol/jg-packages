@@ -143,6 +143,9 @@ export const createHomeEnv = (home: string): NodeJS.ProcessEnv => ({
   HOME: home,
   XDG_CONFIG_HOME: join(home, '.config'),
   GIT_CONFIG_NOSYSTEM: '1',
+  // the tests' remotes are local repositories and a local HTTP server, which runGit refuses unless
+  // allowed
+  GIT_ALLOW_PROTOCOL: 'file:http',
   // a request to the local server never goes through a proxy
   no_proxy: '*',
   NO_PROXY: '*',

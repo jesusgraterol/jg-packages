@@ -249,3 +249,31 @@ export const stopProcessTree = async (
   }
   await stopPosixTree(child, pid, gracePeriodSeconds);
 };
+
+/**
+ * Tells whether a process with this id is running on this machine, such as the owner a lock file
+ * names. It sends signal 0, which checks without signalling, and treats only ESRCH, no such
+ * process, as gone: a process that belongs to another user still counts as running.
+ * @param pid The process id.
+ * @returns Whether the process is running.
+ * @example
+ * import { isProcessRunning } from 'jg-process';
+ *
+ * isProcessRunning(process.pid); // true
+ * @throws
+ * - INVALID_PROCESS_ID: The process id must be a positive safe integer.
+ */
+export const isProcessRunning = (pid: number): boolean => {
+  if (!Number.isSafeInteger(pid) || pid <= 0) {
+    throw new Exception('The process id must be a positive safe integer.', {
+      code: ERRORS.INVALID_PROCESS_ID,
+      data: { pid: String(pid) },
+    });
+  }
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code !== 'ESRCH';
+  }
+};

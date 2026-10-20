@@ -80,6 +80,21 @@ A string, `Blob`, `ArrayBuffer` or view of one, `FormData`, `URLSearchParams`, o
 
 Read other kinds of responses with `parseAs`: `'json'` (the default), `'envelope'`, `'text'`, `'bytes'`, `'blob'`, `'response'` for the unread `Response`, or `'none'`. The data's type follows it.
 
+Read a response from a `fetch` you make yourself, such as a download you hash or stream, with the same byte limit `request` applies:
+
+```ts
+import { readResponseBytes } from 'jg-fetch';
+
+const response = await fetch(attachmentUrl, {
+  redirect: 'error',
+  signal: AbortSignal.timeout(30_000),
+});
+const bytes = await readResponseBytes(response, 10_000_000); // RESPONSE_TOO_LARGE past 10 MB
+const text = new TextDecoder().decode(bytes);
+```
+
+It refuses a body whose content-length is over the limit before reading it, and otherwise stops, cancelling the rest, as soon as the count passes it. It throws an `Exception` with `RESPONSE_TOO_LARGE`, or `INVALID_OPTIONS` for a limit that isn't a positive safe integer.
+
 ### Timeouts and retries
 
 | Option                   | Default                                  | What it does                                                                       |

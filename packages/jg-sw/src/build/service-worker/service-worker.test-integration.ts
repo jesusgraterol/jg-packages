@@ -139,6 +139,15 @@ describe('buildServiceWorker', () => {
     expect(readConstant(source, 'PRECACHE_ASSETS')).toStrictEqual([]);
   });
 
+  test('without caching, names the cache <prefix>--development, so the worker is the same each time', async () => {
+    const sources = await Promise.all(
+      [1, 2].map(() => buildServiceWorker(baseConfig(), { cwd: directory, caching: false })),
+    );
+
+    expect(readConstant(sources[0] as string, 'CACHE_NAME')).toBe('test-app--development');
+    expect(sources[1]).toBe(sources[0]);
+  });
+
   test('resolves outDir from the current directory without a cwd', async () => {
     const source = await buildServiceWorker(baseConfig({ outDir: 'missing' }), {
       caching: false,

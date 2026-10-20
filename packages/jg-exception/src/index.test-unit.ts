@@ -12,6 +12,7 @@ describe('public API', () => {
       'REDACTED_VALUE',
       'UNKNOWN_ERROR_CODE',
       'createErrorFeedback',
+      'defineErrorCatalog',
       'extractMessage',
       'extractRedactedMessage',
       'getErrorCode',

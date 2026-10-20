@@ -39,6 +39,24 @@ getErrorCode(error); // 'USER_NOT_FOUND', or null when the error has no code
 isException(error); // true, even for an Exception from another installed copy of the package
 ```
 
+Define a module's errors once, by kind, so every throw site uses the same code, message, and severity, and handlers check the kind instead of repeating codes:
+
+```ts
+import { defineErrorCatalog } from 'jg-exception';
+
+const githubErrors = defineErrorCatalog({
+  unavailable: { code: 'GITHUB_UNAVAILABLE', message: 'GitHub is temporarily unavailable.' },
+  accessDenied: {
+    code: 'GITHUB_ACCESS_DENIED',
+    message: 'GitHub access was denied.',
+    severity: 'expected',
+  },
+});
+
+throw githubErrors.create('unavailable', { cause: error, data: { status: 503 } });
+githubErrors.is(error, 'accessDenied'); // true for that kind; without a kind, for any of the catalog's
+```
+
 An Exception turns into JSON with its name, code, message, and data, so it can be logged or sent as is:
 
 ```ts

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0
+
+### Changed
+
+- The Vite plugin supports Vite 7 as well as 8: the optional `vite` peer range is `^7.0.0 || ^8.0.0`.
+- A worker generated with `caching: false`, as the plugin's dev server and `--no-caching` generate it, names its cache `<cacheNamePrefix>--development` instead of a random name, so the development worker is the same on every request and the browser doesn't install it again on each reload.
+
 ## 1.5.0
 
 ### Changed

@@ -1,6 +1,3 @@
-// every theme preference a user can pick
-export const THEME_PREFERENCES = ['light', 'dark', 'system'] as const;
-
 // the media query that matches when the system uses a dark color scheme
 export const DARK_COLOR_SCHEME_QUERY = '(prefers-color-scheme: dark)';
 

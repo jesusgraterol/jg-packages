@@ -14,3 +14,8 @@ export type IColumnFilter = {
   // the value it must equal, sent as a query parameter
   value: unknown;
 };
+
+// validates data and returns it typed, which a Zod schema does
+export type ISchema<T> = {
+  parse(value: unknown): T;
+};

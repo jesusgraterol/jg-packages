@@ -146,7 +146,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
   'jg-crypto': {
     title: 'Crypto',
     description:
-      'Hashing, random bytes and digits, and HMAC signatures with constant-time verification, for Node.js.',
+      'Hashing, random bytes and digits, HMAC signatures with constant-time verification, and authenticator app codes, for Node.js.',
     icon: 'lock-keyhole',
     runtimes: ['node'],
     order: 18,

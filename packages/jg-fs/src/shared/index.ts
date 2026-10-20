@@ -3,6 +3,7 @@ export { ERRORS } from './errors.js';
 
 // types
 export type {
+  IAcquireLockOptions,
   IDirectoryElementsKeySort,
   IDirectoryElementsOptions,
   IDirectoryPathElements,
@@ -29,7 +30,7 @@ export {
 } from './constants.js';
 
 // paths
-export { isPathWithin, listPathAncestry, toPathElement } from './paths.js';
+export { isPathWithin, listDirectoriesBelow, listPathAncestry, toPathElement } from './paths.js';
 
 // directory elements
 export { buildDirectoryElementsOptions, groupDirectoryElements } from './directory-elements.js';
@@ -38,6 +39,7 @@ export { buildDirectoryElementsOptions, groupDirectoryElements } from './directo
 export {
   assertBufferData,
   assertTextData,
+  fileChanged,
   fileTooLarge,
   isBusyRenameError,
   isMissingPathError,
@@ -67,6 +69,7 @@ export {
 
 // locks
 export {
+  assertLockOwnerFits,
   createLockOwner,
   judgeExistingLock,
   lockAcquisitionFailed,

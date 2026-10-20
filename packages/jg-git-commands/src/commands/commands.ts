@@ -1,4 +1,4 @@
-import { DEFAULT_GIT_MAX_OUTPUT_BYTES, runGit } from '../run-git/index.js';
+import { assertGitSucceeded, DEFAULT_GIT_MAX_OUTPUT_BYTES, runGit } from '../run-git/index.js';
 import {
   GIT_NULL_DEVICE,
   invalidArgument,
@@ -9,17 +9,44 @@ import {
 import type {
   IFetchCommitOptions,
   IGitCommandOptions,
+  IGitStatus,
+  IGitVersion,
+  IIndexEntry,
+  IListPathsOptions,
+  IReadChangedPathsOptions,
   IReadFileAtRevisionOptions,
-  IStatusEntry,
 } from './types.js';
 import {
+  decodeRecords,
+  decodeText,
   isRefName,
   isRepositoryPathValid,
   isRevisionValid,
+  parseIndexEntries,
   parseRemoteRefs,
   parseStatus,
   readSuccessfulOutput,
 } from './utilities.js';
+
+// the transports a command that reaches a remote allows unless the caller's env says otherwise
+const REMOTE_PROTOCOLS = 'https:ssh';
+
+/**
+ * Checks that every path a caller passes can be a literal pathspec.
+ * @param paths The paths, or undefined for all.
+ * @returns The arguments that limit a command to them: `--` and the paths.
+ * @throws
+ * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ */
+const toPathspecArgs = (paths: readonly string[] | undefined): string[] => {
+  if (paths === undefined) {
+    return ['--'];
+  }
+  if (!Array.isArray(paths) || !paths.every(isArgumentValid)) {
+    throw invalidArgument('paths');
+  }
+  return ['--', ...paths];
+};
 
 /**
  * Resolves a revision, such as a branch, a tag, or an abbreviated object ID, to the full object ID
@@ -27,13 +54,16 @@ import {
  * @param cwd The repository's directory.
  * @param rev The revision.
  * @param options runGit's options, such as the timeout.
- * @returns A promise that resolves to the commit's object ID.
+ * @returns A promise that resolves to the commit's object ID, or null when the revision doesn't
+ * name a commit, such as a branch that doesn't exist.
  * @example
  * import { resolveCommit } from 'jg-git-commands';
  *
- * const commit = await resolveCommit('/srv/app', 'HEAD');
+ * const commit = await resolveCommit('/srv/app', 'HEAD'); // null before the first commit
  * @throws
  * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
  * - GIT_COMMAND_FAILED: The git command failed.
  * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
  * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
@@ -47,18 +77,19 @@ export const resolveCommit = async (
   cwd: string,
   rev: string,
   options: IGitCommandOptions = {},
-): Promise<string> => {
+): Promise<string | null> => {
   if (!isArgumentValid(rev)) {
     throw invalidArgument('rev');
   }
-  const output = readSuccessfulOutput(
-    await runGit(['rev-parse', '--verify', '--quiet', '--end-of-options', `${rev}^{commit}`], {
-      ...options,
-      cwd,
-    }),
-    'rev-parse',
+  const result = await runGit(
+    ['rev-parse', '--verify', '--quiet', '--end-of-options', `${rev}^{commit}`],
+    { ...options, cwd },
   );
-  const objectId = output.trim();
+  // --verify --quiet exits with 1, and writes nothing, for a revision that doesn't resolve
+  if (result.exitCode === 1 && result.stdout === '') {
+    return null;
+  }
+  const objectId = readSuccessfulOutput(result, 'rev-parse').trim();
   if (!isObjectId(objectId)) {
     throw invalidOutput('rev-parse');
   }
@@ -67,9 +98,9 @@ export const resolveCommit = async (
 
 /**
  * Reads the object ID of each ref asked for from a remote, a configured remote's name or a URL,
- * with `git ls-remote --refs`. A ref the remote doesn't have is missing from the map. With a
- * remote's name, Git runs the `remote.<name>.uploadpack` command its config names over the file
- * transport.
+ * with `git ls-remote --refs`. A ref the remote doesn't have is missing from the map. It allows the
+ * HTTPS and SSH transports; set `GIT_ALLOW_PROTOCOL` in `env` for another, such as `file`, over
+ * which Git runs the `remote.<name>.uploadpack` command a remote's config names.
  * @param cwd The repository's directory.
  * @param remote The remote's name, such as `origin`, or its URL.
  * @param refs The full ref names, such as `refs/heads/main`.
@@ -82,6 +113,8 @@ export const resolveCommit = async (
  * const main = refs.get('refs/heads/main'); // the commit's object ID, or undefined
  * @throws
  * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
  * - GIT_COMMAND_FAILED: The git command failed.
  * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
  * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
@@ -107,6 +140,7 @@ export const readRemoteRefs = async (
     await runGit(['ls-remote', '--refs', '--end-of-options', remote, ...refs], {
       ...options,
       cwd,
+      env: { GIT_ALLOW_PROTOCOL: REMOTE_PROTOCOLS, ...options.env },
     }),
     'ls-remote',
   );
@@ -125,6 +159,8 @@ export const readRemoteRefs = async (
  * const url = await getRemoteUrl('/srv/app');
  * @throws
  * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
  * - GIT_COMMAND_FAILED: The git command failed.
  * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
  * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
@@ -154,19 +190,23 @@ export const getRemoteUrl = async (
 };
 
 /**
- * Reads the working tree's status with `git status --porcelain=v1 -z`: the changed paths, staged
- * or not, renames with their original paths, and untracked files, an untracked directory as one
- * entry. Git runs the clean filters that `.gitattributes` and the config name while it compares
- * files.
+ * Reads the working tree's status with `git status --porcelain=v2 -z --branch`: the commit HEAD
+ * points at, null before the first commit, and the changed paths, staged or not, renames and
+ * copies with their original paths, conflicts with their status letters, and every untracked file
+ * that isn't ignored. Submodules are left out. Git runs the clean filters that `.gitattributes`
+ * and the config name while it compares files. A path that isn't valid UTF-8 fails the read.
  * @param cwd The repository's directory.
  * @param options runGit's options, such as the output limit.
- * @returns A promise that resolves to the entries, empty for a clean working tree.
+ * @returns A promise that resolves to the commit and the entries, none for a clean working tree.
  * @example
  * import { readStatus } from 'jg-git-commands';
  *
- * const renamed = (await readStatus('/srv/app')).filter(({ index }) => index === 'R');
+ * const { commit, entries } = await readStatus('/srv/app');
+ * const renamed = entries.filter(({ index }) => index === 'R');
  * @throws
  * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
  * - GIT_COMMAND_FAILED: The git command failed.
  * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
  * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
@@ -179,13 +219,23 @@ export const getRemoteUrl = async (
 export const readStatus = async (
   cwd: string,
   options: IGitCommandOptions = {},
-): Promise<IStatusEntry[]> =>
+): Promise<IGitStatus> =>
   parseStatus(
-    readSuccessfulOutput(
-      await runGit(['status', '--porcelain=v1', '-z', '--untracked-files=normal'], {
-        ...options,
-        cwd,
-      }),
+    decodeRecords(
+      readSuccessfulOutput(
+        await runGit(
+          [
+            'status',
+            '--porcelain=v2',
+            '-z',
+            '--branch',
+            '--untracked-files=all',
+            '--ignore-submodules=all',
+          ],
+          { ...options, cwd, encoding: 'buffer' },
+        ),
+        'status',
+      ),
       'status',
     ),
   );
@@ -204,6 +254,8 @@ export const readStatus = async (
  * }
  * @throws
  * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
  * - GIT_COMMAND_FAILED: The git command failed.
  * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
  * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
@@ -216,7 +268,7 @@ export const readStatus = async (
 export const isWorkingTreeClean = async (
   cwd: string,
   options: IGitCommandOptions = {},
-): Promise<boolean> => (await readStatus(cwd, options)).length === 0;
+): Promise<boolean> => (await readStatus(cwd, options)).entries.length === 0;
 
 /**
  * Reads a file as UTF-8 text at a revision, with `git cat-file blob <rev>:<path>`, without
@@ -225,14 +277,18 @@ export const isWorkingTreeClean = async (
  * @param rev The revision, such as a commit's object ID.
  * @param path The file's path from the repository's root, such as `package.json`.
  * @param options The file's size limit, and runGit's options.
- * @returns A promise that resolves to the file's text.
+ * @returns A promise that resolves to the file's text, or null when the revision has no file at
+ * the path.
  * @example
  * import { readFileAtRevision } from 'jg-git-commands';
  *
  * const manifest = await readFileAtRevision('/srv/app', 'HEAD', 'package.json', { maxBytes: 65_536 });
  * @throws
  * - GIT_INVALID_ARGUMENT: An argument isn't valid.
- * - GIT_COMMAND_FAILED: The git command failed.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
+ * - GIT_COMMAND_FAILED: The git command failed, such as for a revision that doesn't exist, or a path
+ * that names a directory.
  * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
  * - PROCESS_START_FAILED: Unable to start the command
  * - PROCESS_TIMED_OUT: The process didn't finish within the timeout
@@ -245,28 +301,43 @@ export const readFileAtRevision = async (
   rev: string,
   path: string,
   { maxBytes = DEFAULT_GIT_MAX_OUTPUT_BYTES, ...options }: IReadFileAtRevisionOptions = {},
-): Promise<string> => {
+): Promise<string | null> => {
   if (!isRevisionValid(rev)) {
     throw invalidArgument('rev');
   }
   if (!isRepositoryPathValid(path)) {
     throw invalidArgument('path');
   }
-  return readSuccessfulOutput(
-    await runGit(['cat-file', 'blob', '--end-of-options', `${rev}:${path}`], {
+  const result = await runGit(['cat-file', 'blob', '--end-of-options', `${rev}:${path}`], {
+    ...options,
+    cwd,
+    maxOutputBytes: maxBytes,
+  });
+  if (result.exitCode === 0) {
+    return result.stdout;
+  }
+  // cat-file fails the same way for a missing path and a missing revision, so ls-tree tells them
+  // apart: it fails for the revision, and lists nothing for a path the revision doesn't have
+  const listing = readSuccessfulOutput(
+    await runGit(['ls-tree', '-z', '--full-tree', '--end-of-options', rev, '--', path], {
       ...options,
       cwd,
-      maxOutputBytes: maxBytes,
     }),
-    'cat-file',
+    'ls-tree',
   );
+  if (listing === '') {
+    return null;
+  }
+  assertGitSucceeded(result, 'cat-file');
+  return result.stdout;
 };
 
 /**
  * Fetches a commit by its object ID from a URL into a repository, with only the history `depth`
  * asks for, and without tags, submodules, hooks, automatic maintenance, or writing `FETCH_HEAD`.
  * Read it afterwards by its object ID, such as with readFileAtRevision. The remote must allow
- * fetching a commit by its object ID, as GitHub does.
+ * fetching a commit by its object ID, as GitHub does. It allows the HTTPS and SSH transports; set
+ * `GIT_ALLOW_PROTOCOL` in `env` for another.
  * @param cwd The repository's directory, such as a bare one made for the fetch.
  * @param url The remote's URL.
  * @param objectId The commit's full object ID.
@@ -278,6 +349,8 @@ export const readFileAtRevision = async (
  * await fetchCommit('/srv/cache/app.git', 'https://github.com/jesusgraterol/jg-packages.git', 'a'.repeat(40));
  * @throws
  * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
  * - GIT_COMMAND_FAILED: The git command failed.
  * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
  * - PROCESS_START_FAILED: Unable to start the command
@@ -319,8 +392,288 @@ export const fetchCommit = async (
         url,
         objectId,
       ],
-      { ...options, cwd },
+      { ...options, cwd, env: { GIT_ALLOW_PROTOCOL: REMOTE_PROTOCOLS, ...options.env } },
     ),
     'fetch',
   );
+};
+
+/**
+ * Lists the paths that changed between a revision and another, or the working tree, with `git diff
+ * --name-only -z`, without external diff programs, text conversion, rename detection, or
+ * submodules, so a rename lists both its paths. A path that isn't valid UTF-8 fails the read.
+ * @param cwd The repository's directory.
+ * @param from The revision the changes start at, such as a base commit.
+ * @param options The revision the changes end at, the working tree by default, and runGit's
+ * options.
+ * @returns A promise that resolves to the paths from the repository's root, in Git's order.
+ * @example
+ * import { readChangedPaths } from 'jg-git-commands';
+ *
+ * const changed = await readChangedPaths('/srv/app', 'origin/main', { to: 'HEAD' });
+ * @throws
+ * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
+ * - GIT_COMMAND_FAILED: The git command failed.
+ * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
+ * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
+ * - PROCESS_START_FAILED: Unable to start the command
+ * - PROCESS_TIMED_OUT: The process didn't finish within the timeout
+ * - PROCESS_OUTPUT_TOO_LARGE: The process wrote more output than allowed
+ * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped
+ * - The signal's reason when the signal aborts.
+ */
+export const readChangedPaths = async (
+  cwd: string,
+  from: string,
+  { to, ...options }: IReadChangedPathsOptions = {},
+): Promise<string[]> => {
+  if (!isArgumentValid(from)) {
+    throw invalidArgument('from');
+  }
+  if (to !== undefined && !isArgumentValid(to)) {
+    throw invalidArgument('to');
+  }
+  const output = readSuccessfulOutput(
+    await runGit(
+      [
+        'diff',
+        '--no-ext-diff',
+        '--no-textconv',
+        '--no-renames',
+        '--ignore-submodules=all',
+        '--name-only',
+        '-z',
+        '--end-of-options',
+        from,
+        ...(to === undefined ? [] : [to]),
+        '--',
+      ],
+      { ...options, cwd, encoding: 'buffer' },
+    ),
+    'diff',
+  );
+  return decodeRecords(output, 'diff');
+};
+
+/**
+ * Lists the index's entries, with `git ls-files --cached --stage -z`: each tracked path's file
+ * mode and merge stage, 0 unless it's in a conflict, which lists a path once per stage. A path
+ * that isn't valid UTF-8 fails the read.
+ * @param cwd The repository's directory.
+ * @param options The paths to limit the list to, read literally, and runGit's options.
+ * @returns A promise that resolves to the entries, paths from the repository's root.
+ * @example
+ * import { readIndexEntries } from 'jg-git-commands';
+ *
+ * const links = (await readIndexEntries('/srv/app')).filter(({ mode }) => mode === '120000');
+ * @throws
+ * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
+ * - GIT_COMMAND_FAILED: The git command failed.
+ * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
+ * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
+ * - PROCESS_START_FAILED: Unable to start the command
+ * - PROCESS_TIMED_OUT: The process didn't finish within the timeout
+ * - PROCESS_OUTPUT_TOO_LARGE: The process wrote more output than allowed
+ * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped
+ * - The signal's reason when the signal aborts.
+ */
+export const readIndexEntries = async (
+  cwd: string,
+  { paths, ...options }: IListPathsOptions = {},
+): Promise<IIndexEntry[]> => {
+  const pathspec = toPathspecArgs(paths);
+  const output = readSuccessfulOutput(
+    await runGit(['ls-files', '--cached', '--stage', '--full-name', '-z', ...pathspec], {
+      ...options,
+      cwd,
+      encoding: 'buffer',
+    }),
+    'ls-files',
+  );
+  return parseIndexEntries(decodeRecords(output, 'ls-files'));
+};
+
+/**
+ * Lists the untracked files that aren't ignored, with `git ls-files --others --exclude-standard
+ * -z`, each file in an untracked directory included. A path that isn't valid UTF-8 fails the read.
+ * @param cwd The repository's directory.
+ * @param options The paths to limit the list to, read literally, and runGit's options.
+ * @returns A promise that resolves to the paths from the repository's root.
+ * @example
+ * import { listUntrackedFiles } from 'jg-git-commands';
+ *
+ * const untracked = await listUntrackedFiles('/srv/app', { paths: ['docs'] });
+ * @throws
+ * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
+ * - GIT_COMMAND_FAILED: The git command failed.
+ * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
+ * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
+ * - PROCESS_START_FAILED: Unable to start the command
+ * - PROCESS_TIMED_OUT: The process didn't finish within the timeout
+ * - PROCESS_OUTPUT_TOO_LARGE: The process wrote more output than allowed
+ * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped
+ * - The signal's reason when the signal aborts.
+ */
+export const listUntrackedFiles = async (
+  cwd: string,
+  { paths, ...options }: IListPathsOptions = {},
+): Promise<string[]> => {
+  const pathspec = toPathspecArgs(paths);
+  const output = readSuccessfulOutput(
+    await runGit(['ls-files', '--others', '--exclude-standard', '--full-name', '-z', ...pathspec], {
+      ...options,
+      cwd,
+      encoding: 'buffer',
+    }),
+    'ls-files',
+  );
+  return decodeRecords(output, 'ls-files');
+};
+
+/**
+ * Reads the root of the working tree a directory is in, with `git rev-parse --show-toplevel`.
+ * It's null inside a `.git` directory or a bare repository, which have no working tree, and fails
+ * with GIT_REPOSITORY_NOT_FOUND outside any repository.
+ * @param cwd The directory.
+ * @param options runGit's options, such as the timeout.
+ * @returns A promise that resolves to the working tree's root, or null.
+ * @example
+ * import { readTopLevel } from 'jg-git-commands';
+ *
+ * const root = await readTopLevel('/srv/app/src'); // '/srv/app'
+ * @throws
+ * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
+ * - GIT_COMMAND_FAILED: The git command failed.
+ * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
+ * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
+ * - PROCESS_START_FAILED: Unable to start the command
+ * - PROCESS_TIMED_OUT: The process didn't finish within the timeout
+ * - PROCESS_OUTPUT_TOO_LARGE: The process wrote more output than allowed
+ * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped
+ * - The signal's reason when the signal aborts.
+ */
+export const readTopLevel = async (
+  cwd: string,
+  options: IGitCommandOptions = {},
+): Promise<string | null> => {
+  const inside = readSuccessfulOutput(
+    await runGit(['rev-parse', '--is-inside-work-tree'], { ...options, cwd }),
+    'rev-parse',
+  ).trim();
+  if (inside === 'false') {
+    return null;
+  }
+  if (inside !== 'true') {
+    throw invalidOutput('rev-parse');
+  }
+  const output = decodeText(
+    readSuccessfulOutput(
+      await runGit(['rev-parse', '--show-toplevel'], { ...options, cwd, encoding: 'buffer' }),
+      'rev-parse',
+    ),
+    'rev-parse',
+  );
+  // the path, which may hold spaces, ends with one line feed
+  const root = output.endsWith('\n') ? output.slice(0, -1) : '';
+  if (root === '' || root.includes('\n')) {
+    throw invalidOutput('rev-parse');
+  }
+  return root;
+};
+
+/**
+ * Reads a boolean config value, such as `core.symlinks`, with `git config --type=bool`, so every
+ * form Git accepts, such as `yes` or `on`, reads as true. A key that isn't set reads as the default.
+ * @param cwd The repository's directory.
+ * @param key The key, such as `core.sparseCheckout`.
+ * @param defaultValue The value when the key isn't set.
+ * @param options runGit's options, such as `isolateConfig`.
+ * @returns A promise that resolves to the value.
+ * @example
+ * import { readConfigBoolean } from 'jg-git-commands';
+ *
+ * const hasSymlinks = await readConfigBoolean('/srv/app', 'core.symlinks', true);
+ * @throws
+ * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
+ * - GIT_COMMAND_FAILED: The git command failed, such as for a value that isn't a boolean.
+ * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
+ * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
+ * - PROCESS_START_FAILED: Unable to start the command
+ * - PROCESS_TIMED_OUT: The process didn't finish within the timeout
+ * - PROCESS_OUTPUT_TOO_LARGE: The process wrote more output than allowed
+ * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped
+ * - The signal's reason when the signal aborts.
+ */
+export const readConfigBoolean = async (
+  cwd: string,
+  key: string,
+  defaultValue: boolean,
+  options: IGitCommandOptions = {},
+): Promise<boolean> => {
+  if (!isArgumentValid(key) || key.startsWith('-') || /\s/.test(key)) {
+    throw invalidArgument('key');
+  }
+  if (typeof defaultValue !== 'boolean') {
+    throw invalidArgument('defaultValue');
+  }
+  const value = readSuccessfulOutput(
+    await runGit(['config', '--type=bool', `--default=${String(defaultValue)}`, '--get', key], {
+      ...options,
+      cwd,
+    }),
+    'config',
+  );
+  if (value !== 'true\n' && value !== 'false\n') {
+    throw invalidOutput('config');
+  }
+  return value === 'true\n';
+};
+
+/**
+ * Reads the installed Git's version, with `git version`, including the forms Git for Windows,
+ * such as `2.45.1.windows.1`, and Apple's, such as `2.39.5 (Apple Git-154)`, write.
+ * @param cwd The directory git runs in.
+ * @param options runGit's options, such as the timeout.
+ * @returns A promise that resolves to the version.
+ * @example
+ * import { readGitVersion } from 'jg-git-commands';
+ *
+ * const { major, minor } = await readGitVersion('/srv/app');
+ * if (major < 2 || (major === 2 && minor < 32)) {
+ *   // ask for Git 2.32 or later
+ * }
+ * @throws
+ * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
+ * - GIT_COMMAND_FAILED: The git command failed.
+ * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
+ * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
+ * - PROCESS_START_FAILED: Unable to start the command
+ * - PROCESS_TIMED_OUT: The process didn't finish within the timeout
+ * - PROCESS_OUTPUT_TOO_LARGE: The process wrote more output than allowed
+ * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped
+ * - The signal's reason when the signal aborts.
+ */
+export const readGitVersion = async (
+  cwd: string,
+  options: IGitCommandOptions = {},
+): Promise<IGitVersion> => {
+  const output = readSuccessfulOutput(await runGit(['version'], { ...options, cwd }), 'version');
+  const match =
+    /^git version (\d+)\.(\d+)\.(\d+)(?:\.windows\.\d+)?(?: \(Apple Git-\d+\))?\n$/.exec(output);
+  if (match === null) {
+    throw invalidOutput('version');
+  }
+  return { major: Number(match[1]), minor: Number(match[2]), patch: Number(match[3]) };
 };

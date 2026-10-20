@@ -6,6 +6,7 @@ import { PassThrough } from 'node:stream';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { Exception } from 'jg-exception';
+import { expectToRejectCode } from 'jg-exception/testing';
 
 import { stopProcessTree } from '../process-tree/index.js';
 import { ERRORS } from '../shared/index.js';
@@ -95,6 +96,24 @@ describe('runProcess stdin failures', () => {
   );
 });
 
+describe('runProcess when the child cannot start', () => {
+  test("rejects with the child's start error when its pipes fail too, as on Windows", async () => {
+    const child = createFakeChild();
+    const missing = Object.assign(new Error('spawn git ENOENT'), { code: 'ENOENT' });
+
+    const running = runProcess({ command: 'git', args: ['status'] });
+    // Windows reports the pipes of a child that never started as not connected
+    child.stdout.emit('error', streamError('ENOTCONN'));
+    child.stderr.emit('error', streamError('ENOTCONN'));
+    child.emit('error', missing);
+
+    await expect(running).rejects.toMatchObject({
+      code: ERRORS.PROCESS_START_FAILED,
+      cause: missing,
+    });
+  });
+});
+
 describe('runProcess after the child exits', () => {
   test('waits for the output streams to close after the exit', async () => {
     const child = createFakeChild();
@@ -133,5 +152,25 @@ describe('runProcess after the child exits', () => {
 
     await expect(running).rejects.toBe(survived);
     expect(child.stdout.destroyed).toBe(true);
+  });
+});
+
+describe('runProcess limits', () => {
+  test.each([
+    [{ timeoutSeconds: 0 }],
+    [{ timeoutSeconds: -1 }],
+    [{ timeoutSeconds: Number.NaN }],
+    [{ timeoutSeconds: Number.POSITIVE_INFINITY }],
+    [{ timeoutSeconds: 2_147_484 }],
+    [{ maxOutputBytes: 0 }],
+    [{ maxOutputBytes: -1 }],
+    [{ maxOutputBytes: 1.5 }],
+    [{ maxOutputBytes: Number.NaN }],
+  ])('runProcess(%o) -> rejects with INVALID_PROCESS_OPTIONS before starting', async (limits) => {
+    await expectToRejectCode(
+      runProcess({ command: 'node', args: ['--version'], ...limits }),
+      ERRORS.INVALID_PROCESS_OPTIONS,
+    );
+    expect(spawn).not.toHaveBeenCalled();
   });
 });

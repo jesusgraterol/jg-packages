@@ -7,6 +7,7 @@ import Button from 'jg-personal-astro-ui/button';
 import CopyButton from 'jg-personal-astro-ui/copy-button';
 import HeroBackdrop from 'jg-personal-astro-ui/hero-backdrop';
 import Prose from 'jg-personal-astro-ui/prose';
+import { buildStructuredData, SEARCH_TEXT_LIMITS } from 'jg-site';
 
 import OnThisPage from '../../../../components/on-this-page/on-this-page.astro';
 import PackageIcon from '../../../../components/package-icon/package-icon.astro';
@@ -17,7 +18,6 @@ import {
   loadListedPackages,
   type IListedPackage,
 } from '../../../../utilities/package-catalog/index.ts';
-import { buildStructuredData, SEARCH_TEXT_LIMITS } from 'jg-personal-astro-ui/seo';
 
 interface Props {
   package: IListedPackage;

@@ -35,7 +35,7 @@ export type IApiExceptionFilterOptions = {
   ignoredStatuses?: readonly number[] | undefined;
 
   // the error codes that are never reported. Defaults to CORS_ORIGIN_NOT_ALLOWED, MAINTENANCE_MODE,
-  // and IP_BLOCKED
+  // IP_BLOCKED, UPLOAD_REJECTED, and TURNSTILE_FAILED
   ignoredCodes?: readonly string[] | undefined;
 
   // removes secrets from a URL before it's logged or reported, such as a token in the query.

@@ -1,6 +1,6 @@
 {
   "name": "jg-github",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "GitHub App authentication for Node.js: app tokens, scoped installation tokens, webhook signatures, and rate-limit retry times.",
   "author": "Jesus Graterol",
   "license": "MIT",

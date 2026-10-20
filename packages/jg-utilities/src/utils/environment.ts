@@ -1,4 +1,5 @@
 import { REDUCED_MOTION_QUERY } from './constants.js';
+import type { IClickEvent } from './types.js';
 
 // a view whose reduced-motion preference can be read, such as a window
 type IMediaQueryView = { matchMedia?: (query: string) => { matches: boolean } };
@@ -60,3 +61,19 @@ export const prefersReducedMotion = (
   view: IMediaQueryView | null = environmentGlobals.window ?? null,
 ): boolean =>
   typeof view?.matchMedia === 'function' && view.matchMedia(REDUCED_MOTION_QUERY).matches;
+
+/**
+ * Tells whether a click is a plain primary click, the main button without Alt, Ctrl, Meta, or
+ * Shift, such as before a link handler takes over navigation, so a click that opens a new tab or
+ * window stays the browser's. It reads only the event's fields, so it takes DOM and React events.
+ * @param event The click event.
+ * @returns Whether it's a plain primary click.
+ * @example
+ * import { isPrimaryClick } from 'jg-utilities';
+ *
+ * isPrimaryClick({ button: 0, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false }); // => true
+ * isPrimaryClick({ button: 0, altKey: false, ctrlKey: false, metaKey: true, shiftKey: false }); // => false
+ * isPrimaryClick({ button: 1, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false }); // => false
+ */
+export const isPrimaryClick = (event: IClickEvent): boolean =>
+  event.button === 0 && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;

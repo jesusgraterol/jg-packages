@@ -10,6 +10,7 @@ import {
   type PlatformPath,
 } from 'node:path';
 
+import { pathOutsideRoot } from './private-files.js';
 import type { IPathElement } from './types.js';
 
 /**
@@ -69,3 +70,24 @@ export const toPathElement = (path: string, stats: Stats): IPathElement => ({
   size: stats.size,
   creation: Math.round(stats.birthtimeMs),
 });
+
+/**
+ * Lists the directories strictly below a root on the way to a path, down to the path's parent,
+ * such as `/repo/docs` and `/repo/docs/guides` for `/repo/docs/guides/install.md` under `/repo`.
+ * @param rootPath The root.
+ * @param path The path, which must be strictly inside the root.
+ * @returns The directories, from the one right below the root.
+ * @throws
+ * - PATH_OUTSIDE_ROOT: if the path isn't strictly inside the root
+ */
+export const listDirectoriesBelow = (rootPath: string, path: string): string[] => {
+  const root = resolve(rootPath);
+  const target = resolve(path);
+  if (target === root || !isPathWithin(root, target)) {
+    throw pathOutsideRoot(path, rootPath);
+  }
+  const parts = relative(root, target).split(sep);
+  return parts
+    .slice(0, -1)
+    .map((_, index) => platformPath.join(root, ...parts.slice(0, index + 1)));
+};

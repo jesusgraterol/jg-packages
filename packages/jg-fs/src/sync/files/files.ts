@@ -16,10 +16,13 @@ import {
   type WriteFileOptions,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { getErrorCode } from 'jg-exception';
 
 import {
   assertBufferData,
   assertTextData,
+  ERRORS,
+  fileChanged,
   fileTooLarge,
   nonExistentFile,
   notAFile,
@@ -267,6 +270,50 @@ export const createFileSymLink = (target: string, path: string): void => {
 };
 
 /**
+ * Writes a file through a temporary file renamed over it, as writeFileAtomic describes, running a
+ * check right before the rename.
+ * @param path The file's path.
+ * @param data The content.
+ * @param mode The permission bits, or undefined to keep the file's own.
+ * @param beforeRename A check that throws to leave the file as it is.
+ */
+const writeAtomically = (
+  path: string,
+  data: string | NodeJS.ArrayBufferView,
+  mode: number | undefined,
+  beforeRename?: () => void,
+): void => {
+  const directory = dirname(path);
+  mkdirSync(directory, { recursive: true });
+  const finalMode = mode ?? readPermissionBits(path);
+  const tempPath = join(directory, `.${randomUUID()}.tmp`);
+  let isRenamed = false;
+  try {
+    // a known final mode is applied with chmod, so the umask can't change it
+    const descriptor = openSync(tempPath, 'wx', finalMode === undefined ? 0o666 : 0o600);
+    try {
+      if (finalMode !== undefined) {
+        fchmodSync(descriptor, finalMode);
+      }
+      writeFileSync(descriptor, data);
+      fsyncSync(descriptor);
+    } finally {
+      closeSync(descriptor);
+    }
+    beforeRename?.();
+    renameReplacing(tempPath, path);
+    isRenamed = true;
+  } finally {
+    if (!isRenamed) {
+      rmSync(tempPath, { force: true });
+    }
+  }
+  if (process.platform !== 'win32') {
+    syncDirectory(directory);
+  }
+};
+
+/**
  * Writes a file atomically: readers see either the previous content or the complete new content,
  * never a partial write. The data goes to a temporary file in the same directory, which is flushed
  * to disk and renamed over the path; on POSIX, the directory is flushed too. An explicit mode wins;
@@ -290,33 +337,56 @@ export const writeFileAtomic = (
   data: string | NodeJS.ArrayBufferView,
   mode?: number,
 ): void => {
-  const directory = dirname(path);
-  mkdirSync(directory, { recursive: true });
-  const finalMode = mode ?? readPermissionBits(path);
-  const tempPath = join(directory, `.${randomUUID()}.tmp`);
-  let isRenamed = false;
-  try {
-    // a known final mode is applied with chmod, so the umask can't change it
-    const descriptor = openSync(tempPath, 'wx', finalMode === undefined ? 0o666 : 0o600);
+  writeAtomically(path, data, mode);
+};
+
+/**
+ * Writes a file atomically, as writeFileAtomic does, only when it still holds what the caller read,
+ * such as a config file another program may have edited since: just before the rename, it reads
+ * the file again, without following a link, and compares its bytes with `expected`. It throws
+ * `FILE_CHANGED`, leaving the file as it is, when they differ, when the path is now a symbolic link
+ * or not a regular file, or when `expected` is null, for a file that didn't exist, and something now
+ * exists at the path. A change made between that read and the rename itself, a short window, isn't
+ * detected. A replaced file keeps its permission bits.
+ * @param path The file's path.
+ * @param data The new content.
+ * @param expected The bytes the file held when the caller read it, or null when it didn't exist.
+ * @example
+ * import { readBoundedFile, writeFileAtomicIfUnchanged } from 'jg-fs/sync';
+ *
+ * const before = readBoundedFile('.npmrc', 65_536);
+ * writeFileAtomicIfUnchanged('.npmrc', `${before.toString('utf8')}save-exact=true\n`, before);
+ * @throws
+ * - FILE_CHANGED: The file '<path>' changed since it was read.
+ */
+export const writeFileAtomicIfUnchanged = (
+  path: string,
+  data: string | NodeJS.ArrayBufferView,
+  expected: Uint8Array | null,
+): void => {
+  writeAtomically(path, data, undefined, () => {
+    let current: Buffer | null;
     try {
-      if (finalMode !== undefined) {
-        fchmodSync(descriptor, finalMode);
+      // one byte past what's expected is enough to tell the file grew
+      current = readBoundedFile(path, expected === null ? 0 : expected.byteLength);
+    } catch (error) {
+      if (getErrorCode(error) === ERRORS.NON_EXISTENT_FILE) {
+        current = null;
+      } else if (
+        getErrorCode(error) === ERRORS.NOT_A_FILE ||
+        getErrorCode(error) === ERRORS.FILE_TOO_LARGE
+      ) {
+        throw fileChanged(path);
+      } else {
+        throw error;
       }
-      writeFileSync(descriptor, data);
-      fsyncSync(descriptor);
-    } finally {
-      closeSync(descriptor);
     }
-    renameReplacing(tempPath, path);
-    isRenamed = true;
-  } finally {
-    if (!isRenamed) {
-      rmSync(tempPath, { force: true });
+    const isUnchanged =
+      expected === null ? current === null : current !== null && current.equals(expected);
+    if (!isUnchanged) {
+      throw fileChanged(path);
     }
-  }
-  if (process.platform !== 'win32') {
-    syncDirectory(directory);
-  }
+  });
 };
 
 /**

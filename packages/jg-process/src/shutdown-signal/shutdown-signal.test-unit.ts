@@ -163,3 +163,70 @@ describe('createShutdownSignal', () => {
     expect(countListeners()).toStrictEqual(baseline);
   });
 });
+
+describe('createShutdownSignal with disconnect, in-process', () => {
+  /*
+   * Emitting 'disconnect' would reach the test runner's own worker, so the tests stand in for the
+   * IPC channel: process.send and process.connected say whether there's one, and the listener the
+   * shutdown adds is called directly.
+   */
+  const restorers: (() => void)[] = [];
+
+  // replaces one of the process's IPC properties until the test ends
+  const stubProcessProperty = (key: 'send' | 'connected', value: unknown): void => {
+    const original = Object.getOwnPropertyDescriptor(process, key);
+    Object.defineProperty(process, key, { configurable: true, writable: true, value });
+    restorers.push(() => {
+      if (original === undefined) {
+        Reflect.deleteProperty(process, key);
+      } else {
+        Object.defineProperty(process, key, original);
+      }
+    });
+  };
+
+  afterEach(() => {
+    for (const restore of restorers.splice(0).reverse()) {
+      restore();
+    }
+    vi.restoreAllMocks();
+  });
+
+  test('shuts down as with SIGTERM when the channel closes, and stops listening at dispose', () => {
+    stubProcessProperty('send', () => true);
+    stubProcessProperty('connected', true);
+    const on = vi.spyOn(process, 'on');
+    const off = vi.spyOn(process, 'off');
+    shutdown = createShutdownSignal({ signals: SIGNALS, disconnect: true, setExitCode: false });
+    const call = on.mock.calls.find(([event]) => event === 'disconnect');
+    const listener = call?.[1] as () => void;
+
+    listener();
+
+    expect(shutdown.signal.aborted).toBe(true);
+    expect(shutdown.receivedSignal()).toBe('SIGTERM');
+    expect(shutdown.exitCode()).toBe(128 + constants.signals.SIGTERM);
+    shutdown.dispose();
+    expect(off).toHaveBeenCalledWith('disconnect', listener);
+  });
+
+  test('shuts down at once when the channel already closed', () => {
+    stubProcessProperty('send', () => true);
+    stubProcessProperty('connected', false);
+
+    shutdown = createShutdownSignal({ signals: SIGNALS, disconnect: true, setExitCode: false });
+
+    expect(shutdown.signal.aborted).toBe(true);
+    expect(shutdown.receivedSignal()).toBe('SIGTERM');
+  });
+
+  test('watches nothing without an IPC channel', () => {
+    stubProcessProperty('send', undefined);
+    const on = vi.spyOn(process, 'on');
+
+    shutdown = createShutdownSignal({ signals: SIGNALS, disconnect: true });
+
+    expect(shutdown.signal.aborted).toBe(false);
+    expect(on.mock.calls.some(([event]) => event === 'disconnect')).toBe(false);
+  });
+});

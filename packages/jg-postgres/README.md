@@ -34,6 +34,51 @@ await postgres.close();
 
 The pool reads `NUMERIC` as a number and `TIMESTAMPTZ` as an ISO 8601 UTC string, such as `'2026-10-17T08:30:00.000Z'`, and keeps `BIGINT` as a string, so no digit of a large amount is lost. The parsers are set on the pool, not node-postgres's global registry, so other pools in the program keep theirs. Errors no caller awaits, such as an idle connection the server closed, go to `onError`, `console.error` by default, instead of crashing the process.
 
+### Creating the database and its schema
+
+At startup, `ensureDatabase` creates the database when the server doesn't have it yet, connecting to the maintenance database, `postgres`, with the same configuration, and `initializeSchemaOnce` creates its schema the first time:
+
+```ts
+import {
+  createPostgres,
+  ensureDatabase,
+  initializeSchemaOnce,
+  type IPostgresConfig,
+} from 'jg-postgres';
+
+const config: IPostgresConfig = {
+  host: 'db.internal',
+  database: 'app',
+  user: 'app',
+  password: 'secret',
+};
+
+await ensureDatabase(config);
+const postgres = createPostgres(config);
+await initializeSchemaOnce(postgres, {
+  statements: schemaStatements, // such as each table's DDL, in order
+  markerTable: 'schema_migration', // a table the statements create last
+});
+```
+
+Every replica can run both at once. Another process creating the database first counts as success. `initializeSchemaOnce` runs in one transaction under an advisory lock: it skips when the public schema has the marker table, refuses with `SCHEMA_NOT_EMPTY` a public schema that holds anything else, such as a half-applied schema from before, and otherwise runs the statements and checks they created the marker table, rolling everything back with `SCHEMA_MARKER_MISSING` when they didn't. It resolves to true when it created the schema. The statements run in a transaction, so none may be one that can't, such as `CREATE INDEX CONCURRENTLY`.
+
+### Test databases
+
+`jg-postgres/testing` names a database for one test process, `test_<pid>_<name>`, and drops it afterwards, ending its connections first. The drop refuses any name without this process's prefix, with `INVALID_TEST_DATABASE_NAME`, so a configuration that points at a real database can't lose it:
+
+```ts
+import { ensureDatabase, type IPostgresConfig } from 'jg-postgres';
+import { createTestDatabaseName, dropTestDatabase } from 'jg-postgres/testing';
+
+const config: IPostgresConfig = { ...connection, database: createTestDatabaseName('primary') };
+await ensureDatabase(config);
+// ... the tests
+await dropTestDatabase(config);
+```
+
+A name holds lowercase letters, digits, and underscores, and the whole name at most 63 bytes. The helpers aren't exported from the root entry.
+
 ### Transactions
 
 ```ts
@@ -143,6 +188,8 @@ const { deletedCount, cutoff } = await deleteExpiredInBatches(postgres, {
 ```
 
 `olderThan` takes months and days, subtracted on the UTC calendar, so six months before August 31 is the last day of February, and then seconds. It's counted once from the database's clock, and a row exactly at the cutoff is kept. Each batch is one statement that locks the oldest expired rows, skipping rows another transaction holds, which the next run deletes, and deletes them by `keyColumn`; batches repeat until one deletes nothing, so concurrent runs share the work without deleting a row twice. With `timeouts`, a profile from `defineTimeoutProfile`, each batch runs as a transaction of its own with them. Every name is quoted.
+
+A `signal` stops the deletion between batches, such as when the app shuts down: once it aborts, no further statement starts, and the call rejects with its reason after the batch in flight settles. The rows it didn't reach stay for a later call, so a drain of a large backlog can run in small batches without delaying shutdown.
 
 `keyColumn` must be unique and not null, such as the primary key: a key shared by an expired and an unexpired row would delete both. Index the timestamp and the key together, such as `CREATE INDEX idx_ae__created_at_id ON audit_event (created_at, id);`, so each batch reads only the rows it deletes.
 
@@ -511,30 +558,115 @@ await counters.get(); // { notifications: 1, reports: 0 }, checked with the sche
 
 The defaults fill every missing or null field when the record is read, and are the only keys a write keeps. Every method takes an optional transaction's client, to run in that transaction without committing it.
 
+### A delivery inbox
+
+`jg-postgres/delivery-inbox` stores deliveries an app must process exactly once, such as webhook events, before acknowledging them, recognizes replays, and hands each due delivery to one worker at a time under a lease. The app creates the table, under any name:
+
+```sql
+CREATE TABLE IF NOT EXISTS webhook_delivery (
+  delivery_key     varchar(512) NOT NULL,
+  digest           char(64)     NOT NULL,
+  payload          jsonb        NOT NULL,
+  created_at       timestamptz  NOT NULL DEFAULT statement_timestamp(),
+  due_at           timestamptz  NOT NULL,
+  expires_at       timestamptz  NOT NULL,
+  lease_id         uuid         NULL,
+  lease_expires_at timestamptz  NULL,
+  processed_at     timestamptz  NULL,
+
+  CONSTRAINT pk_wd__delivery_key PRIMARY KEY (delivery_key),
+  CONSTRAINT chk_wd__delivery_key_non_empty CHECK (delivery_key <> ''),
+  CONSTRAINT chk_wd__digest_sha256 CHECK (digest ~ '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_wd__expires_at_chronological CHECK (expires_at > created_at),
+  CONSTRAINT chk_wd__processed_at_chronological
+    CHECK (processed_at IS NULL OR processed_at >= created_at),
+  CONSTRAINT chk_wd__lease_complete CHECK ((lease_id IS NULL) = (lease_expires_at IS NULL)),
+  CONSTRAINT chk_wd__processed_without_lease CHECK (processed_at IS NULL OR lease_id IS NULL)
+);
+CREATE INDEX IF NOT EXISTS idx_wd__due_at_delivery_key_pending
+  ON webhook_delivery (due_at, delivery_key)
+  WHERE processed_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_wd__processed_at_delivery_key_processed
+  ON webhook_delivery (processed_at, delivery_key)
+  WHERE processed_at IS NOT NULL;
+```
+
+```ts
+import { createPostgres } from 'jg-postgres';
+import { createDeliveryInbox } from 'jg-postgres/delivery-inbox';
+import { z } from 'zod';
+
+declare const postgres: ReturnType<typeof createPostgres>;
+
+const inbox = createDeliveryInbox(postgres, {
+  table: 'webhook_delivery',
+  schema: z.object({ eventId: z.string() }), // checks the payload on receive and on claim
+  leaseSeconds: 600, // how long a claim holds a delivery
+  retrySeconds: 60, // how long a deferred delivery waits
+  expirySeconds: 86_400, // how long after receipt it may still be claimed
+});
+
+// in the webhook route, before answering 2xx
+await inbox.receive({ key: webhookId, digest: bodySha256, payload: { eventId } });
+
+// in a worker
+for (const key of await inbox.listDue(32)) {
+  const claim = await inbox.claim(key);
+  // null when another worker has it, or it's done or expired
+  if (claim === null) {
+    continue;
+  }
+  try {
+    await handleEvent(claim.payload);
+    await inbox.finish(claim.key, claim.leaseId);
+  } catch {
+    await inbox.defer(claim.key, claim.leaseId);
+  }
+}
+```
+
+`receive` resolves to true for a new delivery and false for a replay with the same digest and payload, and throws `DELIVERY_REPLAY_MISMATCH` for a key received before with another. `listDue` returns the due keys, oldest first. `claim` takes a lease, pushing the delivery's due time to the lease's end, so a worker that dies without finishing leaves it due again then; it resolves to null when the delivery isn't due, is leased, was processed, or is past its expiry, which closes it. `finish` marks it processed and `defer` makes it due after `retrySeconds`, never later than its expiry; both resolve to false when the lease ended, so a worker whose lease ran out can't touch a delivery another worker claimed. Delete processed deliveries with `deleteExpiredInBatches`, on `processed_at`, which never matches a pending delivery:
+
+```ts
+await deleteExpiredInBatches(postgres, {
+  table: 'webhook_delivery',
+  timestampColumn: 'processed_at',
+  keyColumn: 'delivery_key',
+  olderThan: { days: 7 },
+  signal, // the maintenance task's, so shutdown stops it between batches
+});
+```
+
 ### Errors
 
-| Code                            | When                                                                                                                                                                          |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TRANSACTION_OUTCOME_UNKNOWN`   | The connection was lost during `COMMIT`                                                                                                                                       |
-| `TRANSACTION_ALREADY_ACTIVE`    | `runTransaction` or a lock's `transaction` was given a client that's already in a transaction                                                                                 |
-| `SESSION_LOCK_LOST`             | The connection that held a session lock was lost                                                                                                                              |
-| `INVALID_IDENTIFIER`            | A name is empty, holds a null character, or is longer than 63 bytes                                                                                                           |
-| `ROW_NOT_FOUND`                 | The row to move doesn't exist in the ordered list                                                                                                                             |
-| `ROW_ALREADY_FIRST`             | The row to move up is already first                                                                                                                                           |
-| `ROW_ALREADY_LAST`              | The row to move down is already last                                                                                                                                          |
-| `MOVE_FAILED`                   | The move didn't update exactly two rows                                                                                                                                       |
-| `INVALID_EXPIRED_DELETION`      | `deleteExpiredInBatches` was given both `olderThan` and `cutoff` or neither, an age or a date that isn't valid, a batch size outside 1 to 8,192, or a filter without a column |
-| `INVALID_TIMEOUT_PROFILE`       | A timeout profile's seconds aren't positive and finite, or its lock timeout is longer than its statement timeout                                                              |
-| `INVALID_OPTIONAL_READ_OPTIONS` | An optional reader's database, limits, or timeouts aren't valid                                                                                                               |
-| `INVALID_USAGE_ADMISSION`       | A usage admission's ids, limit, or seconds aren't valid, or it has a cooldown without a scope                                                                                 |
-| `INVALID_VERIFICATION_POLICY`   | The verification policies or the code length aren't valid                                                                                                                     |
-| `INVALID_VERIFICATION_INPUT`    | A verification binding's ids aren't valid, its action has no policy, issue or resend has no delivery function, or resend's policy has no resend limit                         |
-| `VERIFICATION_DELIVERY_FAILED`  | The delivery function threw, after the challenge or its resend was committed                                                                                                  |
-| `INVALID_COUNTER_TABLE`         | A counter table has no key column or no counter, or repeats a name                                                                                                            |
-| `INVALID_COUNTER_CHANGE`        | A counter row's key doesn't have exactly the key columns, or an amount isn't a whole, non-zero amount within `BIGINT`                                                         |
-| `COUNTER_ROW_NOT_FOUND`         | A counter query changed no row, because the row to adjust doesn't exist                                                                                                       |
-| `INVALID_ERROR_LOG_OPTIONS`     | An error log's origin, redact keys, limits, or onRecorded aren't valid                                                                                                        |
-| `ERROR_LOG_WRITE_FAILED`        | An error log's write failed, so nothing was inserted; it's reported to `onError`, never thrown                                                                                |
+| Code                             | When                                                                                                                                                                          |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TRANSACTION_OUTCOME_UNKNOWN`    | The connection was lost during `COMMIT`                                                                                                                                       |
+| `TRANSACTION_ALREADY_ACTIVE`     | `runTransaction` or a lock's `transaction` was given a client that's already in a transaction                                                                                 |
+| `SESSION_LOCK_LOST`              | The connection that held a session lock was lost                                                                                                                              |
+| `INVALID_IDENTIFIER`             | A name is empty, holds a null character, or is longer than 63 bytes                                                                                                           |
+| `ROW_NOT_FOUND`                  | The row to move doesn't exist in the ordered list                                                                                                                             |
+| `ROW_ALREADY_FIRST`              | The row to move up is already first                                                                                                                                           |
+| `ROW_ALREADY_LAST`               | The row to move down is already last                                                                                                                                          |
+| `MOVE_FAILED`                    | The move didn't update exactly two rows                                                                                                                                       |
+| `INVALID_EXPIRED_DELETION`       | `deleteExpiredInBatches` was given both `olderThan` and `cutoff` or neither, an age or a date that isn't valid, a batch size outside 1 to 8,192, or a filter without a column |
+| `INVALID_TIMEOUT_PROFILE`        | A timeout profile's seconds aren't positive and finite, or its lock timeout is longer than its statement timeout                                                              |
+| `INVALID_OPTIONAL_READ_OPTIONS`  | An optional reader's database, limits, or timeouts aren't valid                                                                                                               |
+| `INVALID_USAGE_ADMISSION`        | A usage admission's ids, limit, or seconds aren't valid, or it has a cooldown without a scope                                                                                 |
+| `INVALID_VERIFICATION_POLICY`    | The verification policies or the code length aren't valid                                                                                                                     |
+| `INVALID_VERIFICATION_INPUT`     | A verification binding's ids aren't valid, its action has no policy, issue or resend has no delivery function, or resend's policy has no resend limit                         |
+| `VERIFICATION_DELIVERY_FAILED`   | The delivery function threw, after the challenge or its resend was committed                                                                                                  |
+| `INVALID_COUNTER_TABLE`          | A counter table has no key column or no counter, or repeats a name                                                                                                            |
+| `INVALID_COUNTER_CHANGE`         | A counter row's key doesn't have exactly the key columns, or an amount isn't a whole, non-zero amount within `BIGINT`                                                         |
+| `COUNTER_ROW_NOT_FOUND`          | A counter query changed no row, because the row to adjust doesn't exist                                                                                                       |
+| `INVALID_ERROR_LOG_OPTIONS`      | An error log's origin, redact keys, limits, or onRecorded aren't valid                                                                                                        |
+| `ERROR_LOG_WRITE_FAILED`         | An error log's write failed, so nothing was inserted; it's reported to `onError`, never thrown                                                                                |
+| `SCHEMA_NOT_EMPTY`               | `initializeSchemaOnce` found objects in the public schema but not the marker table                                                                                            |
+| `SCHEMA_MARKER_MISSING`          | `initializeSchemaOnce`'s statements didn't create the marker table, so they were rolled back                                                                                  |
+| `INVALID_TEST_DATABASE_NAME`     | A test database's name isn't lowercase letters, digits, and underscores within 63 bytes, or, to drop, doesn't start with this process's `test_<pid>_` prefix                  |
+| `INVALID_DELIVERY_INBOX_OPTIONS` | A delivery inbox's table, schema, or seconds, or a `listDue` limit, aren't valid                                                                                              |
+| `INVALID_DELIVERY`               | A delivery's key, digest, or payload, or a lease id, isn't valid                                                                                                              |
+| `DELIVERY_REPLAY_MISMATCH`       | A delivery's key was received before with another digest or payload                                                                                                           |
 
 A query's own error, such as a constraint violation, is node-postgres's `DatabaseError`, unchanged.
 

@@ -59,7 +59,13 @@ describe('resolveFilterOptions', () => {
       report: undefined,
       resolveStatus: undefined,
       ignoredStatuses: [401, 429],
-      ignoredCodes: [ERRORS.CORS_ORIGIN_NOT_ALLOWED, ERRORS.MAINTENANCE_MODE, ERRORS.IP_BLOCKED],
+      ignoredCodes: [
+        ERRORS.CORS_ORIGIN_NOT_ALLOWED,
+        ERRORS.MAINTENANCE_MODE,
+        ERRORS.IP_BLOCKED,
+        ERRORS.UPLOAD_REJECTED,
+        ERRORS.TURNSTILE_FAILED,
+      ],
     });
     expect(options.redactUrl('/a?token=1')).toBe('/a?token=1');
   });

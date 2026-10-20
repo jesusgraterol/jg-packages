@@ -1,9 +1,10 @@
 import { Exception } from 'jg-exception';
+import { type IThemePreference, THEME_PREFERENCES } from 'jg-site';
 
 import { ERRORS } from '../shared/index.js';
 
-import { DARK_COLOR_SCHEME_QUERY, THEME_PREFERENCES } from './constants.js';
-import type { IThemeInitScriptOptions, IThemePreference } from './types.js';
+import { DARK_COLOR_SCHEME_QUERY } from './constants.js';
+import type { IThemeInitScriptOptions } from './types.js';
 
 /**
  * Writes a string as a JavaScript string literal that's safe inside a `<script>` element: `<`,

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+### Changed
+
+- Depends on `jg-crypto` 0.3.0 and `jg-fetch` 0.5.0. The code is the same.
+
 ## 0.2.0
 
 ### Changed

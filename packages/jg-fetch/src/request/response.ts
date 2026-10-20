@@ -1,8 +1,8 @@
 import { isResponse } from 'jg-api-response';
-import type { IJsonValue } from 'jg-exception';
+import { Exception, type IJsonValue } from 'jg-exception';
 
 import { parseRetryAfterMs } from '../retry-after/index.js';
-import { ERROR_MESSAGES, type IHttpMethod } from '../shared/index.js';
+import { ERROR_MESSAGES, ERRORS, type IHttpMethod } from '../shared/index.js';
 import { RequestFailure, type IFailureDetails } from './failure.js';
 import type { IResolvedOptions } from './options.js';
 
@@ -10,18 +10,18 @@ import type { IResolvedOptions } from './options.js';
 const NO_BODY_STATUSES = new Set([204, 205, 304]);
 
 /**
- * Reads a body as bytes, counting them as they stream, and stops once there are too many.
+ * Reads a body as bytes, counting them as they stream, and stops once there are too many: at
+ * once when content-length declares too many, otherwise as soon as the count passes the limit,
+ * cancelling the rest of the body.
  * @param response The response.
  * @param maxBytes The most bytes to read.
- * @param details What the failure carries.
+ * @param tooLarge Builds the error thrown when there are too many.
  * @returns A promise that resolves to the bytes.
- * @throws
- * - RESPONSE_TOO_LARGE: The response exceeded maxResponseBytes.
  */
 const readBytes = async (
   response: Response,
   maxBytes: number,
-  details: IFailureDetails,
+  tooLarge: () => Error,
 ): Promise<Uint8Array<ArrayBuffer>> => {
   if (response.body === null) {
     return new Uint8Array(0);
@@ -29,7 +29,7 @@ const readBytes = async (
   const declaredBytes = Number(response.headers.get('content-length'));
   if (Number.isFinite(declaredBytes) && declaredBytes > maxBytes) {
     await response.body.cancel();
-    throw new RequestFailure('RESPONSE_TOO_LARGE', details);
+    throw tooLarge();
   }
   // Node.js types the body's chunks as any; they're bytes in every runtime
   const reader: ReadableStreamDefaultReader<Uint8Array> = response.body.getReader();
@@ -43,7 +43,7 @@ const readBytes = async (
     totalBytes += value.byteLength;
     if (totalBytes > maxBytes) {
       await reader.cancel();
-      throw new RequestFailure('RESPONSE_TOO_LARGE', details);
+      throw tooLarge();
     }
     chunks.push(value);
   }
@@ -54,6 +54,44 @@ const readBytes = async (
     offset += chunk.byteLength;
   }
   return bytes;
+};
+
+/**
+ * Reads a response's body as bytes, refusing more than `maxBytes`, such as a download from a
+ * fetch you make yourself: it fails at once when content-length declares too many, and otherwise
+ * stops reading, and cancels the rest of the body, as soon as the count passes the limit. Decode the
+ * bytes yourself, such as with `TextDecoder`. A response without a body reads as no bytes.
+ * @param response The response, whose body nothing has read yet.
+ * @param maxBytes The most bytes to read, a positive safe integer.
+ * @returns A promise that resolves to the body's bytes.
+ * @example
+ * import { readResponseBytes } from 'jg-fetch';
+ *
+ * const response = await fetch('https://example.com/report.json', { redirect: 'error' });
+ * const report = JSON.parse(new TextDecoder().decode(await readResponseBytes(response, 1_048_576)));
+ * @throws
+ * - INVALID_OPTIONS: The byte limit must be a positive safe integer.
+ * - RESPONSE_TOO_LARGE: The response exceeded maxBytes.
+ */
+export const readResponseBytes = async (
+  response: Response,
+  maxBytes: number,
+): Promise<Uint8Array> => {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) {
+    throw new Exception('The byte limit must be a positive safe integer.', {
+      code: ERRORS.INVALID_OPTIONS,
+      data: { maxBytes: String(maxBytes) },
+    });
+  }
+  return readBytes(
+    response,
+    maxBytes,
+    () =>
+      new Exception('The response exceeded maxBytes.', {
+        code: ERRORS.RESPONSE_TOO_LARGE,
+        data: { maxBytes, status: response.status },
+      }),
+  );
 };
 
 /**
@@ -186,10 +224,13 @@ export const readResponse = async <T>(
     headers: response.headers,
     retryAfterMs: parseRetryAfterMs(response.headers.get('retry-after')),
   };
+  const tooLargeFailure = (): RequestFailure => new RequestFailure('RESPONSE_TOO_LARGE', details);
   const hasBody = method !== 'HEAD' && !NO_BODY_STATUSES.has(response.status);
   const readText = async (): Promise<string> =>
     hasBody
-      ? new TextDecoder().decode(await readBytes(response, options.maxResponseBytes, details))
+      ? new TextDecoder().decode(
+          await readBytes(response, options.maxResponseBytes, tooLargeFailure),
+        )
       : '';
 
   if (options.parseAs === 'response' || options.parseAs === 'none') {
@@ -214,7 +255,7 @@ export const readResponse = async <T>(
 
   if (options.parseAs === 'bytes' || options.parseAs === 'blob') {
     const bytes = hasBody
-      ? await readBytes(response, options.maxResponseBytes, details)
+      ? await readBytes(response, options.maxResponseBytes, tooLargeFailure)
       : new Uint8Array(0);
     if (!response.ok) {
       throw httpError(response.status, details, toErrorBody(new TextDecoder().decode(bytes)));

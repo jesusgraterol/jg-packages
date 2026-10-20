@@ -2,4 +2,4 @@
 export type { IFileLock } from './types.js';
 
 // functions
-export { acquireLock } from './locks.js';
+export { acquireLock, readLockOwner } from './locks.js';

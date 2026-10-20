@@ -25,7 +25,9 @@ const loadConfig = (
  * Creates a Vite plugin that generates the service worker. After a production build, it writes
  * `sw.js` into the config's outDir, once the client bundle is written. During development, the
  * dev server answers `/sw.js` with a worker generated with `caching: false`, so every request
- * reaches the dev server and updates show up without stale caches. Paths are resolved from Vite's
+ * reaches the dev server and updates show up without stale caches; that worker is the same on
+ * every request until the config changes, so the browser doesn't install it again on each reload.
+ * It works with Vite 7 and 8. Paths are resolved from Vite's
  * root unless `cwd` is set. When generating fails, the build fails with writeServiceWorker's
  * error, and the dev server answers the worker's request with it.
  * @param options The config, as a file path or an object, plus the build options. The dev server

@@ -1,6 +1,6 @@
 {
   "name": "jg-local-docker",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Checks for Node.js scripts that Docker is local before using it, plus Compose service and container reads with loopback-only ports.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -45,7 +45,7 @@
     "loopback"
   ],
   "scripts": {
-    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/api-reference/src/write-api-markdown.ts",
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/build-tools/src/copy-assets.ts 'container/owner.js' && node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
     "test": "pnpm test:unit && pnpm test:integration",
     "test:coverage": "vitest run --coverage --project unit --project integration",

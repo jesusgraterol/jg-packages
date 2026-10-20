@@ -3,6 +3,7 @@ import { groupSymbols } from '@jg-packages/api-reference';
 import type { GetStaticPaths } from 'astro';
 import { getEntry, render } from 'astro:content';
 import Prose from 'jg-personal-astro-ui/prose';
+import { buildStructuredData } from 'jg-site';
 
 import ApiReference from '../../components/api-reference/api-reference.astro';
 import OnThisPage from '../../components/on-this-page/on-this-page.astro';
@@ -11,7 +12,6 @@ import BaseLayout from '../../layouts/base-layout.astro';
 import { PACKAGE_CATALOG, PACKAGES_DIRECTORY, SITE_CONFIG } from '../../site.config.ts';
 import { toMarkdownPath } from '../../utilities/markdown-pages/index.ts';
 import { loadListedPackages, type IListedPackage } from '../../utilities/package-catalog/index.ts';
-import { buildStructuredData } from 'jg-personal-astro-ui/seo';
 import { loadApiReference } from '../../utilities/site-markdown/index.ts';
 
 interface Props {

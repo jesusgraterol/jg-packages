@@ -71,3 +71,19 @@ export const extractSubstitutionPlaceholderNames = (text: string): string[] => {
 
   return [...variables];
 };
+
+/**
+ * Escapes text for one line of Markdown, such as a heading or a table cell, so the text shows as
+ * written: it puts a backslash before each backslash, backtick, `*`, `_`, `{`, `}`, `[`, `]`, `<`,
+ * `>`, and `|`, which stops code, emphasis, links, inline HTML, and table pipes, and turns each line
+ * break and control character into a space, so the text stays on its line.
+ * @param text The text.
+ * @returns The escaped text.
+ * @example
+ * import { escapeMarkdownInline } from 'jg-utilities';
+ *
+ * escapeMarkdownInline('*bold* <b>x</b> | [link](u)'); // => '\\*bold\\* \\<b\\>x\\</b\\> \\| \\[link\\](u)'
+ * escapeMarkdownInline('two\r\nlines'); // => 'two lines'
+ */
+export const escapeMarkdownInline = (text: string): string =>
+  text.replace(/[\\`*_{}[\]<>|]/gu, '\\$&').replace(/\r\n|\p{Cc}/gu, ' ');

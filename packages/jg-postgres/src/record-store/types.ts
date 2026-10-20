@@ -1,11 +1,7 @@
 import type { PoolClient } from 'pg';
 
 import type { IPostgres } from '../postgres/index.js';
-
-// validates data and returns it typed, which a Zod schema does
-export type ISchema<T> = {
-  parse(value: unknown): T;
-};
+import type { ISchema } from '../shared/index.js';
 
 // the keys of a record whose values are numbers
 export type IRecordNumberKey<T extends Record<string, unknown>> = {

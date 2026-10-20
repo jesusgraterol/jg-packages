@@ -7,6 +7,8 @@ import { expectToThrowCode } from 'jg-exception/testing';
 import {
   applySubstitutions,
   capitalizeFirst,
+  compareCodePoints,
+  countUtf8Bytes,
   escapeHtml,
   maskMiddle,
   normalizeQuery,
@@ -370,4 +372,66 @@ describe('truncateToUtf8Bytes', () => {
       expectToThrowCode(() => truncateToUtf8Bytes('text', maxBytes), ERRORS.INVALID_BYTE_LIMIT);
     },
   );
+});
+
+describe('countUtf8Bytes', () => {
+  test.each([
+    ['', 0],
+    ['a', 1],
+    ['é', 2],
+    ['€', 3],
+    ['😀', 4],
+    ['a😀é', 7],
+    ['\ud800', 3],
+    ['\udc00', 3],
+    ['a\ud800b', 5],
+    ['\udc00\ud800', 6],
+  ])('countUtf8Bytes(%j) -> %d', (text, bytes) => {
+    expect(countUtf8Bytes(text)).toBe(bytes);
+    expect(countUtf8Bytes(text)).toBe(new TextEncoder().encode(text).length);
+  });
+
+  test('counts exactly up to the limit, and stops with a number above it', () => {
+    expect(countUtf8Bytes('abcd', 4)).toBe(4);
+    expect(countUtf8Bytes('😀😀', 4)).toBe(8);
+    expect(countUtf8Bytes('😀😀', 3)).toBe(4);
+
+    const stopped = countUtf8Bytes('x'.repeat(1_000_000), 10);
+    expect(stopped).toBeGreaterThan(10);
+    expect(stopped).toBeLessThan(16);
+  });
+
+  test.each([[-1], [0.5], [NaN], [Infinity]])(
+    'countUtf8Bytes(text, %d) -> throws INVALID_BYTE_LIMIT',
+    (maxBytes) => {
+      expectToThrowCode(() => countUtf8Bytes('text', maxBytes), ERRORS.INVALID_BYTE_LIMIT);
+    },
+  );
+});
+
+describe('compareCodePoints', () => {
+  test.each([
+    ['', '', 0],
+    ['a', 'a', 0],
+    ['a', 'b', -1],
+    ['b', 'a', 1],
+    ['ab', 'a', 1],
+    ['a', 'ab', -1],
+    ['😀', '\uff5e', 1],
+    ['\uff5e', '😀', -1],
+    ['😀', '😁', -1],
+    ['x😀', 'x😀', 0],
+    ['\ud800', '\ud7ff', 1],
+    ['\ud800', '\ue000', -1],
+    ['\ud83d', '😀', -1],
+  ])('compareCodePoints(%j, %j) -> %d', (left, right, expected) => {
+    expect(compareCodePoints(left, right)).toBe(expected);
+  });
+
+  test('sorts characters above U+FFFF after U+E000 to U+FFFF, unlike the default sort', () => {
+    const words = ['😀', '\uff5e', 'z', '\ue000'];
+
+    expect([...words].sort(compareCodePoints)).toStrictEqual(['z', '\ue000', '\uff5e', '😀']);
+    expect([...words].sort()).toStrictEqual(['z', '😀', '\ue000', '\uff5e']);
+  });
 });

@@ -111,3 +111,106 @@ describe.skipIf(process.platform === 'win32')('createShutdownSignal in a process
     await expect(waitForExit(child)).resolves.toStrictEqual({ code: null, signal: 'SIGINT' });
   });
 });
+
+/**
+ * Starts a Node.js child with an IPC channel, as `fork` does, that runs the source and then says
+ * it's ready over the channel.
+ * @param source The child's code, which runs with createShutdownSignal imported.
+ * @returns A promise that resolves to the child.
+ */
+const startIpcChild = async (source: string): Promise<ChildProcess> => {
+  const child = spawn(
+    process.execPath,
+    [
+      '--input-type=module',
+      '--eval',
+      `import { createShutdownSignal } from ${JSON.stringify(DIST_URL)};\n${source}`,
+    ],
+    { stdio: ['ignore', 'pipe', 'inherit', 'ipc'] },
+  );
+  children.push(child);
+  await new Promise<void>((resolve, reject) => {
+    child.once('message', () => {
+      resolve();
+    });
+    child.once('exit', () => {
+      reject(new Error('The child exited before it was ready.'));
+    });
+  });
+  return child;
+};
+
+/**
+ * Reads everything a child writes to stdout until it exits.
+ * @param child The child.
+ * @returns A promise that resolves to the output.
+ */
+const readStdout = async (child: ChildProcess): Promise<string> => {
+  let output = '';
+  child.stdout?.on('data', (chunk: Buffer) => {
+    output += chunk.toString('utf8');
+  });
+  await waitForExit(child);
+  return output;
+};
+
+describe('createShutdownSignal with disconnect', () => {
+  test('shuts down as with SIGTERM when the parent closes the IPC channel', async () => {
+    const child = await startIpcChild(`
+      const shutdown = createShutdownSignal({ disconnect: true });
+      const keepAlive = setInterval(() => undefined, 1_000);
+      shutdown.signal.addEventListener('abort', () => {
+        clearInterval(keepAlive);
+        process.stdout.write(shutdown.receivedSignal() + ' ' + shutdown.signal.reason.code);
+      });
+      process.send('ready');
+    `);
+    const output = readStdout(child);
+
+    child.disconnect();
+
+    await expect(output).resolves.toBe('SIGTERM PROCESS_INTERRUPTED');
+    expect(child.exitCode).toBe(143);
+  });
+
+  test('shuts down at once when the channel is already closed', async () => {
+    const child = await startIpcChild(`
+      process.send('ready', () => {
+        process.disconnect();
+        const shutdown = createShutdownSignal({ disconnect: true });
+        process.stdout.write(String(shutdown.signal.aborted) + ' ' + shutdown.exitCode());
+      });
+    `);
+
+    await expect(readStdout(child)).resolves.toBe('true 143');
+  });
+
+  test('lets the process exit after dispose while the parent keeps the channel open', async () => {
+    const child = await startIpcChild(`
+      const shutdown = createShutdownSignal({ disconnect: true });
+      process.send('ready', () => {
+        shutdown.dispose();
+      });
+    `);
+
+    await expect(waitForExit(child)).resolves.toStrictEqual({ code: 0, signal: null });
+  });
+
+  test('ignores the option in a process without an IPC channel', async () => {
+    const child = spawn(
+      process.execPath,
+      [
+        '--input-type=module',
+        '--eval',
+        `import { createShutdownSignal } from ${JSON.stringify(DIST_URL)};
+        const shutdown = createShutdownSignal({ disconnect: true });
+        process.stdout.write(String(shutdown.signal.aborted));
+        shutdown.dispose();`,
+      ],
+      { stdio: ['ignore', 'pipe', 'inherit'] },
+    );
+    children.push(child);
+
+    await expect(readStdout(child)).resolves.toBe('false');
+  });
+});

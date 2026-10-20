@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+
+- `readResponseBytes(response, maxBytes)`, which reads a response's body as bytes with the bounded reader `request` uses: it refuses a body whose content-length is over the limit at once, and otherwise cancels the rest as soon as the count passes it, throwing an `Exception` with `RESPONSE_TOO_LARGE`, or `INVALID_OPTIONS` for a limit that isn't a positive safe integer.
+
 ## 0.4.0
 
 ### Changed

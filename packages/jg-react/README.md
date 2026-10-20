@@ -156,6 +156,8 @@ export const ThemeRoot = ({ preference }: { preference: 'light' | 'dark' | 'syst
 
 Set `color-scheme` per class in your stylesheet, such as `:root.dark { color-scheme: dark; }`, so form controls and scrollbars follow the theme.
 
+The preference and theme types, `IThemePreference` and `IResolvedTheme`, with `THEME_PREFERENCES`, in the order `['system', 'light', 'dark']`, and `resolveThemePreference`, come from [jg-site](https://jg-packages.jesusgraterol.dev/packages/jg-site/), which jg-react depends on, so a site and an app share one definition.
+
 A component far from the one applying the theme, such as a chart that picks its colors in script, reads the theme the page shows with `useDocumentTheme`, without the user's preference: `<html>`'s `dark` class, then `light`, then the system's color scheme. It re-renders only when that theme changes, not for another class, and reads `light` on a server and while hydrating, as the init script's fallback does:
 
 ```ts
@@ -163,6 +165,39 @@ import { useDocumentTheme } from 'jg-react';
 
 const lineColor = useDocumentTheme() === 'dark' ? '#93c5fd' : '#1d4ed8';
 ```
+
+### Searching as the user types
+
+`useDebouncedSearch` searches once the trimmed query has stayed the same for 0.3 seconds, aborting the previous search when the query changes, the search is disabled, or the component unmounts:
+
+```ts
+import { useDebouncedSearch } from 'jg-react';
+
+const { results, isSearching, error, retry } = useDebouncedSearch({
+  query,
+  enabled: isSearchOpen, // optional
+  search: async (text, signal) => {
+    const response = await fetch(`/api/articles?q=${encodeURIComponent(text)}`, { signal });
+    return (await response.json()) as IArticle[];
+  },
+});
+```
+
+A search that settles after its query changed is ignored, even when `search` doesn't stop on the signal. The previous results stay while the next search runs, and an empty query or a disabled search clears everything. `retry`, such as for a Retry button after `error`, searches the current query again. A new `search` function on each render doesn't restart the wait.
+
+### Table of contents
+
+`useActiveHeading` follows which heading the reader is at: the one the URL's hash names, on mount and on every `hashchange`, then, as the page scrolls, the last heading whose top passed `topOffsetPx`, the height of a sticky header, or the first one before any has:
+
+```tsx
+import { useActiveHeading } from 'jg-react';
+
+const { activeHeadingId, setActiveHeadingId } = useActiveHeading({ headingIds, topOffsetPx: 80 });
+// <a href={`#${id}`} aria-current={activeHeadingId === id ? 'location' : undefined}
+//    onClick={() => setActiveHeadingId(id)}>
+```
+
+Scrolling is followed with an `IntersectionObserver`, and only the hash where there's none. A new array with the same ids keeps the observer. A top offset that isn't a finite number of pixels of at least 0 throws `INVALID_ACTIVE_HEADING_OFFSET`.
 
 ### Element width
 

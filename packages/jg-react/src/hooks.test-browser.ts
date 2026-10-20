@@ -3,6 +3,7 @@ import { createElement } from 'react';
 import { hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { afterEach, describe, expect, test, vi } from 'vitest';
+import type { IThemePreference } from 'jg-site';
 import { page } from 'vitest/browser';
 
 import { useBreakpoint } from './breakpoint/index.js';
@@ -10,7 +11,7 @@ import { useDocumentVisibility } from './document-visibility/index.js';
 import { useFormChanges } from './form-changes/index.js';
 import { useOnlineStatus } from './online-status/index.js';
 import { type IUseResendCooldownOptions, useResendCooldown } from './resend-cooldown/index.js';
-import { type IThemePreference, useAppliedTheme } from './theme/index.js';
+import { useAppliedTheme } from './theme/index.js';
 import { useIsWindowScrolledPast } from './window-scroll/index.js';
 
 afterEach(() => {

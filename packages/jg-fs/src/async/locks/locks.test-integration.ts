@@ -17,7 +17,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import { ERRORS } from '../../shared/index.js';
 
-import { acquireLock } from './locks.js';
+import { acquireLock, readLockOwner } from './locks.js';
 
 const IS_POSIX = process.platform !== 'win32';
 
@@ -138,16 +138,56 @@ describe('acquireLock', () => {
     ).value.release();
   });
 
-  test('takes a lock over from an owner on this host whose process is gone', async () => {
-    await createStaleLock(ownerRecord(getDeadPid()));
+  test('stays busy, naming the owner, when its process is gone and recoverFrom is missing', async () => {
+    const pid = getDeadPid();
+    await createStaleLock(ownerRecord(pid));
 
-    const lock = await acquireLock(lockPath);
+    await expect(acquireLock(lockPath)).rejects.toMatchObject({
+      code: ERRORS.LOCK_BUSY,
+      data: { reason: 'owner-gone', pid, hostname: hostname() },
+    });
+    expect(await readFile(join(lockPath, 'owner.json'), 'utf8')).toBe(ownerRecord(pid));
+  });
+
+  test('takes a lock over from the owner recoverFrom names, once its process is gone', async () => {
+    await createStaleLock(ownerRecord(getDeadPid()));
+    const deadOwner = await readLockOwner(lockPath);
+
+    const lock = await acquireLock(lockPath, { recoverFrom: deadOwner ?? undefined });
     const record: unknown = JSON.parse(await readFile(join(lockPath, 'owner.json'), 'utf8'));
 
+    expect(deadOwner).toMatchObject({ nonce: 'earlier-nonce', hostname: hostname() });
     expect(record).toStrictEqual({ version: 1, ...lock.owner });
     expect(await readdir(lockPath)).toStrictEqual(['owner.json']);
     await lock.release();
     expect(await readdir(directory)).toStrictEqual([]);
+  });
+
+  test('writes the metadata it is given, which readLockOwner returns', async () => {
+    const lock = await acquireLock(lockPath, { metadata: { command: 'report', runId: '42' } });
+
+    expect(await readLockOwner(lockPath)).toStrictEqual(lock.owner);
+    expect(lock.owner.metadata).toStrictEqual({ command: 'report', runId: '42' });
+    await lock.release();
+    expect(await readLockOwner(lockPath)).toBeNull();
+  });
+
+  test('refuses metadata that is not all strings, or does not fit owner.json', async () => {
+    for (const metadata of [
+      { count: 1 } as unknown as Record<string, string>,
+      { note: 'x'.repeat(5_000) },
+    ]) {
+      await expect(acquireLock(lockPath, { metadata })).rejects.toMatchObject({
+        code: ERRORS.LOCK_ACQUISITION_FAILED,
+      });
+    }
+    expect(await readdir(directory)).toStrictEqual([]);
+  });
+
+  test('reads no owner for a lock without a valid owner.json', async () => {
+    await mkdir(lockPath);
+
+    expect(await readLockOwner(lockPath)).toBeNull();
   });
 
   test('stays busy for an owner on another host, even when that pid is gone here', async () => {

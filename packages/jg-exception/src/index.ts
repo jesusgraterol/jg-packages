@@ -32,3 +32,11 @@ export {
   type IErrorFeedbackOverrides,
   createErrorFeedback,
 } from './error-feedback/index.js';
+
+// error catalogs
+export {
+  type IErrorCatalog,
+  type IErrorCatalogEntry,
+  type IErrorCatalogOptions,
+  defineErrorCatalog,
+} from './error-catalog/index.js';

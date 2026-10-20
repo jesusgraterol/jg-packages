@@ -1,6 +1,6 @@
 {
   "name": "jg-git-commands",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Git commands for Node.js that never prompt or inherit Git environment variables, with time and output limits and typed reads.",
   "author": "Jesus Graterol",
   "license": "MIT",

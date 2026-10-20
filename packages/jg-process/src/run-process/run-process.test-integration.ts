@@ -299,3 +299,33 @@ describe.skipIf(IS_WINDOWS)('runProcess', () => {
     expect(isGone(pids.grandchild)).toBe(false);
   });
 });
+
+describe('runProcess output encoding', () => {
+  // writes bytes that aren't valid UTF-8 to stdout, and a string to stderr
+  const script =
+    "process.stdout.write(Buffer.from([0xff, 0xfe, 0x41])); process.stderr.write('é');";
+
+  test("returns the bytes the process wrote with encoding 'buffer'", async () => {
+    const result = await runProcess({
+      command: process.execPath,
+      args: ['--eval', script],
+      encoding: 'buffer',
+      timeoutSeconds: 30,
+    });
+
+    expect(Buffer.isBuffer(result.stdout)).toBe(true);
+    expect([...result.stdout]).toStrictEqual([0xff, 0xfe, 0x41]);
+    expect(result.stderr.toString('utf8')).toBe('é');
+  });
+
+  test('decodes the output as UTF-8 by default, replacing invalid bytes', async () => {
+    const result = await runProcess({
+      command: process.execPath,
+      args: ['--eval', script],
+      timeoutSeconds: 30,
+    });
+
+    expect(result.stdout).toBe('��A');
+    expect(result.stderr).toBe('é');
+  });
+});

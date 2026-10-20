@@ -3,12 +3,20 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createContext, runInContext } from 'node:vm';
-import { build, createServer, type ViteDevServer } from 'vite';
+import * as vite8 from 'vite';
+import * as vite7 from 'vite7';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { pathExists } from 'jg-fs';
 import type { IServiceWorkerConfig } from '../config/index.js';
 import { serviceWorkerPlugin } from './plugin.js';
+
+// the two Vite versions the plugin supports; the plugin's types come from Vite 8
+type IVite = Pick<typeof vite8, 'build' | 'createServer'>;
+const VITE_VERSIONS = [
+  ['Vite 8', vite8],
+  ['Vite 7', vite7 as unknown as IVite],
+] as const;
 
 // the config the fixture app generates its worker from
 const CONFIG: IServiceWorkerConfig = {
@@ -21,7 +29,7 @@ const CONFIG: IServiceWorkerConfig = {
 };
 
 let root: string;
-let server: ViteDevServer | undefined;
+let server: { close: () => Promise<void> } | undefined;
 
 /**
  * Reads a generated worker's constant by running the worker in a fresh context.
@@ -40,19 +48,21 @@ const readConstant = (source: string, name: string): unknown => {
 
 /**
  * Starts a dev server for the fixture app with the plugin.
+ * @param vite The Vite version's module.
  * @param config The plugin's config.
  * @returns A promise that resolves to the server's origin.
  */
-const startServer = async (config: string | IServiceWorkerConfig): Promise<string> => {
-  server = await createServer({
+const startServer = async (vite: IVite, config: string | IServiceWorkerConfig): Promise<string> => {
+  const devServer = await vite.createServer({
     root,
     configFile: false,
     logLevel: 'silent',
     server: { port: 0, host: '127.0.0.1' },
     plugins: [serviceWorkerPlugin({ config })],
   });
-  await server.listen();
-  const { port } = server.httpServer?.address() as AddressInfo;
+  server = devServer;
+  await devServer.listen();
+  const { port } = devServer.httpServer?.address() as AddressInfo;
   return `http://127.0.0.1:${port}`;
 };
 
@@ -73,9 +83,9 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true });
 });
 
-describe('serviceWorkerPlugin', () => {
+describe.each(VITE_VERSIONS)('serviceWorkerPlugin on %s', (_, vite) => {
   test('writes the worker into outDir after a build, precaching the built files', async () => {
-    await build({
+    await vite.build({
       root,
       configFile: false,
       logLevel: 'silent',
@@ -91,7 +101,7 @@ describe('serviceWorkerPlugin', () => {
   });
 
   test('takes the config as an object instead of a file', async () => {
-    await build({
+    await vite.build({
       root,
       configFile: false,
       logLevel: 'silent',
@@ -102,7 +112,7 @@ describe('serviceWorkerPlugin', () => {
   });
 
   test('writes no worker for a server-side rendering build', async () => {
-    await build({
+    await vite.build({
       root,
       configFile: false,
       logLevel: 'silent',
@@ -116,7 +126,7 @@ describe('serviceWorkerPlugin', () => {
   });
 
   test('serves a worker without caching at /sw.js in development', async () => {
-    const origin = await startServer('jg-sw.config.json');
+    const origin = await startServer(vite, 'jg-sw.config.json');
 
     for (const path of ['/sw.js', '/sw.js?v=2']) {
       const response = await fetch(`${origin}${path}`);
@@ -134,8 +144,19 @@ describe('serviceWorkerPlugin', () => {
     expect(await pathExists(join(root, 'dist', 'sw.js'))).toBe(false);
   });
 
+  test('serves the same worker on every request in development', async () => {
+    const origin = await startServer(vite, 'jg-sw.config.json');
+
+    const [first, second] = await Promise.all(
+      [1, 2].map(async () => (await fetch(`${origin}/sw.js`)).text()),
+    );
+
+    expect(second).toBe(first);
+    expect(readConstant(first as string, 'CACHE_NAME')).toBe('fixture-app--development');
+  });
+
   test('re-reads the config file on every request in development', async () => {
-    const origin = await startServer('jg-sw.config.json');
+    const origin = await startServer(vite, 'jg-sw.config.json');
     const firstSource = await (await fetch(`${origin}/sw.js`)).text();
     await writeFile(
       join(root, 'jg-sw.config.json'),
@@ -148,7 +169,7 @@ describe('serviceWorkerPlugin', () => {
   });
 
   test('answers with an error when the worker cannot be generated in development', async () => {
-    const origin = await startServer('missing.config.json');
+    const origin = await startServer(vite, 'missing.config.json');
 
     const response = await fetch(`${origin}/sw.js`);
 

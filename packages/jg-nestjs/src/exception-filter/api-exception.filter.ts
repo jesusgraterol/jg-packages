@@ -29,7 +29,8 @@ import {
  * anything else gets a 500 with INTERNAL_ERROR and a generic message, while the error itself goes
  * only to the logs and the reporter. It logs an error that its throw site marked shouldLog or
  * critical, or that is none of those anticipated kinds, and reports every error except an expected
- * one or one whose status or code is ignored. Errors outside HTTP are rethrown.
+ * one or one whose status or code is ignored. Errors outside HTTP are rethrown. Its options come
+ * from API_EXCEPTION_FILTER_OPTIONS through any provider, such as `useFactory` with injected services.
  * @example
  * import { Module } from '@nestjs/common';
  * import { APP_FILTER } from '@nestjs/core';

@@ -5,7 +5,7 @@ import { hostname, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { ERRORS } from '../../shared/index.js';
+import { ERRORS, type IFileLockOwner } from '../../shared/index.js';
 
 import { acquireLock } from './locks.js';
 
@@ -53,12 +53,14 @@ describe('acquireLock failures', () => {
    * Leaves a lock behind whose owner on this host has exited.
    * @param nonce The owner's nonce.
    */
-  const createDeadOwnersLock = async (nonce = 'dead-nonce'): Promise<void> => {
+  const createDeadOwnersLock = async (nonce = 'dead-nonce'): Promise<IFileLockOwner> => {
+    const owner = { pid: getDeadPid(), nonce, hostname: hostname() };
     await actualFs.mkdir(lockPath);
     await actualFs.writeFile(
       join(lockPath, 'owner.json'),
-      JSON.stringify({ version: 1, pid: getDeadPid(), nonce, hostname: hostname() }),
+      JSON.stringify({ version: 1, ...owner }),
     );
+    return owner;
   };
 
   beforeAll(async () => {
@@ -125,7 +127,7 @@ describe('acquireLock failures', () => {
   });
 
   test('fails when the recovery claim cannot be created', async () => {
-    await createDeadOwnersLock();
+    const deadOwner = await createDeadOwnersLock();
     vi.mocked(fs.mkdir).mockImplementation(async (path, options) => {
       if (String(path).endsWith('recovery')) {
         throw systemError('EACCES');
@@ -133,13 +135,13 @@ describe('acquireLock failures', () => {
       return actualFs.mkdir(path, options);
     });
 
-    await expect(acquireLock(lockPath)).rejects.toMatchObject({
+    await expect(acquireLock(lockPath, { recoverFrom: deadOwner })).rejects.toMatchObject({
       code: ERRORS.LOCK_ACQUISITION_FAILED,
     });
   });
 
   test('is busy when another process claims the takeover first', async () => {
-    await createDeadOwnersLock();
+    const deadOwner = await createDeadOwnersLock();
     vi.mocked(fs.mkdir).mockImplementation(async (path, options) => {
       if (String(path).endsWith('recovery')) {
         throw systemError('EEXIST');
@@ -147,14 +149,14 @@ describe('acquireLock failures', () => {
       return actualFs.mkdir(path, options);
     });
 
-    await expect(acquireLock(lockPath)).rejects.toMatchObject({
+    await expect(acquireLock(lockPath, { recoverFrom: deadOwner })).rejects.toMatchObject({
       code: ERRORS.LOCK_BUSY,
       data: { reason: 'recovery-in-progress' },
     });
   });
 
   test('is busy, and drops its claim, when another process takes the lock over first', async () => {
-    await createDeadOwnersLock();
+    const deadOwner = await createDeadOwnersLock();
     vi.mocked(fs.mkdir).mockImplementation(async (path, options) => {
       const result = await actualFs.mkdir(path, options);
       if (String(path).endsWith('recovery')) {
@@ -166,7 +168,7 @@ describe('acquireLock failures', () => {
       return result;
     });
 
-    await expect(acquireLock(lockPath)).rejects.toMatchObject({
+    await expect(acquireLock(lockPath, { recoverFrom: deadOwner })).rejects.toMatchObject({
       code: ERRORS.LOCK_BUSY,
       data: { reason: 'held', pid: process.pid },
     });
@@ -174,7 +176,7 @@ describe('acquireLock failures', () => {
   });
 
   test('is busy, and drops its claim, when owner.json disappears during the takeover', async () => {
-    await createDeadOwnersLock();
+    const deadOwner = await createDeadOwnersLock();
     vi.mocked(fs.mkdir).mockImplementation(async (path, options) => {
       const result = await actualFs.mkdir(path, options);
       if (String(path).endsWith('recovery')) {
@@ -183,7 +185,7 @@ describe('acquireLock failures', () => {
       return result;
     });
 
-    await expect(acquireLock(lockPath)).rejects.toMatchObject({
+    await expect(acquireLock(lockPath, { recoverFrom: deadOwner })).rejects.toMatchObject({
       code: ERRORS.LOCK_BUSY,
       data: { reason: 'ownerless' },
     });
@@ -191,7 +193,7 @@ describe('acquireLock failures', () => {
   });
 
   test("drops its claim, and leaves the dead owner's record, when the new one cannot be written", async () => {
-    await createDeadOwnersLock();
+    const deadOwner = await createDeadOwnersLock();
     const record = await actualFs.readFile(join(lockPath, 'owner.json'), 'utf8');
     vi.mocked(fs.open).mockImplementation(async (path, flags, mode) => {
       if (String(path).endsWith('.tmp')) {
@@ -200,7 +202,7 @@ describe('acquireLock failures', () => {
       return actualFs.open(path, flags, mode);
     });
 
-    await expect(acquireLock(lockPath)).rejects.toMatchObject({
+    await expect(acquireLock(lockPath, { recoverFrom: deadOwner })).rejects.toMatchObject({
       code: ERRORS.LOCK_ACQUISITION_FAILED,
       cause: expect.objectContaining({ code: 'ENOSPC' }) as unknown,
     });
@@ -209,10 +211,10 @@ describe('acquireLock failures', () => {
   });
 
   test('fails when its recovery claim cannot be removed after the takeover', async () => {
-    await createDeadOwnersLock();
+    const deadOwner = await createDeadOwnersLock();
     vi.mocked(fs.rmdir).mockRejectedValueOnce(systemError('EBUSY'));
 
-    await expect(acquireLock(lockPath)).rejects.toMatchObject({
+    await expect(acquireLock(lockPath, { recoverFrom: deadOwner })).rejects.toMatchObject({
       code: ERRORS.LOCK_ACQUISITION_FAILED,
       cause: expect.objectContaining({ code: 'EBUSY' }) as unknown,
     });

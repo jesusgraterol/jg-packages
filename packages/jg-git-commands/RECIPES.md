@@ -41,11 +41,12 @@ export const readPinnedManifest = async (): Promise<unknown> => {
     ...UNTRUSTED,
     maxBytes: 65_536,
   });
-  return JSON.parse(manifest);
+  // null when the commit has no package.json
+  return manifest === null ? null : JSON.parse(manifest);
 };
 ```
 
-`fetchCommit` takes only a full object ID, so a record can't pin a branch that moves, and it throws `GIT_INVALID_ARGUMENT` for anything else. The remote must allow fetching a commit by its object ID, as GitHub does. A commit or a file the remote doesn't have throws `GIT_COMMAND_FAILED`, with the subcommand and the exit code in its data, but never Git's stderr, which can show the URL. For a private repository, pass a header through `env`, as the README's credentials section shows, rather than a token in the URL.
+`fetchCommit` takes only a full object ID, so a record can't pin a branch that moves, and it throws `GIT_INVALID_ARGUMENT` for anything else. It allows only HTTPS and SSH, so even a URL that slipped past the check can't reach a local path. The remote must allow fetching a commit by its object ID, as GitHub does. A commit the remote doesn't have throws `GIT_COMMAND_FAILED`, with the subcommand and the exit code in its data, but never Git's stderr, which can show the URL, and a file the commit doesn't have reads as null. For a private repository, pass a header through `env`, as the README's credentials section shows, rather than a token in the URL.
 
 ## Checking a checkout before a release script
 
@@ -65,6 +66,7 @@ export const findReleaseBlocker = async (): Promise<IReleaseBlocker> => {
   if (!(await isWorkingTreeClean(repositoryDirectory))) {
     return 'uncommitted-changes';
   }
+  // null before the first commit, which no remote branch points at
   const head = await resolveCommit(repositoryDirectory, 'HEAD');
 
   // one round trip reads both refs; a ref the remote doesn't have is missing from the map

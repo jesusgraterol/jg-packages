@@ -55,7 +55,7 @@ Keep a job from running twice at once, across processes on one machine, with a l
 ```ts
 import { acquireLock } from 'jg-fs';
 
-const lock = await acquireLock('.locks/nightly-report'); // LOCK_BUSY while another process holds it
+const lock = await acquireLock('.locks/nightly-report', { metadata: { command: 'report' } }); // LOCK_BUSY while another process holds it
 try {
   await buildNightlyReport();
 } finally {
@@ -63,7 +63,31 @@ try {
 }
 ```
 
-The lock is a directory holding an `owner.json` that names the process. When its owner's process is gone, as after a crash, the next `acquireLock` on the same host takes it over. Use it on local filesystems only: a lock is never taken over from another host.
+The lock is a directory holding an `owner.json` that names the process, with the `metadata` it's given. A lock is never taken over by itself, even when its owner's process is gone, as after a crash, because only you know whether the owner left work half done: `acquireLock` throws `LOCK_BUSY` with `reason: 'owner-gone'`. Check what the owner left, then take the lock over from exactly that owner:
+
+```ts
+import { acquireLock, readLockOwner } from 'jg-fs';
+
+const deadOwner = await readLockOwner('.locks/nightly-report'); // its pid, hostname, nonce, and metadata
+if (deadOwner !== null) {
+  await cleanUpAfter(deadOwner);
+  const lock = await acquireLock('.locks/nightly-report', { recoverFrom: deadOwner });
+}
+```
+
+`recoverFrom` takes the lock over only from that owner, on this host, once its process is gone. Use locks on local filesystems only: a lock is never taken over from another host.
+
+Write a file only when it still holds what you read, such as a config another program may edit, and check that no directory on the way to a path inside a root is a symbolic link or a junction:
+
+```ts
+import { assertNoLinksBelow, readBoundedFile, writeFileAtomicIfUnchanged } from 'jg-fs';
+
+const before = await readBoundedFile('/srv/repo/.npmrc', 65_536);
+await assertNoLinksBelow('/srv/repo', '/srv/repo/.npmrc'); // PATH_NOT_CANONICAL for a link on the way
+await writeFileAtomicIfUnchanged('/srv/repo/.npmrc', `${before}save-exact=true\n`, before); // FILE_CHANGED if edited meanwhile
+```
+
+`writeJsonFile` ends what it stringifies with a line feed, as text files do.
 
 Keep keys, tokens, and sessions private to the user who owns them:
 
@@ -89,6 +113,7 @@ Failures throw `Exception`s from `jg-exception`, with the codes in `ERRORS`.
 A lock left in a state no process can safely take over stays busy, and `LOCK_BUSY`'s `data.reason` says why:
 
 - `held`: the owner named in `owner.json` is still running. Wait, or stop that process.
+- `owner-gone`: the owner's process is gone, as after a crash. Read it with `readLockOwner`, check what it left, and pass it as `acquireLock`'s `recoverFrom`.
 - `other-host`: the owner runs on another host, which this host can't check.
 - `ownerless`: `owner.json` is missing or invalid, such as after a crash right after the directory was created. A lock being created or released at that moment looks the same, so try again first.
 - `recovery-in-progress`: a `recovery` directory is inside, so another process is taking the lock over, or crashed while doing so.

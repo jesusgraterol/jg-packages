@@ -1,5 +1,14 @@
 // types
 export type {
+  IByteCache,
+  IByteCacheOptions,
+  IByteCacheRetention,
+  IClickEvent,
+  IMarkedRegion,
+  IRegionMarkers,
+  IRunInOrderOptions,
+  IRunWhileCurrentOptions,
+  ITakeWithinByteBudgetOptions,
   ICursorCodec,
   ICursorCodecOptions,
   ICloseTaskRunnerOptions,
@@ -25,16 +34,30 @@ export type {
 } from './types.js';
 
 // async utilities
-export { delay, retryAsyncFunction, waitUntil } from './async.js';
+export { abortable, delay, retryAsyncFunction, waitUntil } from './async.js';
+
+// ordered runs
+export { runInOrder } from './run-in-order.js';
+
+// work tied to the current state
+export { runWhileCurrent } from './run-while-current.js';
+
+// byte caches
+export { createByteCache } from './byte-cache.js';
+
+// marked regions
+export { findMarkedRegion, upsertMarkedRegion } from './marked-region.js';
 
 // collection utilities
 export {
   applyDefaults,
+  deepFreeze,
   isEqual,
   omitProps,
   pickProps,
   shuffleArray,
   splitArrayIntoBatches,
+  takeWithinByteBudget,
 } from './collections.js';
 
 // environment checks
@@ -42,6 +65,7 @@ export {
   hasNavigator,
   hasWindow,
   isIndexedDbAvailable,
+  isPrimaryClick,
   prefersReducedMotion,
 } from './environment.js';
 
@@ -81,6 +105,7 @@ export {
 
 // Markdown utilities
 export {
+  escapeMarkdownInline,
   extractFirstMarkdownHeadingName,
   extractSubstitutionPlaceholderNames,
 } from './markdown.js';
