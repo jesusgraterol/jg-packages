@@ -13,6 +13,10 @@ export type IShutdownSignalOptions = {
   // whether a second signal stops the process at once, as Node.js does without a listener, for a
   // shutdown that hangs. Defaults to false, which ignores later signals
   forceOnRepeat?: boolean | undefined;
+
+  // whether the IPC channel to the parent closing starts the shutdown too, as SIGTERM does, such as
+  // for a child whose parent died without signalling it. Defaults to false
+  disconnect?: boolean | undefined;
 };
 
 // a signal that aborts when the process is asked to stop

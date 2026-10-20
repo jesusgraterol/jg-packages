@@ -1,5 +1,7 @@
 // types
 export type {
+  IProcessOutput,
+  IProcessOutputEncoding,
   IProcessResult,
   IRunProcessOptions,
   IStartProcessCommand,
@@ -16,7 +18,7 @@ export { ERRORS } from './shared/index.js';
 export { runProcess } from './run-process/index.js';
 
 // process trees
-export { startProcess, stopProcessTree } from './process-tree/index.js';
+export { isProcessRunning, startProcess, stopProcessTree } from './process-tree/index.js';
 
 // port reservations
 export {
@@ -52,3 +54,13 @@ export {
   type IShutdownSignalOptions,
   createShutdownSignal,
 } from './shutdown-signal/index.js';
+
+// command-line scripts
+export {
+  type IReadStdinOptions,
+  type IStrictArgOption,
+  type IStrictArgValues,
+  isMainModule,
+  parseStrictArgs,
+  readStdin,
+} from './command-line/index.js';

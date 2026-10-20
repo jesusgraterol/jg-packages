@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.6.0
+
+### Added
+
+- `runProcess({ encoding: 'buffer' })`, which returns `stdout` and `stderr` as the bytes the process wrote, typed as Buffers, for output that may not be valid UTF-8. `IProcessOutputEncoding` and `IProcessOutput`, and `IProcessResult`, which takes the output's type.
+- `isProcessRunning(pid)`, whether a process is running, which treats only ESRCH as gone and throws `INVALID_PROCESS_ID` for an id that isn't a positive safe integer.
+- `createShutdownSignal({ disconnect: true })`, which shuts down as with SIGTERM when the parent closes the IPC channel, and at once when it's already closed.
+- `parseStrictArgs(args, options)`, a strict `util.parseArgs` that also refuses a repeated option that isn't `multiple`, an empty value, and a missing `required` option, with `INVALID_ARGUMENTS` naming the option in `data.option`.
+- `readStdin({ maxBytes, signal? })`, which reads stdin to its end, destroying it and rejecting with `STDIN_TOO_LARGE` past the limit, or with the signal's reason.
+- `isMainModule(importMetaUrl)`, whether a module is the script Node.js started, comparing real paths.
+- `IStrictArgOption`, `IStrictArgValues`, and `IReadStdinOptions`.
+
+### Changed
+
+- `runProcess` rejects with `INVALID_PROCESS_OPTIONS` before starting when the timeout isn't a positive number of at most 2,147,483 seconds, the longest a Node.js timer waits, or the output limit isn't a positive safe integer. A zero output limit used to fail on the first byte.
+
 ## 1.5.0
 
 ### Changed

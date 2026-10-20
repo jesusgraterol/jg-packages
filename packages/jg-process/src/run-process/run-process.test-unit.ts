@@ -6,6 +6,7 @@ import { PassThrough } from 'node:stream';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { Exception } from 'jg-exception';
+import { expectToRejectCode } from 'jg-exception/testing';
 
 import { stopProcessTree } from '../process-tree/index.js';
 import { ERRORS } from '../shared/index.js';
@@ -133,5 +134,25 @@ describe('runProcess after the child exits', () => {
 
     await expect(running).rejects.toBe(survived);
     expect(child.stdout.destroyed).toBe(true);
+  });
+});
+
+describe('runProcess limits', () => {
+  test.each([
+    [{ timeoutSeconds: 0 }],
+    [{ timeoutSeconds: -1 }],
+    [{ timeoutSeconds: Number.NaN }],
+    [{ timeoutSeconds: Number.POSITIVE_INFINITY }],
+    [{ timeoutSeconds: 2_147_484 }],
+    [{ maxOutputBytes: 0 }],
+    [{ maxOutputBytes: -1 }],
+    [{ maxOutputBytes: 1.5 }],
+    [{ maxOutputBytes: Number.NaN }],
+  ])('runProcess(%o) -> rejects with INVALID_PROCESS_OPTIONS before starting', async (limits) => {
+    await expectToRejectCode(
+      runProcess({ command: 'node', args: ['--version'], ...limits }),
+      ERRORS.INVALID_PROCESS_OPTIONS,
+    );
+    expect(spawn).not.toHaveBeenCalled();
   });
 });

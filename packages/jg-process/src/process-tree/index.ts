@@ -1,2 +1,2 @@
 // process trees
-export { startProcess, stopProcessTree } from './process-tree.js';
+export { isProcessRunning, startProcess, stopProcessTree } from './process-tree.js';
