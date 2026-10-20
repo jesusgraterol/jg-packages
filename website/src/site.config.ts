@@ -183,6 +183,14 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['universal'],
     order: 22,
   },
+  'jg-playwright': {
+    title: 'Browser tests',
+    description:
+      'Playwright helpers for end-to-end tests: horizontal overflow, loaded assets, motion, accessibility scans, secrets, and a fake microphone.',
+    icon: 'drama',
+    runtimes: ['node'],
+    order: 23,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/
