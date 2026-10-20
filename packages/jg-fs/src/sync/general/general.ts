@@ -1,6 +1,13 @@
-import { accessSync, lstatSync } from 'node:fs';
+import { accessSync, lstatSync, type Stats } from 'node:fs';
 
-import { toPathElement, type IPathElement } from '../../shared/index.js';
+import {
+  isMissingPathError,
+  listDirectoriesBelow,
+  notADirectory,
+  pathNotCanonical,
+  toPathElement,
+  type IPathElement,
+} from '../../shared/index.js';
 
 /**
  * Checks whether a path exists, whether it's a file, a directory, or anything else.
@@ -35,5 +42,43 @@ export const getPathElement = (path: string): IPathElement | null => {
     return toPathElement(path, lstatSync(path));
   } catch {
     return null;
+  }
+};
+
+/**
+ * Checks that no directory between a root and a path is a symbolic link, or, on Windows, a
+ * junction, such as before writing a file inside a repository that someone else may have changed.
+ * It reads each directory strictly below the root, down to the path's parent, without following
+ * it, and stops at the first that doesn't exist, which a write would create. The root itself and
+ * the path's last component aren't checked.
+ * @param rootPath The root, such as a repository's working tree.
+ * @param path The path, strictly inside the root.
+ * @example
+ * import { assertNoLinksBelow, writeFileAtomic } from 'jg-fs/sync';
+ *
+ * assertNoLinksBelow('/srv/repo', '/srv/repo/docs/guides/install.md');
+ * writeFileAtomic('/srv/repo/docs/guides/install.md', '# Install\n');
+ * @throws
+ * - PATH_OUTSIDE_ROOT: if the path isn't strictly inside the root
+ * - PATH_NOT_CANONICAL: if a directory on the way is a symbolic link or a junction
+ * - NOT_A_DIRECTORY: if a component on the way is a file
+ */
+export const assertNoLinksBelow = (rootPath: string, path: string): void => {
+  for (const directory of listDirectoriesBelow(rootPath, path)) {
+    let stats: Stats;
+    try {
+      stats = lstatSync(directory);
+    } catch (error) {
+      if (isMissingPathError(error)) {
+        return;
+      }
+      throw error;
+    }
+    if (stats.isSymbolicLink()) {
+      throw pathNotCanonical(directory);
+    }
+    if (!stats.isDirectory()) {
+      throw notADirectory(directory);
+    }
   }
 };

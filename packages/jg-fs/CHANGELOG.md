@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.6.0
+
+### Added
+
+- `assertNoLinksBelow(rootPath, path)`, which checks that no directory strictly below a root, on the way to a path, is a symbolic link or a junction, throwing `PATH_NOT_CANONICAL`, `NOT_A_DIRECTORY`, or `PATH_OUTSIDE_ROOT`, and stops at the first that doesn't exist.
+- `writeFileAtomicIfUnchanged(path, data, expected)`, an atomic write that reads the file again, without following a link, right before the rename, and throws the new `FILE_CHANGED` when it no longer holds `expected`, is now a link or not a file, or, for a `null` expected, now exists.
+- `acquireLock(path, { metadata, recoverFrom })`: `metadata` is written to owner.json and returned on the owner, and `recoverFrom` takes a lock over from that exact owner once its process is gone. `readLockOwner(path)` reads a lock's owner, or null.
+- `IAcquireLockOptions`, and `IFileLockOwner`'s `metadata`.
+- Every addition is in `jg-fs/sync` too.
+
+### Changed
+
+- `acquireLock` never takes a lock over by itself, even from an owner whose process is gone, which now throws `LOCK_BUSY` with `reason: 'owner-gone'`; pass that owner as `recoverFrom` to take it over.
+- `writeJsonFile` ends a stringified value with a line feed. A string is still written as given.
+
 ## 1.5.0
 
 ### Changed

@@ -5,7 +5,7 @@ import { hostname, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { ERRORS } from '../../shared/index.js';
+import { ERRORS, type IFileLockOwner } from '../../shared/index.js';
 
 import { acquireLock } from './locks.js';
 
@@ -66,12 +66,11 @@ describe('acquireLock (sync) failures', () => {
   /**
    * Leaves a lock behind whose owner on this host has exited.
    */
-  const createDeadOwnersLock = (): void => {
+  const createDeadOwnersLock = (): IFileLockOwner => {
+    const owner = { pid: getDeadPid(), nonce: 'dead-nonce', hostname: hostname() };
     actualFs.mkdirSync(lockPath);
-    actualFs.writeFileSync(
-      join(lockPath, 'owner.json'),
-      JSON.stringify({ version: 1, pid: getDeadPid(), nonce: 'dead-nonce', hostname: hostname() }),
-    );
+    actualFs.writeFileSync(join(lockPath, 'owner.json'), JSON.stringify({ version: 1, ...owner }));
+    return owner;
   };
 
   beforeAll(async () => {
@@ -145,7 +144,7 @@ describe('acquireLock (sync) failures', () => {
   });
 
   test('fails when the recovery claim cannot be created', () => {
-    createDeadOwnersLock();
+    const deadOwner = createDeadOwnersLock();
     vi.mocked(fs.mkdirSync).mockImplementation((path, options) => {
       if (String(path).endsWith('recovery')) {
         throw systemError('EACCES');
@@ -153,13 +152,13 @@ describe('acquireLock (sync) failures', () => {
       return actualFs.mkdirSync(path, options);
     });
 
-    expect(catchError(() => acquireLock(lockPath))).toMatchObject({
+    expect(catchError(() => acquireLock(lockPath, { recoverFrom: deadOwner }))).toMatchObject({
       code: ERRORS.LOCK_ACQUISITION_FAILED,
     });
   });
 
   test('is busy when another process claims the takeover first', () => {
-    createDeadOwnersLock();
+    const deadOwner = createDeadOwnersLock();
     vi.mocked(fs.mkdirSync).mockImplementation((path, options) => {
       if (String(path).endsWith('recovery')) {
         throw systemError('EEXIST');
@@ -167,14 +166,14 @@ describe('acquireLock (sync) failures', () => {
       return actualFs.mkdirSync(path, options);
     });
 
-    expect(catchError(() => acquireLock(lockPath))).toMatchObject({
+    expect(catchError(() => acquireLock(lockPath, { recoverFrom: deadOwner }))).toMatchObject({
       code: ERRORS.LOCK_BUSY,
       data: { reason: 'recovery-in-progress' },
     });
   });
 
   test('is busy, and drops its claim, when another process takes the lock over first', () => {
-    createDeadOwnersLock();
+    const deadOwner = createDeadOwnersLock();
     vi.mocked(fs.mkdirSync).mockImplementation((path, options) => {
       const result = actualFs.mkdirSync(path, options);
       if (String(path).endsWith('recovery')) {
@@ -186,7 +185,7 @@ describe('acquireLock (sync) failures', () => {
       return result;
     });
 
-    expect(catchError(() => acquireLock(lockPath))).toMatchObject({
+    expect(catchError(() => acquireLock(lockPath, { recoverFrom: deadOwner }))).toMatchObject({
       code: ERRORS.LOCK_BUSY,
       data: { reason: 'held', pid: process.pid },
     });
@@ -194,7 +193,7 @@ describe('acquireLock (sync) failures', () => {
   });
 
   test('is busy, and drops its claim, when owner.json disappears during the takeover', () => {
-    createDeadOwnersLock();
+    const deadOwner = createDeadOwnersLock();
     vi.mocked(fs.mkdirSync).mockImplementation((path, options) => {
       const result = actualFs.mkdirSync(path, options);
       if (String(path).endsWith('recovery')) {
@@ -203,7 +202,7 @@ describe('acquireLock (sync) failures', () => {
       return result;
     });
 
-    expect(catchError(() => acquireLock(lockPath))).toMatchObject({
+    expect(catchError(() => acquireLock(lockPath, { recoverFrom: deadOwner }))).toMatchObject({
       code: ERRORS.LOCK_BUSY,
       data: { reason: 'ownerless' },
     });
@@ -211,7 +210,7 @@ describe('acquireLock (sync) failures', () => {
   });
 
   test("drops its claim, and leaves the dead owner's record, when the new one cannot be written", () => {
-    createDeadOwnersLock();
+    const deadOwner = createDeadOwnersLock();
     const record = actualFs.readFileSync(join(lockPath, 'owner.json'), 'utf8');
     vi.mocked(fs.openSync).mockImplementation((path, flags, mode) => {
       if (String(path).endsWith('.tmp')) {
@@ -220,7 +219,7 @@ describe('acquireLock (sync) failures', () => {
       return actualFs.openSync(path, flags, mode);
     });
 
-    expect(catchError(() => acquireLock(lockPath))).toMatchObject({
+    expect(catchError(() => acquireLock(lockPath, { recoverFrom: deadOwner }))).toMatchObject({
       code: ERRORS.LOCK_ACQUISITION_FAILED,
       cause: expect.objectContaining({ code: 'ENOSPC' }) as unknown,
     });
@@ -229,12 +228,12 @@ describe('acquireLock (sync) failures', () => {
   });
 
   test('fails when its recovery claim cannot be removed after the takeover', () => {
-    createDeadOwnersLock();
+    const deadOwner = createDeadOwnersLock();
     vi.mocked(fs.rmdirSync).mockImplementationOnce(() => {
       throw systemError('EBUSY');
     });
 
-    expect(catchError(() => acquireLock(lockPath))).toMatchObject({
+    expect(catchError(() => acquireLock(lockPath, { recoverFrom: deadOwner }))).toMatchObject({
       code: ERRORS.LOCK_ACQUISITION_FAILED,
       cause: expect.objectContaining({ code: 'EBUSY' }) as unknown,
     });

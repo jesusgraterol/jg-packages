@@ -1,2 +1,2 @@
 // general actions
-export { getPathElement, pathExists } from './general.js';
+export { assertNoLinksBelow, getPathElement, pathExists } from './general.js';

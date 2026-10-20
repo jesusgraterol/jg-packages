@@ -12,6 +12,7 @@ export {
   writeBufferFile,
   writeFile,
   writeFileAtomic,
+  writeFileAtomicIfUnchanged,
   writeJsonFile,
   writeTextFile,
 } from './files.js';

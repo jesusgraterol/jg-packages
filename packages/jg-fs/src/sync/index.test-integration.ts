@@ -37,8 +37,10 @@ import {
   getDirectoryElements,
   isPathWithin,
   writeFileAtomic,
+  writeFileAtomicIfUnchanged,
   readBoundedFile,
   writeFile,
+  assertNoLinksBelow,
 } from './index.js';
 
 /* ************************************************************************************************
@@ -627,6 +629,78 @@ describe('Filesystem', () => {
         symlinkSync(resolve(p('real')), p('linked'), 'dir');
         expect(readBoundedFile(p('linked/file.txt'), 4)).toStrictEqual(Buffer.from('abcd'));
       });
+    });
+  });
+
+  describe('Conditional writes and link checks', () => {
+    test('writeJsonFile ends a stringified value with a line feed', () => {
+      writeJsonFile(p('object.json'), { a: 1 });
+
+      expect(readFileSync(p('object.json'), 'utf-8')).toBe('{\n  "a": 1\n}\n');
+    });
+
+    test('writeFileAtomicIfUnchanged replaces unchanged bytes, and creates a missing file', () => {
+      writeTextFile(p('config.txt'), 'before');
+
+      writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before'));
+      writeFileAtomicIfUnchanged(p('new.txt'), 'created', null);
+
+      expect(readFileSync(p('config.txt'), 'utf-8')).toBe('after');
+      expect(readFileSync(p('new.txt'), 'utf-8')).toBe('created');
+      expect(listTemporaryFiles(p())).toStrictEqual([]);
+    });
+
+    test('writeFileAtomicIfUnchanged throws FILE_CHANGED, leaving the file, for other bytes or a file that appeared', () => {
+      writeTextFile(p('config.txt'), 'edited');
+
+      expectToThrowCode(
+        () => writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before')),
+        ERRORS.FILE_CHANGED,
+      );
+      expectToThrowCode(
+        () => writeFileAtomicIfUnchanged(p('config.txt'), 'after', null),
+        ERRORS.FILE_CHANGED,
+      );
+      expect(readFileSync(p('config.txt'), 'utf-8')).toBe('edited');
+      expect(listTemporaryFiles(p())).toStrictEqual([]);
+    });
+
+    test.skipIf(IS_WINDOWS)(
+      'writeFileAtomicIfUnchanged throws FILE_CHANGED for a symbolic link',
+      () => {
+        writeTextFile(p('target.txt'), 'before');
+        symlinkSync(resolve(p('target.txt')), p('config.txt'));
+
+        expectToThrowCode(
+          () => writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before')),
+          ERRORS.FILE_CHANGED,
+        );
+      },
+    );
+
+    test('assertNoLinksBelow passes real and missing directories, and refuses a link or a junction', () => {
+      createDirectory(p('repo/docs'));
+      createDirectory(p('outside'));
+      symlinkSync(resolve(p('outside')), p('repo/linked'), 'junction');
+
+      expect(() => assertNoLinksBelow(p('repo'), p('repo/docs/new/file.md'))).not.toThrow();
+      expectToThrowCode(
+        () => assertNoLinksBelow(p('repo'), p('repo/linked/file.md')),
+        ERRORS.PATH_NOT_CANONICAL,
+      );
+    });
+
+    test('assertNoLinksBelow refuses a file in the way, and a path outside the root', () => {
+      writeTextFile(p('repo/docs'), 'a file');
+
+      expectToThrowCode(
+        () => assertNoLinksBelow(p('repo'), p('repo/docs/file.md')),
+        ERRORS.NOT_A_DIRECTORY,
+      );
+      expectToThrowCode(
+        () => assertNoLinksBelow(p('repo'), p('elsewhere/file.md')),
+        ERRORS.PATH_OUTSIDE_ROOT,
+      );
     });
   });
 });

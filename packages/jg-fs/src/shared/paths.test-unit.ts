@@ -2,7 +2,10 @@
 import { posix, resolve, win32 } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
-import { isPathWithin, listPathAncestry } from './paths.js';
+import { expectToThrowCode } from 'jg-exception/testing';
+
+import { ERRORS } from './errors.js';
+import { isPathWithin, listDirectoriesBelow, listPathAncestry } from './paths.js';
 
 describe('isPathWithin', () => {
   test.each([
@@ -51,5 +54,23 @@ describe('listPathAncestry', () => {
 
   test('resolves a relative path through the working directory, with the current system by default', () => {
     expect(listPathAncestry('token').at(-1)).toBe(resolve('token'));
+  });
+});
+
+describe('listDirectoriesBelow', () => {
+  test('lists the directories strictly below the root, down to the parent', () => {
+    expect(listDirectoriesBelow('/repo', '/repo/docs/guides/install.md')).toStrictEqual([
+      resolve('/repo/docs'),
+      resolve('/repo/docs/guides'),
+    ]);
+    expect(listDirectoriesBelow('/repo', '/repo/README.md')).toStrictEqual([]);
+  });
+
+  test.each([
+    ['/repo', '/repo'],
+    ['/repo', '/elsewhere/file.md'],
+    ['/repo', '/repo/../file.md'],
+  ])('listDirectoriesBelow(%s, %s) -> throws PATH_OUTSIDE_ROOT', (rootPath, path) => {
+    expectToThrowCode(() => listDirectoriesBelow(rootPath, path), ERRORS.PATH_OUTSIDE_ROOT);
   });
 });

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 
-import { writeFileAtomic } from './files.js';
+import { writeFileAtomic, writeFileAtomicIfUnchanged } from './files.js';
 
 // keeps the real filesystem, while letting a test make a single file handle fail
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -68,4 +68,41 @@ describe('writeFileAtomic failures', () => {
       expect(await listTemporaryFiles()).toStrictEqual([]);
     },
   );
+});
+
+describe('writeFileAtomicIfUnchanged failures', () => {
+  let actualFs: typeof fs;
+  let directory: string;
+
+  beforeAll(async () => {
+    actualFs = await vi.importActual<typeof fs>('node:fs/promises');
+    directory = await fs.mkdtemp(join(tmpdir(), 'jg-fs-'));
+  });
+
+  afterEach(() => {
+    vi.mocked(fs.open).mockReset().mockImplementation(actualFs.open);
+  });
+
+  afterAll(async () => {
+    await fs.rm(directory, { recursive: true, force: true });
+  });
+
+  test('passes on an error reading the file back, other than a change, leaving it untouched', async () => {
+    const destination = join(directory, 'config.txt');
+    await fs.writeFile(destination, 'before');
+    const denied = Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' });
+    // the read-back opens the destination itself with numeric flags; the temporary file uses 'wx'
+    vi.mocked(fs.open).mockImplementation(async (path, flags, mode) => {
+      if (String(path) === destination && typeof flags === 'number') {
+        throw denied;
+      }
+      return actualFs.open(path, flags, mode);
+    });
+
+    await expect(
+      writeFileAtomicIfUnchanged(destination, 'after', Buffer.from('before')),
+    ).rejects.toBe(denied);
+    expect(await fs.readFile(destination, 'utf8')).toBe('before');
+    expect((await fs.readdir(directory)).filter((name) => name.endsWith('.tmp'))).toStrictEqual([]);
+  });
 });
