@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.0
+
+### Added
+
+- `useDebouncedSearch({ query, enabled?, search })`, which searches the trimmed query once it stays unchanged for 0.3 seconds, aborts the search in flight when the query changes, the search is disabled, or the component unmounts, ignores a result that settles late, and returns `{ results, isSearching, error, retry }`.
+- `useActiveHeading({ headingIds, topOffsetPx })`, which follows the heading the URL's hash names and, with an `IntersectionObserver`, the last heading past the offset, returning `{ activeHeadingId, setActiveHeadingId }`. An invalid offset throws `INVALID_ACTIVE_HEADING_OFFSET`.
+- `IUseDebouncedSearchOptions`, `IUseDebouncedSearchResult`, `IUseActiveHeadingOptions`, and `IUseActiveHeadingResult`.
+
+### Changed
+
+- Depends on `jg-site`, whose `IThemePreference`, `IResolvedTheme`, `THEME_PREFERENCES`, and `resolveThemePreference` the theme hooks use. jg-react no longer exports its own, so import them from jg-site; `THEME_PREFERENCES` is now `['system', 'light', 'dark']`.
+
 ## 0.5.0
 
 ### Changed

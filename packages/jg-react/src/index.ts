@@ -50,12 +50,12 @@ export type {
   IUseResendCooldownOptions,
   IUseResendCooldownResult,
 } from './resend-cooldown/index.js';
+export type { IAppliedThemeOptions, IThemeInitScriptOptions } from './theme/index.js';
 export type {
-  IAppliedThemeOptions,
-  IResolvedTheme,
-  IThemeInitScriptOptions,
-  IThemePreference,
-} from './theme/index.js';
+  IUseDebouncedSearchOptions,
+  IUseDebouncedSearchResult,
+} from './debounced-search/index.js';
+export type { IUseActiveHeadingOptions, IUseActiveHeadingResult } from './active-heading/index.js';
 
 // error codes
 export { ERRORS } from './shared/index.js';
@@ -92,11 +92,15 @@ export { DEFAULT_COPY_FEEDBACK_SECONDS, useCopyFeedback } from './copy-feedback/
 // dialogs
 export { createDialogSession, useDialogSession } from './dialog-session/index.js';
 
+// search
+export { useDebouncedSearch } from './debounced-search/index.js';
+
+// reading position
+export { useActiveHeading } from './active-heading/index.js';
+
 // theme
 export {
   createThemeInitScript,
-  resolveThemePreference,
-  THEME_PREFERENCES,
   useAppliedTheme,
   useDocumentTheme,
   useResolvedTheme,

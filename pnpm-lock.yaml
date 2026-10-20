@@ -1060,6 +1060,9 @@ importers:
       jg-exception:
         specifier: workspace:^
         version: link:../jg-exception
+      jg-site:
+        specifier: workspace:^
+        version: link:../jg-site
       jg-storage:
         specifier: workspace:^
         version: link:../jg-storage

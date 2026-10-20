@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
+import type { IResolvedTheme } from 'jg-site';
 
-import type { IResolvedTheme } from './types.js';
 import { readDocumentTheme, subscribeToDocumentTheme } from './utilities.js';
 
 // a server can't read the page's class, so it renders the light theme, as the init script's

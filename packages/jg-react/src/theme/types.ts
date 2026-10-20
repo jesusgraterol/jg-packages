@@ -1,10 +1,4 @@
-import type { THEME_PREFERENCES } from './constants.js';
-
-// the theme a user picks: light, dark, or whatever the system uses
-export type IThemePreference = (typeof THEME_PREFERENCES)[number];
-
-// the theme a page shows: light or dark
-export type IResolvedTheme = 'light' | 'dark';
+import type { IThemePreference } from 'jg-site';
 
 // how useAppliedTheme applies the theme
 export type IAppliedThemeOptions = {

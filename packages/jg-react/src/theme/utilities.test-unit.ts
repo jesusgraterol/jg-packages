@@ -4,7 +4,6 @@ import {
   applyThemeClass,
   getSystemDarkSchemeSnapshot,
   isThemeClassApplied,
-  resolveThemePreference,
   subscribeToNothing,
   subscribeToSystemDarkScheme,
   suppressTransitions,
@@ -29,19 +28,6 @@ const createRoot = (...classes: string[]) => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
-});
-
-describe('resolveThemePreference', () => {
-  test.each([
-    ['light', false, 'light'],
-    ['light', true, 'light'],
-    ['dark', false, 'dark'],
-    ['dark', true, 'dark'],
-    ['system', false, 'light'],
-    ['system', true, 'dark'],
-  ] as const)('resolveThemePreference(%s, %s) -> %s', (preference, isDark, expected) => {
-    expect(resolveThemePreference(preference, isDark)).toBe(expected);
-  });
 });
 
 describe('the system color scheme', () => {

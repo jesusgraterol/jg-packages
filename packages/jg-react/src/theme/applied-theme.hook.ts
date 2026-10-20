@@ -1,7 +1,8 @@
 import { useLayoutEffect } from 'react';
+import type { IResolvedTheme, IThemePreference } from 'jg-site';
 
 import { useResolvedTheme } from './resolved-theme.hook.js';
-import type { IAppliedThemeOptions, IResolvedTheme, IThemePreference } from './types.js';
+import type { IAppliedThemeOptions } from './types.js';
 import { applyThemeClass, isThemeClassApplied, suppressTransitions } from './utilities.js';
 
 /**
