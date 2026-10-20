@@ -12,6 +12,10 @@ const HEADING_IDS = ['first', 'second', 'third'];
 // the page these tests scroll: each heading after a tall block of text
 let article: HTMLElement;
 
+// the URL before each test, restored whole after it, because Vitest's browser runner keeps the
+// session it reconnects with in the query string
+let originalUrl: string;
+
 beforeEach(async () => {
   await page.viewport(800, 600);
   article = document.createElement('article');
@@ -27,7 +31,7 @@ beforeEach(async () => {
   tail.style.height = '2000px';
   article.append(tail);
   document.body.append(article);
-  window.history.replaceState(null, '', window.location.pathname);
+  originalUrl = window.location.href;
 });
 
 afterEach(() => {
@@ -35,7 +39,7 @@ afterEach(() => {
   cleanup();
   window.scrollTo(0, 0);
   article.remove();
-  window.history.replaceState(null, '', window.location.pathname);
+  window.history.replaceState(null, '', originalUrl);
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
