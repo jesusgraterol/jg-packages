@@ -1,3 +1,6 @@
+// types
+export type { IPortablePathOptions } from './types.js';
+
 // constants
 export { MAX_EMAIL_LENGTH } from './constants.js';
 
@@ -7,6 +10,8 @@ export {
   isAuthorizationHeaderValid,
   isEmailValid,
   isFileNameValid,
+  isPortablePathValid,
+  findCaseFoldCollision,
   isIntegerValid,
   isJwtValid,
   isNumberValid,

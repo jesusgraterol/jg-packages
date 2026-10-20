@@ -1,5 +1,3 @@
-import { isArrayValid, isObjectValid } from '../validations/index.js';
-
 import type {
   IDateTemplate,
   IDateTemplateConfigs,
@@ -56,30 +54,6 @@ export const parseTimeString = (str: ITimeString): { value: number; unit: string
 
   // finally, return the value and the unit
   return { value, unit: chunks[1] ?? '' };
-};
-
-/**
- * Recursively sorts the keys of a JSON object. If the value is not an object or an array, it
- * returns the value as is.
- * @param val The value to sort. It can be an object, an array, or any other type.
- * @returns The value with sorted keys if it's an object, or the original value otherwise.
- */
-export const sortJsonObjectKeys = (val: unknown): unknown => {
-  if (isArrayValid(val)) {
-    return val.map(sortJsonObjectKeys);
-  }
-  if (isObjectValid(val)) {
-    return Object.keys(val)
-      .sort()
-      .reduce(
-        (sorted: Record<string, unknown>, key: string) => ({
-          ...sorted,
-          [key]: sortJsonObjectKeys(val[key]),
-        }),
-        {},
-      );
-  }
-  return val;
 };
 
 /**

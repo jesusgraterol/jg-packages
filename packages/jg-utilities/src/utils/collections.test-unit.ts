@@ -6,6 +6,7 @@ import { expectToThrowCode } from 'jg-exception/testing';
 
 import {
   applyDefaults,
+  deepFreeze,
   isEqual,
   omitProps,
   pickProps,
@@ -311,5 +312,56 @@ describe('shuffleArray', () => {
     counts.forEach((count) => {
       expect(Math.abs(count - 10_000)).toBeLessThan(600);
     });
+  });
+});
+
+describe('deepFreeze', () => {
+  test('freezes the value and everything it holds, and returns the same value', () => {
+    const hidden = Symbol('hidden');
+    const value = { list: [{ id: 1 }], nested: { deeper: { flag: true } }, [hidden]: { a: 1 } };
+
+    const frozen = deepFreeze(value);
+
+    expect(frozen).toBe(value);
+    expect(Object.isFrozen(value)).toBe(true);
+    expect(Object.isFrozen(value.list)).toBe(true);
+    expect(Object.isFrozen(value.list[0])).toBe(true);
+    expect(Object.isFrozen(value.nested.deeper)).toBe(true);
+    expect(Object.isFrozen(value[hidden])).toBe(true);
+  });
+
+  test('freezes the children of an object that was already frozen', () => {
+    const child = { count: 1 };
+    const parent = Object.freeze({ child });
+
+    deepFreeze(parent);
+
+    expect(Object.isFrozen(child)).toBe(true);
+  });
+
+  test('handles a cycle', () => {
+    const value: Record<string, unknown> = { name: 'loop' };
+    value['self'] = value;
+    value['list'] = [value];
+
+    expect(deepFreeze(value)).toBe(value);
+    expect(Object.isFrozen(value['list'])).toBe(true);
+  });
+
+  test('leaves getters unrun, and typed arrays as they are', () => {
+    const getter = vi.fn(() => ({ fresh: true }));
+    const bytes = new Uint8Array([1, 2]);
+    const value = { bytes };
+    Object.defineProperty(value, 'computed', { get: getter, enumerable: true });
+
+    deepFreeze(value);
+
+    expect(getter).not.toHaveBeenCalled();
+    expect(Object.isFrozen(value)).toBe(true);
+    expect(Object.isFrozen(bytes)).toBe(false);
+  });
+
+  test.each([[1], ['text'], [null], [undefined]])('returns %j as it is', (value) => {
+    expect(deepFreeze(value)).toBe(value);
   });
 });

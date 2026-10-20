@@ -124,3 +124,22 @@ export const validateJsonDeserializationResult = (value: string, result: unknown
     );
   }
 };
+
+/* ************************************************************************************************
+ *                                           BYTE LIMIT                                            *
+ ************************************************************************************************ */
+
+/**
+ * Ensures a byte limit is a non-negative safe integer.
+ * @param maxBytes The limit.
+ * @throws
+ * - INVALID_BYTE_LIMIT: The byte limit must be a non-negative safe integer.
+ */
+export const validateByteLimit = (maxBytes: number): void => {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 0) {
+    throw new Exception('The byte limit must be a non-negative safe integer.', {
+      code: ERRORS.INVALID_BYTE_LIMIT,
+      data: { maxBytes: String(maxBytes) },
+    });
+  }
+};

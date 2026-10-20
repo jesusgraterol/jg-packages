@@ -30,6 +30,7 @@ export { delay, retryAsyncFunction, waitUntil } from './async.js';
 // collection utilities
 export {
   applyDefaults,
+  deepFreeze,
   isEqual,
   omitProps,
   pickProps,

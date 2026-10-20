@@ -1,6 +1,8 @@
 import { version as uuidVersion, validate as uuidValidate } from 'uuid';
 
 import type { IUuidVersion } from '../shared/types.js';
+
+import type { IPortablePathOptions } from './types.js';
 import {
   FILE_NAME_FORBIDDEN_CHARACTERS,
   MAX_EMAIL_LENGTH,
@@ -294,6 +296,78 @@ export const isUrlValid = (value: unknown): value is string => {
     return false;
   }
   return URL.canParse(value);
+};
+
+/**
+ * Verifies if a value is a relative path, with `/` between its components, that works on Windows,
+ * macOS and Linux: no empty, `.` or `..` component, and every component a valid file name, as
+ * `isFileNameValid` checks it, within `maxComponentBytes` and matching `componentPattern` when one
+ * is given. With `maxPathBytes`, the whole path must fit it too. Sizes are UTF-8 bytes.
+ * @param value The value to be validated.
+ * @param options? The size limits and the pattern each component must match.
+ * @returns A boolean indicating whether the value is a portable relative path.
+ * @example
+ * import { isPortablePathValid } from 'jg-utilities';
+ *
+ * isPortablePathValid('docs/guides/install.md'); // => true
+ * isPortablePathValid('docs/../secrets.md'); // => false
+ * isPortablePathValid('/etc/hosts'); // => false
+ * isPortablePathValid('docs/Install.md', { componentPattern: /^[a-z0-9._-]+$/ }); // => false
+ * isPortablePathValid('a/b/c.md', { maxPathBytes: 4 }); // => false
+ */
+export const isPortablePathValid = (
+  value: unknown,
+  {
+    maxComponentBytes = MAX_FILE_NAME_BYTES,
+    maxPathBytes,
+    componentPattern,
+  }: IPortablePathOptions = {},
+): value is string => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  if (maxPathBytes !== undefined && new TextEncoder().encode(value).length > maxPathBytes) {
+    return false;
+  }
+  // without the g and y flags, test never reads or moves the pattern's lastIndex
+  const pattern =
+    componentPattern === undefined
+      ? undefined
+      : new RegExp(componentPattern.source, componentPattern.flags.replace(/[gy]/g, ''));
+  return value
+    .split('/')
+    .every(
+      (component) =>
+        isFileNameValid(component, maxComponentBytes) &&
+        (pattern === undefined || pattern.test(component)),
+    );
+};
+
+/**
+ * Finds two paths that name the same file on a filesystem that ignores letter case and Unicode
+ * normalization, as Windows and macOS do by default, such as `README.md` and `readme.md`. Each path
+ * is folded with NFC, then uppercase, then lowercase, which also folds letters that only uppercasing
+ * maps, such as the long ſ, which folds to s. An exact duplicate isn't a collision.
+ * @param paths The paths.
+ * @returns The first pair that collides, the earlier path first, or null when none does.
+ * @example
+ * import { findCaseFoldCollision } from 'jg-utilities';
+ *
+ * findCaseFoldCollision(['docs/README.md', 'src/index.ts', 'docs/readme.md']); // => ['docs/README.md', 'docs/readme.md']
+ * findCaseFoldCollision(['a.md', 'b.md', 'a.md']); // => null
+ */
+export const findCaseFoldCollision = (paths: readonly string[]): [string, string] | null => {
+  const pathsByFoldedPath = new Map<string, string>();
+  for (const path of paths) {
+    const foldedPath = path.normalize('NFC').toUpperCase().toLowerCase();
+    const earlier = pathsByFoldedPath.get(foldedPath);
+    if (earlier === undefined) {
+      pathsByFoldedPath.set(foldedPath, path);
+    } else if (earlier !== path) {
+      return [earlier, path];
+    }
+  }
+  return null;
 };
 
 /**

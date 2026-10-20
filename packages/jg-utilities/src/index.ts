@@ -5,6 +5,8 @@ export type { IJsonValue, ISchema, IUuidVersion } from './shared/types.js';
 export { ERRORS } from './shared/errors.js';
 
 // validations
+export type { IPortablePathOptions } from './validations/index.js';
+
 export { MAX_EMAIL_LENGTH } from './validations/index.js';
 
 export {
@@ -17,6 +19,8 @@ export {
   isArrayValid,
   isEmailValid,
   isFileNameValid,
+  isPortablePathValid,
+  findCaseFoldCollision,
   isSlugValid,
   isPasswordValid,
   isOTPSecretValid,
@@ -35,6 +39,7 @@ export type {
   ICursorValue,
   IDateTemplate,
   IDateValue,
+  IDeterministicJsonOptions,
   INumberFormatConfig,
   IRedactSecretsOptions,
   IRedactSecretsResult,
@@ -57,6 +62,8 @@ export {
   toSlug,
   truncateText,
   truncateToUtf8Bytes,
+  countUtf8Bytes,
+  compareCodePoints,
   maskMiddle,
   normalizeQuery,
   stringifyValue,
@@ -68,6 +75,7 @@ export {
   decodeBase64Url,
   stringifyJson,
   stringifyJsonDeterministically,
+  measureJsonBytes,
   parseJson,
   pruneJson,
   encodeCursor,
@@ -129,6 +137,7 @@ export {
   pickProps,
   omitProps,
   isEqual,
+  deepFreeze,
   filterByQuery,
   resolveSafeInternalPath,
   delay,

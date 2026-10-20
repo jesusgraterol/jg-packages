@@ -158,3 +158,41 @@ export const applyDefaults = <T extends Record<string, unknown>>(
     }),
     {} as T,
   );
+
+/**
+ * Freezes a value and every object it holds, at any depth, so nothing in it can change, such as a
+ * configuration shared across a program. Unlike a recursive `Object.freeze`, it walks every own
+ * property, symbol keys included, freezes the children of an object that was already frozen, and
+ * visits each object once, so a cycle is safe. It reads only data properties, so no getter runs,
+ * and leaves typed arrays and DataViews, which can't be frozen, as they are.
+ * @param value The value.
+ * @returns The same value, now frozen.
+ * @example
+ * import { deepFreeze } from 'jg-utilities';
+ *
+ * const config = deepFreeze({ retries: { count: 3 }, hosts: ['a.example'] });
+ * Object.isFrozen(config.retries); // => true
+ * Object.isFrozen(config.hosts); // => true
+ */
+export const deepFreeze = <T>(value: T): T => {
+  const visited = new WeakSet<object>();
+  const pending: unknown[] = [value];
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (typeof current !== 'object' || current === null || visited.has(current)) {
+      continue;
+    }
+    visited.add(current);
+    if (ArrayBuffer.isView(current)) {
+      continue;
+    }
+    for (const key of Reflect.ownKeys(current)) {
+      const descriptor = Reflect.getOwnPropertyDescriptor(current, key);
+      if (descriptor !== undefined && 'value' in descriptor) {
+        pending.push(descriptor.value);
+      }
+    }
+    Object.freeze(current);
+  }
+  return value;
+};

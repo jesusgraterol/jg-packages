@@ -2,6 +2,7 @@
 export type {
   IDateTemplate,
   IDateValue,
+  IDeterministicJsonOptions,
   INumberFormatConfig,
   IRedactSecretsOptions,
   IRedactSecretsResult,
@@ -31,7 +32,13 @@ export {
 } from './constants.js';
 
 // JSON transformers
-export { parseJson, pruneJson, stringifyJson, stringifyJsonDeterministically } from './json.js';
+export {
+  measureJsonBytes,
+  parseJson,
+  pruneJson,
+  stringifyJson,
+  stringifyJsonDeterministically,
+} from './json.js';
 
 // number transformers
 export {
@@ -48,6 +55,8 @@ export { redactSecrets, redactUrlQueryParams } from './redaction.js';
 export {
   applySubstitutions,
   capitalizeFirst,
+  compareCodePoints,
+  countUtf8Bytes,
   escapeHtml,
   maskMiddle,
   normalizeQuery,

@@ -4,6 +4,7 @@ import { ERRORS } from '../shared/errors.js';
 import { isArrayValid, isObjectValid, isStringValid } from '../validations/index.js';
 
 import type { ISubstitutionOptions } from './types.js';
+import { validateByteLimit } from './validations.js';
 
 /**
  * Capitalizes the first letter of a string and returns the new value.
@@ -117,12 +118,7 @@ const getUtf8ByteLength = (codePoint: string): number => {
  * - INVALID_BYTE_LIMIT: The byte limit must be a non-negative safe integer.
  */
 export const truncateToUtf8Bytes = (text: string, maxBytes: number): string => {
-  if (!Number.isSafeInteger(maxBytes) || maxBytes < 0) {
-    throw new Exception('The byte limit must be a non-negative safe integer.', {
-      code: ERRORS.INVALID_BYTE_LIMIT,
-      data: { maxBytes: String(maxBytes) },
-    });
-  }
+  validateByteLimit(maxBytes);
   // a UTF-16 code unit never takes more than 3 bytes, so a string this short always fits
   if (text.length * 3 <= maxBytes) {
     return text;
@@ -137,6 +133,77 @@ export const truncateToUtf8Bytes = (text: string, maxBytes: number): string => {
     end += codePoint.length;
   }
   return text;
+};
+
+/**
+ * Counts the bytes a string takes in UTF-8, as `TextEncoder` writes it, without encoding it, and
+ * stops once the count passes `maxBytes`, so measuring a long string against a small limit costs
+ * little. A lone surrogate counts as 3 bytes, the size of the U+FFFD that replaces it.
+ * @param text The string.
+ * @param maxBytes? The limit, a non-negative safe integer. Without it, the whole string is counted.
+ * @returns The exact count when it's at most `maxBytes`, otherwise a number above it.
+ * @example
+ * import { countUtf8Bytes } from 'jg-utilities';
+ *
+ * countUtf8Bytes('café'); // => 5
+ * countUtf8Bytes('😀'); // => 4
+ * countUtf8Bytes('a'.repeat(1_000_000), 10) > 10; // => true
+ * @throws
+ * - INVALID_BYTE_LIMIT: The byte limit must be a non-negative safe integer.
+ */
+export const countUtf8Bytes = (text: string, maxBytes?: number): number => {
+  if (maxBytes !== undefined) {
+    validateByteLimit(maxBytes);
+  }
+  const limit = maxBytes ?? Number.POSITIVE_INFINITY;
+  let bytes = 0;
+  for (let index = 0; index < text.length && bytes <= limit; index += 1) {
+    const code = text.charCodeAt(index);
+    if (code < 0x80) {
+      bytes += 1;
+    } else if (code < 0x800) {
+      bytes += 2;
+    } else if (
+      code >= 0xd800 &&
+      code <= 0xdbff &&
+      (text.charCodeAt(index + 1) & 0xfc00) === 0xdc00
+    ) {
+      bytes += 4;
+      index += 1;
+    } else {
+      bytes += 3;
+    }
+  }
+  return bytes;
+};
+
+/**
+ * Compares two strings by Unicode code point, the order of UTF-8 bytes and of most other languages'
+ * strings, where `<` and the default sort compare UTF-16 code units, which put characters above
+ * U+FFFF, such as emoji, before U+E000 to U+FFFF. It allocates nothing, so it suits sorting large
+ * lists. A lone surrogate compares as its own code point.
+ * @param left The first string.
+ * @param right The second string.
+ * @returns A negative number when `left` comes first, a positive one when `right` does, and 0 when
+ * they're equal.
+ * @example
+ * import { compareCodePoints } from 'jg-utilities';
+ *
+ * ['😀', '\uff5e', 'a'].sort(compareCodePoints); // => ['a', '\uff5e', '😀']
+ * ['😀', '\uff5e', 'a'].sort(); // => ['a', '😀', '\uff5e']
+ */
+export const compareCodePoints = (left: string, right: string): number => {
+  let index = 0;
+  while (index < left.length && index < right.length) {
+    // equal code points take the same number of code units, so one index walks both strings
+    const leftCodePoint = left.codePointAt(index) as number;
+    const rightCodePoint = right.codePointAt(index) as number;
+    if (leftCodePoint !== rightCodePoint) {
+      return leftCodePoint < rightCodePoint ? -1 : 1;
+    }
+    index += leftCodePoint > 0xffff ? 2 : 1;
+  }
+  return Math.sign(left.length - right.length);
 };
 
 /**

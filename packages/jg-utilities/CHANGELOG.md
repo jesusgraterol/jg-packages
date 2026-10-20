@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.7.0
+
+### Added
+
+- `stringifyJsonDeterministically(value, { strict: true })`, which accepts only plain JSON data, such as a document a digest or a signature covers. It throws `UNABLE_TO_SERIALIZE_JSON`, naming the value's path, for undefined anywhere, NaN and ±Infinity, BigInts, symbols, functions, objects that aren't plain, symbol keys, holes, and cycles, and writes -0 as 0.
+- `measureJsonBytes(value, maxBytes)`, the UTF-8 size of what `JSON.stringify` writes, measured without serializing and stopped once it passes the limit. It takes primitives too, descends at most 64 levels, and throws `UNABLE_TO_SERIALIZE_JSON` for a value JSON can't hold.
+- `countUtf8Bytes(text, maxBytes?)`, a string's UTF-8 size as `TextEncoder` writes it, counted without encoding and stopped once it passes the limit.
+- `compareCodePoints(left, right)`, an allocation-free comparison by Unicode code point, the order of UTF-8 bytes, for sorting.
+- `isPortablePathValid(value, { maxComponentBytes?, maxPathBytes?, componentPattern? })`, which checks a relative path with `/` between its components for Windows, macOS, and Linux, with limits in UTF-8 bytes, and `findCaseFoldCollision(paths)`, the first two paths a filesystem that ignores case and Unicode normalization would see as one.
+- `deepFreeze(value)`, which freezes every object a value holds, symbol keys and the children of frozen objects included, and is safe with cycles.
+- `IDeterministicJsonOptions` and `IPortablePathOptions`.
+
+### Changed
+
+- `stringifyJsonDeterministically` builds its text directly, ordering keys by UTF-16 code unit, as RFC 8785 does, so integer-like keys sort with the others instead of first. Sorting no longer takes quadratic time on large objects, and toJSON is called wherever `JSON.stringify` calls it.
+- `isFileNameValid` refuses `COM¹`, `COM²`, `COM³`, `LPT¹`, `LPT²`, and `LPT³`, which Windows reserves like `COM1`.
+
 ## 1.6.0
 
 ### Changed

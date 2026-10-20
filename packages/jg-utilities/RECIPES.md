@@ -95,7 +95,7 @@ When the last page happens to be full, this costs one more request, which comes 
 
 ## Stable cache keys from JSON
 
-To cache a result by the request that produced it, such as a search, build the key from the request's parameters with `stringifyJsonDeterministically`, which sorts object keys at every depth. `{ q, sort }` and `{ sort, q }` then share one entry, where `JSON.stringify` would give two.
+To cache a result by the request that produced it, such as a search, build the key from the request's parameters with `stringifyJsonDeterministically`, which sorts object keys at every depth, in RFC 8785's order. `{ q, sort }` and `{ sort, q }` then share one entry, where `JSON.stringify` would give two. Strict mode accepts only plain JSON data, so a value that would serialize lossily, such as a Date or an `undefined` that slipped past the normalization, throws instead of making a key that another search shares.
 
 ```ts
 import { createHash } from 'node:crypto';
@@ -138,7 +138,7 @@ const toSearchCacheKey = (filters: ISearchFilters): string => {
     // the tags' order doesn't change the result, so it doesn't change the key
     tags: filters.tags?.toSorted(),
   });
-  const json = stringifyJsonDeterministically(normalized ?? {});
+  const json = stringifyJsonDeterministically(normalized ?? {}, { strict: true });
   // a hash keeps the key short whatever the filters hold; the prefix says what's cached, and the
   // version of its shape
   return `products:search:v1:${createHash('sha256').update(json).digest('base64url')}`;

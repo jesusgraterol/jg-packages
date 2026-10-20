@@ -10,6 +10,7 @@ import {
   isBigIntStringValid,
   isYouTubeVideoIdValid,
   isEmailValid,
+  findCaseFoldCollision,
   isFileNameValid,
   isIntegerValid,
   isJwtValid,
@@ -19,6 +20,7 @@ import {
   isOTPSecretValid,
   isOTPTokenValid,
   isPasswordValid,
+  isPortablePathValid,
   isSemverValid,
   isSlugValid,
   isStringValid,
@@ -790,6 +792,10 @@ describe('isFileNameValid', () => {
     ['con', false],
     ['CON.txt', false],
     ['lpt9.md', false],
+    ['COM¹', false],
+    ['com².txt', false],
+    ['LPT³.log', false],
+    ['lpt0', true],
     ['nul', false],
     ['Aux.tar.gz', false],
     ['a<b', false],
@@ -876,5 +882,83 @@ describe('isYouTubeVideoIdValid', () => {
     [null, false],
   ])('isYouTubeVideoIdValid(%o) -> %o', (value, expected) => {
     expect(isYouTubeVideoIdValid(value)).toBe(expected);
+  });
+});
+
+describe('isPortablePathValid', () => {
+  test.each([
+    ['README.md', true],
+    ['docs/guides/install.md', true],
+    ['.github/workflows/ci.yml', true],
+    ['a/b/c', true],
+    ['', false],
+    ['/etc/hosts', false],
+    ['docs/', false],
+    ['docs//install.md', false],
+    ['./docs', false],
+    ['docs/./install.md', false],
+    ['docs/../install.md', false],
+    ['..', false],
+    ['docs\\install.md', false],
+    ['C:/docs', false],
+    ['docs/con', false],
+    ['docs/COM¹.txt', false],
+    ['docs/name.', false],
+    ['docs/a\u0001b', false],
+    [undefined, false],
+    [42, false],
+  ])('isPortablePathValid(%j) -> %s', (value, expected) => {
+    expect(isPortablePathValid(value)).toBe(expected);
+  });
+
+  test('limits each component in UTF-8 bytes, not characters', () => {
+    expect(isPortablePathValid(`docs/${'é'.repeat(32)}`, { maxComponentBytes: 64 })).toBe(true);
+    expect(isPortablePathValid(`docs/${'é'.repeat(33)}`, { maxComponentBytes: 64 })).toBe(false);
+    expect(isPortablePathValid(`${'a'.repeat(65)}/x`, { maxComponentBytes: 64 })).toBe(false);
+  });
+
+  test('limits the whole path in UTF-8 bytes when asked to', () => {
+    expect(isPortablePathValid('ab/cd', { maxPathBytes: 5 })).toBe(true);
+    expect(isPortablePathValid('ab/cé', { maxPathBytes: 5 })).toBe(false);
+    expect(isPortablePathValid('a/'.repeat(100) + 'b')).toBe(true);
+  });
+
+  test('requires every component to match the pattern, whatever its flags', () => {
+    const lowercase = /^[a-z0-9._-]+$/g;
+
+    expect(isPortablePathValid('docs/install.md', { componentPattern: lowercase })).toBe(true);
+    expect(isPortablePathValid('docs/install.md', { componentPattern: lowercase })).toBe(true);
+    expect(isPortablePathValid('docs/Install.md', { componentPattern: lowercase })).toBe(false);
+    expect(lowercase.lastIndex).toBe(0);
+  });
+});
+
+describe('findCaseFoldCollision', () => {
+  test.each<[string[], [string, string] | null]>([
+    [[], null],
+    [['a.md', 'b.md'], null],
+    [['a.md', 'b.md', 'a.md'], null],
+    [
+      ['docs/README.md', 'src/index.ts', 'docs/readme.md'],
+      ['docs/README.md', 'docs/readme.md'],
+    ],
+    [
+      ['café.md', 'cafe\u0301.md'],
+      ['café.md', 'cafe\u0301.md'],
+    ],
+    [
+      ['s.md', 'ſ.md'],
+      ['s.md', 'ſ.md'],
+    ],
+    [
+      ['k', '\u212a'],
+      ['k', '\u212a'],
+    ],
+    [
+      ['A', 'B', 'b', 'a'],
+      ['B', 'b'],
+    ],
+  ])('findCaseFoldCollision(%j) -> %j', (paths, expected) => {
+    expect(findCaseFoldCollision(paths)).toStrictEqual(expected);
   });
 });

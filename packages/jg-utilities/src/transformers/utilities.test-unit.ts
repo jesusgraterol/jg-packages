@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'vitest';
 
 import type { INumberFormatConfig } from './types.js';
-import { buildNumberFormatConfig, sortJsonObjectKeys } from './utilities.js';
+import { buildNumberFormatConfig } from './utilities.js';
 
 /* ************************************************************************************************
  *                                            HELPERS                                             *
@@ -40,36 +40,5 @@ describe('buildNumberFormatConfig', () => {
     ],
   ])('buildNumberFormatConfig(%o) -> %o', (a, expected) => {
     expect(buildNumberFormatConfig(a)).toStrictEqual(expected);
-  });
-});
-
-describe('sortJsonObjectKeys', () => {
-  test.each(<Array<[unknown, unknown]>>[
-    [123456, 123456],
-    ['Hello there!', 'Hello there!'],
-    [true, true],
-    [{}, {}],
-    [[], []],
-    [
-      { b: 2, a: 1 },
-      { a: 1, b: 2 },
-    ],
-    [
-      { b: 2, a: { 2: 'b', 1: 'a', 3: [1, 2, 3], 4: { z: 2, x: 5, y: true } } },
-      { a: { 1: 'a', 2: 'b', 3: [1, 2, 3], 4: { x: 5, y: true, z: 2 } }, b: 2 },
-    ],
-    [[{ b: 2, a: 1, c: 4 }], [{ a: 1, b: 2, c: 4 }]],
-    [
-      [
-        { b: 2, a: { 2: 'b', 1: 'a', 3: [1, 2, 3], 4: { z: 2, x: 5, y: true } } },
-        { b: 2, a: 1, c: [{ d: 5, c: [1, 2, 3] }] },
-      ],
-      [
-        { a: { 1: 'a', 2: 'b', 3: [1, 2, 3], 4: { x: 5, y: true, z: 2 } }, b: 2 },
-        { a: 1, b: 2, c: [{ c: [1, 2, 3], d: 5 }] },
-      ],
-    ],
-  ])('sortJsonObjectKeys(%j) -> %j', (value, expected) => {
-    expect(JSON.stringify(sortJsonObjectKeys(value))).toBe(JSON.stringify(expected));
   });
 });

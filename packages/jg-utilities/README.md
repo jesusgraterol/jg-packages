@@ -105,6 +105,28 @@ events.subscribe('userSignedUp', ({ userId }) => sendWelcomeEmail(userId));
 events.emit('userSignedUp', { userId }); // returns at once; each handler runs later, on its own
 ```
 
+Serialize, measure, and compare text and JSON exactly, and check paths before writing them:
+
+```ts
+import {
+  compareCodePoints,
+  countUtf8Bytes,
+  deepFreeze,
+  findCaseFoldCollision,
+  isPortablePathValid,
+  measureJsonBytes,
+  stringifyJsonDeterministically,
+} from 'jg-utilities';
+
+stringifyJsonDeterministically(document, { strict: true }); // RFC 8785 key order, plain JSON only
+measureJsonBytes(message, 1_048_576) > 1_048_576; // too big, found without serializing it
+countUtf8Bytes(title, 255); // stops counting once it passes the limit
+names.sort(compareCodePoints); // UTF-8 byte order, where sort() compares UTF-16 code units
+isPortablePathValid(path, { maxComponentBytes: 64, maxPathBytes: 160 }); // safe on every OS
+findCaseFoldCollision(paths); // such as ['README.md', 'readme.md'], or null
+const config = deepFreeze(loadConfig()); // nothing in it can change, at any depth
+```
+
 Paginate with opaque cursors, and wait or retry with timing in seconds:
 
 ```ts

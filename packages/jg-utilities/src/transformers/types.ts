@@ -120,3 +120,10 @@ export type IRedactSecretsResult = {
   text: string;
   count: number;
 };
+
+// the options accepted by stringifyJsonDeterministically
+export type IDeterministicJsonOptions = {
+  // accepts only plain JSON data, such as a document whose bytes a digest or signature covers, and
+  // throws for anything JSON.stringify would drop, convert, or call toJSON on
+  strict?: boolean | undefined;
+};
