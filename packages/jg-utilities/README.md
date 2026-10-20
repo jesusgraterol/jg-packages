@@ -127,6 +127,31 @@ findCaseFoldCollision(paths); // such as ['README.md', 'readme.md'], or null
 const config = deepFreeze(loadConfig()); // nothing in it can change, at any depth
 ```
 
+Keep a request's result from reaching another account, run work in parallel but record it in order, and keep bytes in a bounded cache:
+
+```ts
+import { createByteCache, runInOrder, runWhileCurrent, upsertMarkedRegion } from 'jg-utilities';
+
+const requestedFor = session.getState().accountId;
+const profile = await runWhileCurrent((signal) => fetchProfile(signal), {
+  isCurrent: () => session.getState().accountId === requestedFor,
+  subscriptions: [session.subscribe], // a Zustand store's subscribe, say
+  createStaleError: (cause) => new Error('The account changed.', { cause }),
+});
+
+const results = await runInOrder(cases, {
+  concurrency: 4,
+  execute: (testCase) => evaluate(testCase),
+  commit: (result) => appendToCheckpoint(result), // one at a time, in the cases' order
+});
+
+const pages = createByteCache({ maxBytes: 8 * 1024 * 1024 }); // least recently used out first
+const readme = upsertMarkedRegion(text, block, {
+  start: '<!-- tool:start -->',
+  end: '<!-- tool:end -->',
+});
+```
+
 Paginate with opaque cursors, and wait or retry with timing in seconds:
 
 ```ts

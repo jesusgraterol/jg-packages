@@ -10,7 +10,14 @@
 - `compareCodePoints(left, right)`, an allocation-free comparison by Unicode code point, the order of UTF-8 bytes, for sorting.
 - `isPortablePathValid(value, { maxComponentBytes?, maxPathBytes?, componentPattern? })`, which checks a relative path with `/` between its components for Windows, macOS, and Linux, with limits in UTF-8 bytes, and `findCaseFoldCollision(paths)`, the first two paths a filesystem that ignores case and Unicode normalization would see as one.
 - `deepFreeze(value)`, which freezes every object a value holds, symbol keys and the children of frozen objects included, and is safe with cycles.
-- `IDeterministicJsonOptions` and `IPortablePathOptions`.
+- `runInOrder(items, { concurrency, execute, commit? })`, which runs items at most `concurrency` at a time and commits their results one at a time, in the items' order, a worker starting its next item only after committing its previous one. The first failure stops new items, and the ones running finish uncommitted. A concurrency that isn't an integer of at least 1 throws `INVALID_CONCURRENCY_LIMIT`.
+- `findMarkedRegion(text, markers)` and `upsertMarkedRegion(text, block, markers)`, for the part of a document a tool keeps up to date between two marker lines. They keep a byte order mark and the text around the region, follow the start marker line's LF or CRLF, append after a blank line when there's no region, and throw `INVALID_MARKED_REGION` for duplicate, misordered, or partial-line markers and a malformed block.
+- `runWhileCurrent(run, { isCurrent, subscriptions, createStaleError, signal? })`, for work that belongs to a state that can change while it runs, such as a request for the signed-in account. A change that leaves it stale aborts it and makes it end in the stale error, whatever it does, and the caller's signal aborts it with its own reason.
+- `createByteCache({ maxBytes, maxEntries? })`, a least-recently-used cache of bytes that copies them in and out, and whose `retain` pins an entry against eviction and replacement. Invalid limits throw `INVALID_BYTE_LIMIT`.
+- `takeWithinByteBudget(items, { maxBytes, measurePage })`, the longest run of items whose page fits a byte budget, measuring each item once and reading the items lazily.
+- `abortable(promise, { signal })`, which stops waiting for a promise when a signal aborts, with its reason.
+- `isPrimaryClick(event)`, whether a DOM or React click is a plain primary click, and `escapeMarkdownInline(text)`, which escapes text for one line of Markdown.
+- `IDeterministicJsonOptions`, `IPortablePathOptions`, `IRunInOrderOptions`, `IRegionMarkers`, `IMarkedRegion`, `IRunWhileCurrentOptions`, `IByteCache`, `IByteCacheOptions`, `IByteCacheRetention`, `ITakeWithinByteBudgetOptions`, and `IClickEvent`.
 
 ### Changed
 

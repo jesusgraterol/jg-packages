@@ -6,6 +6,7 @@ import {
   hasNavigator,
   hasWindow,
   isIndexedDbAvailable,
+  isPrimaryClick,
   prefersReducedMotion,
 } from './environment.js';
 
@@ -82,5 +83,21 @@ describe('prefersReducedMotion', () => {
 
   test('returns false for a view without matchMedia', () => {
     expect(prefersReducedMotion({})).toBe(false);
+  });
+});
+
+describe('isPrimaryClick', () => {
+  const PLAIN = { button: 0, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
+
+  test.each([
+    ['a plain primary click', PLAIN, true],
+    ['the middle button', { ...PLAIN, button: 1 }, false],
+    ['the secondary button', { ...PLAIN, button: 2 }, false],
+    ['Alt', { ...PLAIN, altKey: true }, false],
+    ['Ctrl', { ...PLAIN, ctrlKey: true }, false],
+    ['Meta', { ...PLAIN, metaKey: true }, false],
+    ['Shift', { ...PLAIN, shiftKey: true }, false],
+  ])('isPrimaryClick(%s) -> %s', (_, event, expected) => {
+    expect(isPrimaryClick(event)).toBe(expected);
   });
 });

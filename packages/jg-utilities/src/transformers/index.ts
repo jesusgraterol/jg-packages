@@ -67,3 +67,6 @@ export {
   truncateText,
   truncateToUtf8Bytes,
 } from './string.js';
+
+// validations shared with the utilities
+export { validateByteLimit } from './validations.js';

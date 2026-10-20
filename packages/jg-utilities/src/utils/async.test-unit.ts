@@ -4,7 +4,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import { ERRORS } from '../shared/errors.js';
 import { expectToRejectCode } from 'jg-exception/testing';
 
-import { delay, retryAsyncFunction, waitUntil } from './async.js';
+import { abortable, delay, retryAsyncFunction, waitUntil } from './async.js';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -349,5 +349,39 @@ describe('waitUntil', () => {
     const error = new Error('Probe failed');
 
     await expect(waitUntil(() => Promise.reject(error), { timeoutSeconds: 1 })).rejects.toBe(error);
+  });
+});
+
+describe('abortable', () => {
+  test('settles as the promise does when the signal never aborts', async () => {
+    const { signal } = new AbortController();
+    const failure = new Error('failed');
+
+    await expect(abortable(Promise.resolve('done'), { signal })).resolves.toBe('done');
+    await expect(abortable(Promise.reject(failure), { signal })).rejects.toBe(failure);
+  });
+
+  test("rejects at once with an already aborted signal's reason", async () => {
+    await expect(
+      abortable(new Promise(() => {}), { signal: AbortSignal.abort('left') }),
+    ).rejects.toBe('left');
+  });
+
+  test("rejects with the signal's reason when it aborts first", async () => {
+    const controller = new AbortController();
+    const waiting = abortable(new Promise(() => {}), { signal: controller.signal });
+
+    controller.abort('navigated away');
+
+    await expect(waiting).rejects.toBe('navigated away');
+  });
+
+  test('removes its abort listener once the promise settles', async () => {
+    const { signal } = new AbortController();
+    const removeListener = vi.spyOn(signal, 'removeEventListener');
+
+    await abortable(Promise.resolve(1), { signal });
+
+    expect(removeListener).toHaveBeenCalledWith('abort', expect.any(Function));
   });
 });

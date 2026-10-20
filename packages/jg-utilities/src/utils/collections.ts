@@ -1,10 +1,15 @@
 import { Exception } from 'jg-exception';
 
 import { ERRORS } from '../shared/errors.js';
-import { stringifyJsonDeterministically } from '../transformers/index.js';
+import {
+  measureJsonBytes,
+  stringifyJsonDeterministically,
+  validateByteLimit,
+} from '../transformers/index.js';
 import { isIntegerValid } from '../validations/index.js';
 
 import { createUint32Source, drawUniformIndex } from './random.js';
+import type { ITakeWithinByteBudgetOptions } from './types.js';
 import { canArrayBeShuffled, validateObjectAndKeys } from './validations.js';
 
 /**
@@ -195,4 +200,45 @@ export const deepFreeze = <T>(value: T): T => {
     Object.freeze(current);
   }
   return value;
+};
+
+/**
+ * Takes the longest run of items, from the first, whose page fits a byte budget, such as an API
+ * response or a CLI's output page that must stay under a size limit. It measures each item's JSON
+ * once, adds it to the size of the items as a JSON array, and asks `measurePage` for the size of
+ * the page around them, such as with an envelope and a cursor, stopping at the first item that
+ * doesn't fit. It reads the items lazily, so a generator that builds each item stops being read
+ * there. `measurePage` receives the same array each time, so copy it to keep it.
+ * @param items The items, in order.
+ * @param options The budget, and the function that measures a page.
+ * @returns The items that fit, or an empty array when the first one doesn't.
+ * @example
+ * import { takeWithinByteBudget } from 'jg-utilities';
+ *
+ * // a page is { "items": [...] }, 11 bytes around the array
+ * takeWithinByteBudget(['aaaa', 'bbbb', 'cccc'], {
+ *   maxBytes: 28,
+ *   measurePage: (page, itemsBytes) => itemsBytes + 11,
+ * }); // => ['aaaa', 'bbbb']
+ * @throws
+ * - INVALID_BYTE_LIMIT: The byte limit must be a non-negative safe integer.
+ * - UNABLE_TO_SERIALIZE_JSON: if an item can't be serialized, as for `measureJsonBytes`
+ */
+export const takeWithinByteBudget = <T>(
+  items: Iterable<T>,
+  { maxBytes, measurePage }: ITakeWithinByteBudgetOptions<T>,
+): T[] => {
+  validateByteLimit(maxBytes);
+  const page: T[] = [];
+  // the brackets of an empty JSON array
+  let itemsBytes = 2;
+  for (const item of items) {
+    itemsBytes += (page.length === 0 ? 0 : 1) + measureJsonBytes(item, maxBytes);
+    page.push(item);
+    if (itemsBytes > maxBytes || measurePage(page, itemsBytes) > maxBytes) {
+      page.pop();
+      break;
+    }
+  }
+  return page;
 };

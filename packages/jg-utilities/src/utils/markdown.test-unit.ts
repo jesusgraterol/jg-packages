@@ -2,6 +2,7 @@
 import { describe, expect, test } from 'vitest';
 
 import {
+  escapeMarkdownInline,
   extractFirstMarkdownHeadingName,
   extractSubstitutionPlaceholderNames,
 } from './markdown.js';
@@ -97,5 +98,19 @@ describe('extractSubstitutionPlaceholderNames', () => {
     expect(
       extractSubstitutionPlaceholderNames('Empty: {{}}. Space: {{ }}. Valid: {{name}}.'),
     ).toStrictEqual(['name']);
+  });
+});
+
+describe('escapeMarkdownInline', () => {
+  test.each([
+    ['plain text', 'plain text'],
+    ['*bold* _em_', '\\*bold\\* \\_em\\_'],
+    ['`code` \\ slash', '\\`code\\` \\\\ slash'],
+    ['[link](url) {attr}', '\\[link\\](url) \\{attr\\}'],
+    ['<b>x</b> | cell', '\\<b\\>x\\</b\\> \\| cell'],
+    ['two\r\nlines\nand\rmore', 'two lines and more'],
+    ['tab\there\u0000\u007f\u0085', 'tab here   '],
+  ])('escapeMarkdownInline(%j) -> %j', (text, expected) => {
+    expect(escapeMarkdownInline(text)).toBe(expected);
   });
 });

@@ -12,6 +12,7 @@ import {
   pickProps,
   shuffleArray,
   splitArrayIntoBatches,
+  takeWithinByteBudget,
 } from './collections.js';
 
 const TEST_OBJ = {
@@ -363,5 +364,66 @@ describe('deepFreeze', () => {
 
   test.each([[1], ['text'], [null], [undefined]])('returns %j as it is', (value) => {
     expect(deepFreeze(value)).toBe(value);
+  });
+});
+
+describe('takeWithinByteBudget', () => {
+  // a page is { "items": [...] }, 11 bytes around the array
+  const measurePage = (_: readonly unknown[], itemsBytes: number): number => itemsBytes + 11;
+
+  test('takes the longest run whose page fits, measuring the items as a JSON array', () => {
+    const measured: number[] = [];
+
+    expect(
+      takeWithinByteBudget(['aaaa', 'bbbb', 'cccc'], {
+        maxBytes: 28,
+        measurePage: (page, itemsBytes) => {
+          measured.push(itemsBytes);
+          return measurePage(page, itemsBytes);
+        },
+      }),
+    ).toStrictEqual(['aaaa', 'bbbb']);
+    expect(measured).toStrictEqual([8, 15, 22]);
+  });
+
+  test('takes every item when they all fit, including at an exact fit', () => {
+    expect(takeWithinByteBudget([1, 2], { maxBytes: 16, measurePage })).toStrictEqual([1, 2]);
+  });
+
+  test('returns an empty array when the first item does not fit', () => {
+    expect(takeWithinByteBudget(['x'.repeat(100)], { maxBytes: 50, measurePage })).toStrictEqual(
+      [],
+    );
+    expect(takeWithinByteBudget([], { maxBytes: 0, measurePage })).toStrictEqual([]);
+  });
+
+  test('stops reading the items at the first that does not fit', () => {
+    let built = 0;
+    function* projectRows(): Generator<string> {
+      for (let row = 0; row < 1000; row += 1) {
+        built += 1;
+        yield `row-${row}`;
+      }
+    }
+
+    expect(takeWithinByteBudget(projectRows(), { maxBytes: 40, measurePage })).toHaveLength(3);
+    expect(built).toBe(4);
+  });
+
+  test.each([[-1], [1.5], [NaN]])(
+    'takeWithinByteBudget(items, { maxBytes: %d }) -> throws INVALID_BYTE_LIMIT',
+    (maxBytes) => {
+      expectToThrowCode(
+        () => takeWithinByteBudget([], { maxBytes, measurePage }),
+        ERRORS.INVALID_BYTE_LIMIT,
+      );
+    },
+  );
+
+  test('throws UNABLE_TO_SERIALIZE_JSON for an item JSON cannot hold', () => {
+    expectToThrowCode(
+      () => takeWithinByteBudget([{ id: 1n }], { maxBytes: 100, measurePage }),
+      ERRORS.UNABLE_TO_SERIALIZE_JSON,
+    );
   });
 });
