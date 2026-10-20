@@ -298,13 +298,14 @@ jobs:
           node-version: 22.17.0
           package-manager-cache: false
 
-      # as in the floor job, the type stripping loads the shared Vitest config
+      # as in the floor job, the type stripping loads the shared Vitest config; --continue lets one
+      # run report every package that fails on the system
       - name: Run the package unit and integration tests
         env:
           NODE_OPTIONS: --experimental-strip-types
         run: |
           node --version
-          pnpm turbo run test:unit test:integration --filter=jg-fs --filter=jg-process --filter=jg-git-commands --filter=jg-env --only --concurrency=4
+          pnpm turbo run test:unit test:integration --filter=jg-fs --filter=jg-process --filter=jg-git-commands --filter=jg-env --only --concurrency=4 --continue
 
   deploy:
     name: Deploy the site

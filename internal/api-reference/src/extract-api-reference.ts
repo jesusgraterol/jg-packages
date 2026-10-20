@@ -4,6 +4,7 @@ import {
   Application,
   Converter,
   type DeclarationReflection,
+  normalizePath,
   type ProjectReflection,
   ReflectionKind,
 } from 'typedoc';
@@ -54,7 +55,9 @@ const groupByEntryPoint = (
     const module = (project.children ?? []).find(
       (child) =>
         child.kind === ReflectionKind.Module &&
-        child.sources?.some((source) => source.fullFileName === sourceFile),
+        child.sources?.some(
+          (source) => normalizePath(source.fullFileName) === normalizePath(sourceFile),
+        ),
     );
     if (module === undefined) {
       throw new Error(`TypeDoc produced no module for the entry point: ${sourceFile}`);
@@ -104,7 +107,8 @@ export const extractApiReference = async (packageDirectory: string): Promise<IAp
 
   const app = await Application.bootstrap({
     name: manifest.name,
-    entryPoints: entryPoints.map(({ sourceFile }) => sourceFile),
+    // TypeDoc reads entry points as globs, which can't hold Windows's `\` separators
+    entryPoints: entryPoints.map(({ sourceFile }) => normalizePath(sourceFile)),
     tsconfig: await getTsconfigPath(packageDirectory),
     // the repository documents types and constants with `//` comments, so read every comment style
     commentStyle: 'all',

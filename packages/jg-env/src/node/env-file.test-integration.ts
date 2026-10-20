@@ -1,5 +1,13 @@
 // @vitest-environment node
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -18,7 +26,9 @@ const IS_POSIX = process.platform !== 'win32';
 let directory: string;
 
 beforeAll(() => {
-  directory = mkdtempSync(join(tmpdir(), 'jg-env-files-'));
+  // the real path, because the private reads refuse a root reached through a symbolic link, as
+  // macOS's temporary directory is
+  directory = realpathSync(mkdtempSync(join(tmpdir(), 'jg-env-files-')));
 });
 
 afterAll(() => {
