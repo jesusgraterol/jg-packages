@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.1
+
+### Fixed
+
+- `parseStrictArgs` refuses a flag given twice, such as `--check --check`, with `INVALID_ARGUMENTS`, as it already did for a repeated string option that isn't `multiple`.
+
 ## 1.6.0
 
 ### Added

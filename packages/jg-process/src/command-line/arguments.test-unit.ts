@@ -48,6 +48,7 @@ describe('parseStrictArgs', () => {
 
   test.each([
     ['an option given twice', ['--path', 'a', '--path', 'b'], 'path', 'more than once'],
+    ['a flag given twice', ['--path', 'a', '--check', '--check'], 'check', 'more than once'],
     ['an empty value', ['--path', ''], 'path', "can't be empty"],
     ['an empty repeated value', ['--path', 'a', '--tag', ''], 'tag', "can't be empty"],
     ['a missing required option', ['--check'], 'path', 'is required'],
