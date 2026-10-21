@@ -86,13 +86,14 @@ export const parseStrictArgs = <TOptions extends Record<string, IStrictArgOption
   }
   const values: Record<string, unknown> = {};
   for (const [name, option] of Object.entries(options)) {
+    const isMultiple = option.type === 'string' && option.multiple === true;
+    if (!isMultiple && (counts.get(name) ?? 0) > 1) {
+      throw invalidArguments(`The --${name} option was given more than once.`, name);
+    }
     const value: unknown = parsed.values[name];
     if (option.type === 'boolean') {
       values[name] = value === true;
       continue;
-    }
-    if (option.multiple !== true && (counts.get(name) ?? 0) > 1) {
-      throw invalidArguments(`The --${name} option was given more than once.`, name);
     }
     const strings = value === undefined ? [] : Array.isArray(value) ? value : [value];
     if (strings.some((item) => item === '')) {
