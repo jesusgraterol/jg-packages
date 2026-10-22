@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import { expect, test } from '@playwright/test';
 import { expectNoHorizontalOverflow, inspectMotion, waitForPageAssets } from 'jg-playwright';
@@ -8,7 +9,17 @@ import { GALLERY_EXAMPLES, GALLERY_PAGES } from '../catalog/index.ts';
 
 test('every public Astro component has a real rendered example', async ({ page }) => {
   const manifest = JSON.parse(
-    await readFile(new URL('../../../package.json', import.meta.url), 'utf8'),
+    await readFile(
+      process.env['JG_UI_GALLERY_ROOT'] === undefined
+        ? new URL('../../../package.json', import.meta.url)
+        : join(
+            process.env['JG_UI_GALLERY_ROOT'],
+            'node_modules',
+            'jg-personal-astro-ui',
+            'package.json',
+          ),
+      'utf8',
+    ),
   ) as { exports: Record<string, unknown> };
   const components = Object.entries(manifest.exports)
     .filter(([, target]) => typeof target === 'string' && target.endsWith('.astro'))

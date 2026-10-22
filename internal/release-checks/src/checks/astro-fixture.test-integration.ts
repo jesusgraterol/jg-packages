@@ -1,8 +1,11 @@
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 import { checkAstroFixture } from './astro-fixture.ts';
+import type { IRunAstroFixtureCommand } from './astro-fixture-command/index.ts';
 import type { ICommandResult, IPackageManifest, IRunCommand } from '../shared/types.ts';
 import type { IPackedPackage } from './types.ts';
 
@@ -25,6 +28,287 @@ const UI_PACKAGE = toPacked({
   },
   dependencies: { 'jg-exception': '^1.0.0', shiki: '^4.5.0' },
   peerDependencies: { astro: '^7.4.0', tailwindcss: '^4.3.0' },
+});
+
+const PERSONAL_UI_DIRECTORY = resolve(
+  import.meta.dirname,
+  '../../../../packages/jg-personal-astro-ui',
+);
+const COMMAND_SUCCESS = { exitCode: 0, signalCode: null, stdout: '', stderr: '', durationMs: 0 };
+
+// real gallery sources and configuration; only the installed-tool command boundary is replaced
+const personalGalleryPackages = async (): Promise<IPackedPackage[]> => {
+  const manifest = JSON.parse(
+    await readFile(join(PERSONAL_UI_DIRECTORY, 'package.json'), 'utf8'),
+  ) as IPackageManifest;
+  const ui: IPackedPackage = {
+    ...toPacked(manifest),
+    workspacePackage: {
+      name: manifest.name,
+      version: manifest.version,
+      directory: PERSONAL_UI_DIRECTORY,
+      manifest,
+    },
+  };
+  return [
+    ui,
+    ...new Set([
+      'jg-process',
+      'jg-playwright',
+      ...Object.keys(manifest.dependencies ?? {}).filter((name) => name.startsWith('jg-')),
+    ]),
+  ].map((item) => (typeof item === 'string' ? toPacked({ name: item, version: '1.0.0' }) : item));
+};
+
+/** Emulates installation's filesystem output while leaving preparation and cleanup real. */
+const writeInstalledClis = async (root: string): Promise<void> => {
+  for (const name of ['astro', 'pagefind', '@playwright/test']) {
+    const directory = join(root, 'node_modules', name);
+    await mkdir(directory, { recursive: true });
+    await writeFile(join(directory, 'package.json'), JSON.stringify({ name, bin: 'cli.mjs' }));
+    await writeFile(join(directory, 'cli.mjs'), 'export {};');
+  }
+};
+
+describe('the installed personal UI gallery', () => {
+  test('retains the Astro and Tailwind peer contract for the personal UI', async () => {
+    const packages = await personalGalleryPackages();
+    const ui = packages[0];
+    if (ui === undefined) throw new Error('The UI fixture is missing.');
+    ui.packedManifest = { ...ui.packedManifest, peerDependencies: {} };
+    let calls = 0;
+    const runner: IRunAstroFixtureCommand = () => {
+      calls++;
+      return Promise.resolve(COMMAND_SUCCESS);
+    };
+    expect(
+      (await checkAstroFixture(packages, createRunner([]).runCommand, runner)).get(
+        'jg-personal-astro-ui',
+      ),
+    ).toStrictEqual(['ships Astro components without the peer dependencies astro and tailwindcss']);
+    expect(calls).toBe(0);
+  });
+  test('copies the maintained gallery, installs exact tools and tarballs, and runs every stage', async () => {
+    const packages = await personalGalleryPackages();
+    const commands: {
+      executable: string;
+      args: string[];
+      options: Parameters<IRunAstroFixtureCommand>[2];
+    }[] = [];
+    const runner: IRunAstroFixtureCommand = async (executable, args, options) => {
+      commands.push({ executable, args, options });
+      if (commands.length === 1) {
+        expect(
+          await readFile(join(options.cwd, 'src', 'pages', 'interactions.astro'), 'utf8'),
+        ).toContain("from 'jg-personal-astro-ui/tabs'");
+        expect(await readFile(join(options.cwd, 'playwright.config.ts'), 'utf8')).toContain(
+          'reuseExistingServer: false',
+        );
+        expect(JSON.parse(await readFile(join(options.cwd, 'package.json'), 'utf8'))).toStrictEqual(
+          { name: 'release-check-astro-gallery', private: true, type: 'module' },
+        );
+        await writeInstalledClis(options.cwd);
+      }
+      expect(options.env?.['JG_UI_GALLERY_ROOT']).toBe(options.cwd);
+      expect(options.signal.aborted).toBe(false);
+      return COMMAND_SUCCESS;
+    };
+    const legacy = createRunner([]);
+    expect(await checkAstroFixture(packages, legacy.runCommand, runner)).toStrictEqual(
+      new Map([['jg-personal-astro-ui', []]]),
+    );
+    expect(legacy.commands).toStrictEqual([]);
+    expect(commands).toHaveLength(4);
+    expect(commands[0]?.args).toEqual(
+      expect.arrayContaining([
+        'astro@7.4.0',
+        'tailwindcss@4.3.3',
+        '@playwright/test@1.64.1',
+        'pagefind@1.5.2',
+        '/release/jg-process-1.0.0.tgz',
+        '/release/jg-playwright-1.0.0.tgz',
+      ]),
+    );
+    expect(commands.slice(1).map(({ executable }) => executable)).toStrictEqual([
+      process.execPath,
+      process.execPath,
+      process.execPath,
+    ]);
+    expect(commands.slice(1).map(({ args }) => args.slice(1))).toStrictEqual([
+      ['build'],
+      ['--site', 'dist'],
+      ['test', '--retries=0'],
+    ]);
+    expect(commands.map(({ options }) => Math.ceil(options.timeoutSeconds))).toStrictEqual([
+      300, 300, 60, 600,
+    ]);
+    await expect(access(commands[0]?.options.cwd ?? '')).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  test.each([
+    [{ exitCode: 7, signalCode: null, stdout: '', stderr: 'failed build' }, '7: failed build'],
+    [{ exitCode: null, signalCode: 'SIGTERM' as const, stdout: '', stderr: '' }, 'SIGTERM:'],
+  ])(
+    'reports actual build termination %o and removes partial setup',
+    async (result, diagnostic) => {
+      const roots: string[] = [];
+      const runner: IRunAstroFixtureCommand = async (_command, _args, options) => {
+        roots.push(options.cwd);
+        if (roots.length === 1) {
+          await writeInstalledClis(options.cwd);
+          return COMMAND_SUCCESS;
+        }
+        return { ...result, durationMs: 0 };
+      };
+      const problems = await checkAstroFixture(
+        await personalGalleryPackages(),
+        createRunner([]).runCommand,
+        runner,
+      );
+      expect(problems.get('jg-personal-astro-ui')?.[0]).toContain(
+        `Astro gallery build failed: command exited with ${diagnostic}`,
+      );
+      expect(roots).toHaveLength(2);
+      await expect(access(roots[0] ?? '')).rejects.toMatchObject({ code: 'ENOENT' });
+    },
+  );
+
+  test('bounds one-line command diagnostics and starts no later stage', async () => {
+    let calls = 0;
+    const runner: IRunAstroFixtureCommand = () => {
+      calls++;
+      return Promise.resolve({ ...COMMAND_SUCCESS, exitCode: 1, stderr: 'x'.repeat(16_384) });
+    };
+    const problems = await checkAstroFixture(
+      await personalGalleryPackages(),
+      createRunner([]).runCommand,
+      runner,
+    );
+    expect(calls).toBe(1);
+    expect(problems.get('jg-personal-astro-ui')?.[0]).toHaveLength(
+      'Astro gallery install failed: '.length + 8192,
+    );
+  });
+
+  test('keeps the final diagnostic from output with many short lines', async () => {
+    const runner: IRunAstroFixtureCommand = () =>
+      Promise.resolve({
+        ...COMMAND_SUCCESS,
+        exitCode: 1,
+        stderr: `${'context\n'.repeat(262_144)}final diagnostic`,
+      });
+    const problems = await checkAstroFixture(
+      await personalGalleryPackages(),
+      createRunner([]).runCommand,
+      runner,
+    );
+    const message = problems.get('jg-personal-astro-ui')?.[0] ?? '';
+    expect(message).toBe(
+      `Astro gallery install failed: command exited with 1: ${'context\n'.repeat(19)}final diagnostic`,
+    );
+  });
+
+  test('rejects an installed CLI that escapes its owning package', async () => {
+    let calls = 0;
+    let consumer = '';
+    const runner: IRunAstroFixtureCommand = async (_command, _args, options) => {
+      calls++;
+      consumer = options.cwd;
+      await writeInstalledClis(consumer);
+      await writeFile(
+        join(consumer, 'node_modules', 'astro', 'package.json'),
+        JSON.stringify({ name: 'astro', bin: '../../outside.js' }),
+      );
+      return COMMAND_SUCCESS;
+    };
+    const problems = await checkAstroFixture(
+      await personalGalleryPackages(),
+      createRunner([]).runCommand,
+      runner,
+    );
+    expect(problems.get('jg-personal-astro-ui')).toStrictEqual([
+      'Astro gallery build failed: The installed gallery tool astro points its CLI outside its package.',
+    ]);
+    expect(calls).toBe(1);
+    await expect(access(consumer)).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  test('requires every packed component to have a catalog example before installation', async () => {
+    const packages = await personalGalleryPackages();
+    const ui = packages[0];
+    expect(ui).toBeDefined();
+    if (ui === undefined) return;
+    ui.packedManifest = {
+      ...ui.packedManifest,
+      exports: {
+        ...(ui.packedManifest.exports as Record<string, string>),
+        './unrepresented': './src/components/unrepresented/unrepresented.astro',
+      },
+    };
+    let calls = 0;
+    const runner: IRunAstroFixtureCommand = () => {
+      calls++;
+      return Promise.resolve(COMMAND_SUCCESS);
+    };
+    const problems = await checkAstroFixture(packages, createRunner([]).runCommand, runner);
+    expect(problems.get('jg-personal-astro-ui')?.[0]).toContain(
+      'The gallery has no rendered example for jg-personal-astro-ui/unrepresented.',
+    );
+    expect(calls).toBe(0);
+  });
+
+  test('reports incomplete preparation without running an install', async () => {
+    const root = join(tmpdir(), `jg-ui-setup-${randomUUID()}`);
+    const uiDirectory = join(root, 'packages', 'ui');
+    await mkdir(uiDirectory, { recursive: true });
+    try {
+      await writeFile(join(root, 'pnpm-workspace.yaml'), 'catalog:\n');
+      await writeFile(join(uiDirectory, 'package.json'), JSON.stringify({ devDependencies: {} }));
+      const packages = await personalGalleryPackages();
+      const ui = packages[0];
+      if (ui === undefined) throw new Error('The UI fixture is missing.');
+      ui.workspacePackage.directory = uiDirectory;
+      let calls = 0;
+      const runner: IRunAstroFixtureCommand = () => {
+        calls++;
+        return Promise.resolve(COMMAND_SUCCESS);
+      };
+      const problems = await checkAstroFixture(packages, createRunner([]).runCommand, runner);
+      expect(problems.get('jg-personal-astro-ui')?.[0]).toContain(
+        'Astro gallery preparation failed: No exact workspace version is configured for gallery tool astro.',
+      );
+      expect(calls).toBe(0);
+    } finally {
+      await rm(root, { recursive: true });
+    }
+  });
+
+  test('preserves and reports a consumer when the executor cannot confirm teardown', async () => {
+    let consumer = '';
+    const runner: IRunAstroFixtureCommand = (_command, _args, options) => {
+      consumer = options.cwd;
+      return Promise.reject(
+        Object.assign(
+          new Error('The process tree of pid 123 is still running after it was force-stopped.'),
+          { code: 'PROCESS_TREE_SURVIVED' },
+        ),
+      );
+    };
+    try {
+      const problems = await checkAstroFixture(
+        await personalGalleryPackages(),
+        createRunner([]).runCommand,
+        runner,
+      );
+      expect(problems.get('jg-personal-astro-ui')?.[0]).toContain(
+        `consumer preserved at ${consumer}`,
+      );
+      expect(problems.get('jg-personal-astro-ui')?.[0]).toContain('pid 123');
+      await expect(access(consumer)).resolves.toBeUndefined();
+    } finally {
+      if (consumer !== '') await rm(consumer, { recursive: true });
+    }
+  });
 });
 const SIBLING = toPacked({ name: 'jg-exception', version: '1.0.1' });
 const UNRELATED = toPacked({ name: 'jg-fs', version: '1.0.1' });

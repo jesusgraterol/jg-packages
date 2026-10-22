@@ -46,6 +46,7 @@ const requireOption = (values: Record<string, unknown>, name: string): string =>
  * @throws
  * - The release commands run on Linux and macOS.
  * - Unknown command: {command}
+ * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
  */
 const main = async (args: string[]): Promise<number> => {
   if (process.platform === 'win32') {

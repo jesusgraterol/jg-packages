@@ -169,4 +169,4 @@ The light theme's keyword color maintains readable contrast on both added and re
 
 ## Releasing it
 
-It's checked like every other package, plus an Astro build: `release:verify` installs its tarball with its peers into a temporary Astro site that imports every component, stylesheet, and module, and runs `astro build`. [`releasing.md`](releasing.md) covers the rest.
+It's checked like every other package, plus the rendered gallery: `release:verify` copies the maintained gallery into an isolated consumer, installs the exact UI and required sibling tarballs with the checked-in tool versions, builds its pages and Pagefind index, and runs the same Playwright scenarios in all three browser engines. The fixture checks the packed export inventory and owns bounded commands, shutdown, and cleanup. [`releasing.md`](releasing.md) covers its limits and failure handling.

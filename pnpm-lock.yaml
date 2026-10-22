@@ -357,6 +357,9 @@ importers:
       '@jg-packages/api-reference':
         specifier: workspace:*
         version: link:../api-reference
+      jg-process:
+        specifier: workspace:*
+        version: link:../../packages/jg-process
       publint:
         specifier: 0.3.25
         version: 0.3.25

@@ -19,6 +19,7 @@
   "dependencies": {
     "@arethetypeswrong/cli": "0.18.5",
     "@jg-packages/api-reference": "workspace:*",
+    "jg-process": "workspace:*",
     "publint": "0.3.25",
     "semver": "7.8.5",
     "typescript": "catalog:"

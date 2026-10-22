@@ -26,6 +26,16 @@ describe('classifyExports', () => {
     ).toStrictEqual({ components: [], stylesheets: [], modules: ['jg-sample'] });
     expect(classifyExports('jg-sample', undefined).components).toStrictEqual([]);
   });
+
+  test('includes conditional Astro defaults in the rendered export inventory', () => {
+    expect(
+      classifyExports('jg-ui', {
+        './badge': { default: './src/components/badge/badge.astro' },
+        './types-only': { types: './dist/types.d.ts' },
+        './unsupported': null,
+      }),
+    ).toStrictEqual({ components: ['jg-ui/badge'], stylesheets: [], modules: [] });
+  });
 });
 
 describe('buildFixtureSources', () => {

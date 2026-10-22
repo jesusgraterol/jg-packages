@@ -1,8 +1,20 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { cp, lstat, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-import type { IRunCommand } from '../shared/types.ts';
+import { ERRORS as PROCESS_ERRORS, resolvePackageManagerCommand } from 'jg-process';
+
+import { getRuntimeDependencyNames } from '../workspace/workspace.ts';
+import type { IPackageManifest, IRunCommand } from '../shared/types.ts';
+
+import {
+  ASTRO_FIXTURE_LIMITS,
+  createAstroFixtureScope,
+  runAstroFixtureCommand,
+  type IRunAstroFixtureCommand,
+} from './astro-fixture-command/index.ts';
 import type { IPackedPackage } from './types.ts';
 
 // the peers an Astro package's fixture installs, besides the Tailwind CSS Vite plugin, which
@@ -11,6 +23,31 @@ const FIXTURE_PEERS = ['astro', 'tailwindcss'] as const;
 
 // the most lines of a failed command's output a problem quotes
 const MAX_OUTPUT_LINES = 20;
+const MAX_OUTPUT_CHARACTERS = 8192;
+
+// exact versions come from the owning manifest and the workspace's checked-in catalog
+const GALLERY_TOOLS = [
+  'astro',
+  'tailwindcss',
+  '@tailwindcss/vite',
+  '@playwright/test',
+  '@astrojs/markdown-satteri',
+  '@axe-core/playwright',
+  'pagefind',
+];
+const EXCLUDED_GALLERY_DIRECTORIES = new Set([
+  '_archive',
+  '_archives',
+  '_backup',
+  '_backups',
+  'node_modules',
+  'dist',
+  '.astro',
+  '.turbo',
+  'coverage',
+  'test-results',
+  'playwright-report',
+]);
 
 // a packed package's export specifiers, by kind
 export type IPackageExports = {
@@ -97,7 +134,7 @@ export const buildFixtureSources = ({
  * @returns The trimmed lines.
  */
 const lastLines = (output: string): string =>
-  output.trim().split('\n').slice(-MAX_OUTPUT_LINES).join('\n');
+  output.trim().slice(-MAX_OUTPUT_CHARACTERS).split('\n').slice(-MAX_OUTPUT_LINES).join('\n');
 
 /**
  * Builds one Astro package's fixture site: installs its tarball, the siblings it depends on, and
@@ -113,10 +150,6 @@ const buildFixture = async (
   runCommand: IRunCommand,
 ): Promise<string[]> => {
   const { dependencies = {}, name, peerDependencies = {} } = packed.packedManifest;
-  const missingPeers = FIXTURE_PEERS.filter((peer) => peerDependencies[peer] === undefined);
-  if (missingPeers.length > 0) {
-    return [`ships Astro components without the peer dependencies ${missingPeers.join(' and ')}`];
-  }
   const siblings = packages.filter(({ packedManifest }) => packedManifest.name in dependencies);
   const projectDirectory = await mkdtemp(join(tmpdir(), 'jg-release-astro-fixture-'));
   try {
@@ -175,21 +208,291 @@ const buildFixture = async (
 };
 
 /**
+ * Reads exact gallery tool versions from the checked-in UI manifest and catalog, failing rather
+ * than choosing a registry's latest version when a required version is missing.
+ * @param uiDirectory The source package that owns the maintained gallery.
+ * @returns The exact install specifiers.
+ * @throws
+ * - No exact workspace version is configured for gallery tool {name}.
+ */
+const readGalleryTools = async (uiDirectory: string): Promise<string[]> => {
+  const manifest = JSON.parse(
+    await readFile(join(uiDirectory, 'package.json'), 'utf8'),
+  ) as IPackageManifest;
+  const workspace = await readFile(resolve(uiDirectory, '..', '..', 'pnpm-workspace.yaml'), 'utf8');
+  const catalog = workspace.split('\ncatalog:\n')[1]?.split(/\n\S/u)[0]?.split('\n') ?? [];
+  return GALLERY_TOOLS.map((name) => {
+    const declared = manifest.devDependencies?.[name];
+    const catalogLine = catalog.find(
+      (line) => line.startsWith(`  '${name}': `) || line.startsWith(`  ${name}: `),
+    );
+    const version =
+      declared === 'catalog:'
+        ? catalogLine?.slice(catalogLine.lastIndexOf(':') + 1).trim()
+        : declared;
+    if (version === undefined || !/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/u.test(version)) {
+      throw new Error(`No exact workspace version is configured for gallery tool ${name}.`);
+    }
+    return `${name}@${version}`;
+  });
+};
+
+/**
+ * Includes the UI's runtime closure and gallery-only JG tools from this release's tarballs.
+ * @param packed The UI tarball.
+ * @param packages The release's tarballs.
+ * @returns The required tarballs, without duplicates.
+ * @throws
+ * - The Astro gallery needs the packed dependency {name}.
+ */
+const galleryTarballs = (packed: IPackedPackage, packages: IPackedPackage[]): string[] => {
+  const byName = new Map(packages.map((item) => [item.packedManifest.name, item]));
+  const selected = new Map([[packed.packedManifest.name, packed]]);
+  const pending = [
+    'jg-process',
+    'jg-playwright',
+    ...getRuntimeDependencyNames(packed.packedManifest).filter(
+      (name) => byName.has(name) || name.startsWith('jg-'),
+    ),
+  ];
+  for (const name of pending) {
+    if (selected.has(name)) continue;
+    const sibling = byName.get(name);
+    if (sibling === undefined)
+      throw new Error(`The Astro gallery needs the packed dependency ${name}.`);
+    selected.set(name, sibling);
+    pending.push(
+      ...getRuntimeDependencyNames(sibling.packedManifest).filter(
+        (dependency) => byName.has(dependency) || dependency.startsWith('jg-'),
+      ),
+    );
+  }
+  return [...selected.values()].map(({ tarballPath }) => tarballPath);
+};
+
+/**
+ * Locates a JavaScript CLI in this consumer's installation, without PATH or NODE_PATH fallback.
+ * @param root The installed consumer.
+ * @param name The dependency name.
+ * @param command Its bin name.
+ * @returns The absolute JavaScript entry point.
+ * @throws
+ * - The installed gallery tool {name} has no {command} CLI.
+ * - The installed gallery tool {name} points its CLI outside its package.
+ */
+const galleryCli = async (root: string, name: string, command: string): Promise<string> => {
+  const packageRoot = join(root, 'node_modules', name);
+  const manifest = JSON.parse(
+    await readFile(join(packageRoot, 'package.json'), 'utf8'),
+  ) as IPackageManifest;
+  const bin = typeof manifest.bin === 'string' ? manifest.bin : manifest.bin?.[command];
+  if (bin === undefined)
+    throw new Error(`The installed gallery tool ${name} has no ${command} CLI.`);
+  const entry = resolve(packageRoot, bin);
+  const path = relative(packageRoot, entry);
+  if (path === '' || isAbsolute(path) || path === '..' || path.startsWith(`..${sep}`)) {
+    throw new Error(`The installed gallery tool ${name} points its CLI outside its package.`);
+  }
+  const resolved = await realpath(entry);
+  const resolvedPackageRoot = await realpath(packageRoot);
+  const resolvedPath = relative(resolvedPackageRoot, resolved);
+  if (isAbsolute(resolvedPath) || resolvedPath === '..' || resolvedPath.startsWith(`..${sep}`)) {
+    throw new Error(`The installed gallery tool ${name} points its CLI outside its package.`);
+  }
+  return resolved;
+};
+
+/**
+ * Builds and exercises the maintained gallery using only the exact installed UI and sibling
+ * tarballs. A command finishes teardown before this boundary removes the consumer. Failed
+ * process-tree teardown preserves its root and reports the original diagnostic and known PID.
+ * @param packed The UI tarball and its source gallery owner.
+ * @param packages Every tarball in this release.
+ * @param executor The bounded command boundary.
+ * @returns A promise that resolves to stage-specific problems.
+ * @throws
+ * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
+ */
+const buildGalleryFixture = async (
+  packed: IPackedPackage,
+  packages: IPackedPackage[],
+  executor: IRunAstroFixtureCommand,
+): Promise<string[]> => {
+  const scope = createAstroFixtureScope(executor);
+  const projectDirectory = join(tmpdir(), `jg-ui-fixture-${randomUUID()}`);
+  const problems: string[] = [];
+  let stage = 'preparation';
+  let canRemove = true;
+  let ownsProject = false;
+  try {
+    scope.signal.throwIfAborted();
+    await mkdir(projectDirectory);
+    ownsProject = true;
+    const uiDirectory = packed.workspacePackage.directory;
+    const tools = await readGalleryTools(uiDirectory);
+    const tarballs = galleryTarballs(packed, packages);
+    await cp(join(uiDirectory, 'gallery'), projectDirectory, {
+      recursive: true,
+      filter: async (path) => {
+        if (EXCLUDED_GALLERY_DIRECTORIES.has(basename(path))) return false;
+        scope.signal.throwIfAborted();
+        if ((await lstat(path)).isSymbolicLink())
+          throw new Error(`The gallery source contains a symbolic link: ${path}`);
+        return true;
+      },
+    });
+    await cp(
+      join(uiDirectory, 'playwright.config.ts'),
+      join(projectDirectory, 'playwright.config.ts'),
+    );
+    await writeFile(
+      join(projectDirectory, 'package.json'),
+      JSON.stringify({ name: 'release-check-astro-gallery', private: true, type: 'module' }),
+    );
+    const catalog = (await import(
+      pathToFileURL(join(projectDirectory, 'src', 'catalog', 'index.ts')).href
+    )) as { GALLERY_EXAMPLES: { subpath: string }[] };
+    const represented = new Set(
+      catalog.GALLERY_EXAMPLES.map(({ subpath }) => `${packed.packedManifest.name}/${subpath}`),
+    );
+    const missing = classifyExports(
+      packed.packedManifest.name,
+      packed.packedManifest.exports,
+    ).components.filter((specifier) => !represented.has(specifier));
+    if (missing.length > 0)
+      throw new Error(`The gallery has no rendered example for ${missing.join(', ')}.`);
+
+    /**
+     * Runs a stage within both deadlines and rejects unexpected command termination.
+     * @param name The stage whose limit and failure diagnostic apply.
+     * @param executable The executable, without a shell.
+     * @param args Its arguments.
+     * @returns A promise that resolves after a successful command and its teardown.
+     * @throws
+     * - INVALID_PROCESS_OPTIONS: The timeout must be a positive number of at most 2,147,483 seconds, and the output limit a positive safe integer.
+     * - PROCESS_START_FAILED: Unable to start the command
+     * - PROCESS_TIMED_OUT: The process didn't finish within the timeout
+     * - PROCESS_OUTPUT_TOO_LARGE: The process wrote more output than allowed
+     * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped
+     * - The Astro gallery exceeded its overall deadline.
+     * - command exited with {exitCodeOrSignal}: {diagnostic}
+     * - The cancellation signal's reason.
+     */
+    const runStage = async (
+      name: Exclude<keyof typeof ASTRO_FIXTURE_LIMITS, 'total'>,
+      executable: string,
+      args: string[],
+    ): Promise<void> => {
+      stage = name;
+      scope.signal.throwIfAborted();
+      const result = await scope.run(executable, args, {
+        cwd: projectDirectory,
+        env: { ...process.env, JG_UI_GALLERY_ROOT: projectDirectory },
+        signal: scope.signal,
+        timeoutSeconds: ASTRO_FIXTURE_LIMITS[name],
+      });
+      if (result.signalCode !== null || result.exitCode !== 0) {
+        throw new Error(
+          `command exited with ${result.signalCode ?? String(result.exitCode)}: ${lastLines(`${result.stdout}\n${result.stderr}`)}`,
+        );
+      }
+    };
+    stage = 'install';
+    const npm = resolvePackageManagerCommand(
+      [
+        'install',
+        '--ignore-scripts',
+        '--no-audit',
+        '--no-fund',
+        '--no-package-lock',
+        ...tarballs,
+        ...tools,
+      ],
+      { packageManager: 'npm', cwd: projectDirectory },
+    );
+    await runStage('install', npm.command, npm.args);
+    stage = 'build';
+    await runStage('build', process.execPath, [
+      await galleryCli(projectDirectory, 'astro', 'astro'),
+      'build',
+    ]);
+    stage = 'index';
+    await runStage('index', process.execPath, [
+      await galleryCli(projectDirectory, 'pagefind', 'pagefind'),
+      '--site',
+      'dist',
+    ]);
+    stage = 'browser';
+    await runStage('browser', process.execPath, [
+      await galleryCli(projectDirectory, '@playwright/test', 'playwright'),
+      'test',
+      '--retries=0',
+    ]);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    canRemove = !(
+      error instanceof Error &&
+      'code' in error &&
+      error.code === PROCESS_ERRORS.PROCESS_TREE_SURVIVED
+    );
+    if (!canRemove) {
+      const diagnostic = `Astro gallery ${stage} teardown could not be confirmed; consumer preserved at ${projectDirectory}: ${lastLines(message)}`;
+      problems.push(diagnostic);
+      if (scope.isInterrupted()) console.error(diagnostic);
+    } else {
+      problems.push(`Astro gallery ${stage} failed: ${lastLines(message)}`);
+    }
+  } finally {
+    if (canRemove && ownsProject) {
+      try {
+        await rm(projectDirectory, { recursive: true, force: true });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const diagnostic = `Astro gallery consumer could not be removed at ${projectDirectory}: ${lastLines(message)}`;
+        problems.push(diagnostic);
+        if (scope.isInterrupted()) console.error(diagnostic);
+      }
+    }
+    scope.dispose();
+  }
+  if (scope.isInterrupted()) throw scope.interruptionReason();
+  return problems;
+};
+
+/**
  * Check 4: for each package that ships Astro components, a temporary Astro site installed from the
- * tarball imports every component, stylesheet, and module, and `astro build` must pass.
+ * tarball imports every component, stylesheet, and module, and `astro build` must pass. The
+ * personal UI instead renders its maintained gallery and runs the installed browser suite.
  * @param packages The packed packages.
  * @param runCommand Runs a command.
+ * @param runGalleryCommand Runs the installed UI fixture with bounded process ownership.
  * @returns A promise that resolves to each Astro package's problems, by name.
+ * @throws
+ * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
  */
 export const checkAstroFixture = async (
   packages: IPackedPackage[],
   runCommand: IRunCommand,
+  runGalleryCommand: IRunAstroFixtureCommand = runAstroFixtureCommand,
 ): Promise<Map<string, string[]>> => {
   const problems = new Map<string, string[]>();
   for (const packed of packages) {
     const { name, exports: exportsMap } = packed.packedManifest;
-    if (classifyExports(name, exportsMap).components.length > 0) {
-      problems.set(name, await buildFixture(packed, packages, runCommand));
+    if (
+      name === 'jg-personal-astro-ui' ||
+      classifyExports(name, exportsMap).components.length > 0
+    ) {
+      const missingPeers = FIXTURE_PEERS.filter(
+        (peer) => packed.packedManifest.peerDependencies?.[peer] === undefined,
+      );
+      problems.set(
+        name,
+        missingPeers.length > 0
+          ? [`ships Astro components without the peer dependencies ${missingPeers.join(' and ')}`]
+          : await (name === 'jg-personal-astro-ui'
+              ? buildGalleryFixture(packed, packages, runGalleryCommand)
+              : buildFixture(packed, packages, runCommand)),
+      );
     }
   }
   return problems;
