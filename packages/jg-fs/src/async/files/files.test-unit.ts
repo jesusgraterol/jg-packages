@@ -87,9 +87,53 @@ describe('writeFileAtomicIfUnchanged failures', () => {
     await fs.rm(directory, { recursive: true, force: true });
   });
 
+  test.skipIf(process.platform === 'win32')(
+    'sets private permissions before writing any content to the temporary file',
+    async () => {
+      const destination = join(directory, 'private.txt');
+      await fs.writeFile(destination, 'before', { mode: 0o644 });
+      let modeAtWrite: number | undefined;
+      vi.mocked(fs.open).mockImplementationOnce(async (...args) => {
+        const handle = await actualFs.open(...args);
+        const write = handle.writeFile.bind(handle);
+        handle.writeFile = async (...writeArgs) => {
+          modeAtWrite = (await handle.stat()).mode & 0o777;
+          return write(...writeArgs);
+        };
+        return handle;
+      });
+
+      await writeFileAtomicIfUnchanged(destination, 'after', Buffer.from('before'), 0o600);
+
+      expect(modeAtWrite).toBe(0o600);
+      expect(await fs.readFile(destination, 'utf8')).toBe('after');
+    },
+  );
+
+  test('leaves the destination untouched and removes the temporary file when setting its mode fails', async () => {
+    const destination = join(directory, 'mode-failure.txt');
+    await fs.writeFile(destination, 'before');
+    const modeBefore = (await fs.stat(destination)).mode;
+    const denied = Object.assign(new Error('EPERM: operation not permitted'), { code: 'EPERM' });
+    vi.mocked(fs.open).mockImplementationOnce(async (...args) => {
+      const handle = await actualFs.open(...args);
+      handle.chmod = () => Promise.reject(denied);
+      return handle;
+    });
+
+    await expect(
+      writeFileAtomicIfUnchanged(destination, 'after', Buffer.from('before'), 0o600),
+    ).rejects.toBe(denied);
+
+    expect(await fs.readFile(destination, 'utf8')).toBe('before');
+    expect((await fs.stat(destination)).mode).toBe(modeBefore);
+    expect((await fs.readdir(directory)).filter((name) => name.endsWith('.tmp'))).toStrictEqual([]);
+  });
+
   test('passes on an error reading the file back, other than a change, leaving it untouched', async () => {
     const destination = join(directory, 'config.txt');
     await fs.writeFile(destination, 'before');
+    const modeBefore = (await fs.stat(destination)).mode;
     const denied = Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' });
     // the read-back opens the destination itself with numeric flags; the temporary file uses 'wx'
     vi.mocked(fs.open).mockImplementation(async (path, flags, mode) => {
@@ -100,9 +144,10 @@ describe('writeFileAtomicIfUnchanged failures', () => {
     });
 
     await expect(
-      writeFileAtomicIfUnchanged(destination, 'after', Buffer.from('before')),
+      writeFileAtomicIfUnchanged(destination, 'after', Buffer.from('before'), 0o600),
     ).rejects.toBe(denied);
     expect(await fs.readFile(destination, 'utf8')).toBe('before');
+    expect((await fs.stat(destination)).mode).toBe(modeBefore);
     expect((await fs.readdir(directory)).filter((name) => name.endsWith('.tmp'))).toStrictEqual([]);
   });
 });

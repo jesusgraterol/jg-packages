@@ -271,18 +271,97 @@ describe('File Actions', () => {
       expect(await readRaw(p('nested/new.txt'), 'utf-8')).toBe('created');
     });
 
+    test('creates a private file with an explicit mode', async () => {
+      await writeFileAtomicIfUnchanged(p('secret.txt'), 'created', null, 0o600);
+
+      expect(await readRaw(p('secret.txt'), 'utf-8')).toBe('created');
+      if (!IS_WINDOWS) {
+        expect(await permissionBits(p('secret.txt'))).toBe(0o600);
+      }
+      expect(await listTemporaryFiles(p())).toStrictEqual([]);
+    });
+
+    test.each([0o640, 0o644, 0o666])(
+      'replaces a file with mode %i using explicit private permissions',
+      async (mode) => {
+        await writeTextFile(p('secret.txt'), 'before');
+        if (!IS_WINDOWS) {
+          await chmod(p('secret.txt'), mode);
+        }
+
+        await writeFileAtomicIfUnchanged(p('secret.txt'), 'after', Buffer.from('before'), 0o600);
+
+        expect(await readRaw(p('secret.txt'), 'utf-8')).toBe('after');
+        if (!IS_WINDOWS) {
+          expect(await permissionBits(p('secret.txt'))).toBe(0o600);
+        }
+        expect(await listTemporaryFiles(p())).toStrictEqual([]);
+      },
+    );
+
+    test.skipIf(IS_WINDOWS).each([
+      ['jg-fs', 0o022],
+      ['jg-fs', 0o777],
+      ['jg-fs/sync', 0o022],
+      ['jg-fs/sync', 0o777],
+    ] as const)(
+      '%s honors explicit and omitted modes under child-process umask %i',
+      async (entry, umask) => {
+        await mkdir(p(), { recursive: true });
+        const script = `
+          const { writeFileAtomicIfUnchanged } = await import(process.argv[3]);
+          import { chmodSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          const directory = process.argv[1];
+          const existing = join(directory, 'existing.txt');
+          const created = join(directory, 'created.txt');
+          const defaulted = join(directory, 'defaulted.txt');
+          writeFileSync(existing, 'before');
+          chmodSync(existing, 0o644);
+          process.umask(Number(process.argv[2]));
+          await writeFileAtomicIfUnchanged(created, 'secret', null, 0o600);
+          await writeFileAtomicIfUnchanged(defaulted, '', null);
+          await writeFileAtomicIfUnchanged(existing, 'after', Buffer.from('before'), 0o600);
+          const modes = [created, defaulted, existing].map(path => statSync(path).mode & 0o777);
+          console.log(JSON.stringify({ modes, content: readFileSync(existing, 'utf8') }));
+        `;
+
+        const { stdout } = await promisify(execFile)(
+          process.execPath,
+          ['--input-type=module', '-e', script, p(), String(umask), entry],
+          {
+            cwd: join(import.meta.dirname, '../../..'),
+            signal: AbortSignal.timeout(5_000),
+            maxBuffer: 65_536,
+          },
+        );
+
+        expect(JSON.parse(stdout)).toStrictEqual({
+          modes: [0o600, 0o666 & ~umask, 0o600],
+          content: 'after',
+        });
+        expect(await listTemporaryFiles(p())).toStrictEqual([]);
+      },
+    );
+
     test.each([
       ['other bytes of the same length', 'BEFORE'],
       ['fewer bytes', 'befor'],
       ['more bytes', 'before and more'],
     ])('throws FILE_CHANGED, leaving the file, when it holds %s', async (_, current) => {
       await writeTextFile(p('config.txt'), current);
+      if (!IS_WINDOWS) {
+        await chmod(p('config.txt'), 0o644);
+      }
 
       await expectToRejectCode(
-        writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before')),
+        writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before'), 0o600),
         ERRORS.FILE_CHANGED,
       );
       expect(await readRaw(p('config.txt'), 'utf-8')).toBe(current);
+      if (!IS_WINDOWS) {
+        expect(await permissionBits(p('config.txt'))).toBe(0o644);
+      }
       expect(await listTemporaryFiles(p())).toStrictEqual([]);
     });
 
@@ -290,7 +369,7 @@ describe('File Actions', () => {
       await writeTextFile(p('new.txt'), '');
 
       await expectToRejectCode(
-        writeFileAtomicIfUnchanged(p('new.txt'), 'created', null),
+        writeFileAtomicIfUnchanged(p('new.txt'), 'created', null, 0o600),
         ERRORS.FILE_CHANGED,
       );
       expect(await readRaw(p('new.txt'), 'utf-8')).toBe('');
@@ -300,11 +379,11 @@ describe('File Actions', () => {
       await mkdir(p('directory'), { recursive: true });
 
       await expectToRejectCode(
-        writeFileAtomicIfUnchanged(p('missing.txt'), 'after', Buffer.from('before')),
+        writeFileAtomicIfUnchanged(p('missing.txt'), 'after', Buffer.from('before'), 0o600),
         ERRORS.FILE_CHANGED,
       );
       await expectToRejectCode(
-        writeFileAtomicIfUnchanged(p('directory'), 'after', Buffer.from('')),
+        writeFileAtomicIfUnchanged(p('directory'), 'after', Buffer.from(''), 0o600),
         ERRORS.FILE_CHANGED,
       );
     });
@@ -316,7 +395,7 @@ describe('File Actions', () => {
         await symlink(p('target.txt'), p('config.txt'));
 
         await expectToRejectCode(
-          writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before')),
+          writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before'), 0o600),
           ERRORS.FILE_CHANGED,
         );
         expect(await readRaw(p('target.txt'), 'utf-8')).toBe('before');

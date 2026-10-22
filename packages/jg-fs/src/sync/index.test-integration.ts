@@ -641,27 +641,83 @@ describe('Filesystem', () => {
 
     test('writeFileAtomicIfUnchanged replaces unchanged bytes, and creates a missing file', () => {
       writeTextFile(p('config.txt'), 'before');
+      if (!IS_WINDOWS) {
+        chmodSync(p('config.txt'), 0o640);
+      }
 
       writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before'));
       writeFileAtomicIfUnchanged(p('new.txt'), 'created', null);
 
       expect(readFileSync(p('config.txt'), 'utf-8')).toBe('after');
       expect(readFileSync(p('new.txt'), 'utf-8')).toBe('created');
+      if (!IS_WINDOWS) {
+        expect(permissionBits(p('config.txt'))).toBe(0o640);
+      }
       expect(listTemporaryFiles(p())).toStrictEqual([]);
     });
 
+    test('writeFileAtomicIfUnchanged creates a private file with an explicit mode', () => {
+      writeFileAtomicIfUnchanged(p('secret.txt'), 'created', null, 0o600);
+
+      expect(readFileSync(p('secret.txt'), 'utf-8')).toBe('created');
+      if (!IS_WINDOWS) {
+        expect(permissionBits(p('secret.txt'))).toBe(0o600);
+      }
+      expect(listTemporaryFiles(p())).toStrictEqual([]);
+    });
+
+    test.each([0o640, 0o644, 0o666])(
+      'writeFileAtomicIfUnchanged replaces mode %i with explicit private permissions',
+      (mode) => {
+        writeTextFile(p('secret.txt'), 'before');
+        if (!IS_WINDOWS) {
+          chmodSync(p('secret.txt'), mode);
+        }
+
+        writeFileAtomicIfUnchanged(p('secret.txt'), 'after', Buffer.from('before'), 0o600);
+
+        expect(readFileSync(p('secret.txt'), 'utf-8')).toBe('after');
+        if (!IS_WINDOWS) {
+          expect(permissionBits(p('secret.txt'))).toBe(0o600);
+        }
+        expect(listTemporaryFiles(p())).toStrictEqual([]);
+      },
+    );
+
     test('writeFileAtomicIfUnchanged throws FILE_CHANGED, leaving the file, for other bytes or a file that appeared', () => {
       writeTextFile(p('config.txt'), 'edited');
+      if (!IS_WINDOWS) {
+        chmodSync(p('config.txt'), 0o644);
+      }
 
       expectToThrowCode(
-        () => writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before')),
+        () => writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before'), 0o600),
         ERRORS.FILE_CHANGED,
       );
       expectToThrowCode(
-        () => writeFileAtomicIfUnchanged(p('config.txt'), 'after', null),
+        () => writeFileAtomicIfUnchanged(p('config.txt'), 'after', null, 0o600),
         ERRORS.FILE_CHANGED,
       );
       expect(readFileSync(p('config.txt'), 'utf-8')).toBe('edited');
+      if (!IS_WINDOWS) {
+        expect(permissionBits(p('config.txt'))).toBe(0o644);
+      }
+      expect(listTemporaryFiles(p())).toStrictEqual([]);
+    });
+
+    test('writeFileAtomicIfUnchanged refuses a missing file or directory without leaving temporary files', () => {
+      createDirectory(p('directory'));
+
+      expectToThrowCode(
+        () => writeFileAtomicIfUnchanged(p('missing.txt'), 'after', Buffer.from('before'), 0o600),
+        ERRORS.FILE_CHANGED,
+      );
+      expectToThrowCode(
+        () => writeFileAtomicIfUnchanged(p('directory'), 'after', Buffer.from(''), 0o600),
+        ERRORS.FILE_CHANGED,
+      );
+      expect(pathExists(p('missing.txt'))).toBe(false);
+      expect(isDirectory(p('directory'))).toBe(true);
       expect(listTemporaryFiles(p())).toStrictEqual([]);
     });
 
@@ -672,9 +728,11 @@ describe('Filesystem', () => {
         symlinkSync(resolve(p('target.txt')), p('config.txt'));
 
         expectToThrowCode(
-          () => writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before')),
+          () => writeFileAtomicIfUnchanged(p('config.txt'), 'after', Buffer.from('before'), 0o600),
           ERRORS.FILE_CHANGED,
         );
+        expect(readFileSync(p('target.txt'), 'utf-8')).toBe('before');
+        expect(listTemporaryFiles(p())).toStrictEqual([]);
       },
     );
 

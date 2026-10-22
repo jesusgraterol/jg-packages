@@ -347,15 +347,18 @@ export const writeFileAtomic = (
  * `FILE_CHANGED`, leaving the file as it is, when they differ, when the path is now a symbolic link
  * or not a regular file, or when `expected` is null, for a file that didn't exist, and something now
  * exists at the path. A change made between that read and the rename itself, a short window, isn't
- * detected. A replaced file keeps its permission bits.
+ * detected. An explicit mode wins; without one, a replaced file keeps its permission bits and a
+ * new file gets the platform default. The temporary file's permissions are set before writing.
  * @param path The file's path.
  * @param data The new content.
  * @param expected The bytes the file held when the caller read it, or null when it didn't exist.
+ * @param mode The permission bits of the written file, such as `0o600`.
  * @example
  * import { readBoundedFile, writeFileAtomicIfUnchanged } from 'jg-fs/sync';
  *
  * const before = readBoundedFile('.npmrc', 65_536);
  * writeFileAtomicIfUnchanged('.npmrc', `${before.toString('utf8')}save-exact=true\n`, before);
+ * writeFileAtomicIfUnchanged('credentials.json', '{"token":"abc"}\n', null, 0o600);
  * @throws
  * - FILE_CHANGED: The file '<path>' changed since it was read.
  */
@@ -363,8 +366,9 @@ export const writeFileAtomicIfUnchanged = (
   path: string,
   data: string | NodeJS.ArrayBufferView,
   expected: Uint8Array | null,
+  mode?: number,
 ): void => {
-  writeAtomically(path, data, undefined, () => {
+  writeAtomically(path, data, mode, () => {
     let current: Buffer | null;
     try {
       // one byte past what's expected is enough to tell the file grew
