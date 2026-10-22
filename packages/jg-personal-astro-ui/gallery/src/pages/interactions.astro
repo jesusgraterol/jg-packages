@@ -251,6 +251,18 @@ import GalleryLayout from '../layouts/gallery-layout.astro';
     </section>
     <section
       class="gallery-example"
+      aria-labelledby="configured-search-heading"
+    >
+      <h2 id="configured-search-heading">Configured search</h2>
+      <SearchDialog
+        id="configured-search"
+        title="Find documentation"
+        inputLabel="Search documentation"
+        placeholder="e.g. Installation"
+      />
+    </section>
+    <section
+      class="gallery-example"
       data-example="copy-button"
       aria-labelledby="copy-title"
     >

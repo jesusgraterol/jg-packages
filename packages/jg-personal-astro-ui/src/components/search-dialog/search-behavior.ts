@@ -1,4 +1,4 @@
-import { openDialog } from '../dialog/dialog-behavior.ts';
+import { closeDialog, openDialog } from '../dialog/dialog-behavior.ts';
 
 // what a Pagefind result's data holds that the dialog shows
 export type IPagefindResultData = {
@@ -160,88 +160,201 @@ const closeOnEscape = (event: KeyboardEvent): boolean => {
     return false;
   }
   event.preventDefault();
-  dialog.close();
+  closeDialog(dialog);
   return true;
 };
 
+// one listener set and shared index-promise cache per document, including Astro swaps
+const registeredDocuments = new WeakSet<Document>();
+
+/** Updates loading state without blocking announcements in the adjacent status region. */
+const setSearchPending = (container: HTMLElement, isPending: boolean): void => {
+  container.querySelector('[data-search-results]')?.setAttribute('aria-busy', String(isPending));
+  container.querySelector('[data-search-retry]')?.setAttribute('aria-disabled', String(isPending));
+};
+
+/** Hides a completed retry action while preserving useful keyboard focus. */
+const hideSearchRetry = (container: HTMLElement): void => {
+  const retry = container.querySelector<HTMLElement>('[data-search-retry]');
+  if (retry === null) return;
+  if (container.ownerDocument.activeElement === retry)
+    container
+      .querySelector<HTMLInputElement>('[data-search-input]')
+      ?.focus({ preventScroll: true });
+  retry.hidden = true;
+};
+
+/** Finds the search region only in a native dialog, ignoring other toggle/close events. */
+const searchFromDialog = (target: EventTarget | null): HTMLElement | null => {
+  const dialog = target as Partial<HTMLDialogElement> | null;
+  return typeof dialog?.showModal === 'function'
+    ? (dialog.querySelector?.<HTMLElement>('[data-search-dialog]') ?? null)
+    : null;
+};
+
 /**
- * Makes the page's search dialogs work: the shortcut opens one, with its field focused, Escape in
- * its field closes it, even with text in the field, and typing searches with Pagefind once the
- * visitor pauses. A newer search replaces an older one's
- * results, even when the older one answers last. One key listener and one input listener on the
- * document serve them all; the attribute set on the root element keeps a second call from adding
- * second listeners.
- * @param root The document. Defaults to the page's.
- * @param load Loads Pagefind from the dialog's `data-pagefind-path`. Defaults to a dynamic import.
+ * Registers document-owned search, native dialog lifecycle, and retry behavior. Queries retain
+ * the existing debounce and eight-result bound. Request identities prevent stale completion,
+ * including A/B/A queries. Failed imports are retried with a fresh module URL; healthy indexes
+ * retain the existing shared promise per configured path. Closing/navigation cancels pending
+ * timers and invalidates in-flight work without replacing Pagefind's own index cache.
+ * @param root The owning document. Defaults to the page's.
+ * @param load Optionally replaces only the Pagefind import boundary.
  */
-export const registerSearchDialogs = (
-  root: Document = document,
-  load: IPagefindLoader = (path) => import(/* @vite-ignore */ path) as Promise<IPagefind>,
-): void => {
-  if (root.documentElement.hasAttribute('data-search-dialogs-ready')) {
-    return;
-  }
-  root.documentElement.setAttribute('data-search-dialogs-ready', '');
+export const registerSearchDialogs = (root: Document = document, load?: IPagefindLoader): void => {
+  if (registeredDocuments.has(root)) return;
+  registeredDocuments.add(root);
   const pagefinds = new Map<string, Promise<IPagefind>>();
+  const failedLoads = new Map<string, number>();
   const timers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
-  const latestQueries = new WeakMap<HTMLElement, string>();
+  const generations = new WeakMap<HTMLElement, number>();
+  const active = new Set<HTMLElement>();
+  const loadIndex: IPagefindLoader =
+    load ??
+    ((path) => {
+      const attempt = failedLoads.get(path) ?? 0;
+      if (attempt === 0) return import(/* @vite-ignore */ path) as Promise<IPagefind>;
+      const url = new URL(path, import.meta.url);
+      url.searchParams.set('__jg_search_retry', String(attempt));
+      return import(/* @vite-ignore */ url.href) as Promise<IPagefind>;
+    });
+
+  /** Cancels only this region's pending work; a shared index load may still serve other queries. */
+  const cancel = (container: HTMLElement): void => {
+    clearTimeout(timers.get(container));
+    timers.delete(container);
+    generations.set(container, (generations.get(container) ?? 0) + 1);
+    active.delete(container);
+    setSearchPending(container, false);
+  };
+
+  /** Schedules a query or runs an explicit retry, keeping every completion tied to its request. */
+  const schedule = (container: HTMLElement, query: string, isRetry = false): void => {
+    cancel(container);
+    const generation = generations.get(container);
+    if (query === '') {
+      hideSearchRetry(container);
+      showResults(container, '', []);
+      return;
+    }
+    active.add(container);
+    if (!isRetry) hideSearchRetry(container);
+    setSearchPending(container, true);
+    container.querySelector('[data-search-results]')?.replaceChildren();
+    const status = container.querySelector('[data-search-status]');
+    if (status !== null) status.textContent = 'Searching…';
+    const isCurrent = (): boolean =>
+      generations.get(container) === generation && container.isConnected;
+    const run = async (): Promise<void> => {
+      if (!isCurrent()) {
+        active.delete(container);
+        return;
+      }
+      const path = container.dataset['pagefindPath'] ?? '/pagefind/pagefind.js';
+      let promise: Promise<IPagefind> | undefined;
+      try {
+        promise = pagefinds.get(path);
+        if (promise === undefined) {
+          promise = loadIndex(path);
+          pagefinds.set(path, promise);
+        }
+        const results = await searchSite(await promise, query);
+        if (isCurrent()) {
+          setSearchPending(container, false);
+          hideSearchRetry(container);
+          showResults(container, query, results);
+        }
+      } catch {
+        if (promise !== undefined && pagefinds.get(path) === promise) {
+          pagefinds.delete(path);
+          failedLoads.set(path, (failedLoads.get(path) ?? 0) + 1);
+        }
+        if (isCurrent()) {
+          setSearchPending(container, false);
+          showUnavailable(container);
+          const retry = container.querySelector<HTMLElement>('[data-search-retry]');
+          if (retry !== null) retry.hidden = false;
+        }
+      } finally {
+        if (generations.get(container) === generation) {
+          active.delete(container);
+          timers.delete(container);
+        }
+      }
+    };
+    if (isRetry) void run();
+    else
+      timers.set(
+        container,
+        setTimeout(() => {
+          void run();
+        }, SEARCH_DELAY_MS),
+      );
+  };
 
   root.addEventListener('keydown', (event) => {
-    if (closeOnEscape(event)) {
-      return;
-    }
-    // the dialog element that holds the page's search
-    const dialog = root.querySelector('[data-search-dialog]')?.closest('dialog');
-    if (dialog === null || dialog === undefined || dialog.open || !isSearchShortcut(event)) {
-      return;
-    }
+    if (closeOnEscape(event) || !isSearchShortcut(event)) return;
+    const container =
+      [...root.querySelectorAll<HTMLElement>('[data-search-dialog]')].find(
+        (candidate) => candidate.closest('dialog')?.open === true,
+      ) ?? root.querySelector('[data-search-dialog]');
+    const dialog = container?.closest('dialog');
+    if (dialog === null || dialog === undefined) return;
     event.preventDefault();
-    openDialog(dialog, root.activeElement);
+    if (!dialog.open)
+      openDialog(dialog, root.activeElement === root.body ? null : root.activeElement);
     dialog.querySelector<HTMLInputElement>('[data-search-input]')?.focus();
   });
-
   root.addEventListener('input', (event) => {
     const target = event.target as Partial<HTMLInputElement> | null;
-    if (typeof target?.closest !== 'function' || target.matches?.('[data-search-input]') !== true) {
+    if (typeof target?.closest !== 'function' || target.matches?.('[data-search-input]') !== true)
       return;
-    }
-    // the search field, now that it matched
-    const input = target as HTMLInputElement;
-    const dialog = input.closest<HTMLElement>('[data-search-dialog]');
-    if (dialog === null) {
-      return;
-    }
-    const query = input.value.trim();
-    latestQueries.set(dialog, query);
-    clearTimeout(timers.get(dialog));
-    if (query === '') {
-      showResults(dialog, '', []);
-      return;
-    }
-    timers.set(
-      dialog,
-      setTimeout(() => {
-        const path = dialog.dataset['pagefindPath'] ?? '/pagefind/pagefind.js';
-        if (!pagefinds.has(path)) {
-          pagefinds.set(path, load(path));
-        }
-        void (async () => {
-          try {
-            const results = await searchSite(
-              await (pagefinds.get(path) as Promise<IPagefind>),
-              query,
-            );
-            if (latestQueries.get(dialog) === query) {
-              showResults(dialog, query, results);
-            }
-          } catch {
-            pagefinds.delete(path);
-            if (latestQueries.get(dialog) === query) {
-              showUnavailable(dialog);
-            }
-          }
-        })();
-      }, SEARCH_DELAY_MS),
-    );
+    const container = target.closest<HTMLElement>('[data-search-dialog]');
+    if (container !== null) schedule(container, (target.value ?? '').trim());
   });
+  root.addEventListener('click', (event) => {
+    const target = event.target as Partial<Element> | null;
+    if (event.defaultPrevented || event.button !== 0 || typeof target?.closest !== 'function')
+      return;
+    const retry = target.closest<HTMLElement>('[data-search-retry]');
+    const container = retry?.closest<HTMLElement>('[data-search-dialog]');
+    if (
+      retry === null ||
+      retry === undefined ||
+      container === null ||
+      container === undefined ||
+      retry.getAttribute('aria-disabled') === 'true'
+    )
+      return;
+    const input = container.querySelector<HTMLInputElement>('[data-search-input]');
+    if (input !== null) {
+      event.preventDefault();
+      schedule(container, input.value.trim(), true);
+    }
+  });
+  root.addEventListener(
+    'toggle',
+    (event) => {
+      const container = searchFromDialog(event.target);
+      const dialog = event.target as HTMLDialogElement | null;
+      if (container === null || dialog?.open !== true) return;
+      const input = container.querySelector<HTMLInputElement>('[data-search-input]');
+      if (input !== null) schedule(container, input.value.trim());
+    },
+    true,
+  );
+  root.addEventListener(
+    'close',
+    (event) => {
+      const container = searchFromDialog(event.target);
+      if (container !== null && (event.target as HTMLDialogElement).open === false)
+        cancel(container);
+    },
+    true,
+  );
+  const clear = (): void => {
+    for (const container of active) cancel(container);
+  };
+  root.addEventListener('astro:before-swap', clear);
+  root.defaultView?.addEventListener('pagehide', clear);
 };

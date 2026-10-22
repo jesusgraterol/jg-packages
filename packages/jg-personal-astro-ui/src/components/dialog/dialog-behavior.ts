@@ -137,6 +137,16 @@ export const openDialog = (dialog: HTMLDialogElement, opener?: Element | null): 
   else state.history.whenReady(open);
 };
 
+/**
+ * Closes a dialog and synchronously releases its owned resources and restores focus. The later
+ * native close notification remains idempotent, including if another opening already started.
+ * @param dialog The dialog to close.
+ */
+export const closeDialog = (dialog: HTMLDialogElement): void => {
+  dialog.close();
+  finishDialog(dialog);
+};
+
 /** Opens named triggers and handles close buttons and the permitted backdrop dismissal. */
 export const handleDialogClick = (event: MouseEvent): void => {
   const target = event.target as Partial<Element> | null;
@@ -156,8 +166,7 @@ export const handleDialogClick = (event: MouseEvent): void => {
     (target.closest('[data-dialog-close]') !== null ||
       (target === dialog && dialog.dataset['dialogOverlayClose'] !== 'false'))
   ) {
-    dialog.close();
-    finishDialog(dialog);
+    closeDialog(dialog);
   }
 };
 

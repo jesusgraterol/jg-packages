@@ -64,6 +64,8 @@ Tabs expose labeled panels and ordinary panel links without JavaScript. Once enh
 
 `dialog` keeps its title and close action visible while the body scrolls. It restores background styles, page position, and focus on dismissal. Optional `size`, `mobilePresentation="fullscreen"`, `isOverlayCloseEnabled`, and `initialFocus` props configure larger content and phone flows; floating `md` dialogs and backdrop dismissal remain the defaults.
 
+`search-dialog` accepts `title`, `inputLabel`, and `placeholder`, with the existing text as defaults. It announces loading, result counts, empty results, and errors, offers retry after failure, and keeps touch input text at 16px. Pagefind indexes remain shared, results stay bounded to eight, and stale queries cannot replace newer results.
+
 ## Private gallery
 
 From a repository checkout, run `pnpm --filter jg-personal-astro-ui gallery:dev` to inspect the components, or `pnpm --filter jg-personal-astro-ui test:e2e` to build the gallery and test it in Chromium, Firefox, and WebKit. The gallery uses public package imports, real Markdown transforms, and a Pagefind index. Its source, preview tooling, and tests are excluded from npm and public website output. See the [gallery workflow](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md#private-gallery).
