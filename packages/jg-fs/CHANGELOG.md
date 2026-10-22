@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.0
+
+### Added
+
+- `writeFileAtomicIfUnchanged(path, data, expected, mode?)`, in both entries, accepts explicit permission bits such as `0o600`. The temporary file receives them before any content is written, even under a restrictive umask. A failed expectation leaves the destination's bytes and permissions unchanged. Without a mode, replacement preserves existing permissions and creation uses the platform default.
+
 ## 1.6.0
 
 ### Added

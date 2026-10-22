@@ -73,6 +73,18 @@ writeFileAtomic(credentialsPath, JSON.stringify({ token }), 0o600);
 
 Without a mode, a replaced file keeps its permission bits, so a config someone restricted with `chmod` stays restricted after the app saves it.
 
+When another program may have edited the file, compare it with the bytes you read before replacing it. The optional fourth argument applies the same explicit permissions:
+
+```ts
+import { readBoundedFile, writeFileAtomicIfUnchanged } from 'jg-fs';
+
+const before = await readBoundedFile('credentials.json', 65_536);
+const credentials = JSON.stringify({ token: 'replacement-token' });
+await writeFileAtomicIfUnchanged('credentials.json', credentials, before, 0o600);
+```
+
+On POSIX, the temporary file has mode `0o600` before any credentials are written, and a successful replacement has that mode even if the old file was more widely readable. A failed comparison throws `FILE_CHANGED` and leaves both the original content and permissions untouched. Pass `null` instead of bytes only when the file was absent. The final comparison and rename are separate operations: coordinate cooperating writers with `acquireLock` when a change in that short window must be prevented. On Windows, privacy depends on the directory's access control list.
+
 ## Reading uploads with a size limit
 
 Use this when a request names a file that someone uploaded earlier, such as an import or an attachment, and the app reads it into memory. The name comes from a client, and the file can be larger than you expect, so the read checks three things: the path stays inside the uploads directory, the file is a regular file and not a symbolic link, and its size is within a limit:
