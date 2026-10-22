@@ -1,7 +1,17 @@
 import { randomUUID } from 'node:crypto';
-import { cp, lstat, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import {
+  cp,
+  glob,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { ERRORS as PROCESS_ERRORS, resolvePackageManagerCommand } from 'jg-process';
@@ -345,6 +355,23 @@ const buildGalleryFixture = async (
       join(uiDirectory, 'playwright.config.ts'),
       join(projectDirectory, 'playwright.config.ts'),
     );
+    // co-located component scenarios run against this consumer, alongside the gallery scenarios
+    for await (const path of glob('src/components/**/*.test-e2e.ts', {
+      cwd: uiDirectory,
+      exclude: [...EXCLUDED_GALLERY_DIRECTORIES].map((name) => `**/${name}/**`),
+    })) {
+      scope.signal.throwIfAborted();
+      const source = join(uiDirectory, path);
+      if ((await realpath(source)) !== resolve(source))
+        throw new Error(`The component test uses a symbolic link: ${source}`);
+      const target = join(
+        projectDirectory,
+        'component-tests',
+        relative(join(uiDirectory, 'src', 'components'), source),
+      );
+      await mkdir(dirname(target), { recursive: true });
+      await cp(source, target);
+    }
     await writeFile(
       join(projectDirectory, 'package.json'),
       JSON.stringify({ name: 'release-check-astro-gallery', private: true, type: 'module' }),

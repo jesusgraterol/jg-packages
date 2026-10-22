@@ -104,6 +104,9 @@ describe('the installed personal UI gallery', () => {
         expect(await readFile(join(options.cwd, 'playwright.config.ts'), 'utf8')).toContain(
           'reuseExistingServer: false',
         );
+        await expect(
+          access(join(options.cwd, 'component-tests', 'tabs', 'tabs.test-e2e.ts')),
+        ).resolves.toBeUndefined();
         expect(JSON.parse(await readFile(join(options.cwd, 'package.json'), 'utf8'))).toStrictEqual(
           { name: 'release-check-astro-gallery', private: true, type: 'module' },
         );

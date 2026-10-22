@@ -70,6 +70,54 @@ import GalleryLayout from '../layouts/gallery-layout.astro';
     </section>
     <section
       class="gallery-example"
+      aria-labelledby="wide-tabs-title"
+    >
+      <h2 id="wide-tabs-title">Long tab labels and an actions slot</h2>
+      <Tabs
+        id="wide-tabs"
+        label="Scrollable reference"
+        storageKey={'gallery-reference["choice"]'}
+        tabs={[
+          { id: 'overview', label: 'Overview of the package' },
+          { id: 'configuration', label: 'Configuration and installation' },
+          { id: 'extension', label: 'Extending the public API' },
+          { id: 'recovery', label: 'Troubleshooting and recovery' },
+        ]}
+      >
+        <p
+          slot="overview"
+          class="py-5"
+        >
+          Reference overview content.
+        </p>
+        <p
+          slot="configuration"
+          class="py-5"
+        >
+          Reference configuration content.
+        </p>
+        <p
+          slot="extension"
+          class="py-5"
+        >
+          Reference extension content.
+        </p>
+        <p
+          slot="recovery"
+          class="py-5"
+        >
+          Reference recovery content.
+        </p>
+        <CopyButton
+          slot="actions"
+          text="reference example"
+          context="tab actions example"
+          tone="outline"
+        />
+      </Tabs>
+    </section>
+    <section
+      class="gallery-example"
       data-example="package-manager-tabs"
       aria-labelledby="install-title"
     >

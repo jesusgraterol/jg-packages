@@ -148,6 +148,8 @@ Chromium supports both, Safari only the transitions, and Firefox neither; where 
 
 A page's JSON-LD (`buildStructuredData`, `serializeStructuredData`, and `SEARCH_TEXT_LIMITS`), llms.txt (`buildLlmsText` and `buildLlmsFullText`), and the stored theme preference come from [jg-site](../packages/jg-site/README.md), which the components use too. The events between `theme-control` and `theme-init-script` stay inside the package.
 
+Tabs render every panel with a visible label and a panel-anchor link before enhancement. Complete groups then become ARIA tablists with one focusable tab, Arrow/Home/End navigation, and Enter/Space activation. `storageKey` restores valid choices and synchronizes compatible groups on the page, including when browser storage is blocked. Nested groups retain their own state. Selection scrolls only the horizontal strip; it leaves the document position unchanged. The `actions` slot and terminal variant remain available.
+
 ## Private gallery
 
 The repository's `packages/jg-personal-astro-ui/gallery/` renders the public component inventory across foundations, interactions, documentation, and technical content pages. `gallery/src/catalog/` maps each Astro export to a rendered example. Examples import only public package subpaths; the token contract detects component classes from the installed package and the gallery stylesheet detects its own templates. Markdown examples execute the Sätteri plugins, and the build creates a real Pagefind index.

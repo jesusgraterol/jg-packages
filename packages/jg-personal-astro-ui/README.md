@@ -60,6 +60,8 @@ export default defineConfig({
 
 The token contract, every component, and how to use them in a site are in [docs/personal-astro-ui.md](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md). The reference of its TypeScript modules, such as `./code-window-plugin`, ships in the package as `API.md`. A page's JSON-LD, llms.txt, and the stored theme preference come from [jg-site](https://jg-packages.jesusgraterol.dev/packages/jg-site/), which the components use too.
 
+Tabs expose labeled panels and ordinary panel links without JavaScript. Once enhanced, they support arrow keys, Home, End, Enter, and Space, remembered choices, and synchronized instances. Nested groups keep their own selection; long strips scroll horizontally without moving the page.
+
 ## Private gallery
 
 From a repository checkout, run `pnpm --filter jg-personal-astro-ui gallery:dev` to inspect the components, or `pnpm --filter jg-personal-astro-ui test:e2e` to build the gallery and test it in Chromium, Firefox, and WebKit. The gallery uses public package imports, real Markdown transforms, and a Pagefind index. Its source, preview tooling, and tests are excluded from npm and public website output. See the [gallery workflow](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md#private-gallery).
