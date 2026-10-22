@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import {
   handleDialogClick,
@@ -6,213 +6,314 @@ import {
   openDialog,
   registerDialogs,
 } from './dialog-behavior.ts';
+import { createDialogFixture } from './dialog.test-utils.ts';
 
-/*
- * The dialogs' behavior against fake elements. The browser test runs it on real markup in
- * Chromium, Firefox, and WebKit, where the dialog element itself makes the page inert.
- */
-
-// a fake dialog element, which records its showModal and close calls
-type IFakeDialog = {
-  open: boolean;
-  showModal: () => void;
-  close: () => void;
-  closest: (selector: string) => unknown;
+const asDialog = (dialog: ReturnType<ReturnType<typeof createDialogFixture>['dialog']>) =>
+  dialog as unknown as HTMLDialogElement;
+const asElement = (element: unknown) => element as Element;
+const click = (target: unknown, extra: object = {}) => {
+  const event = { target, button: 0, defaultPrevented: false, preventDefault: vi.fn(), ...extra };
+  handleDialogClick(event as unknown as MouseEvent);
+  return event;
+};
+const close = (dialog: ReturnType<ReturnType<typeof createDialogFixture>['dialog']>) => {
+  dialog.close();
+  handleDialogClose({ target: dialog } as unknown as Event);
 };
 
-/**
- * Builds a fake dialog.
- * @param open Whether it starts open.
- * @returns The dialog.
- */
-const createDialog = (open = false): IFakeDialog => {
-  const dialog: IFakeDialog = {
-    open,
-    showModal: vi.fn(() => {
-      dialog.open = true;
-    }),
-    close: vi.fn(() => {
-      dialog.open = false;
-    }),
-    closest: (selector) => (selector === 'dialog[data-dialog]' ? dialog : null),
-  };
-  return dialog;
-};
+afterEach(() => vi.unstubAllGlobals());
 
-/**
- * Builds a fake element that sits inside the given ancestors, by the selectors that find them.
- * @param ancestors The element each selector's closest finds.
- * @param extra Properties of the element itself.
- * @returns The element.
- */
-const createElement = (ancestors: Record<string, unknown>, extra: object = {}) => ({
-  closest: (selector: string) => ancestors[selector] ?? null,
-  ...extra,
-});
-
-/**
- * Builds a fake click on a target.
- * @param target The target.
- * @param preventDefault The click's preventDefault, such as a spy.
- * @returns The click.
- */
-const createClick = (target: unknown, preventDefault: () => void = vi.fn()): MouseEvent =>
-  ({ target, preventDefault }) as unknown as MouseEvent;
-
-/**
- * Builds a trigger whose document holds the given elements by id.
- * @param dialogId The id it names in data-dialog-open, if any.
- * @param elements The document's elements by id.
- * @returns The trigger.
- */
-const createTrigger = (dialogId: string | undefined, elements: Record<string, unknown>) => {
-  const trigger: Record<string, unknown> = {
-    dataset: dialogId === undefined ? {} : { dialogOpen: dialogId },
-    focus: vi.fn(),
-    isConnected: true,
-    ownerDocument: { getElementById: (id: string) => elements[id] ?? null },
-  };
-  trigger['closest'] = (selector: string) => (selector === '[data-dialog-open]' ? trigger : null);
-  return trigger;
-};
-
-describe('openDialog', () => {
-  test('opens a dialog as a modal, and gives focus back to its opener when it closes', () => {
-    const dialog = createDialog();
-    const opener = { focus: vi.fn(), isConnected: true };
-
-    openDialog(dialog as unknown as HTMLDialogElement, opener as unknown as Element);
-    handleDialogClose({ target: dialog } as unknown as Event);
-
+describe('dialog behavior', () => {
+  test('opens a named trigger as a native modal, locks the background, and returns focus once', () => {
+    const fixture = createDialogFixture();
+    const dialog = fixture.dialog();
+    const trigger = fixture.trigger(dialog);
+    expect(click(trigger).preventDefault).toHaveBeenCalledOnce();
     expect(dialog.showModal).toHaveBeenCalledOnce();
-    expect(opener.focus).toHaveBeenCalledOnce();
-  });
-
-  test('leaves an open dialog as it is', () => {
-    const dialog = createDialog(true);
-
-    openDialog(dialog as unknown as HTMLDialogElement);
-
-    expect(dialog.showModal).not.toHaveBeenCalled();
-  });
-
-  test('forgets an opener that cannot take focus, or that left the page', () => {
-    const first = createDialog();
-    const second = createDialog();
-    const detached = { focus: vi.fn(), isConnected: false };
-
-    openDialog(first as unknown as HTMLDialogElement, {} as Element);
-    openDialog(second as unknown as HTMLDialogElement, detached as unknown as Element);
-    openDialog(createDialog() as unknown as HTMLDialogElement, null);
-
-    expect(() => handleDialogClose({ target: first } as unknown as Event)).not.toThrow();
-    handleDialogClose({ target: second } as unknown as Event);
-    expect(detached.focus).not.toHaveBeenCalled();
-  });
-});
-
-describe('handleDialogClick', () => {
-  test('opens the dialog a trigger names, and remembers the trigger', () => {
-    const dialog = createDialog();
-    const trigger = createTrigger('search', { search: dialog });
-    const preventDefault = vi.fn();
-
-    handleDialogClick(createClick(trigger, preventDefault));
-    handleDialogClose({ target: dialog } as unknown as Event);
-
+    expect(fixture.body.style.getPropertyValue('position')).toBe('fixed');
+    openDialog(asDialog(dialog), asElement(trigger));
     expect(dialog.showModal).toHaveBeenCalledOnce();
-    expect(preventDefault).toHaveBeenCalledOnce();
-    expect(trigger['focus']).toHaveBeenCalledOnce();
+    close(dialog);
+    handleDialogClose({ target: dialog } as unknown as Event);
+    expect(trigger.focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
+    expect(fixture.body.style.length).toBe(0);
   });
 
-  test('ignores a trigger whose id names no dialog', () => {
-    const preventDefault = vi.fn();
-
-    handleDialogClick(createClick(createTrigger('missing', {}), preventDefault));
-    handleDialogClick(
-      createClick(createTrigger('menu', { menu: { tagName: 'NAV' } }), preventDefault),
-    );
-    handleDialogClick(createClick(createTrigger(undefined, {}), preventDefault));
-
-    expect(preventDefault).not.toHaveBeenCalled();
-  });
-
-  test('closes a dialog from its close button, and from a click on its backdrop', () => {
-    const dialog = createDialog(true);
-    const closeButton = createElement({
-      'dialog[data-dialog]': dialog,
-      '[data-dialog-close]': {},
-    });
-
-    handleDialogClick(createClick(closeButton));
-    expect(dialog.close).toHaveBeenCalledOnce();
-
+  test('leaves detached dialogs closed and already-open unmanaged dialogs unchanged', () => {
+    const fixture = createDialogFixture();
+    const dialog = fixture.dialog();
+    dialog.isConnected = false;
+    openDialog(asDialog(dialog));
+    dialog.isConnected = true;
     dialog.open = true;
-    handleDialogClick(createClick(dialog));
+    openDialog(asDialog(dialog));
+    expect(dialog.showModal).not.toHaveBeenCalled();
+    expect(fixture.body.style.length).toBe(0);
+    handleDialogClose({ target: dialog } as unknown as Event);
+    handleDialogClose({ target: createDialogFixture().dialog() } as unknown as Event);
+  });
+
+  test('ignores an old queued close event after the same dialog has reopened', () => {
+    const fixture = createDialogFixture();
+    const dialog = fixture.dialog();
+    openDialog(asDialog(dialog));
+    close(dialog);
+    openDialog(asDialog(dialog));
+    handleDialogClose({ target: dialog } as unknown as Event);
+    expect(dialog.open).toBe(true);
+    expect(fixture.body.style.getPropertyValue('position')).toBe('fixed');
+    close(dialog);
+  });
+
+  test.each(['undefined', 'null', 'non-focusable', 'removed', 'disabled', 'hidden'] as const)(
+    'uses safe main focus when the opener is %s',
+    (kind) => {
+      const fixture = createDialogFixture();
+      const dialog = fixture.dialog();
+      const trigger = fixture.trigger(dialog);
+      if (kind === 'removed') trigger.isConnected = false;
+      if (kind === 'disabled') trigger.setAttribute('disabled', '');
+      if (kind === 'hidden') trigger.getClientRects.mockReturnValue([]);
+      const opener =
+        kind === 'undefined'
+          ? undefined
+          : kind === 'null'
+            ? null
+            : kind === 'non-focusable'
+              ? asElement({})
+              : asElement(trigger);
+      openDialog(asDialog(dialog), opener);
+      close(dialog);
+      expect(fixture.main.focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
+      expect(fixture.main.hasAttribute('tabindex')).toBe(false);
+    },
+  );
+
+  test('falls back to a nearby control, preserves its tab order, and supports the body as a final fallback', () => {
+    const fixture = createDialogFixture();
+    const dialog = fixture.dialog();
+    const trigger = fixture.trigger(dialog);
+    const parent = fixture.element();
+    const nearby = fixture.element();
+    nearby.setAttribute('tabindex', '0');
+    parent.queries.set(
+      'button:not([disabled]), a[href], input:not([disabled]), [tabindex="0"]',
+      nearby,
+    );
+    trigger.parentElement = parent;
+    openDialog(asDialog(dialog), asElement(trigger));
+    trigger.isConnected = false;
+    close(dialog);
+    expect(nearby.focus).toHaveBeenCalledOnce();
+    expect(nearby.attributes.get('tabindex')).toBe('0');
+    nearby.getClientRects.mockReturnValue([]);
+    openDialog(asDialog(dialog), asElement(trigger));
+    close(dialog);
+    expect(fixture.main.focus).toHaveBeenCalledOnce();
+    parent.isConnected = false;
+    fixture.documentQueries.delete('main');
+    openDialog(asDialog(dialog), asElement(trigger));
+    close(dialog);
+    expect(fixture.body.focus).toHaveBeenCalledOnce();
+  });
+
+  test('closing a child retains the parent scroll lock and gives fallback focus to its title', () => {
+    const fixture = createDialogFixture();
+    const first = fixture.dialog('parent');
+    const title = fixture.element();
+    first.queries.set('[data-dialog-title]', title);
+    const second = fixture.dialog('child');
+    openDialog(asDialog(first));
+    openDialog(asDialog(second));
+    close(second);
+    expect(title.focus).toHaveBeenCalledOnce();
+    expect(fixture.body.style.getPropertyValue('position')).toBe('fixed');
+    close(first);
+    expect(fixture.body.style.length).toBe(0);
+  });
+
+  test.each([true, false])(
+    'returns child focus only to an opener inside the remaining modal: %s',
+    (isInside) => {
+      const fixture = createDialogFixture();
+      const parent = fixture.dialog('parent');
+      const title = fixture.element();
+      parent.queries.set('[data-dialog-title]', title);
+      const child = fixture.dialog('child');
+      const trigger = fixture.trigger(child);
+      if (isInside) parent.queries.set('#child-trigger', trigger);
+      openDialog(asDialog(parent));
+      openDialog(asDialog(child), asElement(trigger));
+      close(child);
+      expect(trigger.focus).toHaveBeenCalledTimes(isInside ? 1 : 0);
+      expect(title.focus).toHaveBeenCalledTimes(isInside ? 0 : 1);
+      close(parent);
+    },
+  );
+
+  test('resets the owned body before opening and resets native focus that would hide its start', () => {
+    const fixture = createDialogFixture();
+    const dialog = fixture.dialog();
+    const body = fixture.element();
+    const title = fixture.element();
+    body.scrollTop = 200;
+    dialog.queries.set('[data-dialog-body]', body);
+    dialog.queries.set('[data-dialog-title]', title);
+    dialog.showModal.mockImplementation(() => {
+      expect(body.scrollTop).toBe(0);
+      dialog.open = true;
+      body.scrollTop = 64;
+    });
+    openDialog(asDialog(dialog));
+    expect(body.scrollTop).toBe(0);
+    expect(title.focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
+    close(dialog);
+    dialog.queries.delete('[data-dialog-title]');
+    openDialog(asDialog(dialog));
+    expect(body.scrollTop).toBe(0);
+    close(dialog);
+  });
+
+  test.each(['valid', 'invalid', 'missing', 'nested'] as const)(
+    'keeps initial focus local when a selector is %s',
+    (kind) => {
+      const fixture = createDialogFixture();
+      const dialog = fixture.dialog();
+      const target = fixture.element();
+      dialog.dataset['dialogInitialFocus'] = '#choice';
+      if (kind === 'valid' || kind === 'nested') {
+        dialog.queries.set('#choice', target);
+        target.ancestors.set('dialog', kind === 'valid' ? dialog : fixture.dialog('nested'));
+      }
+      if (kind === 'invalid')
+        dialog.querySelector = () => {
+          throw new DOMException('Invalid selector', 'SyntaxError');
+        };
+      if (kind === 'invalid') {
+        const query = dialog.querySelector;
+        dialog.querySelector = (selector) => (selector === '#choice' ? query(selector) : null);
+      }
+      openDialog(asDialog(dialog));
+      expect(target.focus).toHaveBeenCalledTimes(kind === 'valid' ? 1 : 0);
+      close(dialog);
+    },
+  );
+
+  test('cleans up a failed native opening and leaves its actual failure visible', () => {
+    const fixture = createDialogFixture();
+    const dialog = fixture.dialog();
+    const failure = new DOMException('Cannot open', 'InvalidStateError');
+    dialog.showModal.mockImplementation(() => {
+      throw failure;
+    });
+    expect(() => openDialog(asDialog(dialog))).toThrow(failure);
+    expect(fixture.body.style.length).toBe(0);
+    expect(fixture.view.scrollTo).toHaveBeenCalledOnce();
+  });
+
+  test('supports a document without a browsing context', () => {
+    const fixture = createDialogFixture();
+    fixture.root.defaultView = null;
+    const dialog = fixture.dialog();
+    openDialog(asDialog(dialog), null);
+    close(dialog);
+    expect(dialog.showModal).toHaveBeenCalledOnce();
+  });
+
+  test('registers once per document even when HTML attributes change, and uses the global document by default', () => {
+    const fixture = createDialogFixture();
+    vi.stubGlobal('document', fixture.document);
+    registerDialogs();
+    registerDialogs(fixture.document);
+    fixture.bootstrap();
+    expect(
+      fixture.root.addEventListener.mock.calls.map(([name, , capture]) => [name, capture]),
+    ).toStrictEqual([
+      ['jg:dialog-history-pop', undefined],
+      ['astro:before-swap', undefined],
+      ['click', undefined],
+      ['close', true],
+    ]);
+    expect(fixture.viewListeners.get('popstate')).toHaveLength(1);
+    expect(fixture.viewListeners.get('pagehide')).toHaveLength(1);
+  });
+
+  test.each(['astro:before-swap', 'pagehide'])(
+    'navigation %s closes all owned dialogs and releases resources without old focus',
+    (event) => {
+      const fixture = createDialogFixture();
+      registerDialogs(fixture.document);
+      const first = fixture.dialog('first');
+      const second = fixture.dialog('second');
+      const trigger = fixture.trigger(first);
+      openDialog(asDialog(first), asElement(trigger));
+      openDialog(asDialog(second));
+      if (event === 'pagehide') fixture.emitView(event);
+      else fixture.emitRoot(event);
+      expect(first.open).toBe(false);
+      expect(second.open).toBe(false);
+      expect(fixture.body.style.length).toBe(0);
+      expect(trigger.focus).not.toHaveBeenCalled();
+    },
+  );
+
+  test('Back closes an owned phone fullscreen dialog through the real document resource path', () => {
+    const fixture = createDialogFixture();
+    const dialog = fixture.dialog();
+    dialog.dataset['dialogMobilePresentation'] = 'fullscreen';
+    const trigger = fixture.trigger(dialog);
+    openDialog(asDialog(dialog), asElement(trigger));
+    fixture.traverse(-1);
+    expect(dialog.open).toBe(false);
+    expect(fixture.body.style.length).toBe(0);
+    expect(trigger.focus).toHaveBeenCalledOnce();
+  });
+
+  test('close controls always work while content and disabled backdrop dismissal leave the dialog open', () => {
+    const fixture = createDialogFixture();
+    const dialog = fixture.dialog();
+    openDialog(asDialog(dialog));
+    const content = fixture.element();
+    content.ancestors.set('dialog[data-dialog]', dialog);
+    click(content);
+    expect(dialog.close).not.toHaveBeenCalled();
+    dialog.dataset['dialogOverlayClose'] = 'false';
+    click(dialog);
+    expect(dialog.close).not.toHaveBeenCalled();
+    const button = fixture.element();
+    button.ancestors.set('dialog[data-dialog]', dialog);
+    button.ancestors.set('[data-dialog-close]', button);
+    click(button);
+    expect(dialog.close).toHaveBeenCalledOnce();
+    dialog.dataset['dialogOverlayClose'] = 'true';
+    openDialog(asDialog(dialog));
+    click(dialog);
     expect(dialog.close).toHaveBeenCalledTimes(2);
   });
 
-  test('leaves a dialog open when its content is clicked', () => {
-    const dialog = createDialog(true);
+  test.each([null, {}, { closest: () => null }])(
+    'ignores unrelated targets %o and non-dialog close events',
+    (target) => {
+      expect(click(target).preventDefault).not.toHaveBeenCalled();
+      expect(() => handleDialogClose({ target } as unknown as Event)).not.toThrow();
+    },
+  );
 
-    handleDialogClick(createClick(createElement({ 'dialog[data-dialog]': dialog })));
-
-    expect(dialog.close).not.toHaveBeenCalled();
-  });
-
-  test('ignores clicks outside dialogs, and targets that are no element', () => {
-    expect(() => {
-      handleDialogClick(createClick(createElement({})));
-      handleDialogClick(createClick(null));
-      handleDialogClick(createClick({}));
-    }).not.toThrow();
-  });
-});
-
-describe('handleDialogClose', () => {
-  test('ignores a close event from anything but a dialog', () => {
-    expect(() => handleDialogClose({ target: {} } as unknown as Event)).not.toThrow();
-  });
-});
-
-describe('registerDialogs', () => {
-  /**
-   * Builds a fake document that records its listeners.
-   * @returns The document and its listeners.
-   */
-  const createDocument = () => {
-    const attributes = new Set<string>();
-    const listeners: [string, unknown, unknown][] = [];
-    const root = {
-      documentElement: {
-        hasAttribute: (name: string) => attributes.has(name),
-        setAttribute: (name: string) => attributes.add(name),
-      },
-      addEventListener: (type: string, listener: unknown, options: unknown) => {
-        listeners.push([type, listener, options]);
-      },
-    };
-    return { root: root as unknown as Document, listeners };
-  };
-
-  test('adds one click listener and one capturing close listener, however many times it runs', () => {
-    const { root, listeners } = createDocument();
-
-    registerDialogs(root);
-    registerDialogs(root);
-
-    expect(listeners).toStrictEqual([
-      ['click', handleDialogClick, undefined],
-      ['close', handleDialogClose, true],
-    ]);
-  });
-
-  test("registers on the page's document by default", () => {
-    const { root, listeners } = createDocument();
-    vi.stubGlobal('document', root);
-
-    registerDialogs();
-
-    expect(listeners).toHaveLength(2);
+  test('ignores missing and non-dialog trigger targets, inhibited clicks, and secondary clicks', () => {
+    const fixture = createDialogFixture();
+    const dialog = fixture.dialog();
+    const trigger = fixture.trigger(dialog);
+    trigger.dataset['dialogOpen'] = 'missing';
+    click(trigger);
+    delete trigger.dataset['dialogOpen'];
+    click(trigger);
+    trigger.dataset['dialogOpen'] = 'example';
+    click(trigger, { defaultPrevented: true });
+    click(trigger, { button: 1 });
+    expect(dialog.showModal).not.toHaveBeenCalled();
+    const nativeQuery = fixture.root.getElementById;
+    fixture.root.getElementById = () => ({ tagName: 'NAV' });
+    click(trigger);
+    fixture.root.getElementById = nativeQuery;
   });
 });

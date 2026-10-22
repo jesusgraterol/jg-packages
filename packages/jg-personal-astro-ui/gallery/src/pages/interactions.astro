@@ -12,7 +12,10 @@ import Tabs from 'jg-personal-astro-ui/tabs';
 import GalleryLayout from '../layouts/gallery-layout.astro';
 ---
 
-<GalleryLayout title="Interactions">
+<GalleryLayout
+  title="Interactions"
+  clientRouter
+>
   <PageHeader
     title="Interactions"
     eyebrow="Browser behavior"
@@ -165,6 +168,12 @@ import GalleryLayout from '../layouts/gallery-layout.astro';
         >
           Open long dialog
         </Button>
+        <Button
+          variant="outline"
+          data-dialog-open="mobile-dialog"
+        >
+          Open mobile reference
+        </Button>
       </div>
       <Dialog
         id="example-dialog"
@@ -177,6 +186,54 @@ import GalleryLayout from '../layouts/gallery-layout.astro';
         >
           Finish
         </Button>
+      </Dialog>
+      <Dialog
+        id="mobile-dialog"
+        title="Mobile reference"
+        size="lg"
+        mobilePresentation="fullscreen"
+        isOverlayCloseEnabled={false}
+        initialFocus="#mobile-dialog-input"
+      >
+        <label
+          class="mb-2 block text-sm font-medium"
+          for="mobile-dialog-input"
+        >
+          Reference note
+        </label>
+        <input
+          id="mobile-dialog-input"
+          type="text"
+          autocomplete="off"
+          inputmode="text"
+          enterkeyhint="done"
+          placeholder="e.g. Installation notes"
+          class="w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-base"
+        />
+        <div class="my-5 flex flex-wrap gap-4">
+          <Button data-dialog-open="nested-dialog">Open nested reference</Button>
+          <a
+            class="underline"
+            href="/interactions/?dialog-navigation=1"
+          >
+            Continue browsing
+          </a>
+        </div>
+        {Array.from({ length: 16 }, (_, index) => (
+          <p class="my-5">
+            Reference section {index + 1}. The title and close action remain visible while this
+            content scrolls.
+          </p>
+        ))}
+        <Button data-dialog-close>Done reading</Button>
+      </Dialog>
+      <Dialog
+        id="nested-dialog"
+        title="Nested reference"
+        size="sm"
+        mobilePresentation="fullscreen"
+      >
+        <p>A second native modal retains the parent dialog's scroll lock and history entry.</p>
       </Dialog>
       <Dialog
         id="long-dialog"

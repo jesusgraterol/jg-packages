@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
+import { createDialogFixture } from '../dialog/dialog.test-utils.ts';
+
 import {
   isSearchShortcut,
   MAX_SEARCH_RESULTS,
@@ -105,6 +107,8 @@ const createSearchDialog = ({
 }: { pagefindPath?: string; open?: boolean } = {}) => {
   const list = createElement('ul');
   const status = createElement('p');
+  const native = createDialogFixture();
+  native.root.defaultView = null;
   const input = {
     focus: vi.fn(),
     matches: (selector: string) => selector === '[data-search-input]',
@@ -113,6 +117,7 @@ const createSearchDialog = ({
       ({ '[data-search-dialog]': container, dialog })[selector] ?? null,
   };
   const dialog = {
+    ...native.dialog('search'),
     open,
     close: vi.fn(() => {
       dialog.open = false;
