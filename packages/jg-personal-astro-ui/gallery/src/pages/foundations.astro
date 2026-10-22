@@ -1,0 +1,173 @@
+---
+import { Code, Layers } from '@lucide/astro';
+import AgenticCodingMark from 'jg-personal-astro-ui/agentic-coding-mark';
+import Badge from 'jg-personal-astro-ui/badge';
+import Button from 'jg-personal-astro-ui/button';
+import Card from 'jg-personal-astro-ui/card';
+import Container from 'jg-personal-astro-ui/container';
+import HeroBackdrop from 'jg-personal-astro-ui/hero-backdrop';
+import IconTile from 'jg-personal-astro-ui/icon-tile';
+import JgMark from 'jg-personal-astro-ui/jg-mark';
+import LinkCard from 'jg-personal-astro-ui/link-card';
+import NewTabMarker from 'jg-personal-astro-ui/new-tab-marker';
+import PageHeader from 'jg-personal-astro-ui/page-header';
+import Stack from 'jg-personal-astro-ui/stack';
+import TextLink from 'jg-personal-astro-ui/text-link';
+
+import GalleryLayout from '../layouts/gallery-layout.astro';
+---
+
+<GalleryLayout title="Foundations">
+  <PageHeader
+    title="Foundations"
+    eyebrow="Brand and surfaces"
+    lede="Actions, status, and layout in the shared light and dark palettes."
+  />
+  <Container
+    class="pb-16"
+    data-example="container"
+  >
+    <section
+      class="gallery-example"
+      aria-labelledby="marks-title"
+    >
+      <h2 id="marks-title">Brand marks</h2>
+      <div class="flex flex-wrap items-center gap-8">
+        <span data-example="jg-mark">
+          <JgMark class="size-16" />
+        </span>
+        <span data-example="agentic-coding-mark">
+          <AgenticCodingMark class="size-16" />
+        </span>
+        <span data-example="icon-tile">
+          <IconTile>
+            <Layers
+              class="size-5"
+              aria-hidden="true"
+            />
+          </IconTile>
+        </span>
+        <IconTile size="header">
+          <Code
+            class="size-8"
+            aria-hidden="true"
+          />
+        </IconTile>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="button"
+      aria-labelledby="actions-title"
+    >
+      <h2 id="actions-title">Actions</h2>
+      <div class="flex flex-wrap items-center gap-3">
+        <Button>Primary action</Button>
+        <Button variant="secondary">Secondary action</Button>
+        <Button variant="outline">Outline</Button>
+        <Button variant="ghost">Ghost</Button>
+        <Button disabled>Unavailable</Button>
+        <Button
+          size="sm"
+          href="/interactions/"
+        >
+          Small link
+        </Button>
+        <Button
+          size="lg"
+          external
+          href="https://astro.build/"
+        >
+          Astro
+        </Button>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="badge"
+      aria-labelledby="status-title"
+    >
+      <h2 id="status-title">Status</h2>
+      <div class="flex flex-wrap gap-3">
+        <Badge>Default</Badge>
+        <Badge
+          variant="neutral"
+          dot
+        >
+          Active
+        </Badge>
+        <Badge
+          variant="success"
+          dot
+        >
+          Complete
+        </Badge>
+        <Badge variant="warning">Attention</Badge>
+        <Badge variant="danger">Failed</Badge>
+        <Badge mono={false}>A longer human-readable status</Badge>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      aria-labelledby="surfaces-title"
+    >
+      <h2 id="surfaces-title">Cards and links</h2>
+      <div
+        class="grid gap-4 md:grid-cols-2"
+        data-example="stack"
+      >
+        <Card
+          class="p-6"
+          data-example="card"
+        >
+          <Stack gap="md">
+            <h3 class="text-lg font-semibold">A focused surface</h3>
+            <p class="text-muted">Cards group related content without imposing a workflow.</p>
+            <TextLink
+              href="/documentation/"
+              data-example="text-link"
+            >
+              Read the documentation examples
+            </TextLink>
+          </Stack>
+        </Card>
+        <div data-example="link-card">
+          <LinkCard
+            href="/technical-content/"
+            title="Long technical content"
+            headingLevel={3}
+          >
+            <p>Check long paths, commands, and differences at small widths.</p>
+          </LinkCard>
+        </div>
+        <TextLink
+          external
+          href="https://astro.build/"
+        >
+          External text link
+        </TextLink>
+        <a
+          href="https://astro.build/"
+          target="_blank"
+          rel="noreferrer"
+          class="w-fit underline"
+          data-example="new-tab-marker"
+        >
+          Standalone new-tab notice
+          <NewTabMarker />
+        </a>
+      </div>
+    </section>
+    <section
+      class="gallery-example relative isolate overflow-hidden rounded-xl p-8"
+      data-example="hero-backdrop"
+      aria-labelledby="backdrop-title"
+    >
+      <HeroBackdrop />
+      <h2 id="backdrop-title">Hero backdrop</h2>
+      <p class="relative max-w-lg text-muted">
+        The brand's dot lattice and accent glow behind ordinary page content.
+      </p>
+    </section>
+  </Container>
+</GalleryLayout>

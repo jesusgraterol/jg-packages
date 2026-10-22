@@ -98,12 +98,16 @@
   ],
   "scripts": {
     "build": "node ../../internal/api-reference/src/write-api-markdown.ts",
+    "gallery:dev": "astro dev --root gallery",
+    "gallery:build": "astro build --root gallery && pagefind --site gallery/dist",
     "lint": "eslint .",
-    "test": "pnpm test:unit && pnpm test:browser",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:browser && pnpm test:e2e",
     "test:browser": "vitest run --project browser",
-    "test:coverage": "vitest run --coverage --project unit",
+    "test:coverage": "vitest run --coverage --project unit --project integration",
+    "test:e2e": "pnpm gallery:build && playwright test",
+    "test:integration": "vitest run --project integration",
     "test:unit": "vitest run --project unit",
-    "typecheck": "astro check"
+    "typecheck": "astro check && astro check --root gallery"
   },
   "peerDependencies": {
     "astro": "^7.4.0",
@@ -121,12 +125,19 @@
   },
   "devDependencies": {
     "@astrojs/check": "catalog:",
+    "@astrojs/markdown-satteri": "0.4.4",
+    "@axe-core/playwright": "4.13.0",
     "@jg-packages/eslint-config": "workspace:*",
     "@jg-packages/vitest-config": "workspace:*",
+    "@playwright/test": "catalog:",
+    "@tailwindcss/vite": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "astro": "catalog:",
     "eslint": "catalog:",
+    "jg-playwright": "workspace:*",
+    "jg-process": "workspace:*",
+    "pagefind": "1.5.2",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

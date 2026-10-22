@@ -148,6 +148,25 @@ Chromium supports both, Safari only the transitions, and Firefox neither; where 
 
 A page's JSON-LD (`buildStructuredData`, `serializeStructuredData`, and `SEARCH_TEXT_LIMITS`), llms.txt (`buildLlmsText` and `buildLlmsFullText`), and the stored theme preference come from [jg-site](../packages/jg-site/README.md), which the components use too. The events between `theme-control` and `theme-init-script` stay inside the package.
 
+## Private gallery
+
+The repository's `packages/jg-personal-astro-ui/gallery/` renders the public component inventory across foundations, interactions, documentation, and technical content pages. `gallery/src/catalog/` maps each Astro export to a rendered example. Examples import only public package subpaths; the token contract detects component classes from the installed package and the gallery stylesheet detects its own templates. Markdown examples execute the Sätteri plugins, and the build creates a real Pagefind index.
+
+```bash
+pnpm --filter jg-personal-astro-ui gallery:dev
+pnpm --filter jg-personal-astro-ui gallery:build
+pnpm --filter jg-personal-astro-ui test:integration
+pnpm --filter jg-personal-astro-ui test:e2e
+```
+
+The E2E suite serves the build only at `http://127.0.0.1:4332/`, refuses to reuse an existing server, and runs all three browser engines. Its preview wrapper owns Astro's child process tree and stops it on stdin EOF, SIGINT, SIGTERM, or child failure. `JG_UI_GALLERY_ROOT` optionally selects an absolute consumer root with its own installed Astro and built gallery; it is a local verification override. Default preview resolution uses this package's development installation. Global `NODE_PATH` entries never supply Astro for a selected consumer.
+
+The preview integration tests exercise real CLI/descendant teardown in a temporary consumer without a pre-existing build. `test:coverage` includes unit and integration tests; `test` additionally runs browser tests and gallery E2E. Package typechecking includes the private gallery. The package-local Turbo graph serializes typechecking after the package build and E2E after typechecking to avoid concurrent Astro syncs.
+
+The gallery stays out of the public website's routes and catalog, the npm allowlist, and deployed website output. Its examples cover the current supported behavior; the gallery is a verification tool rather than a public documentation site.
+
+The light theme's keyword color maintains readable contrast on both added and removed diff backgrounds. Gallery axe checks cover these rendered syntax tokens in both themes.
+
 ## Releasing it
 
 It's checked like every other package, plus an Astro build: `release:verify` installs its tarball with its peers into a temporary Astro site that imports every component, stylesheet, and module, and runs `astro build`. [`releasing.md`](releasing.md) covers the rest.

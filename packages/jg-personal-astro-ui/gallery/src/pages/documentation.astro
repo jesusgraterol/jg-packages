@@ -1,0 +1,148 @@
+---
+import Breadcrumb from 'jg-personal-astro-ui/breadcrumb';
+import Callout from 'jg-personal-astro-ui/callout';
+import Container from 'jg-personal-astro-ui/container';
+import InlineCode from 'jg-personal-astro-ui/inline-code';
+import Kbd from 'jg-personal-astro-ui/kbd';
+import PageHeader from 'jg-personal-astro-ui/page-header';
+import Prose from 'jg-personal-astro-ui/prose';
+import Section from 'jg-personal-astro-ui/section';
+import Table from 'jg-personal-astro-ui/table';
+
+import GalleryLayout from '../layouts/gallery-layout.astro';
+---
+
+<GalleryLayout title="Documentation">
+  <div data-example="page-header">
+    <PageHeader
+      title="Documentation"
+      eyebrow="Reading and reference"
+      lede="Readable prose, clear hierarchy, and wide content in a narrow viewport."
+    />
+  </div>
+  <Container
+    width="prose"
+    class="pb-12"
+  >
+    <div
+      class="gallery-example"
+      data-example="breadcrumb"
+    >
+      <Breadcrumb
+        items={[
+          { href: '/', name: 'Gallery' },
+          { href: '/documentation/', name: 'Documentation' },
+        ]}
+      />
+    </div>
+    <section
+      class="gallery-example"
+      data-example="prose"
+      aria-labelledby="prose-title"
+    >
+      <h2 id="prose-title">Rich prose</h2>
+      <Prose>
+        <h3>One reading column</h3>
+        <p>
+          Documentation joins explanation with <strong>important details</strong>, <em>emphasis</em>
+          , and <a href="/technical-content/">useful examples</a>. The shared type system keeps
+          paragraphs readable in both themes.
+        </p>
+        <ul>
+          <li>Explain the behavior and its constraints.</li>
+          <li>Show a small working example.</li>
+        </ul>
+        <blockquote>
+          <p>Keep content and its presentation owned by the appropriate layer.</p>
+        </blockquote>
+        <hr />
+        <h4>Paths and keyboard notation</h4>
+        <p data-example="inline-code">
+          <InlineCode code="packages/jg-personal-astro-ui/src/components/documentation/very-long-reference-name.ts" />
+        </p>
+        <p data-example="kbd">
+          Open search with <Kbd>Ctrl</Kbd> + <Kbd>K</Kbd>.
+        </p>
+      </Prose>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="callout"
+      aria-labelledby="callouts-title"
+    >
+      <h2 id="callouts-title">Callouts</h2>
+      <div class="grid gap-4">
+        <Callout
+          title="Note"
+          role="note"
+        >
+          <p>Supplementary context for the reader.</p>
+        </Callout>
+        <Callout
+          variant="tip"
+          title="Tip"
+        >
+          <p>A practical shortcut.</p>
+        </Callout>
+        <Callout
+          variant="warning"
+          title="Warning"
+        >
+          <p>Check the selected environment before proceeding.</p>
+        </Callout>
+        <Callout
+          variant="danger"
+          title="Danger"
+        >
+          <p>This operation needs deliberate attention.</p>
+        </Callout>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="table"
+      aria-labelledby="table-title"
+    >
+      <h2 id="table-title">Wide reference table</h2>
+      <Table
+        caption="Example configuration"
+        scrollLabel="Configuration columns"
+        stickyFirstColumn
+      >
+        <thead>
+          <tr>
+            <th scope="col">Option</th>
+            <th scope="col">Default</th>
+            <th scope="col">Purpose</th>
+            <th scope="col">Supported environments</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">theme</th>
+            <td>system</td>
+            <td>Follows the selected color preference</td>
+            <td>Chromium, Firefox, and WebKit</td>
+          </tr>
+          <tr>
+            <th scope="row">content</th>
+            <td>empty</td>
+            <td>Caller-owned content and labels</td>
+            <td>Static Astro output</td>
+          </tr>
+        </tbody>
+      </Table>
+    </section>
+  </Container>
+  <div data-example="section">
+    <Section
+      id="reference-section"
+      title="A separate section"
+      eyebrow="Composition"
+      layout="split"
+      lede="The same section spacing used by the personal websites."
+    >
+      <p class="text-muted">Section content remains supplied by the site.</p>
+    </Section>
+  </div>
+</GalleryLayout>

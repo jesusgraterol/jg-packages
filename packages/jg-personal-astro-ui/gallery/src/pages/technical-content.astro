@@ -1,0 +1,150 @@
+---
+import { createSatteriMarkdownProcessor } from '@astrojs/markdown-satteri';
+import CodeBlock from 'jg-personal-astro-ui/code-block';
+import CodeDiff from 'jg-personal-astro-ui/code-diff';
+import { renderCodeWindowHeader } from 'jg-personal-astro-ui/code-window';
+import { codeWindowPlugin } from 'jg-personal-astro-ui/code-window-plugin';
+import Container from 'jg-personal-astro-ui/container';
+import { externalLinkPlugin } from 'jg-personal-astro-ui/external-link-plugin';
+import InstallCommand from 'jg-personal-astro-ui/install-command';
+import { renderNewTabMarker } from 'jg-personal-astro-ui/new-tab-marker-markup';
+import PageHeader from 'jg-personal-astro-ui/page-header';
+import Prose from 'jg-personal-astro-ui/prose';
+import { SYNTAX_THEME } from 'jg-personal-astro-ui/syntax-theme';
+import TerminalWindow from 'jg-personal-astro-ui/terminal-window';
+
+import GalleryLayout from '../layouts/gallery-layout.astro';
+
+const code = 'export const greeting = "Hello from Astro UI";\nconsole.log(greeting);';
+const processor = await createSatteriMarkdownProcessor({
+  shikiConfig: { theme: SYNTAX_THEME },
+  hastPlugins: [codeWindowPlugin, externalLinkPlugin({ siteUrl: 'https://gallery.example' })],
+});
+const markdown = await processor.render(
+  [
+    'A real Markdown code fence:',
+    '',
+    '```ts',
+    code,
+    '```',
+    '',
+    '[Astro documentation](https://docs.astro.build/)',
+  ].join('\n'),
+);
+---
+
+<GalleryLayout title="Technical content">
+  <PageHeader
+    title="Technical content"
+    eyebrow="Code and commands"
+    lede="Build-time highlighting, real Markdown transforms, long lines, and responsive diffs."
+  />
+  <Container class="pb-16">
+    <section
+      class="gallery-example"
+      data-example="code-block"
+      aria-labelledby="code-title"
+    >
+      <h2 id="code-title">Code blocks</h2>
+      <div class="grid gap-6">
+        <CodeBlock
+          code={code}
+          lang="ts"
+          title="greeting.ts"
+        />
+        <CodeBlock
+          code={
+            'const destination = "https://example.com/a/very/long/path/that/stays/inside/the/code/window/without/overflowing/the/page";'
+          }
+          lang="ts"
+          title="a-long-directory-name/another-directory/configuration-with-a-long-name.ts"
+          copy={false}
+        />
+        <CodeBlock
+          code=""
+          lang="text"
+          title="Empty file"
+        />
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="code-diff"
+      aria-labelledby="diff-title"
+    >
+      <h2 id="diff-title">Code differences</h2>
+      <div class="grid gap-6">
+        <CodeDiff
+          lang="ts"
+          before={{ title: 'Before', code: 'const retries = 2;\nconst enabled = false;' }}
+          after={{ title: 'After', code: 'const retries = 4;\nconst enabled = true;' }}
+        />
+        <CodeDiff
+          lang="text"
+          before={{ title: 'Empty file', code: '' }}
+          after={{ title: 'New file', code: 'First line\nSecond line' }}
+        />
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="install-command"
+      aria-labelledby="command-title"
+    >
+      <h2 id="command-title">Install command</h2>
+      <InstallCommand
+        id="long-install"
+        command="pnpm add jg-personal-astro-ui jg-site @astrojs/markdown-satteri"
+        title="Install the shared UI and the tools that render its Markdown code windows"
+        context="gallery install command"
+      />
+    </section>
+    <section
+      class="gallery-example"
+      data-example="terminal-window"
+      aria-labelledby="terminal-title"
+    >
+      <h2 id="terminal-title">Terminal output</h2>
+      <TerminalWindow
+        title="Build output"
+        copy={{ context: 'terminal output', sourceId: 'terminal-output' }}
+      >
+        <pre
+          id="terminal-output"
+          class="overflow-x-auto p-5 text-sm"
+        >pnpm build&#10;5 pages built successfully.</pre>
+      </TerminalWindow>
+    </section>
+    <section
+      class="gallery-example"
+      aria-labelledby="markdown-title"
+    >
+      <h2 id="markdown-title">Markdown pipeline</h2>
+      <Prose
+        data-markdown-example
+        set:html={markdown.code}
+      />
+    </section>
+    <section
+      class="gallery-example"
+      aria-labelledby="markup-title"
+    >
+      <h2 id="markup-title">Markup modules</h2>
+      <figure class="jg-code-window">
+        <Fragment
+          set:html={renderCodeWindowHeader({ caption: 'Generated window header', copy: false })}
+        />
+        <pre class="p-5">Build-owned content</pre>
+      </figure>
+      <a
+        href="https://docs.astro.build/"
+        target="_blank"
+        rel="noreferrer"
+        class="mt-4 inline-block underline"
+      >
+        Generated link notice
+        <Fragment set:html={renderNewTabMarker()} />
+      </a>
+    </section>
+  </Container>
+</GalleryLayout>

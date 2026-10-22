@@ -1,0 +1,54 @@
+---
+import Badge from 'jg-personal-astro-ui/badge';
+import Container from 'jg-personal-astro-ui/container';
+import LinkCard from 'jg-personal-astro-ui/link-card';
+import PageHeader from 'jg-personal-astro-ui/page-header';
+
+import { GALLERY_EXAMPLES, GALLERY_PAGES } from '../catalog/index.ts';
+import GalleryLayout from '../layouts/gallery-layout.astro';
+---
+
+<GalleryLayout title="Overview">
+  <PageHeader
+    eyebrow="Personal websites"
+    title="Astro UI gallery"
+    lede="Inspect the shared components as real pages, with the same tokens, typography, and interactions used by the personal websites."
+  >
+    <Badge>{GALLERY_EXAMPLES.length} public components</Badge>
+  </PageHeader>
+  <Container class="py-12">
+    <div class="grid gap-4 md:grid-cols-2">
+      {GALLERY_PAGES.map((page) => (
+        <LinkCard
+          href={page.href}
+          title={page.label}
+        >
+          <p>{page.description}</p>
+        </LinkCard>
+      ))}
+    </div>
+    <section
+      class="mt-12"
+      aria-labelledby="inventory-title"
+    >
+      <h2
+        id="inventory-title"
+        class="mb-4 text-xl font-semibold"
+      >
+        Rendered inventory
+      </h2>
+      <ul class="grid gap-2 font-mono text-sm sm:grid-cols-2 lg:grid-cols-3">
+        {GALLERY_EXAMPLES.map((example) => (
+          <li>
+            <a
+              class="underline underline-offset-4"
+              href={example.path}
+            >
+              {example.subpath}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  </Container>
+</GalleryLayout>

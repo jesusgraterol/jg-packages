@@ -1,0 +1,201 @@
+---
+import Button from 'jg-personal-astro-ui/button';
+import Container from 'jg-personal-astro-ui/container';
+import CopyButton from 'jg-personal-astro-ui/copy-button';
+import Dialog from 'jg-personal-astro-ui/dialog';
+import PackageManagerTabs from 'jg-personal-astro-ui/package-manager-tabs';
+import PageHeader from 'jg-personal-astro-ui/page-header';
+import SearchDialog from 'jg-personal-astro-ui/search-dialog';
+import SegmentedControl from 'jg-personal-astro-ui/segmented-control';
+import Tabs from 'jg-personal-astro-ui/tabs';
+
+import GalleryLayout from '../layouts/gallery-layout.astro';
+---
+
+<GalleryLayout title="Interactions">
+  <PageHeader
+    title="Interactions"
+    eyebrow="Browser behavior"
+    lede="Keyboard navigation, multiple instances, and visible feedback on real rendered components."
+  />
+  <Container class="pb-16">
+    <section
+      class="gallery-example"
+      data-example="tabs"
+      aria-labelledby="tabs-title"
+    >
+      <h2 id="tabs-title">Independent and nested tabs</h2>
+      <Tabs
+        id="example-tabs"
+        label="Example language"
+        tabs={[
+          { id: 'typescript', label: 'TypeScript' },
+          { id: 'javascript', label: 'JavaScript with a longer label' },
+        ]}
+      >
+        <div
+          slot="typescript"
+          class="py-5"
+        >
+          <p>TypeScript example panel.</p>
+          <Tabs
+            id="nested-tabs"
+            label="Nested detail"
+            tabs={[
+              { id: 'overview', label: 'Overview' },
+              { id: 'details', label: 'Details' },
+            ]}
+          >
+            <p
+              slot="overview"
+              class="py-4"
+            >
+              Nested overview.
+            </p>
+            <p
+              slot="details"
+              class="py-4"
+            >
+              Nested details.
+            </p>
+          </Tabs>
+        </div>
+        <p
+          slot="javascript"
+          class="py-5"
+        >
+          JavaScript example panel.
+        </p>
+      </Tabs>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="package-manager-tabs"
+      aria-labelledby="install-title"
+    >
+      <h2 id="install-title">Synchronized install commands</h2>
+      <div class="grid gap-4">
+        <PackageManagerTabs
+          id="install-main"
+          packages="jg-site"
+          storageKey="gallery-package-manager"
+        />
+        <PackageManagerTabs
+          id="install-dev"
+          packages="jg-playwright"
+          dev
+          storageKey="gallery-package-manager"
+        />
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="segmented-control"
+      aria-labelledby="segmented-title"
+    >
+      <h2 id="segmented-title">Native choices</h2>
+      <SegmentedControl
+        name="gallery-density"
+        legend="Reading density"
+        options={[
+          { value: 'comfortable', label: 'Comfortable' },
+          { value: 'compact', label: 'Compact' },
+        ]}
+      />
+    </section>
+    <section
+      class="gallery-example"
+      data-example="dialog"
+      aria-labelledby="dialogs-title"
+    >
+      <h2 id="dialogs-title">Dialogs</h2>
+      <div class="flex flex-wrap gap-3">
+        <Button data-dialog-open="example-dialog">Open example dialog</Button>
+        <Button
+          variant="outline"
+          data-dialog-open="long-dialog"
+        >
+          Open long dialog
+        </Button>
+      </div>
+      <Dialog
+        id="example-dialog"
+        title="Example dialog"
+      >
+        <p>A native modal with a named close action and focus return.</p>
+        <Button
+          class="mt-4"
+          data-dialog-close
+        >
+          Finish
+        </Button>
+      </Dialog>
+      <Dialog
+        id="long-dialog"
+        title="Long content"
+      >
+        <div class="space-y-5">
+          {Array.from({ length: 16 }, (_, index) => (
+            <p>
+              Section {index + 1}. Long dialog content stays inside the scrollable body so the close
+              action remains reachable.
+            </p>
+          ))}
+        </div>
+      </Dialog>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="copy-button"
+      aria-labelledby="copy-title"
+    >
+      <h2 id="copy-title">Copy sources and failures</h2>
+      <p
+        id="copy-source"
+        class="mb-4 font-mono"
+      >
+        gallery source text
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <CopyButton
+          text="gallery clipboard text"
+          context="literal example"
+          tone="outline"
+          size="md"
+        />
+        <CopyButton
+          sourceId="copy-source"
+          context="source example"
+          tone="outline"
+          size="md"
+        />
+        <CopyButton
+          sourceId="missing-source"
+          context="missing example"
+          tone="outline"
+          size="md"
+        />
+        <CopyButton
+          url="/missing-copy-source.txt"
+          context="unavailable document"
+          tone="outline"
+          size="md"
+        />
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      aria-labelledby="search-title"
+    >
+      <h2 id="search-title">Unavailable search index</h2>
+      <p class="mb-4 text-muted">
+        The header searches the real gallery index. This separate instance exercises the failure
+        state.
+      </p>
+      <SearchDialog
+        id="unavailable-search"
+        pagefindPath="/missing-pagefind.js"
+      />
+    </section>
+  </Container>
+</GalleryLayout>

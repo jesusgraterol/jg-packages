@@ -1,7 +1,26 @@
 import { createVitestConfig } from '@jg-packages/vitest-config';
 
-export default createVitestConfig({
-  categories: ['unit', 'browser'],
+const config = createVitestConfig({
+  categories: ['unit', 'integration', 'browser'],
   // the coverage measured after the gap pass, rounded down; raise them as tests improve
   coverage: { thresholds: { statements: 100, branches: 100, functions: 100, lines: 100 } },
 });
+
+// this private CLI lives outside the published src tree; keep the override local
+for (const project of config.test?.projects ?? []) {
+  if (typeof project === 'object' && 'test' in project && project.test !== undefined) {
+    project.test.exclude = [
+      '**/_archive/**',
+      '**/_archives/**',
+      '**/_backup/**',
+      '**/_backups/**',
+      '**/node_modules/**',
+      '**/dist/**',
+    ];
+  }
+  if (typeof project === 'object' && 'test' in project && project.test?.name === 'integration') {
+    project.test.include = ['gallery/**/*.test-integration.ts'];
+  }
+}
+
+export default config;

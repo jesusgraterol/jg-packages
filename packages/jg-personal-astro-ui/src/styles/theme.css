@@ -58,7 +58,7 @@
   /* code colours, after GitHub's light theme */
   --jg-syntax-foreground: oklch(25.5% 0.012 260);
   --jg-syntax-background: transparent;
-  --jg-syntax-token-keyword: oklch(54% 0.2 25);
+  --jg-syntax-token-keyword: oklch(53% 0.2 25);
   --jg-syntax-token-string: oklch(33% 0.12 255);
   --jg-syntax-token-string-expression: oklch(42% 0.11 150);
   --jg-syntax-token-comment: oklch(50% 0.015 250);
