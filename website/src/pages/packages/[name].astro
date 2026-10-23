@@ -2,11 +2,13 @@
 import { groupSymbols } from '@jg-packages/api-reference';
 import type { GetStaticPaths } from 'astro';
 import { getEntry, render } from 'astro:content';
+import DocumentationOutline from 'jg-personal-astro-ui/documentation-outline';
+import DocumentationShell from 'jg-personal-astro-ui/documentation-shell';
+import PageNavigation from 'jg-personal-astro-ui/page-navigation';
 import Prose from 'jg-personal-astro-ui/prose';
 import { buildStructuredData } from 'jg-site';
 
 import ApiReference from '../../components/api-reference/api-reference.astro';
-import OnThisPage from '../../components/on-this-page/on-this-page.astro';
 import PackageHero from '../../components/package-hero/package-hero.astro';
 import BaseLayout from '../../layouts/base-layout.astro';
 import { PACKAGE_CATALOG, PACKAGES_DIRECTORY, SITE_CONFIG } from '../../site.config.ts';
@@ -79,24 +81,21 @@ const contents = [
   title={title}
 >
   <PackageHero package={listedPackage} />
-  <div class="jg-container grid gap-10 py-10 sm:py-14 lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-14">
+  <DocumentationShell>
+    <DocumentationOutline
+      slot="outline"
+      items={contents}
+    />
     <div class="min-w-0 lg:max-w-[48rem]">
-      <div class="lg:hidden">
-        <OnThisPage
-          items={contents}
-          variant="disclosure"
-        />
-      </div>
-      <Prose class="mt-8 lg:mt-0">
+      <Prose>
         <Content />
       </Prose>
       <ApiReference reference={reference} />
     </div>
-    <aside class="hidden lg:block">
-      <OnThisPage
-        items={contents}
-        variant="sidebar"
-      />
-    </aside>
-  </div>
+    <PageNavigation
+      slot="footer"
+      class="lg:max-w-[48rem]"
+      next={{ href: `${pagePath}recipes/`, label: `${listedPackage.name} recipes` }}
+    />
+  </DocumentationShell>
 </BaseLayout>

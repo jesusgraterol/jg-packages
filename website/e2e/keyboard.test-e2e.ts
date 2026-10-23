@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 
 import { SITE_CONFIG } from '../src/site.config.ts';
 
@@ -112,4 +112,116 @@ test('the package manager tabs work by keyboard and the choice carries across pa
       .getByRole('tab', { name: 'pnpm', exact: true }),
   ).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('tabpanel')).toContainText('pnpm add jg-fs');
+});
+
+/**
+ * Waits until a fragment's heading is readable beneath the sticky site header.
+ * @param heading The destination heading.
+ * @returns A promise that resolves once the heading clears the header.
+ */
+const expectHeadingBelowHeader = async (heading: Locator): Promise<void> => {
+  await expect(heading).toBeInViewport();
+  await expect
+    .poll(() =>
+      heading.evaluate((target) => {
+        const header = target.ownerDocument.querySelector('body > header');
+        if (header === null) throw new Error('The site header is missing.');
+        return target.getBoundingClientRect().top - header.getBoundingClientRect().bottom;
+      }),
+    )
+    .toBeGreaterThanOrEqual(0);
+};
+
+for (const colorScheme of ['light', 'dark'] as const) {
+  for (const width of [320, 1280]) {
+    test(`documentation outlines and adjacent pages work by keyboard at ${String(width)}px in ${colorScheme}`, async ({
+      page,
+    }) => {
+      await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto('/packages/jg-fetch/');
+      await expect(page.getByRole('main')).toHaveCount(1);
+      const outline = page.getByRole('navigation', { name: 'On this page', exact: true });
+      await expect(outline).toHaveCount(1);
+      if (width < 1024) {
+        const disclosure = outline
+          .getByText('On this page', { exact: true })
+          .filter({ visible: true });
+        await disclosure.focus();
+        await disclosure.press('Enter');
+      }
+      const apiLink = outline.getByRole('link', { name: 'API reference', exact: true });
+      await apiLink.focus();
+      await expect(apiLink).toBeFocused();
+      expect(await apiLink.evaluate((link) => getComputedStyle(link).outlineStyle)).not.toBe(
+        'none',
+      );
+      await apiLink.press('Enter');
+      await expect(page).toHaveURL('/packages/jg-fetch/#api-reference');
+      await expectHeadingBelowHeader(
+        page.getByRole('heading', { name: 'API reference', exact: true }),
+      );
+      await expect(outline.getByRole('link', { name: 'Functions', exact: true })).toBeVisible();
+
+      const next = page
+        .getByRole('navigation', { name: 'Page navigation', exact: true })
+        .getByRole('link');
+      await expect(next).toHaveAttribute('rel', 'next');
+      await next.focus();
+      await next.press('Enter');
+      await expect(page).toHaveURL('/packages/jg-fetch/recipes/');
+      await expect(page.getByRole('heading', { level: 1 })).toHaveAttribute(
+        'data-pagefind-meta',
+        'title:jg-fetch recipes',
+      );
+      const recipeOutline = page.getByRole('navigation', { name: 'On this page', exact: true });
+      if (width < 1024) {
+        const disclosure = recipeOutline
+          .getByText('On this page', { exact: true })
+          .filter({ visible: true });
+        await disclosure.focus();
+        await disclosure.press('Enter');
+      }
+      const firstRecipe = recipeOutline.getByRole('link').first();
+      const recipeTitle = await firstRecipe.innerText();
+      const fragment = await firstRecipe.getAttribute('href');
+      expect(fragment).toMatch(/^#/u);
+      await firstRecipe.focus();
+      await firstRecipe.press('Enter');
+      await expect(page).toHaveURL(`/packages/jg-fetch/recipes/${fragment ?? ''}`);
+      await expectHeadingBelowHeader(
+        page.getByRole('heading', { level: 2, name: recipeTitle, exact: true }),
+      );
+      const previous = page
+        .getByRole('navigation', { name: 'Page navigation', exact: true })
+        .getByRole('link');
+      await expect(previous).toHaveAttribute('rel', 'prev');
+      await previous.focus();
+      await previous.press('Enter');
+      await expect(page).toHaveURL('/packages/jg-fetch/');
+    });
+  }
+}
+
+test.describe('documentation without JavaScript', () => {
+  test.use({ javaScriptEnabled: false, viewport: { width: 320, height: 800 } });
+  for (const path of ['/packages/jg-fetch/', '/packages/jg-fetch/recipes/']) {
+    test(`${path} retains native outline and adjacent-page links`, async ({ page }) => {
+      await page.goto(path);
+      const outline = page.getByRole('navigation', { name: 'On this page', exact: true });
+      await outline.getByText('On this page', { exact: true }).filter({ visible: true }).click();
+      const link = outline.getByRole('link').first();
+      const fragment = await link.getAttribute('href');
+      expect(fragment).toMatch(/^#/u);
+      await link.click();
+      await expect(page).toHaveURL(`${path}${fragment ?? ''}`);
+      await expect(page.getByRole('main')).toHaveCount(1);
+      await expect(
+        page.getByRole('navigation', { name: 'Page navigation', exact: true }).getByRole('link'),
+      ).toHaveAttribute(
+        'href',
+        path.endsWith('/recipes/') ? '/packages/jg-fetch/' : '/packages/jg-fetch/recipes/',
+      );
+    });
+  }
 });
