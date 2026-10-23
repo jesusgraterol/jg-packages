@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 import { DatabaseError, type PoolClient } from 'pg';
-import { Exception, REDACTED_VALUE } from 'jg-exception';
+import { Exception, REDACTED_VALUE, type IJsonValue } from 'jg-exception';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { isCheckViolationError, isUniqueViolationError } from '../database-errors/index.js';
@@ -213,6 +213,28 @@ describe('record', () => {
       ['LARGE: large', null],
       ['SMALL: small', { id: 1 }],
     ]);
+  });
+
+  test('stores a payload nested 256 levels deep, and leaves out deeper ones', async () => {
+    const nest = (levels: number): { [key: string]: unknown } => {
+      let value: { [key: string]: unknown } = { id: levels };
+      for (let level = 1; level < levels; level += 1) {
+        value = { next: value };
+      }
+      return value;
+    };
+    // room for any of them, so only the depth leaves one out
+    const errorLog = createErrorLog(postgres, { origin: 'api', maxPayloadBytes: 1_048_576 });
+
+    await expect(
+      errorLog.recordMany(
+        [256, 257, 100_000].map((levels) => ({
+          error: new Exception('deep', { code: 'DEEP', data: nest(levels) as IJsonValue }),
+        })),
+      ),
+    ).resolves.toBe(3);
+
+    expect((await readRows()).map(({ payload }) => payload)).toStrictEqual([nest(256), null, null]);
   });
 
   test('records nothing, and resolves to 0, for an empty list or something that is not a list', async () => {

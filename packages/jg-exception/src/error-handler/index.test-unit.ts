@@ -118,6 +118,55 @@ describe('extractMessage', () => {
     expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
+  test('returns the default message for an object JSON leaves out', () => {
+    expect(extractMessage({ toJSON: () => undefined })).toBe(DEFAULT_MESSAGE);
+  });
+
+  test('follows 256 causes, leaving out the causes past them, however long the chain', () => {
+    const buildChain = (causes: number): Error => {
+      let error = new Error(`message ${causes}`);
+      for (let index = causes - 1; index >= 0; index -= 1) {
+        error = new Error(`message ${index}`, { cause: error });
+      }
+      return error;
+    };
+    const firstMessages = Array.from({ length: 257 }, (_, index) => `message ${index}`).join(
+      '; [CAUSE]: ',
+    );
+
+    expect(extractMessage(buildChain(256))).toBe(firstMessages);
+    expect(extractMessage(buildChain(257))).toBe(firstMessages);
+    expect(extractMessage(buildChain(100_000))).toBe(firstMessages);
+  });
+
+  test('follows 256 properties to a message, and returns the default message past them', () => {
+    const nestInErrors = (levels: number): unknown => {
+      let error: unknown = 'The deepest message';
+      for (let level = 0; level < levels; level += 1) {
+        error = { error };
+      }
+      return error;
+    };
+
+    expect(extractMessage(nestInErrors(256))).toBe('The deepest message');
+    expect(extractMessage(nestInErrors(257))).toBe(DEFAULT_MESSAGE);
+    expect(extractMessage(nestInErrors(100_000))).toBe(DEFAULT_MESSAGE);
+  });
+
+  test('stringifies an object nested 256 levels deep, and returns the default message past it', () => {
+    const nestInArrays = (levels: number): unknown => {
+      let value: unknown = 1;
+      for (let level = 0; level < levels; level += 1) {
+        value = [value];
+      }
+      return value;
+    };
+
+    expect(extractMessage(nestInArrays(256))).toBe(`${'['.repeat(256)}1${']'.repeat(256)}`);
+    expect(extractMessage(nestInArrays(257))).toBe(DEFAULT_MESSAGE);
+    expect(extractMessage(nestInArrays(100_000))).toBe(DEFAULT_MESSAGE);
+  });
+
   test('can extract a message from within an object', () => {
     expect(extractMessage({ message: 'Ops! something went wrong', msg: 'did it?' })).toBe(
       'Ops! something went wrong',

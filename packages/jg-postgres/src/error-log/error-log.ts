@@ -20,7 +20,8 @@ const DEFAULT_TIMEOUTS = defineTimeoutProfile({
  * API's exception filter catches. A record's message is the error's message, prefixed with its
  * code, without null characters and cut to `maxMessageLength`; an Exception's object data is its
  * payload, with `redactKeys` replaced at any depth, left out when it's larger than
- * `maxPayloadBytes`; and a `deduplicationKey` stores one row per origin and key, by the key's
+ * `maxPayloadBytes` or nested more than 256 levels deep, like user info nested that deep; and a
+ * `deduplicationKey` stores one row per origin and key, by the key's
  * SHA-256 digest in lowercase hex. A write runs in one transaction with `timeouts`, in INSERTs of
  * at most `maxBatchSize` rows, and never rejects: a failure goes to the database's onError as
  * ERROR_LOG_WRITE_FAILED, with the SQLSTATE and without the rows, and the write resolves to 0.
