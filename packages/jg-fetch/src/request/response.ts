@@ -12,7 +12,7 @@ const NO_BODY_STATUSES = new Set([204, 205, 304]);
 /**
  * Reads a body as bytes, counting them as they stream, and stops once there are too many: at
  * once when content-length declares too many, otherwise as soon as the count passes the limit,
- * cancelling the rest of the body.
+ * cancelling the rest of the body. The body is left unlocked however the read ends.
  * @param response The response.
  * @param maxBytes The most bytes to read.
  * @param tooLarge Builds the error thrown when there are too many.
@@ -35,17 +35,22 @@ const readBytes = async (
   const reader: ReadableStreamDefaultReader<Uint8Array> = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let totalBytes = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        throw tooLarge();
+      }
+      chunks.push(value);
     }
-    totalBytes += value.byteLength;
-    if (totalBytes > maxBytes) {
-      await reader.cancel();
-      throw tooLarge();
-    }
-    chunks.push(value);
+  } finally {
+    // unlocks the body however the read ends, so a caller can still inspect or cancel it
+    reader.releaseLock();
   }
   const bytes = new Uint8Array(totalBytes);
   let offset = 0;
@@ -59,8 +64,10 @@ const readBytes = async (
 /**
  * Reads a response's body as bytes, refusing more than `maxBytes`, such as a download from a
  * fetch you make yourself: it fails at once when content-length declares too many, and otherwise
- * stops reading, and cancels the rest of the body, as soon as the count passes the limit. Decode the
- * bytes yourself, such as with `TextDecoder`. A response without a body reads as no bytes.
+ * stops reading, and cancels the rest of the body, as soon as the count passes the limit. However
+ * the read ends, including when the body's stream fails, such as on an aborted fetch, the body is
+ * left unlocked. Decode the bytes yourself, such as with `TextDecoder`. A response without a body
+ * reads as no bytes.
  * @param response The response, whose body nothing has read yet.
  * @param maxBytes The most bytes to read, a positive safe integer.
  * @returns A promise that resolves to the body's bytes.

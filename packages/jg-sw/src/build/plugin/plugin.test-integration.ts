@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -27,6 +27,9 @@ const CONFIG: IServiceWorkerConfig = {
   excludeFilesFromPrecache: [],
   excludeMIMETypesFromCache: [],
 };
+
+// a worker already in outDir, from an earlier build
+const EXISTING_WORKER = '// the worker an earlier build wrote\n';
 
 let root: string;
 let server: { close: () => Promise<void> } | undefined;
@@ -100,6 +103,23 @@ describe.each(VITE_VERSIONS)('serviceWorkerPlugin on %s', (_, vite) => {
     expect(precacheAssets[2]).toMatch(/^\/assets\/index-[\w-]+\.js$/);
   });
 
+  test('replaces a worker already in outDir after a build', async () => {
+    await mkdir(join(root, 'dist'));
+    await writeFile(join(root, 'dist', 'sw.js'), EXISTING_WORKER);
+
+    await vite.build({
+      root,
+      configFile: false,
+      logLevel: 'silent',
+      build: { emptyOutDir: false },
+      plugins: [serviceWorkerPlugin({ config: 'jg-sw.config.json' })],
+    });
+
+    const source = await readFile(join(root, 'dist', 'sw.js'), 'utf8');
+    expect(source).not.toBe(EXISTING_WORKER);
+    expect(readConstant(source, 'CACHING')).toBe(true);
+  });
+
   test('takes the config as an object instead of a file', async () => {
     await vite.build({
       root,
@@ -142,6 +162,23 @@ describe.each(VITE_VERSIONS)('serviceWorkerPlugin on %s', (_, vite) => {
     const page = await fetch(`${origin}/`);
     expect(await page.text()).toContain('/main.js');
     expect(await pathExists(join(root, 'dist', 'sw.js'))).toBe(false);
+  });
+
+  test('leaves the built worker in outDir alone when the dev server closes', async () => {
+    await vite.build({
+      root,
+      configFile: false,
+      logLevel: 'silent',
+      plugins: [serviceWorkerPlugin({ config: 'jg-sw.config.json' })],
+    });
+    await writeFile(join(root, 'dist', 'sw.js'), EXISTING_WORKER);
+    await startServer(vite, 'jg-sw.config.json');
+
+    // closing a dev server, as Vitest does after a run, closes every environment's bundle
+    await server?.close();
+    server = undefined;
+
+    expect(await readFile(join(root, 'dist', 'sw.js'), 'utf8')).toBe(EXISTING_WORKER);
   });
 
   test('serves the same worker on every request in development', async () => {

@@ -20,9 +20,16 @@ import { TurnstileAction } from './turnstile-action.decorator.js';
 import type { ISiteverifyResponse, ITurnstileGuardOptions } from './types.js';
 import { readSiteverifyResponse } from './validations.js';
 
-// the 403 a request gets when its token doesn't verify, which says nothing about why
-const turnstileFailed = (): ApiException =>
-  new ApiException(ERROR_MESSAGES.TURNSTILE_FAILED, { code: ERRORS.TURNSTILE_FAILED, status: 403 });
+/*
+ * the 403 a request gets when its token doesn't verify, which tells the client nothing about why;
+ * the reason, when siteverify gave one, is kept as the cause, which the response never includes
+ */
+const turnstileFailed = (cause?: unknown): ApiException =>
+  new ApiException(ERROR_MESSAGES.TURNSTILE_FAILED, {
+    code: ERRORS.TURNSTILE_FAILED,
+    status: 403,
+    cause,
+  });
 
 // the 503 a request gets when the token can't be verified, with the reason kept as the cause
 const turnstileUnavailable = (cause: unknown): ApiException =>
@@ -52,9 +59,10 @@ const SITEVERIFY_RESPONSE_SCHEMA = {
  * token can be verified once, so the client renders a new widget for each request.
  *
  * A missing, invalid, expired, or reused token, or one from another hostname or action, gets a
- * 403 with TURNSTILE_FAILED, which isn't reported. When siteverify can't be reached, answers with
- * an error, or refuses the secret, the request gets a 503 with TURNSTILE_UNAVAILABLE, which is
- * reported with the reason as its cause. Neither tells the client what Cloudflare answered.
+ * 403 with TURNSTILE_FAILED, which isn't reported; when siteverify refused the token, its error
+ * codes are in the cause's data. When siteverify can't be reached, answers with an error, or
+ * refuses the secret, the request gets a 503 with TURNSTILE_UNAVAILABLE, which is reported with the
+ * reason as its cause. Neither tells the client what Cloudflare answered.
  * Siteverify is called through jg-fetch's `request`, which retries the POST on a network error,
  * a timeout, or a 5xx, with the same idempotency key, so Cloudflare verifies the token once. Other
  * contexts, such as microservices, pass. Its options come from TURNSTILE_GUARD_OPTIONS, and the
@@ -127,7 +135,12 @@ export class TurnstileGuard implements CanActivate {
     }
     if (!data.success) {
       if (data.errorCodes.some((code) => CLIENT_ERROR_CODES.includes(code))) {
-        throw turnstileFailed();
+        throw turnstileFailed(
+          new Exception('Siteverify refused the token.', {
+            code: ERRORS.TURNSTILE_FAILED,
+            data: { errorCodes: data.errorCodes },
+          }),
+        );
       }
       throw turnstileUnavailable(
         new Exception('Siteverify refused the verification.', {

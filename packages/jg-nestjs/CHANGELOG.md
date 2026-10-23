@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+### Fixed
+
+- `TurnstileGuard` keeps the `error-codes` siteverify refused a token with: the `TURNSTILE_FAILED` error's cause, an `Exception` with the same code, holds them as `data.errorCodes`. The response still sends only the code and message, and the failure's classification is unchanged.
+
 ## 0.5.0
 
 ### Added

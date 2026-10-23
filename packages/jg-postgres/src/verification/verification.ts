@@ -207,6 +207,7 @@ export const createVerificationChallenges = (
    * @throws
    * - INVALID_VERIFICATION_INPUT: The verification input needs an actor id of 1 to 256 characters, an action id with a policy, a target id of 1 to 256 characters, and, to issue or resend, a delivery function, and to resend, a policy with a resend limit.
    * - VERIFICATION_DELIVERY_FAILED: The verification code couldn't be delivered.
+   * - TRANSACTION_OUTCOME_UNKNOWN: The connection was lost during COMMIT, so the transaction may or may not have committed.
    */
   const issue = async (
     binding: IVerificationBinding,
@@ -305,6 +306,7 @@ export const createVerificationChallenges = (
    * @throws
    * - INVALID_VERIFICATION_INPUT: The verification input needs an actor id of 1 to 256 characters, an action id with a policy, a target id of 1 to 256 characters, and, to issue or resend, a delivery function, and to resend, a policy with a resend limit.
    * - VERIFICATION_DELIVERY_FAILED: The verification code couldn't be delivered.
+   * - TRANSACTION_OUTCOME_UNKNOWN: The connection was lost during COMMIT, so the transaction may or may not have committed.
    */
   const resend = async (
     { challengeToken, ...binding }: IVerificationResendRequest,

@@ -8,11 +8,15 @@ import type { IByteCache, IByteCacheOptions, IByteCacheRetention } from './types
 // one cached value, and how many retentions pin it
 type IByteCacheEntry = { bytes: Uint8Array; retentions: number };
 
+// copies bytes into new memory; a Buffer's slice is a view that shares its memory
+const cloneBytes = (bytes: Uint8Array): Uint8Array => new Uint8Array(bytes);
+
 /**
  * Creates a least-recently-used cache of bytes, such as file pages or API responses, that never
- * holds more than `maxBytes` and, when given, `maxEntries`. It copies bytes on the way in and out,
- * so no caller can change a cached value. `retain` pins an entry, such as while a reader streams
- * it, so it's never evicted or replaced until released, and pinned bytes count toward the limit.
+ * holds more than `maxBytes` and, when given, `maxEntries`. It copies bytes into new memory on the
+ * way in and out, a `Buffer` included, so no caller can change a cached value. `retain` pins an
+ * entry, such as while a reader streams it, so it's never evicted or replaced until released, and
+ * pinned bytes count toward the limit.
  * @param options The byte limit, and the optional entry limit.
  * @returns The cache.
  * @example
@@ -57,7 +61,7 @@ export const createByteCache = ({ maxBytes, maxEntries }: IByteCacheOptions): IB
       }
       entries.delete(key);
       entries.set(key, entry);
-      return entry.bytes.slice();
+      return cloneBytes(entry.bytes);
     },
     set: (key, bytes) => {
       const existing = entries.get(key);
@@ -79,7 +83,7 @@ export const createByteCache = ({ maxBytes, maxEntries }: IByteCacheOptions): IB
           evict(oldestKey, oldest);
         }
       }
-      entries.set(key, { bytes: bytes.slice(), retentions: 0 });
+      entries.set(key, { bytes: cloneBytes(bytes), retentions: 0 });
       byteLength += bytes.byteLength;
       return true;
     },
@@ -94,7 +98,7 @@ export const createByteCache = ({ maxBytes, maxEntries }: IByteCacheOptions): IB
       }
       entry.retentions += 1;
       const retention: IByteCacheRetention = {
-        copyBytes: () => entry?.bytes.slice(),
+        copyBytes: () => (entry === undefined ? undefined : cloneBytes(entry.bytes)),
         release: () => {
           if (entry === undefined) {
             return;
