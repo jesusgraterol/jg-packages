@@ -19,3 +19,13 @@ export interface IDocumentationOutlineItem extends IDocumentationLink {
 export interface IPageNavigationLink extends IDocumentationLink {
   description?: string | undefined;
 }
+
+// caller-supplied file presentation; no repository state is inferred
+export type IFileStatus = 'added' | 'modified' | 'removed' | 'unchanged';
+
+// one file or directory in a supplied preview, with optional real navigation
+export type IFileTreeEntry = {
+  name: string;
+  href?: string | undefined;
+  status?: IFileStatus | undefined;
+} & ({ kind: 'file' } | { kind: 'directory'; children: readonly IFileTreeEntry[] });

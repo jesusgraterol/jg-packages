@@ -68,7 +68,14 @@ export const GALLERY_EXAMPLES: IGalleryExample[] = [
     path: '/documentation/',
     selector: `[data-example="${subpath}"]`,
   })),
-  ...['code-block', 'code-diff', 'install-command', 'terminal-window'].map((subpath) => ({
+  ...[
+    'code-block',
+    'code-diff',
+    'file-preview',
+    'file-tree',
+    'install-command',
+    'terminal-window',
+  ].map((subpath) => ({
     subpath,
     path: '/technical-content/',
     selector: `[data-example="${subpath}"]`,

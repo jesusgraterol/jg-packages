@@ -41,6 +41,8 @@
     "./document-head": "./src/components/document-head/document-head.astro",
     "./documentation-outline": "./src/components/documentation-outline/documentation-outline.astro",
     "./documentation-shell": "./src/components/documentation-shell/documentation-shell.astro",
+    "./file-preview": "./src/components/file-preview/file-preview.astro",
+    "./file-tree": "./src/components/file-tree/file-tree.astro",
     "./hero-backdrop": "./src/components/hero-backdrop/hero-backdrop.astro",
     "./icon-tile": "./src/components/icon-tile/icon-tile.astro",
     "./inline-code": "./src/components/inline-code/inline-code.astro",

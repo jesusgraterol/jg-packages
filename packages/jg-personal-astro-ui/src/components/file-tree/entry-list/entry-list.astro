@@ -1,0 +1,44 @@
+---
+import { File, Folder } from '@lucide/astro';
+
+import type { IFileTreeEntry } from '../../../contracts/index.ts';
+
+import FileStatus from '../../file-status/file-status.astro';
+
+interface Props {
+  entries: readonly IFileTreeEntry[];
+}
+const { entries } = Astro.props;
+---
+
+<ul class="grid min-w-0 gap-2">
+  {entries.map((entry) => {
+    const Icon = entry.kind === 'directory' ? Folder : File;
+    return (
+      <li class="min-w-0">
+        <div class="flex min-w-0 flex-wrap items-center gap-2">
+          <Icon
+            class="size-4 shrink-0 text-muted"
+            aria-hidden="true"
+          />
+          {entry.href === undefined ? (
+            <span class="min-w-0 flex-1 font-mono text-sm wrap-anywhere">{entry.name}</span>
+          ) : (
+            <a
+              href={entry.href}
+              class="flex min-h-11 min-w-0 flex-1 items-center font-mono text-sm wrap-anywhere underline-offset-4 hover:underline"
+            >
+              {entry.name}
+            </a>
+          )}
+          <FileStatus status={entry.status} />
+        </div>
+        {entry.kind === 'directory' && entry.children.length > 0 && (
+          <div class="mt-2 min-w-0 border-l border-border pl-3">
+            <Astro.self entries={entry.children} />
+          </div>
+        )}
+      </li>
+    );
+  })}
+</ul>

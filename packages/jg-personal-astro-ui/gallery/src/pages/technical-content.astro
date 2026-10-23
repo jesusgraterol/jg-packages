@@ -1,11 +1,16 @@
 ---
 import { createSatteriMarkdownProcessor } from '@astrojs/markdown-satteri';
+import Button from 'jg-personal-astro-ui/button';
 import CodeBlock from 'jg-personal-astro-ui/code-block';
 import CodeDiff from 'jg-personal-astro-ui/code-diff';
 import { renderCodeWindowHeader } from 'jg-personal-astro-ui/code-window';
 import { codeWindowPlugin, createCodeWindowPlugin } from 'jg-personal-astro-ui/code-window-plugin';
 import Container from 'jg-personal-astro-ui/container';
+import type { IFileTreeEntry } from 'jg-personal-astro-ui/contracts';
+import CopyButton from 'jg-personal-astro-ui/copy-button';
 import { externalLinkPlugin } from 'jg-personal-astro-ui/external-link-plugin';
+import FilePreview from 'jg-personal-astro-ui/file-preview';
+import FileTree from 'jg-personal-astro-ui/file-tree';
 import InstallCommand from 'jg-personal-astro-ui/install-command';
 import { renderNewTabMarker } from 'jg-personal-astro-ui/new-tab-marker-markup';
 import PageHeader from 'jg-personal-astro-ui/page-header';
@@ -44,6 +49,37 @@ const diffAfter =
   'one\ntwo\nthree\nconst message = "new 🌍";\nconst extra = true;\nfive\nsix\nseven\n';
 const wideDiffBefore = `const message = "${'old Unicode 世界 <tag> & text '.repeat(8)}";\nshort\nlast`;
 const wideDiffAfter = 'const message = "new 🌍";\nanother\nlast\n';
+const fileEntries: IFileTreeEntry[] = [
+  {
+    kind: 'directory',
+    name: 'src',
+    status: 'modified',
+    children: [
+      {
+        kind: 'file',
+        name: 'configuration-with-a-very-long-name-世界.ts',
+        href: '#preview-source',
+        status: 'added',
+      },
+      { kind: 'file', name: 'old-settings.ts', status: 'removed' },
+      { kind: 'file', name: 'stable.ts', status: 'unchanged' },
+    ],
+  },
+  { kind: 'directory', name: 'empty-directory', href: '#file-tree-title', children: [] },
+];
+const wideEntries: IFileTreeEntry[] = Array.from({ length: 257 }, (_, index) => ({
+  kind: 'file',
+  name: `entry-${String(index).padStart(3, '0')}.ts`,
+}));
+const cyclicEntry: IFileTreeEntry = { kind: 'directory', name: 'cycle', children: [] };
+cyclicEntry.children = [cyclicEntry];
+let deepEntry: IFileTreeEntry = { kind: 'file', name: 'beyond-preview.ts' };
+for (let level = 9; level >= 1; level--)
+  deepEntry = {
+    kind: 'directory',
+    name: `directory-${level}-with-a-long-name`,
+    children: [deepEntry],
+  };
 ---
 
 <GalleryLayout title="Technical content">
@@ -53,6 +89,113 @@ const wideDiffAfter = 'const message = "new 🌍";\nanother\nlast\n';
     lede="Build-time highlighting, real Markdown transforms, long lines, and responsive diffs."
   />
   <Container class="pb-16">
+    <section
+      class="gallery-example"
+      data-example="file-preview"
+      aria-labelledby="file-preview-title"
+    >
+      <h2 id="file-preview-title">File content and actions</h2>
+      <div class="grid min-w-0 gap-6">
+        <FilePreview
+          path="src/configuration/with-a-long-directory-name/example-世界.ts"
+          label="Source preview"
+          status="modified"
+        >
+          <div
+            slot="header-actions"
+            class="flex flex-wrap items-center gap-2"
+          >
+            <CopyButton
+              text={longSource}
+              context="preview source"
+              display="icon"
+              tone="outline"
+            />
+            <Button
+              href={`data:text/plain;charset=utf-8,${encodeURIComponent(longSource)}`}
+              download="example.ts"
+              variant="outline"
+            >
+              Download
+            </Button>
+            <Button
+              href="#preview-source"
+              variant="outline"
+            >
+              Source
+            </Button>
+          </div>
+          <CodeBlock
+            code={longSource}
+            lang="ts"
+            appearance="plain"
+            copy={false}
+            maxHeight="12rem"
+            ariaLabel="Preview source content"
+          />
+          <p
+            slot="footer"
+            class="text-sm text-muted"
+          >
+            Caller-supplied source and download actions.
+          </p>
+        </FilePreview>
+        <FilePreview
+          path="src/settings.ts"
+          label="Change preview"
+          status="added"
+        >
+          <CodeDiff
+            appearance="plain"
+            lang="ts"
+            before={{ title: 'Before', code: 'const enabled = false;\n' }}
+            after={{ title: 'After', code: 'const enabled = true;\n' }}
+          />
+        </FilePreview>
+        <FilePreview path="notes.txt">
+          <p>Plain caller-supplied file content.</p>
+        </FilePreview>
+      </div>
+      <p
+        id="preview-source"
+        class="mt-4 scroll-mt-24"
+      >
+        Source link destination.
+      </p>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="file-tree"
+      aria-labelledby="file-tree-title"
+    >
+      <h2 id="file-tree-title">Semantic file previews</h2>
+      <div class="grid min-w-0 gap-6">
+        <FileTree
+          entries={fileEntries}
+          label="Project files"
+        />
+        <FileTree
+          entries={[]}
+          label="Empty file preview"
+        />
+        <FileTree
+          entries={[deepEntry]}
+          label="Deep file preview"
+        />
+        <FileTree
+          entries={[cyclicEntry]}
+          label="Cyclic file preview"
+        />
+        <details class="min-w-0 rounded-xl border border-border p-4">
+          <summary class="min-h-11 cursor-pointer font-semibold">Show wide file preview</summary>
+          <FileTree
+            entries={wideEntries}
+            label="Wide file preview"
+            class="mt-4"
+          />
+        </details>
+      </div>
+    </section>
     <section
       class="gallery-example"
       data-example="code-block"
