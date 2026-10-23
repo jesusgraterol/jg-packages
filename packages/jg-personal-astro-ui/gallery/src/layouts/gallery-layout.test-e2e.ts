@@ -101,7 +101,11 @@ test('Pagefind returns real indexed content, no matches, and an unavailable stat
   const input = dialog.getByRole('searchbox', { name: 'Search the site' });
   await expect(input).toBeFocused();
   await input.fill('Rich prose');
-  await expect(dialog.getByRole('link', { name: /^Documentation Reading/ })).toBeVisible();
+  await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toBeVisible();
+  await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toHaveAttribute(
+    'href',
+    '/documentation/',
+  );
   await input.fill('zzzxqnomatch');
   await expect(dialog.getByText('No results for “zzzxqnomatch”.')).toBeVisible();
   await input.press('Escape');

@@ -4,6 +4,9 @@ export type ISectionAlign = 'center' | 'start';
 // how a section's header is laid out: stacked, or split into the eyebrow beside the title and lede
 export type ISectionLayout = 'split' | 'stacked';
 
+// default sections inherit their context; inverse sections own a dark surface in either theme
+export type ISectionTone = 'default' | 'inverse';
+
 // what buildSectionClasses needs
 export type ISectionClassOptions = {
   // centers a stacked header; a split header always starts at the column's edge. Defaults to 'start'
@@ -14,6 +17,7 @@ export type ISectionClassOptions = {
   layout?: ISectionLayout | undefined;
   // the page column, or the narrower reading column. Defaults to 'page'
   width?: 'page' | 'prose' | undefined;
+  tone?: ISectionTone | undefined;
 };
 
 // the classes of each part of a section
@@ -36,12 +40,17 @@ export const buildSectionClasses = ({
   border = true,
   layout = 'stacked',
   width = 'page',
+  tone = 'default',
 }: ISectionClassOptions = {}): ISectionClasses => {
   const isCentered = layout === 'stacked' && align === 'center';
   return {
-    root: border
-      ? 'jg-section-space scroll-mt-16 border-b border-border'
-      : 'jg-section-space scroll-mt-16',
+    root: [
+      'jg-section-space scroll-mt-16',
+      border && 'border-b border-border',
+      tone === 'inverse' && 'jg-section-inverse',
+    ]
+      .filter(Boolean)
+      .join(' '),
     container: width === 'prose' ? 'jg-container-prose' : 'jg-container',
     header:
       layout === 'split'

@@ -4,6 +4,8 @@ import AgenticCodingMark from 'jg-personal-astro-ui/agentic-coding-mark';
 import Badge from 'jg-personal-astro-ui/badge';
 import Button from 'jg-personal-astro-ui/button';
 import Card from 'jg-personal-astro-ui/card';
+import Callout from 'jg-personal-astro-ui/callout';
+import CodeBlock from 'jg-personal-astro-ui/code-block';
 import Container from 'jg-personal-astro-ui/container';
 import HeroBackdrop from 'jg-personal-astro-ui/hero-backdrop';
 import IconTile from 'jg-personal-astro-ui/icon-tile';
@@ -11,10 +13,15 @@ import JgMark from 'jg-personal-astro-ui/jg-mark';
 import LinkCard from 'jg-personal-astro-ui/link-card';
 import NewTabMarker from 'jg-personal-astro-ui/new-tab-marker';
 import PageHeader from 'jg-personal-astro-ui/page-header';
+import Prose from 'jg-personal-astro-ui/prose';
+import Section from 'jg-personal-astro-ui/section';
+import SegmentedControl from 'jg-personal-astro-ui/segmented-control';
 import Stack from 'jg-personal-astro-ui/stack';
 import TextLink from 'jg-personal-astro-ui/text-link';
 
 import GalleryLayout from '../layouts/gallery-layout.astro';
+
+const tones = ['primary', 'neutral', 'accent', 'success', 'warning', 'danger'] as const;
 ---
 
 <GalleryLayout title="Foundations">
@@ -53,6 +60,23 @@ import GalleryLayout from '../layouts/gallery-layout.astro';
             aria-hidden="true"
           />
         </IconTile>
+      </div>
+      <div
+        class="mt-6 flex flex-wrap gap-4"
+        data-compact-tiles
+      >
+        {tones.map((tone) => (
+          <span data-icon-tone={tone}>
+            <IconTile
+              size="compact"
+              tone={tone}
+              data-icon-sample={tone}
+            >
+              <Layers aria-hidden="true" />
+            </IconTile>
+            <span class="sr-only">{tone} tile</span>
+          </span>
+        ))}
       </div>
     </section>
     <section
@@ -122,6 +146,7 @@ import GalleryLayout from '../layouts/gallery-layout.astro';
         >
           <Stack gap="md">
             <h3 class="text-lg font-semibold">A focused surface</h3>
+            <Badge variant="danger">Action required</Badge>
             <p class="text-muted">Cards group related content without imposing a workflow.</p>
             <TextLink
               href="/documentation/"
@@ -169,5 +194,99 @@ import GalleryLayout from '../layouts/gallery-layout.astro';
         The brand's dot lattice and accent glow behind ordinary page content.
       </p>
     </section>
+  </Container>
+  <Section
+    id="inverse-example"
+    title="Inverse section"
+    eyebrow="Local palette"
+    lede="Controls, status, and source remain readable within a dark section in either theme."
+    tone="inverse"
+  >
+    <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <Card class="p-6">
+        <h3 class="text-lg font-semibold">Nested controls</h3>
+        <div class="mt-4 flex flex-wrap gap-3">
+          <Button>Inverse primary</Button>
+          <Button variant="secondary">Inverse secondary</Button>
+          <Button variant="outline">Inverse outline</Button>
+          <Button variant="ghost">Inverse ghost</Button>
+          <Button variant="destructive">Inverse destructive</Button>
+        </div>
+        <div
+          class="mt-4 flex flex-wrap gap-3"
+          data-inverse-status
+        >
+          <Badge variant="success">Complete</Badge>
+          <Badge variant="warning">Attention</Badge>
+          <Badge variant="danger">Failed</Badge>
+        </div>
+        <div
+          class="mt-4 flex flex-wrap gap-4"
+          data-compact-tiles
+        >
+          {tones.map((tone) => (
+            <span data-icon-tone={tone}>
+              <IconTile
+                size="compact"
+                tone={tone}
+                data-icon-sample={tone}
+              >
+                <Layers aria-hidden="true" />
+              </IconTile>
+              <span class="sr-only">{tone} tile</span>
+            </span>
+          ))}
+        </div>
+        <div class="mt-6 grid gap-2">
+          <label for="inverse-field">Example name</label>
+          <input
+            id="inverse-field"
+            type="text"
+            class="min-h-11 rounded-md border border-border-strong bg-background px-3 text-base text-foreground"
+          />
+        </div>
+        <div class="mt-6">
+          <SegmentedControl
+            name="inverse-density"
+            legend="Inverse reading density"
+            options={[
+              { value: 'comfortable', label: 'Comfortable' },
+              { value: 'compact', label: 'Compact' },
+            ]}
+          />
+        </div>
+      </Card>
+      <Card class="p-6">
+        <Prose>
+          <h3>Reading on an inverse surface</h3>
+          <p>
+            Foreground, <strong>emphasis</strong>, <code>inline code</code>, and{' '}
+            <a href="/technical-content/">source examples</a> inherit the local palette.
+          </p>
+          <CodeBlock
+            code={'// syntax remains meaningful\nconst enabled = true;'}
+            lang="ts"
+            appearance="plain"
+            copy={false}
+            ariaLabel="Inverse source"
+          />
+        </Prose>
+        <div class="mt-6">
+          <Callout
+            variant="warning"
+            title="Attention"
+          >
+            <p>Semantic colors remain distinct within this surface.</p>
+          </Callout>
+        </div>
+      </Card>
+    </div>
+  </Section>
+  <Container
+    class="py-8"
+    data-after-inverse
+  >
+    <p class="text-muted">The surrounding page keeps its selected theme.</p>
+    <TextLink href="/documentation/">Outside section link</TextLink>
   </Container>
 </GalleryLayout>

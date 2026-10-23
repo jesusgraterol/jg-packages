@@ -35,7 +35,7 @@ import ThemeInitScript from 'jg-personal-astro-ui/theme-init-script';
 <Button href="/start">Get started</Button>
 ```
 
-The components style themselves with the contract's tokens only, so another theme can replace `theme.css` by defining every `--jg-*` property.
+The components style themselves with the contract's tokens only, so another theme can replace `theme.css` by defining every `--jg-*` property and the documented code-window and inverse surface scopes.
 
 Put the code blocks of the site's Markdown in the same code windows as `code-block`, with a copy button each, and open its links to other sites in a new tab, as the components do, through Astro's Markdown processor. Render the Markdown inside `prose`:
 
@@ -73,6 +73,10 @@ For compact Markdown windows, replace `codeWindowPlugin` with `createCodeWindowP
 CodeBlock accepts `appearance="plain"` to compose within another surface, `overflow="wrap"` for long lines, CSS-length `height` and `maxHeight`, and `ariaLabel` to name its keyboard-focusable source region. The default remains a dark window with horizontal scrolling. Source dimensions leave the header outside the scroll body. Copying preserves the original code, including CRLF and final newlines, independently of highlighting or wrapping.
 
 CodeDiff adds `view="auto" | "unified" | "split"`, `lineNumbers`, `contextLines`, `highlightWords`, `appearance="plain"`, and `overflow="wrap"`. Defaults retain the existing framed, responsive comparison with complete context. Comparisons run at build time, preserve source line endings, and show accurate omission and final-newline notices. Exhausting the bounded edit search produces a full replacement rather than incomplete output.
+
+PageHeader and Prose accept `titleVariant="page" | "document"` and a scoped `titleFont="sans" | "mono"`. Existing page typography remains the default; document typography is more compact. PageHeader also has a `metadata` slot between its lede and actions. The `jg-page-title` and `jg-document-title` CSS utilities expose the title scales directly.
+
+Section supports `tone="inverse"` for a dark surface with its own readable controls, semantic colors, syntax, selection, and focus. IconTile adds `size="compact"` and primary, neutral, accent, success, warning, and danger tones; card size and primary tone remain its defaults.
 
 ## Private gallery
 

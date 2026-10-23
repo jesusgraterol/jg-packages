@@ -1,5 +1,10 @@
 ---
-import { buildSectionClasses, type ISectionAlign, type ISectionLayout } from './section-classes.ts';
+import {
+  buildSectionClasses,
+  type ISectionAlign,
+  type ISectionLayout,
+  type ISectionTone,
+} from './section-classes.ts';
 
 interface Props {
   // centers a stacked header. Defaults to 'start'
@@ -18,6 +23,7 @@ interface Props {
   lede?: string | undefined;
   title?: string | undefined;
   width?: 'page' | 'prose' | undefined;
+  tone?: ISectionTone | undefined;
 }
 
 const {
@@ -30,8 +36,9 @@ const {
   lede,
   title,
   width,
+  tone,
 } = Astro.props;
-const classes = buildSectionClasses({ align, border, layout, width });
+const classes = buildSectionClasses({ align, border, layout, width, tone });
 const titleId = `${id}-title`;
 ---
 

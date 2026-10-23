@@ -1,8 +1,11 @@
 ---
+import { Code } from '@lucide/astro';
+import Button from 'jg-personal-astro-ui/button';
 import Breadcrumb from 'jg-personal-astro-ui/breadcrumb';
 import Callout from 'jg-personal-astro-ui/callout';
 import Container from 'jg-personal-astro-ui/container';
 import InlineCode from 'jg-personal-astro-ui/inline-code';
+import IconTile from 'jg-personal-astro-ui/icon-tile';
 import Kbd from 'jg-personal-astro-ui/kbd';
 import PageHeader from 'jg-personal-astro-ui/page-header';
 import Prose from 'jg-personal-astro-ui/prose';
@@ -24,6 +27,63 @@ import GalleryLayout from '../layouts/gallery-layout.astro';
     width="prose"
     class="pb-12"
   >
+    <section
+      class="gallery-example"
+      data-document-header
+      aria-label="Document header options"
+    >
+      <PageHeader
+        title="Astro component API"
+        titleVariant="document"
+        titleFont="mono"
+        eyebrow="Reference"
+        lede="Props, examples, and the component contracts."
+        border={false}
+      >
+        <IconTile
+          slot="leading"
+          size="header"
+        >
+          <Code aria-hidden="true" />
+        </IconTile>
+        <time
+          slot="metadata"
+          datetime="2026-10-22"
+        >
+          Updated October 22, 2026
+        </time>
+        <span slot="metadata">API reference</span>
+        <div class="mt-6">
+          <Button href="/technical-content/">Read source examples</Button>
+        </div>
+      </PageHeader>
+    </section>
+    <section
+      class="gallery-example"
+      data-document-prose
+      aria-labelledby="document-prose-title"
+    >
+      <h2 id="document-prose-title">Document typography</h2>
+      <Prose
+        titleVariant="document"
+        titleFont="mono"
+      >
+        <h1>Component reference headings</h1>
+        <h2>Document section heading</h2>
+        <p>Document body copy retains the sans font while headings can use mono.</p>
+        <h3>Document subsection heading</h3>
+        <div data-nested-sans>
+          <Prose
+            titleVariant="document"
+            titleFont="sans"
+          >
+            <h2>Nested sans heading</h2>
+            <p>Font choices stay within their owning scope.</p>
+          </Prose>
+        </div>
+        <p data-after-nested>Outer prose keeps its own typography.</p>
+      </Prose>
+    </section>
     <div
       class="gallery-example"
       data-example="breadcrumb"

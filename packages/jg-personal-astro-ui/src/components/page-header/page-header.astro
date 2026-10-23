@@ -1,4 +1,6 @@
 ---
+import type { ITitleFont, ITitleVariant } from '../../typography/index.ts';
+
 import Breadcrumb from '../breadcrumb/breadcrumb.astro';
 import HeroBackdrop from '../hero-backdrop/hero-backdrop.astro';
 import { buildPageHeaderClasses, type IPageHeaderAlign } from './page-header-classes.ts';
@@ -16,15 +18,27 @@ interface Props {
   // the paragraph under the title
   lede?: string | undefined;
   title: string;
+  titleFont?: ITitleFont | undefined;
+  titleVariant?: ITitleVariant | undefined;
 }
 
-const { align, border = true, breadcrumbs, class: className, eyebrow, lede, title } = Astro.props;
-const classes = buildPageHeaderClasses(align);
+const {
+  align,
+  border = true,
+  breadcrumbs,
+  class: className,
+  eyebrow,
+  lede,
+  title,
+  titleFont,
+  titleVariant,
+} = Astro.props;
+const classes = buildPageHeaderClasses(align, titleVariant);
 ---
 
 {/*
  * an inner page's header, over the hero backdrop: its breadcrumb, an optional mark in the
- * `leading` slot, its eyebrow, title and lede, and its actions in the default slot
+ * `leading` slot, its eyebrow, title and lede, metadata, and actions in the default slot
  */}
 <header
   class:list={['relative isolate overflow-hidden', border && 'border-b border-border', className]}
@@ -42,12 +56,20 @@ const classes = buildPageHeaderClasses(align);
       <slot name="leading" />
       <div class="min-w-0">
         {eyebrow !== undefined && <p class="eyebrow">{eyebrow}</p>}
-        <h1 class="mt-2 text-[clamp(2rem,6vw,3.5rem)] leading-none font-bold tracking-tight wrap-anywhere">
+        <h1
+          class={classes.title}
+          data-jg-title-font={titleFont}
+        >
           {title}
         </h1>
       </div>
     </div>
     {lede !== undefined && <p class={classes.lede}>{lede}</p>}
+    {Astro.slots.has('metadata') && (
+      <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
+        <slot name="metadata" />
+      </div>
+    )}
     <slot />
   </div>
 </header>

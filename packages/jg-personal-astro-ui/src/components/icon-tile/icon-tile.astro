@@ -1,20 +1,25 @@
 ---
 import type { HTMLAttributes } from 'astro/types';
 
-import { buildIconTileClasses, type IIconTileSize } from './icon-tile-classes.ts';
+import {
+  buildIconTileClasses,
+  type IIconTileSize,
+  type IIconTileTone,
+} from './icon-tile-classes.ts';
 
 type Props = {
   class?: string | undefined;
-  // 'card' leads a card's top row, 'header' opens a page. Defaults to 'card'
+  // compact, card, or header dimensions. Defaults to 'card'
   size?: IIconTileSize | undefined;
+  tone?: IIconTileTone | undefined;
 } & Omit<HTMLAttributes<'span'>, 'class'>;
 
-const { class: className, size, ...attributes } = Astro.props;
+const { class: className, size, tone, ...attributes } = Astro.props;
 ---
 
 {/* decorative: the thing it stands for is always named next to it. The icon goes in the slot */}
 <span
-  class:list={[buildIconTileClasses(size), className]}
+  class:list={[buildIconTileClasses(size, tone), className]}
   aria-hidden="true"
   {...attributes}
 >

@@ -125,6 +125,34 @@
     text-wrap: balance;
   }
 
+  .jg-page-title {
+    font-family: var(--jg-title-font, inherit);
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1;
+    overflow-wrap: anywhere;
+  }
+
+  .jg-document-title,
+  .jg-prose[data-jg-title-variant='document'] h1 {
+    font-family: var(--jg-title-font, inherit);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 650;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  :is(.jg-page-title, .jg-document-title, .jg-prose)[data-jg-title-font='sans'] {
+    --jg-title-font: var(--jg-font-sans);
+  }
+
+  :is(.jg-page-title, .jg-document-title, .jg-prose)[data-jg-title-font='mono'] {
+    --jg-title-font: var(--jg-font-mono);
+  }
+
   .section-title {
     max-width: 24ch;
     font-size: clamp(2.125rem, 5vw, 3.25rem);
@@ -154,6 +182,11 @@
 
   .jg-section-space {
     padding-block: var(--jg-section-space);
+  }
+
+  .jg-section-inverse {
+    background: var(--jg-inverse);
+    color: var(--jg-inverse-foreground);
   }
 
   /*

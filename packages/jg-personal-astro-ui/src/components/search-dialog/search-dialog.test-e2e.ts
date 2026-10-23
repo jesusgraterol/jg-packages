@@ -19,7 +19,11 @@ test('an index load failure exposes retry and the next load recovers real Pagefi
     dialog.getByText("Search isn't available on this page.", { exact: true }),
   ).toBeVisible();
   await dialog.getByRole('button', { name: 'Try again', exact: true }).click();
-  await expect(dialog.getByRole('link', { name: /^Documentation Reading/ })).toBeVisible();
+  await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toBeVisible();
+  await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toHaveAttribute(
+    'href',
+    '/documentation/',
+  );
   expect(loads).toBe(2);
   expect(new URL(requests[1] ?? '').searchParams.get('__jg_search_retry')).toBe('1');
 });
@@ -46,7 +50,11 @@ test('loading, rapid input, empty results, and reopening preserve the latest que
     await input.fill('zzzxqnomatch');
     await input.fill('Rich prose');
     release.resolve();
-    await expect(dialog.getByRole('link', { name: /^Documentation Reading/ })).toBeVisible();
+    await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toBeVisible();
+    await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toHaveAttribute(
+      'href',
+      '/documentation/',
+    );
     await expect(dialog.getByRole('status')).toHaveText('2 results for “Rich prose”.');
     await input.fill('zzzxqnomatch');
     await expect(dialog.getByRole('status')).toHaveText('No results for “zzzxqnomatch”.');
@@ -60,7 +68,11 @@ test('loading, rapid input, empty results, and reopening preserve the latest que
     await page.keyboard.press('/');
     await expect(input).toBeFocused();
     await expect(input).toHaveValue('Rich prose');
-    await expect(dialog.getByRole('link', { name: /^Documentation Reading/ })).toBeVisible();
+    await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toBeVisible();
+    await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toHaveAttribute(
+      'href',
+      '/documentation/',
+    );
   } finally {
     release.resolve();
   }
@@ -89,7 +101,11 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('dialog', { name: 'Search', exact: true })).not.toBeVisible();
       await expect(input).toBeFocused();
       await input.fill('Rich prose');
-      await expect(dialog.getByRole('link', { name: /^Documentation Reading/ })).toBeVisible();
+      await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toBeVisible();
+      await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toHaveAttribute(
+        'href',
+        '/documentation/',
+      );
       await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeInViewport();
       await input.press('Escape');
       await expect(dialog).not.toBeVisible();
@@ -132,7 +148,11 @@ test('search remains usable after an Astro client navigation replaces the page',
   const input = dialog.getByRole('searchbox', { name: 'Search the site', exact: true });
   await expect(input).toBeFocused();
   await input.fill('Rich prose');
-  await expect(dialog.getByRole('link', { name: /^Documentation Reading/ })).toBeVisible();
+  await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toBeVisible();
+  await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toHaveAttribute(
+    'href',
+    '/documentation/',
+  );
   await input.press('Control+k');
   await expect(page.locator('dialog[open]')).toHaveCount(1);
   await input.press('Escape');
