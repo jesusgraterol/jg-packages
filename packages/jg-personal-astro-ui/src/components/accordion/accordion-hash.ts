@@ -1,5 +1,5 @@
 // document ownership survives Astro navigation and separately bundled component scripts
-const CONTROLLER = Symbol.for('jg-personal-astro-ui.accordion-hash');
+const CONTROLLER = Symbol.for('jg:ui-accordion-hash');
 
 /** Opens collapsed ancestors of a fragment inside an owned accordion, without moving focus. */
 const revealHash = (root: Document, view: Window): void => {

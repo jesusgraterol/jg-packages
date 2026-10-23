@@ -346,9 +346,21 @@
   }
 
   .jg-diff-entry {
-    display: block;
+    display: flex;
+    flex-direction: column;
     width: max-content;
     min-width: 100%;
+  }
+
+  /* changed lines composite over the code surface, independent of a surrounding card */
+  .jg-diff-entry[data-diff-kind='added'],
+  .jg-diff-entry[data-diff-kind='removed'] {
+    background-color: var(--jg-code);
+  }
+
+  .jg-diff-tint {
+    display: block;
+    flex: 1;
   }
 
   .jg-diff-line {

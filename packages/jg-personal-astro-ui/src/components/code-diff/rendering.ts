@@ -71,7 +71,7 @@ const renderLine = (
     ? `<span class="jg-diff-ending"${ending === '' ? ' aria-hidden="true"' : ''}>${ending || ' '}</span>`
     : '';
   const html = renderSource(line, tokens);
-  return `<span class="jg-diff-entry ${style.classes}" data-diff-kind="${kind}" data-line-ending="${line.ending}"><span class="jg-diff-line${options.wrap ? ' jg-diff-line-wrap' : ''}">${gutters}<span class="jg-diff-marker" aria-hidden="true">${style.marker}</span><span class="sr-only select-none">${numberLabel}${style.label}</span><span class="jg-diff-source">${html === '' ? ' ' : html}</span></span>${endingHtml}</span>`;
+  return `<span class="jg-diff-entry" data-diff-kind="${kind}" data-line-ending="${line.ending}"><span class="jg-diff-tint ${style.classes}"><span class="jg-diff-line${options.wrap ? ' jg-diff-line-wrap' : ''}">${gutters}<span class="jg-diff-marker" aria-hidden="true">${style.marker}</span><span class="sr-only select-none">${numberLabel}${style.label}</span><span class="jg-diff-source">${html === '' ? ' ' : html}</span></span>${endingHtml}</span></span>`;
 };
 
 /**

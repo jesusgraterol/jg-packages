@@ -13,7 +13,7 @@ interface IHistoryMarker {
  * @returns The component's small inline bootstrap.
  */
 export const buildDialogHistoryBootstrap = (): string => `(() => {
-  const key = Symbol.for('jg-personal-astro-ui.dialog-history');
+  const key = Symbol.for('jg:ui-dialog-history');
   if (window[key]) return;
   window[key] = true;
   window.addEventListener('popstate', (event) => {

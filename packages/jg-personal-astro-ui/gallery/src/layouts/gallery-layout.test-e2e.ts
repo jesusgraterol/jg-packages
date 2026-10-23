@@ -36,10 +36,12 @@ test('every public Astro component has a real rendered example', async ({ page }
 
 for (const colorScheme of ['light', 'dark'] as const) {
   for (const width of [320, 1280]) {
-    test(`pages are styled, accessible, and fit ${width}px in ${colorScheme}`, async ({ page }) => {
-      await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
-      await page.setViewportSize({ width, height: 800 });
-      for (const path of ['/', ...GALLERY_PAGES.map(({ href }) => href)]) {
+    for (const path of ['/', ...GALLERY_PAGES.map(({ href }) => href)]) {
+      test(`${path} is styled, accessible, and fits ${width}px in ${colorScheme}`, async ({
+        page,
+      }) => {
+        await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
+        await page.setViewportSize({ width, height: 800 });
         await page.goto(path);
         await waitForPageAssets(page);
         await expect(page.locator('html')).toHaveAttribute('data-resolved-theme', colorScheme);
@@ -49,8 +51,8 @@ for (const colorScheme of ['light', 'dark'] as const) {
         await expectNoHorizontalOverflow(page);
         await expectNoAxeViolations(page);
         expect((await inspectMotion(page)).movingAnimations).toStrictEqual([]);
-      }
-    });
+      });
+    }
   }
 }
 
@@ -179,4 +181,27 @@ test('mobile navigation and theme controls work from the shared frame', async ({
   await expect(page.locator('html')).toHaveAttribute('data-resolved-theme', 'dark');
   await expect(summary).toBeVisible();
   await expectNoHorizontalOverflow(page);
+});
+
+test('emitted client scripts keep implementation package names out of consumer output', async ({
+  page,
+}) => {
+  const visited = new Set<string>();
+  for (const path of ['/documentation/', '/technical-content/']) {
+    await page.goto(path);
+    const scripts = await page.locator('script').evaluateAll((elements) =>
+      elements.map((element) => ({
+        src: element.getAttribute('src') ?? '',
+        inline: element.textContent ?? '',
+      })),
+    );
+    for (const script of scripts) {
+      expect(script.inline).not.toContain('jg-personal-astro-ui');
+      if (script.src === '' || visited.has(script.src)) continue;
+      visited.add(script.src);
+      const response = await page.request.get(script.src);
+      expect(response.ok()).toBe(true);
+      expect(await response.text()).not.toContain('jg-personal-astro-ui');
+    }
+  }
 });

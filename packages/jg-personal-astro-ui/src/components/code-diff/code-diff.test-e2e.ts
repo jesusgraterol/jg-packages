@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { expectNoHorizontalOverflow, waitForPageAssets } from 'jg-playwright';
 
@@ -79,6 +80,31 @@ for (const colorScheme of ['light', 'dark'] as const) {
       });
       if (width === 320) await expect(defaultUnified).toBeVisible();
       else await expect(defaultUnified).toBeHidden();
+      await expectNoHorizontalOverflow(page);
+    });
+  }
+}
+
+for (const colorScheme of ['light', 'dark'] as const) {
+  for (const width of [320, 1280]) {
+    test(`plain diff syntax retains contrast on page and card surfaces at ${width}px in ${colorScheme}`, async ({
+      page,
+    }) => {
+      await page.emulateMedia({ colorScheme });
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto('/technical-content/');
+      await waitForPageAssets(page);
+      for (const surface of ['page', 'surface']) {
+        const selector = `[data-diff-contrast="${surface}"]`;
+        await expect(page.locator(selector).getByRole('figure')).toBeVisible();
+        // Firefox cannot measure the decorative Unicode minus; source and text labels stay checked.
+        const { violations, incomplete } = await new AxeBuilder({ page })
+          .include(selector)
+          .exclude('.jg-diff-marker[aria-hidden="true"]')
+          .analyze();
+        expect(violations).toStrictEqual([]);
+        expect(incomplete.filter(({ id }) => id === 'color-contrast')).toStrictEqual([]);
+      }
       await expectNoHorizontalOverflow(page);
     });
   }

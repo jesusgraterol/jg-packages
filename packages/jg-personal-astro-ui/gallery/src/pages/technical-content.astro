@@ -690,6 +690,39 @@ for (let level = 9; level >= 1; level--)
             after={{ title: 'Empty update', code: '' }}
           />
         </div>
+        {(['page', 'surface'] as const).map((surface) => (
+          <section
+            class:list={[
+              'min-w-0 rounded-xl border border-border p-4',
+              surface === 'page' ? 'bg-background' : 'bg-surface',
+            ]}
+            data-diff-contrast={surface}
+            aria-labelledby={`plain-diff-${surface}`}
+          >
+            <h3
+              id={`plain-diff-${surface}`}
+              class="mb-4 text-lg font-semibold"
+            >
+              Plain diff on {surface}
+            </h3>
+            <CodeDiff
+              lang="ts"
+              before={{
+                title: `Original ${surface} configuration`,
+                code: '// Configuration\nconst flag = false;\nconst mode = "off";\nconst count = 2;\nlet id: string = "a";\n',
+              }}
+              after={{
+                title: `Updated ${surface} configuration`,
+                code: '// Configuration\nconst flag = true;\nconst mode = "on";\nconst count = 4;\nlet id: string = "b";\n',
+              }}
+              appearance="plain"
+              view={surface === 'page' ? 'unified' : 'auto'}
+              overflow="wrap"
+              lineNumbers
+              highlightWords
+            />
+          </section>
+        ))}
       </div>
     </section>
     <section

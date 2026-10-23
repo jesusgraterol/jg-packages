@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { expectNoHorizontalOverflow } from 'jg-playwright';
+import { expectNoHorizontalOverflow, waitForPageAssets } from 'jg-playwright';
 
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
@@ -73,10 +73,14 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 320, height: 800 });
     await page.goto('/interactions/');
+    await waitForPageAssets(page);
     const list = page.getByRole('tablist', { name: 'Scrollable reference', exact: true });
     const first = list.getByRole('tab', { name: 'Overview of the package', exact: true });
     const last = list.getByRole('tab', { name: 'Troubleshooting and recovery', exact: true });
     await first.focus();
+    // native focus must finish revealing the offscreen tab before the scroll baseline is read
+    await expect(first).toBeFocused();
+    await expect(first).toBeInViewport();
     const scrollY = await page.evaluate(() => window.scrollY);
     await first.press('End');
     await expect(last).toBeFocused();

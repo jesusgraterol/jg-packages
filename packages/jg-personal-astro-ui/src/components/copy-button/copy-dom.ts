@@ -1,5 +1,5 @@
 // document identity survives Astro's HTML/body replacement and repeated bundles
-const CONTROLLER_KEY = Symbol.for('jg-personal-astro-ui.copy-controls');
+const CONTROLLER_KEY = Symbol.for('jg:ui-copy-controls');
 type ICopyDocument = Document & { [CONTROLLER_KEY]?: () => void };
 
 // matches the 1rem gutter used by the package's narrow layouts
