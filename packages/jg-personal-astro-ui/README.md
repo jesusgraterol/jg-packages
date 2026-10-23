@@ -78,6 +78,8 @@ PageHeader and Prose accept `titleVariant="page" | "document"` and a scoped `tit
 
 Section supports `tone="inverse"` for a dark surface with its own readable controls, semantic colors, syntax, selection, and focus. IconTile adds `size="compact"` and primary, neutral, accent, success, warning, and danger tones; card size and primary tone remain its defaults.
 
+`accordion` uses native details and summary elements, with optional `isOpen` and exclusive `group`. Its summary, decorative icon, status, and body slots preserve rich portfolio content. Native disclosure works without JavaScript; the shared script opens collapsed ancestors when following a deep link, including after Astro navigation.
+
 ## Private gallery
 
 From a repository checkout, run `pnpm --filter jg-personal-astro-ui gallery:dev` to inspect the components, or `pnpm --filter jg-personal-astro-ui test:e2e` to build the gallery and test it in Chromium, Firefox, and WebKit. The gallery uses public package imports, real Markdown transforms, and a Pagefind index. Its source, preview tooling, and tests are excluded from npm and public website output. See the [gallery workflow](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md#private-gallery).

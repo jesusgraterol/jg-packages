@@ -497,6 +497,14 @@
   }
 }
 
+.jg-accordion > summary > .jg-accordion-chevron {
+  transition: transform 150ms ease;
+}
+
+.jg-accordion[open] > summary > .jg-accordion-chevron {
+  transform: rotate(180deg);
+}
+
 /* pages crossfade into each other where the browser supports cross-document view transitions */
 @view-transition {
   navigation: auto;

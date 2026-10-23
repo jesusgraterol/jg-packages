@@ -23,6 +23,7 @@
     "./external-link-plugin": "./src/external-link-plugin/index.ts",
     "./new-tab-marker-markup": "./src/new-tab-marker-markup/index.ts",
     "./syntax-theme": "./src/syntax-theme/index.ts",
+    "./accordion": "./src/components/accordion/accordion.astro",
     "./agentic-coding-mark": "./src/components/agentic-coding-mark/agentic-coding-mark.astro",
     "./agentic-coding-mark.svg": "./src/components/agentic-coding-mark/agentic-coding-mark.svg",
     "./badge": "./src/components/badge/badge.astro",

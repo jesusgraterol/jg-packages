@@ -39,9 +39,18 @@ export const GALLERY_EXAMPLES: IGalleryExample[] = [
     'new-tab-marker',
   ].map((subpath) => ({ subpath, path: '/foundations/', selector: `[data-example="${subpath}"]` })),
   { subpath: 'container', path: '/foundations/', selector: '.jg-container' },
-  ...['copy-button', 'dialog', 'package-manager-tabs', 'segmented-control', 'tabs'].map(
-    (subpath) => ({ subpath, path: '/interactions/', selector: `[data-example="${subpath}"]` }),
-  ),
+  ...[
+    'accordion',
+    'copy-button',
+    'dialog',
+    'package-manager-tabs',
+    'segmented-control',
+    'tabs',
+  ].map((subpath) => ({
+    subpath,
+    path: '/interactions/',
+    selector: `[data-example="${subpath}"]`,
+  })),
   ...[
     'breadcrumb',
     'callout',

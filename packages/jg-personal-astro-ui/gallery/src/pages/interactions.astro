@@ -1,8 +1,11 @@
 ---
+import Accordion from 'jg-personal-astro-ui/accordion';
+import Badge from 'jg-personal-astro-ui/badge';
 import Button from 'jg-personal-astro-ui/button';
 import Container from 'jg-personal-astro-ui/container';
 import CopyButton from 'jg-personal-astro-ui/copy-button';
 import Dialog from 'jg-personal-astro-ui/dialog';
+import JgMark from 'jg-personal-astro-ui/jg-mark';
 import PackageManagerTabs from 'jg-personal-astro-ui/package-manager-tabs';
 import PageHeader from 'jg-personal-astro-ui/page-header';
 import SearchDialog from 'jg-personal-astro-ui/search-dialog';
@@ -22,6 +25,87 @@ import GalleryLayout from '../layouts/gallery-layout.astro';
     lede="Keyboard navigation, multiple instances, and visible feedback on real rendered components."
   />
   <Container class="pb-16">
+    <section
+      class="gallery-example"
+      data-example="accordion"
+      aria-labelledby="accordion-title"
+    >
+      <h2 id="accordion-title">Native disclosures and rich summaries</h2>
+      <div class="grid min-w-0 gap-4">
+        <Accordion
+          id="experience"
+          title="Project experience"
+        >
+          <JgMark
+            slot="icon"
+            class="size-10"
+          />
+          <span
+            slot="summary"
+            class="grid gap-1"
+          >
+            <span>Project experience</span>
+            <span class="text-sm font-normal text-muted">
+              Engineering and product development, 2020–present
+            </span>
+          </span>
+          <Badge
+            slot="status"
+            variant="success"
+          >
+            Active
+          </Badge>
+          <p class="mb-4">Portfolio logos, dates, and status remain part of the summary.</p>
+          <Accordion
+            id="nested-experience"
+            title="Nested project details"
+          >
+            <p
+              id="project:details"
+              class="scroll-mt-24"
+            >
+              Deep-linked project details.
+            </p>
+            <p class="mt-3">
+              averylongunbrokenprojectidentifierthatmustfitanarrowviewportwithoutoverflow
+            </p>
+          </Accordion>
+        </Accordion>
+        <Accordion
+          id="initial-disclosure"
+          title="Initially expanded"
+          isOpen
+        >
+          <p slot="body">This body uses the named body slot.</p>
+        </Accordion>
+        <Accordion
+          id="group-first"
+          title="First grouped disclosure"
+          group="gallery-disclosures"
+        >
+          <p>First exclusive body.</p>
+        </Accordion>
+        <Accordion
+          id="group-second"
+          title="Second grouped disclosure"
+          group="gallery-disclosures"
+        >
+          <p>Second exclusive body.</p>
+        </Accordion>
+      </div>
+      <a
+        href="#project%3Adetails"
+        class="mt-4 inline-flex min-h-11 items-center underline"
+      >
+        Open deep-linked project details
+      </a>
+      <a
+        href="/interactions/?example=deep-link#project%3Adetails"
+        class="mt-4 ml-4 inline-flex min-h-11 items-center underline"
+      >
+        Open this example as a page
+      </a>
+    </section>
     <section
       class="gallery-example"
       data-example="tabs"

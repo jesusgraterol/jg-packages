@@ -76,6 +76,7 @@ Each component is its own subpath, such as `jg-personal-astro-ui/button`. Most t
 
 | Component              | What it renders                                                                                                                                                                                                                                                                                                                              |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `accordion`            | Native details and summary with rich summary, icon, status, and body slots; exclusive groups and progressive deep-link opening                                                                                                                                                                                                               |
 | `document-head`        | The title, description, canonical URL, robots, Open Graph and X tags, JSON-LD, icons, and agent links; `openGraphType` with its `article:*` or `profile:*` tags, and an `alternate` version of the page                                                                                                                                      |
 | `new-tab-marker`       | The arrow and screen-reader notice that end a link opening a new tab, with `data-new-tab-marker` on the arrow                                                                                                                                                                                                                                |
 | `theme-init-script`    | The inline script that applies the stored or system theme before the first paint                                                                                                                                                                                                                                                             |
@@ -142,6 +143,32 @@ Section's `tone="default" | "inverse"` defaults to the current inherited surface
 IconTile accepts `size="compact" | "card" | "header"` and `tone="primary" | "neutral" | "accent" | "success" | "warning" | "danger"`, retaining `card` and `primary` defaults. Compact tiles fit dense rows, size their slotted SVG, and remain decorative; nearby content supplies their name. All tones use the surrounding palette, including inverse sections.
 
 External links show an arrow after their text. On a `button`, `externalIcon={false}` hides it, and so does `externalIcon: false` on a `site-footer` link; the jg-packages site does that on the links to its own repository.
+
+### Native accordion
+
+Import `Accordion` from `jg-personal-astro-ui/accordion`. Supply a unique `id` and fallback `title`; `isOpen` defaults to false. `group` maps to the native details `name`, so opening one member closes another. Use a separate group for nested disclosures. Ordinary details attributes and `class` pass through.
+
+The `summary` slot replaces the title with rich phrasing content such as a name and dates. `icon` is decorative; `status` contributes to the summary's accessible name. Keep links, buttons, and other interactive controls in the body rather than the summary. The `body` slot holds the expanded content; ordinary children are its fallback.
+
+```astro
+<Accordion
+  id="experience"
+  title="Project experience"
+>
+  <span slot="summary">
+    Project experience <span>2020–present</span>
+  </span>
+  <Badge
+    slot="status"
+    variant="success"
+  >
+    Active
+  </Badge>
+  <p id="experience-detail">Experience details.</p>
+</Accordion>
+```
+
+Native disclosure, focus, and exclusive grouping work without JavaScript. With JavaScript, initial fragments, hash changes, Astro navigation, and history restoration open collapsed details ancestors of targets inside an accordion, then reveal the target. The script does not move focus or rewrite history; native fragment navigation retains browser behavior. Percent-encoded IDs are supported; missing and malformed fragments are ignored. An already visible target does not cause extra scrolling. Status sits below the summary text on narrow screens and inline on larger screens. Chevron motion respects reduced motion.
 
 ## Navigation
 
