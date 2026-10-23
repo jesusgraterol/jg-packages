@@ -72,6 +72,8 @@ For compact Markdown windows, replace `codeWindowPlugin` with `createCodeWindowP
 
 CodeBlock accepts `appearance="plain"` to compose within another surface, `overflow="wrap"` for long lines, CSS-length `height` and `maxHeight`, and `ariaLabel` to name its keyboard-focusable source region. The default remains a dark window with horizontal scrolling. Source dimensions leave the header outside the scroll body. Copying preserves the original code, including CRLF and final newlines, independently of highlighting or wrapping.
 
+CodeDiff adds `view="auto" | "unified" | "split"`, `lineNumbers`, `contextLines`, `highlightWords`, `appearance="plain"`, and `overflow="wrap"`. Defaults retain the existing framed, responsive comparison with complete context. Comparisons run at build time, preserve source line endings, and show accurate omission and final-newline notices. Exhausting the bounded edit search produces a full replacement rather than incomplete output.
+
 ## Private gallery
 
 From a repository checkout, run `pnpm --filter jg-personal-astro-ui gallery:dev` to inspect the components, or `pnpm --filter jg-personal-astro-ui test:e2e` to build the gallery and test it in Chromium, Firefox, and WebKit. The gallery uses public package imports, real Markdown transforms, and a Pagefind index. Its source, preview tooling, and tests are excluded from npm and public website output. See the [gallery workflow](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md#private-gallery).

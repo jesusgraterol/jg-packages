@@ -127,6 +127,12 @@ CodeBlock keeps `code`, `lang`, `title`, `copy`, `copyDisplay`, and `class`. Its
 
 `renderCodeWindowHeader` also accepts a literal `copySource: { context, text }`, alongside its existing `{ context, sourceId }` form. Literal attributes preserve carriage returns through HTML parsing. This is source transport for copying, not an additional highlighter or source cache; all code blocks retain the shared build-time Shiki instance.
 
+CodeDiff retains its `before` and `after` source/title objects, `lang`, and `class`. `view="auto" | "unified" | "split"` defaults to the existing container-responsive view: unified below 48rem, split above it. Other defaults remain no line numbers, full context, no word emphasis, a framed `appearance="window"`, and `overflow="scroll"`. `appearance="plain"` removes the frame and inherits its surrounding palette; `overflow="wrap"` wraps long source and gives paired split cells a shared row height. The default scrolling split view retains separate keyboard-focusable source panes.
+
+`lineNumbers` shows original source numbers in each view. `contextLines` retains that many unchanged lines next to each changed block; every omitted interval has its exact count. With no changes, an explicit context limit represents the whole unchanged file with an omission notice. A negative, fractional, non-finite, or unsafe-integer limit retains full context. Empty files create no invented source rows. Line endings participate in comparison, and unterminated displayed lines include a final-newline notice.
+
+The installed diff library compares exact source-line records with `maxEditLength: 1024`. Exhausting that search shows the complete original and resulting files as a replacement, with a visible explanation. Optional `highlightWords` compares paired lines only when each has at most 4096 UTF-16 code units, using the same edit-effort bound; longer or exhausted word comparisons keep line emphasis. Source parsing, model construction, and rendering remain linear outside the bounded edit searches; highlighting and output size still grow with source size. No client diff engine or additional source cache is used, and both views share the existing build-time Shiki highlighting.
+
 External links show an arrow after their text. On a `button`, `externalIcon={false}` hides it, and so does `externalIcon: false` on a `site-footer` link; the jg-packages site does that on the links to its own repository.
 
 ## Navigation

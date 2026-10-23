@@ -55,7 +55,8 @@
       table,
       .jg-code-window,
       .jg-code-plain,
-      pre:not(.jg-code-window pre, .jg-code-plain pre)
+      .jg-code-diff,
+      pre:not(.jg-code-window pre, .jg-code-plain pre, .jg-code-diff pre)
     ) {
     margin-top: 1.25rem;
   }
@@ -96,7 +97,7 @@
     font-weight: 650;
   }
 
-  .jg-prose :not(pre) > code {
+  .jg-prose :not(pre) > code:not(.jg-code-diff code) {
     border: 1px solid var(--jg-border);
     border-radius: calc(var(--jg-radius) * 0.5);
     background: var(--jg-code);
@@ -107,7 +108,7 @@
   }
 
   /* a code block outside a code window, when the site doesn't use codeWindowPlugin */
-  .jg-prose pre:not(.jg-code-window pre, .jg-code-plain pre) {
+  .jg-prose pre:not(.jg-code-window pre, .jg-code-plain pre, .jg-code-diff pre) {
     overflow-x: auto;
     border: 1px solid var(--jg-border);
     border-radius: calc(var(--jg-radius) * 1.25);

@@ -39,6 +39,11 @@ const iconCode = 'const message = "Hola, 世界 <Astro> & friends";\nconsole.log
 const iconMarkdown = await iconProcessor.render(['```ts', iconCode, '```'].join('\n'));
 const longSource = `${'// A long source line with Unicode 世界 and <tag> text '.repeat(8)}\n${Array.from({ length: 32 }, (_, index) => `console.log(${index});`).join('\n')}\n`;
 const fidelitySource = 'const greeting = "世界";\r\nconsole.log("<tag> & text");\r\n';
+const diffBefore = 'one\ntwo\nthree\nconst message = "old";\nfive\nsix\nseven\n';
+const diffAfter =
+  'one\ntwo\nthree\nconst message = "new 🌍";\nconst extra = true;\nfive\nsix\nseven\n';
+const wideDiffBefore = `const message = "${'old Unicode 世界 <tag> & text '.repeat(8)}";\nshort\nlast`;
+const wideDiffAfter = 'const message = "new 🌍";\nanother\nlast\n';
 ---
 
 <GalleryLayout title="Technical content">
@@ -196,6 +201,78 @@ const fidelitySource = 'const greeting = "世界";\r\nconsole.log("<tag> & text"
         context="compact install command"
         copyDisplay="icon"
       />
+    </section>
+    <section
+      class="gallery-example"
+      data-diff-newline
+      aria-labelledby="diff-newline-title"
+    >
+      <h2 id="diff-newline-title">Line ending changes</h2>
+      <CodeDiff
+        lang="text"
+        before={{ title: 'Without final newline', code: 'last line' }}
+        after={{ title: 'With final newline', code: 'last line\n' }}
+      />
+    </section>
+    <section
+      class="gallery-example"
+      data-diff-options
+      aria-labelledby="diff-options-title"
+    >
+      <h2 id="diff-options-title">Diff presentation</h2>
+      <div class="grid grid-cols-1 gap-6">
+        <div data-diff-context>
+          <CodeDiff
+            lang="ts"
+            before={{ title: 'Original source', code: diffBefore }}
+            after={{ title: 'Updated source', code: diffAfter }}
+            view="unified"
+            lineNumbers
+            contextLines={1}
+            highlightWords
+          />
+        </div>
+        <div data-diff-wrap>
+          <CodeDiff
+            lang="ts"
+            before={{ title: 'Long original source', code: wideDiffBefore }}
+            after={{ title: 'Short updated source', code: wideDiffAfter }}
+            view="split"
+            lineNumbers
+            highlightWords
+            overflow="wrap"
+          />
+        </div>
+        <div data-diff-scroll>
+          <CodeDiff
+            lang="ts"
+            before={{ title: 'Scrollable original source', code: wideDiffBefore }}
+            after={{ title: 'Scrollable updated source', code: wideDiffAfter }}
+            view="split"
+          />
+        </div>
+        <div
+          class="rounded-xl border border-border bg-surface p-4"
+          data-diff-plain
+        >
+          <Prose>
+            <CodeDiff
+              lang="text"
+              before={{ title: 'Plain original', code: 'one\n' }}
+              after={{ title: 'Plain update', code: 'two\n' }}
+              appearance="plain"
+              overflow="wrap"
+            />
+          </Prose>
+        </div>
+        <div data-diff-empty>
+          <CodeDiff
+            lang="text"
+            before={{ title: 'Empty original', code: '' }}
+            after={{ title: 'Empty update', code: '' }}
+          />
+        </div>
+      </div>
     </section>
     <section
       class="gallery-example"

@@ -292,6 +292,133 @@
     }
   }
 
+  /* diff source stays server-rendered; each wrapped split row sizes both columns together */
+  .jg-code-diff .jg-diff-pre,
+  .jg-code-diff .jg-diff-wrapped {
+    margin: 0;
+    background: transparent;
+    padding-block: 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.5rem;
+    white-space: pre;
+  }
+
+  .jg-code-diff .jg-diff-pre {
+    overflow: auto;
+  }
+
+  .jg-code-diff [tabindex]:focus-visible {
+    outline: 2px solid var(--jg-focus);
+    outline-offset: -2px;
+  }
+
+  .jg-diff-entry {
+    display: block;
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .jg-diff-line {
+    display: flex;
+    min-width: max-content;
+    min-height: 1.5rem;
+    padding-inline-end: 1rem;
+  }
+
+  .jg-diff-number {
+    width: var(--jg-diff-number-width, 2ch);
+    flex-shrink: 0;
+    box-sizing: content-box;
+    padding-inline: 0.5ch;
+    color: var(--jg-muted);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .jg-diff-marker {
+    width: 2rem;
+    flex-shrink: 0;
+    color: var(--jg-muted);
+    text-align: center;
+    user-select: none;
+  }
+
+  .jg-diff-source {
+    min-width: 0;
+  }
+
+  .jg-diff-ending,
+  .jg-diff-omitted {
+    display: block;
+    min-height: 1.5rem;
+    padding-inline: 2rem 1rem;
+    color: var(--jg-muted);
+    font-size: 0.75rem;
+    white-space: pre;
+  }
+
+  .jg-diff-ending {
+    font-style: italic;
+  }
+
+  .jg-diff-omitted {
+    background: var(--jg-secondary);
+    padding-inline-start: 1rem;
+  }
+
+  .jg-diff-word {
+    background: transparent;
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+  }
+
+  [data-code-diff-overflow='wrap'] .jg-diff-pre,
+  [data-code-diff-overflow='wrap'] .jg-diff-wrapped,
+  [data-code-diff-overflow='wrap'] .jg-diff-ending,
+  [data-code-diff-overflow='wrap'] .jg-diff-omitted {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  [data-code-diff-overflow='wrap'] .jg-diff-pre {
+    overflow-x: hidden;
+  }
+
+  [data-code-diff-overflow='wrap'] .jg-diff-entry,
+  .jg-diff-line-wrap {
+    width: auto;
+    min-width: 0;
+  }
+
+  .jg-diff-line-wrap .jg-diff-source {
+    flex: 1;
+  }
+
+  .jg-diff-wrapped > div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .jg-diff-wrapped > div > code,
+  .jg-diff-wrapped .jg-diff-entry {
+    flex: 1;
+  }
+
+  .jg-diff-wrapped > div > code {
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (min-width: 40rem) {
+    .jg-code-diff .jg-diff-pre,
+    .jg-code-diff .jg-diff-wrapped {
+      font-size: 0.875rem;
+    }
+  }
+
   /*
    * The page-loading bar: a thin track along the top of the viewport whose indicator sweeps across
    * while the next page loads. A still bar a third wide replaces the sweep under reduced motion.
