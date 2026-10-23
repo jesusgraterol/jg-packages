@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+
+- Native Accordion with rich summary, icon, status, and content slots, optional exclusive groups, and fragment links that reveal collapsed ancestors.
+- DocumentationShell, DocumentationOutline, and PageNavigation for responsive reading layouts, caller-supplied outlines, and adjacent pages.
+- FilePreview and FileTree for supplied paths, statuses, source/diff content, and actions. FileTree limits each preview to 256 entries and eight levels and identifies partial output.
+- Conversation and ConversationMessage for ordered transcripts with supplied speakers, roles, avatars, content, artifacts, and footers.
+- Steps, Step, Timeline, TimelineItem, and ResultSummary for supplied order, numbering, dates, statuses, result tones, and actions. Summary heading levels fit the surrounding document.
+- The contracts subpath with shared documentation, file, conversation, process, and result presentation types.
+- CodeBlock plain presentation, wrapping, source height limits, and accessible source labels. CodeDiff adds unified and split views, original line numbers, context limits, word emphasis, plain presentation, and wrapping.
+- Icon-only copy controls across code surfaces and the createCodeWindowPlugin factory for configured Markdown windows. Literal source transport preserves carriage returns and final newlines.
+- Dialog sizes, opt-in fullscreen phone presentation, overlay-dismissal control, and initial-focus selection. SearchDialog adds configurable title, input label, and placeholder.
+- Scoped page/document title scales and fonts, PageHeader metadata, inverse Section surfaces, and IconTile tones and compact sizing.
+
+### Fixed
+
+- Tabs retain readable panels and native links without JavaScript, preserve keyboard and stored choices after enhancement, and scroll their strip horizontally without moving the document.
+- Dialogs restore focus and exact background scroll state, keep phone controls clear of safe areas, and handle opt-in fullscreen Back navigation without consuming unrelated history.
+- Search keeps the latest query's results and accessible loading, empty, count, and failure feedback; retry recovers a failed index load.
+- Copy controls stay hidden until functional, preserve original source independently of highlighted markup, and keep failure guidance inside the viewport.
+- Diff rendering preserves line endings and truthful context notices, bounds edit and word comparisons, and keeps plain syntax readable on page and card surfaces. Dark status badges also retain readable contrast on raised surfaces.
+- Shared controller identity strings no longer expose the implementation package name in consumer client scripts.
+
+### Changed
+
+- Development and release verification use a private rendered gallery with real Pagefind, three-browser checks, exact installed tarballs, bounded commands, and owned process teardown. Gallery sources and tests remain outside the published package.
+
+This release preserves the 0.4.0 export targets, production dependency set, peer ranges, and Node.js floor.
+
 ## 0.4.0
 
 ### Removed

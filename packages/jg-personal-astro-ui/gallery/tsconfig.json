@@ -4,7 +4,7 @@
     "allowImportingTsExtensions": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
-    "types": ["node"]
+    "types": ["node", "astro/client"]
   },
   "include": [".astro/types.d.ts", "src/**/*", "*.ts"],
   "exclude": ["dist"]
