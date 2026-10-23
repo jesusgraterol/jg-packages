@@ -1,0 +1,28 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test:integration": {
+      "inputs": [
+        "$TURBO_EXTENDS$",
+        "$TURBO_ROOT$/packages/jg-personal-astro-ui/src/**",
+        "$TURBO_ROOT$/packages/jg-personal-astro-ui/gallery/**",
+        "$TURBO_ROOT$/packages/jg-personal-astro-ui/package.json",
+        "$TURBO_ROOT$/packages/jg-personal-astro-ui/playwright.config.ts",
+        "!$TURBO_ROOT$/packages/jg-personal-astro-ui/gallery/dist/**",
+        "!$TURBO_ROOT$/packages/jg-personal-astro-ui/gallery/.astro/**"
+      ]
+    },
+    "test:coverage": {
+      "inputs": [
+        "$TURBO_EXTENDS$",
+        "$TURBO_ROOT$/packages/jg-personal-astro-ui/src/**",
+        "$TURBO_ROOT$/packages/jg-personal-astro-ui/gallery/**",
+        "$TURBO_ROOT$/packages/jg-personal-astro-ui/package.json",
+        "$TURBO_ROOT$/packages/jg-personal-astro-ui/playwright.config.ts",
+        "!$TURBO_ROOT$/packages/jg-personal-astro-ui/gallery/dist/**",
+        "!$TURBO_ROOT$/packages/jg-personal-astro-ui/gallery/.astro/**"
+      ]
+    }
+  }
+}

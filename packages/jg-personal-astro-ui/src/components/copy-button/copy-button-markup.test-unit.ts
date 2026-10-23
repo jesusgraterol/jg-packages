@@ -10,15 +10,22 @@ import { COPY_OUTCOME_LABELS, renderCopyButton } from './copy-button-markup.ts';
 const readButtonTag = (html: string): string => /<button[^>]*>/.exec(html)?.[0] ?? '';
 
 describe('renderCopyButton', () => {
+  test('preserves carriage returns in literal source attributes', () => {
+    expect(renderCopyButton({ text: 'first\r\nsecond\n' })).toContain(
+      'data-copy-text="first&#13;\nsecond\n"',
+    );
+  });
   test('renders a button that copies its code window, labelled Copy, on the page surface', () => {
     const html = renderCopyButton();
 
     expect(readButtonTag(html)).toBe(
-      '<button type="button" class="inline-flex min-h-8 items-center gap-1.5 text-xs font-semibold transition-colors rounded-md px-2.5 text-muted hover:bg-secondary hover:text-foreground" data-copy-button data-copy-context="text">',
+      '<button type="button" inert class="invisible inline-flex min-h-8 items-center gap-1.5 text-xs font-semibold transition-colors rounded-md px-2.5 text-muted hover:bg-secondary hover:text-foreground" data-copy-button data-copy-context="text">',
     );
     expect(html).toContain('<span class="col-start-1 row-start-1" data-copy-label>Copy</span>');
     expect(html).toContain('<span class="sr-only"> text</span>');
-    expect(html).toContain('<span class="sr-only" data-copy-status aria-live="polite"></span>');
+    expect(html).toContain(
+      '<span class="sr-only" data-copy-status role="status" aria-live="polite" aria-atomic="true"></span>',
+    );
     expect(html).toContain('data-copy-hint hidden></span>');
     // the label and the guidance stay out of the search index
     expect(
@@ -76,7 +83,9 @@ describe('renderCopyButton', () => {
     ['sm', 'min-h-8 items-center gap-1.5 text-xs'],
     ['md', 'min-h-11 items-center gap-2 text-sm'],
   ] as const)('renders the %s size', (size, classes) => {
-    expect(readButtonTag(renderCopyButton({ size }))).toContain(`class="inline-flex ${classes} `);
+    expect(readButtonTag(renderCopyButton({ size }))).toContain(
+      `class="invisible inline-flex ${classes} `,
+    );
   });
 
   test('copies the text at a URL, linking to it under the guidance', () => {
@@ -95,4 +104,23 @@ describe('renderCopyButton', () => {
       'data-copy-hint hidden><span data-copy-hint-text></span><a href="/packages/a&amp;b/index.md" class="mt-1.5 block font-semibold underline underline-offset-2 wrap-anywhere">/packages/a&amp;b/index.md</a></span>',
     );
   });
+  test.each(['sm', 'md'] as const)(
+    'renders %s icon controls with an accessible label and stable width',
+    (size) => {
+      const html = renderCopyButton({
+        display: 'icon',
+        size,
+        context: 'Unicode example',
+        label: 'Copy source',
+      });
+      expect(readButtonTag(html)).toContain(' inert ');
+      expect(readButtonTag(html)).toContain('data-copy-display="icon"');
+      expect(readButtonTag(html)).toContain(size === 'sm' ? ' w-8 ' : ' w-11 ');
+      expect(html).toContain(
+        '<span class="sr-only"><span class="col-start-1 row-start-1" data-copy-label>Copy source</span></span>',
+      );
+      expect(html).toContain('<span class="sr-only"> Unicode example</span>');
+      expect(readButtonTag(html)).toContain('pointer-coarse:min-h-11 pointer-coarse:min-w-11');
+    },
+  );
 });

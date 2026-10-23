@@ -40,11 +40,13 @@ Developing needs Node.js 24 or later and pnpm, which switches itself to the vers
 
 ```bash
 pnpm install
-pnpm --filter jg-sw exec playwright install chromium
+pnpm --filter jg-sw exec playwright install chromium firefox webkit
 pnpm check
 ```
 
 `pnpm check` runs every check CI runs: lint, typecheck, unit tests, builds, integration and end-to-end tests, the format check, and the release checks. [`docs/development.md`](docs/development.md) covers the rest of the daily workflow.
+
+Preview the shared Astro components locally with `pnpm --filter jg-personal-astro-ui gallery:dev`. Its private gallery and browser checks are described in [`docs/personal-astro-ui.md`](docs/personal-astro-ui.md#private-gallery).
 
 ## Documentation
 
@@ -81,6 +83,7 @@ pnpm check
 │   ├── tsconfig/             # base, library, browser and node TypeScript configurations
 │   └── vitest-config/        # createVitestConfig(), one Vitest project per test category, and the suites
 ├── packages/                 # the published jg-* packages, and jg-personal-astro-ui
+│   └── jg-personal-astro-ui/gallery/ # private rendered examples and preview lifecycle tests
 ├── website/                  # the Astro site at jg-packages.jesusgraterol.dev, private
 ├── LICENSE
 ├── package.json              # workspace scripts, pinned pnpm, Node.js engines
@@ -89,6 +92,7 @@ pnpm check
 ```
 
 - Internal packages run from their TypeScript sources with Node.js type stripping, so they have no build step. Their relative imports keep the `.ts` extension.
+- `docs/` holds concise documentation of essential, durable project concepts and processes. Package API references stay in each package's `API.md`, outside `docs/`.
 - Every task `turbo run` targets, in scripts, CI, and the docs, is declared in `turbo.json`.
 - Every package's build ends by writing `API.md`, its API reference rendered from its TSDoc, which ships in its tarball and is git-ignored.
 - Local coding instructions (`AGENTS.md`, `CLAUDE.md`, `CANDIDATE.md`) and `coding-agent-planning/` are git-ignored and never published.

@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
+import { createDialogFixture } from '../dialog/dialog.test-utils.ts';
+
 import {
   isSearchShortcut,
   MAX_SEARCH_RESULTS,
@@ -51,7 +53,7 @@ const createKeyPress = (
  * @returns Pagefind's API, with a spy on search.
  */
 const createPagefind = (pages: IPagefindResultData[] | null) => ({
-  search: vi.fn((query: string) => {
+  search: vi.fn<IPagefind['search']>((query) => {
     void query;
     return Promise.resolve(
       pages === null
@@ -63,6 +65,10 @@ const createPagefind = (pages: IPagefindResultData[] | null) => ({
 
 // a fake element of the dialog's markup
 type IFakeElement = {
+  hidden: boolean;
+  attributes: Map<string, string>;
+  setAttribute: (name: string, value: string) => unknown;
+  getAttribute: (name: string) => string | null;
   append: (...children: IFakeElement[]) => void;
   children: IFakeElement[];
   className: string;
@@ -79,7 +85,12 @@ type IFakeElement = {
  * @returns The element.
  */
 const createElement = (tagName: string): IFakeElement => {
+  const attributes = new Map<string, string>();
   const element: IFakeElement = {
+    hidden: false,
+    attributes,
+    setAttribute: (name, value) => attributes.set(name, value),
+    getAttribute: (name) => attributes.get(name) ?? null,
     append: (...children) => element.children.push(...children),
     children: [],
     className: '',
@@ -105,14 +116,23 @@ const createSearchDialog = ({
 }: { pagefindPath?: string; open?: boolean } = {}) => {
   const list = createElement('ul');
   const status = createElement('p');
+  const native = createDialogFixture();
+  native.root.defaultView = null;
   const input = {
     focus: vi.fn(),
     matches: (selector: string) => selector === '[data-search-input]',
     value: '',
-    closest: (selector: string) =>
+    closest: (selector: string): unknown =>
       ({ '[data-search-dialog]': container, dialog })[selector] ?? null,
   };
+  const retry = {
+    ...createElement('button'),
+    closest: (selector: string): unknown =>
+      ({ '[data-search-retry]': retry, '[data-search-dialog]': container })[selector] ?? null,
+  };
+  retry.hidden = true;
   const dialog = {
+    ...native.dialog('search'),
     open,
     close: vi.fn(() => {
       dialog.open = false;
@@ -120,16 +140,23 @@ const createSearchDialog = ({
     showModal: vi.fn(() => {
       dialog.open = true;
     }),
-    querySelector: (selector: string) => (selector === '[data-search-input]' ? input : null),
+    querySelector: (selector: string): unknown =>
+      ({ '[data-search-input]': input, '[data-search-dialog]': container })[selector] ?? null,
   };
   const container = {
-    closest: (selector: string) => (selector === 'dialog' ? dialog : null),
+    closest: (selector: string): unknown => (selector === 'dialog' ? dialog : null),
+    isConnected: true,
     dataset: pagefindPath === undefined ? {} : { pagefindPath },
-    ownerDocument: { createElement },
-    querySelector: (selector: string) =>
-      ({ '[data-search-results]': list, '[data-search-status]': status })[selector] ?? null,
+    ownerDocument: { createElement, activeElement: undefined as unknown },
+    querySelector: (selector: string): unknown =>
+      ({
+        '[data-search-results]': list,
+        '[data-search-status]': status,
+        '[data-search-input]': input,
+        '[data-search-retry]': retry,
+      })[selector] ?? null,
   };
-  return { container, dialog, input, list, status };
+  return { container, dialog, input, list, status, retry, native };
 };
 
 /**
@@ -137,7 +164,10 @@ const createSearchDialog = ({
  * @param parts The search dialog's parts, or null for a page without one.
  * @returns The document, and a way to fire its events.
  */
-const createDocument = (parts: ReturnType<typeof createSearchDialog> | null) => {
+const createDocument = (
+  parts: ReturnType<typeof createSearchDialog> | null,
+  additional: ReturnType<typeof createSearchDialog>[] = [],
+) => {
   const attributes = new Set<string>();
   const listeners = new Map<string, ((event: unknown) => void)[]>();
   const activeElement = { focus: vi.fn() };
@@ -151,7 +181,12 @@ const createDocument = (parts: ReturnType<typeof createSearchDialog> | null) => 
       listeners.set(type, [...(listeners.get(type) ?? []), listener]);
     },
     querySelector: (selector: string) =>
-      selector === '[data-search-dialog]' ? (parts?.container ?? null) : null,
+      selector === '[data-search-dialog]' ||
+      (selector === 'dialog[open] [data-search-dialog]' && parts?.dialog.open === true)
+        ? (parts?.container ?? null)
+        : null,
+    querySelectorAll: () =>
+      [...(parts === null ? [] : [parts]), ...additional].map((item) => item.container),
   };
   const fire = (type: string, event: unknown) => {
     for (const listener of listeners.get(type) ?? []) listener(event);
@@ -295,7 +330,33 @@ describe('registerSearchDialogs', () => {
     expect(parts.input.focus).toHaveBeenCalledOnce();
   });
 
-  test('ignores the shortcut while the dialog is open, other keys, and pages without search', () => {
+  test('keyboard opening from the page body closes with immediate usable focus and can reopen', () => {
+    const parts = createSearchDialog();
+    const { root, fire, activeElement } = createDocument(parts);
+    Object.defineProperty(root, 'body', { value: activeElement });
+    registerSearchDialogs(root, vi.fn());
+    fire('keydown', createKeyPress('/'));
+    fire('keydown', createKeyPress('Escape', { target: parts.input }));
+    expect(parts.native.main.focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
+    expect(activeElement.focus).not.toHaveBeenCalled();
+    expect(parts.dialog.open).toBe(false);
+    fire('keydown', createKeyPress('/'));
+    expect(parts.dialog.showModal).toHaveBeenCalledTimes(2);
+  });
+
+  test('the shortcut reuses the search region whose own dialog is open', () => {
+    const primary = createSearchDialog();
+    const closed = createSearchDialog();
+    const current = createSearchDialog({ open: true });
+    const { root, fire } = createDocument(primary, [closed, current]);
+    registerSearchDialogs(root, vi.fn());
+    fire('keydown', createKeyPress('k', { ctrlKey: true }));
+    expect(current.input.focus).toHaveBeenCalledOnce();
+    expect(primary.dialog.showModal).not.toHaveBeenCalled();
+    expect(closed.dialog.showModal).not.toHaveBeenCalled();
+  });
+
+  test('reuses an open search and ignores unrelated keys or missing dialogs', () => {
     const open = createSearchDialog({ open: true });
     const openDocument = createDocument(open);
     registerSearchDialogs(openDocument.root, vi.fn());
@@ -315,6 +376,7 @@ describe('registerSearchDialogs', () => {
     orphanDocument.fire('keydown', createKeyPress('/'));
 
     expect(open.dialog.showModal).not.toHaveBeenCalled();
+    expect(open.input.focus).toHaveBeenCalledOnce();
     expect(other.dialog.showModal).not.toHaveBeenCalled();
     expect(orphan.dialog.showModal).not.toHaveBeenCalled();
   });
@@ -451,6 +513,7 @@ describe('registerSearchDialogs', () => {
       fire('input', { target: null });
       fire('input', { target: { closest: () => null, matches: () => false } });
       fire('input', { target: { closest: () => null, matches: () => true, value: 'x' } });
+      fire('input', { target: { closest: () => parts.container, matches: () => true } });
     }).not.toThrow();
   });
 
@@ -463,6 +526,217 @@ describe('registerSearchDialogs', () => {
     type(fire, parts, 'fetch');
 
     await expect(vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS)).resolves.not.toThrow();
+  });
+
+  test('announces loading, retries once while busy, and restores useful focus after recovery', async () => {
+    const parts = createSearchDialog();
+    const { root, fire } = createDocument(parts);
+    const pending = Promise.withResolvers<IPagefind>();
+    const load = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockImplementationOnce(() => pending.promise);
+    registerSearchDialogs(root, load);
+    type(fire, parts, 'fetch');
+    expect(parts.status.textContent).toBe('Searching…');
+    expect(parts.list.getAttribute('aria-busy')).toBe('true');
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    expect(parts.retry.hidden).toBe(false);
+    expect(parts.retry.getAttribute('aria-disabled')).toBe('false');
+    parts.container.ownerDocument.activeElement = parts.retry;
+    const event = {
+      target: parts.retry,
+      button: 0,
+      defaultPrevented: false,
+      preventDefault: vi.fn(),
+    };
+    fire('click', event);
+    fire('click', event);
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(parts.retry.getAttribute('aria-disabled')).toBe('true');
+    expect(parts.retry.hidden).toBe(false);
+    pending.resolve(createPagefind([page('jg-fetch', '/fetch/')]));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(parts.status.textContent).toBe('1 result for “fetch”.');
+    expect(parts.retry.hidden).toBe(true);
+    expect(parts.input.focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(parts.list.getAttribute('aria-busy')).toBe('false');
+  });
+
+  test('does not confuse an old A request with a new A after an intervening B', async () => {
+    const parts = createSearchDialog();
+    const { root, fire } = createDocument(parts);
+    const old = Promise.withResolvers<Awaited<ReturnType<IPagefind['search']>>>();
+    const pagefind = createPagefind([page('new A', '/new-a/')]);
+    pagefind.search.mockImplementationOnce(() => old.promise);
+    registerSearchDialogs(root, () => Promise.resolve(pagefind));
+    type(fire, parts, 'A');
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    type(fire, parts, 'B');
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    type(fire, parts, 'A');
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    old.resolve({ results: [] });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(parts.status.textContent).toBe('1 result for “A”.');
+    expect(parts.list.children[0]?.children[0]?.href).toBe('/new-a/');
+  });
+
+  test('shares an in-flight index load between distinct dialogs', async () => {
+    const first = createSearchDialog();
+    const second = createSearchDialog();
+    const { root, fire } = createDocument(first);
+    const index = Promise.withResolvers<IPagefind>();
+    const load = vi.fn(() => index.promise);
+    registerSearchDialogs(root, load);
+    type(fire, first, 'one');
+    type(fire, second, 'two');
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    expect(load).toHaveBeenCalledOnce();
+    index.resolve(createPagefind([]));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(first.status.textContent).toBe('No results for “one”.');
+    expect(second.status.textContent).toBe('No results for “two”.');
+  });
+
+  test('an old search failure cannot evict a newer healthy index', async () => {
+    const parts = createSearchDialog();
+    const { root, fire } = createDocument(parts);
+    const slow = Promise.withResolvers<Awaited<ReturnType<IPagefind['search']>>>();
+    const first: IPagefind = {
+      search: vi
+        .fn()
+        .mockImplementationOnce(() => slow.promise)
+        .mockRejectedValueOnce(new Error('broken index')),
+    };
+    const healthy = createPagefind([page('healthy', '/healthy/')]);
+    const load = vi.fn().mockResolvedValueOnce(first).mockResolvedValueOnce(healthy);
+    registerSearchDialogs(root, load);
+    type(fire, parts, 'slow');
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    type(fire, parts, 'broken');
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    type(fire, parts, 'healthy');
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    slow.reject(new Error('late failure'));
+    await vi.advanceTimersByTimeAsync(0);
+    type(fire, parts, 'still healthy');
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(parts.status.textContent).toBe('1 result for “still healthy”.');
+  });
+
+  test('a synchronous loader failure becomes recoverable inline feedback', async () => {
+    const parts = createSearchDialog();
+    const { root, fire } = createDocument(parts);
+    registerSearchDialogs(root, () => {
+      throw new Error('loader failed synchronously');
+    });
+    type(fire, parts, 'fetch');
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    expect(parts.status.textContent).toBe("Search isn't available on this page.");
+    expect(parts.retry.hidden).toBe(false);
+  });
+
+  test('default import retries use a new module URL after failure', async () => {
+    const parts = createSearchDialog({ pagefindPath: '/missing/pagefind.js?existing=1#section' });
+    const { root, fire } = createDocument(parts);
+    registerSearchDialogs(root);
+    type(fire, parts, 'fetch');
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    await vi.waitFor(() =>
+      expect(parts.status.textContent).toBe("Search isn't available on this page."),
+    );
+    fire('click', { target: parts.retry, button: 0, preventDefault: vi.fn() });
+    await vi.waitFor(() =>
+      expect(parts.status.textContent).toBe("Search isn't available on this page."),
+    );
+    expect(parts.status.textContent).toBe("Search isn't available on this page.");
+    expect(parts.retry.hidden).toBe(false);
+  });
+
+  test.each(['before', 'during'] as const)(
+    'ignores a region detached %s its request',
+    async (when) => {
+      const parts = createSearchDialog();
+      const { root, fire } = createDocument(parts);
+      const index = Promise.withResolvers<IPagefind>();
+      const load = vi.fn(() => index.promise);
+      registerSearchDialogs(root, load);
+      type(fire, parts, 'fetch');
+      if (when === 'during') await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+      parts.container.isConnected = false;
+      index.resolve(createPagefind([]));
+      await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+      expect(load).toHaveBeenCalledTimes(when === 'before' ? 0 : 1);
+      expect(parts.status.textContent).toBe('Searching…');
+    },
+  );
+
+  test('closing cancels pending work and reopening searches the retained input through the native lifecycle', async () => {
+    const parts = createSearchDialog({ open: true });
+    const { root, fire } = createDocument(parts);
+    const load = vi.fn(() => Promise.resolve(createPagefind([])));
+    registerSearchDialogs(root, load);
+    type(fire, parts, 'fetch');
+    parts.dialog.close();
+    fire('close', { target: parts.dialog });
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    expect(load).not.toHaveBeenCalled();
+    expect(parts.input.value).toBe('fetch');
+    fire('toggle', { target: parts.dialog });
+    expect(vi.getTimerCount()).toBe(0);
+    parts.dialog.open = true;
+    fire('toggle', { target: parts.dialog });
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    expect(load).toHaveBeenCalledOnce();
+    expect(parts.status.textContent).toBe('No results for “fetch”.');
+    fire('close', { target: parts.dialog });
+    type(fire, parts, 'later');
+    fire('astro:before-swap', {});
+    await vi.advanceTimersByTimeAsync(SEARCH_DELAY_MS);
+    expect(load).toHaveBeenCalledOnce();
+  });
+
+  test('ignores unrelated toggle and close events and handles a search region without its input', () => {
+    const parts = createSearchDialog({ open: true });
+    parts.container.querySelector = () => null;
+    const { root, fire } = createDocument(parts);
+    registerSearchDialogs(root, vi.fn());
+    for (const target of [null, {}, { showModal: () => undefined }, parts.dialog]) {
+      fire('toggle', { target });
+      fire('close', { target });
+    }
+    parts.container.ownerDocument.activeElement = parts.retry;
+    type(fire, parts, 'query');
+    fire('astro:before-swap', {});
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  test('ignores unrelated, inhibited, orphan, and incomplete retry clicks', () => {
+    const parts = createSearchDialog();
+    const { root, fire } = createDocument(parts);
+    const load = vi.fn();
+    registerSearchDialogs(root, load);
+    for (const target of [
+      null,
+      {},
+      { closest: () => null },
+      { closest: () => ({ closest: () => null }) },
+    ])
+      fire('click', { target, button: 0 });
+    fire('click', { target: parts.retry, button: 1 });
+    fire('click', { target: parts.retry, button: 0, defaultPrevented: true });
+    const original = parts.retry.closest;
+    parts.retry.closest = () => null;
+    fire('click', { target: parts.retry, button: 0 });
+    parts.retry.closest = original;
+    parts.retry.setAttribute('aria-disabled', 'true');
+    fire('click', { target: parts.retry, button: 0 });
+    parts.retry.setAttribute('aria-disabled', 'false');
+    parts.container.querySelector = () => null;
+    fire('click', { target: parts.retry, button: 0 });
+    expect(load).not.toHaveBeenCalled();
   });
 
   test('adds one listener of each kind, however many times it runs', () => {

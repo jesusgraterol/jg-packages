@@ -357,6 +357,9 @@ importers:
       '@jg-packages/api-reference':
         specifier: workspace:*
         version: link:../api-reference
+      jg-process:
+        specifier: workspace:*
+        version: link:../../packages/jg-process
       publint:
         specifier: 0.3.25
         version: 0.3.25
@@ -916,12 +919,24 @@ importers:
       '@astrojs/check':
         specifier: 'catalog:'
         version: 0.9.10(@emnapi/runtime@1.11.3)(prettier-plugin-astro@1.1.1(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(prettier@3.9.10))(prettier@3.9.10)(typescript@6.0.3)
+      '@astrojs/markdown-satteri':
+        specifier: 0.4.4
+        version: 0.4.4
+      '@axe-core/playwright':
+        specifier: 4.13.0
+        version: 4.13.0(playwright-core@1.64.1)
       '@jg-packages/eslint-config':
         specifier: workspace:*
         version: link:../../internal/eslint-config
       '@jg-packages/vitest-config':
         specifier: workspace:*
         version: link:../../internal/vitest-config
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.64.1
+      '@tailwindcss/vite':
+        specifier: 'catalog:'
+        version: 4.3.3(vite@8.3.4(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.1))
       '@types/node':
         specifier: 'catalog:'
         version: 22.20.5
@@ -934,6 +949,15 @@ importers:
       eslint:
         specifier: 'catalog:'
         version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      jg-playwright:
+        specifier: workspace:*
+        version: link:../jg-playwright
+      jg-process:
+        specifier: workspace:*
+        version: link:../jg-process
+      pagefind:
+        specifier: 1.5.2
+        version: 1.5.2
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3

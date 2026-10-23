@@ -15,6 +15,10 @@
     margin-top: 0;
   }
 
+  .jg-prose :is(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--jg-title-font, inherit);
+  }
+
   .jg-prose :is(h2, h3, h4) {
     scroll-margin-top: 6rem;
     font-weight: 650;
@@ -46,7 +50,47 @@
     font-size: 1.0625rem;
   }
 
-  .jg-prose :is(p, ul, ol, blockquote, table, .jg-code-window, pre:not(.jg-code-window pre)) {
+  /* document typography is opt-in; existing page prose keeps its heading scale and rhythm */
+  .jg-prose[data-jg-title-variant='document'] h2 {
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    font-size: clamp(1.375rem, 3vw, 1.75rem);
+    line-height: 1.3;
+  }
+
+  .jg-prose[data-jg-title-variant='document'] h3 {
+    margin-top: 1.75rem;
+    font-size: 1.125rem;
+    line-height: 1.3;
+  }
+
+  .jg-prose[data-jg-title-variant='document'] :is(h4, h5, h6) {
+    margin-top: 1.5rem;
+    font-size: 1rem;
+    font-weight: 650;
+    line-height: 1.3;
+  }
+
+  .jg-prose[data-jg-title-variant='document'] > h2:first-child {
+    padding-top: 0;
+  }
+
+  .jg-prose[data-jg-title-variant='document'] > :first-child {
+    margin-top: 0;
+  }
+
+  .jg-prose
+    :is(
+      p,
+      ul,
+      ol,
+      blockquote,
+      table,
+      .jg-code-window,
+      .jg-code-plain,
+      .jg-code-diff,
+      pre:not(.jg-code-window pre, .jg-code-plain pre, .jg-code-diff pre)
+    ) {
     margin-top: 1.25rem;
   }
 
@@ -86,7 +130,7 @@
     font-weight: 650;
   }
 
-  .jg-prose :not(pre) > code {
+  .jg-prose :not(pre) > code:not(.jg-code-diff code) {
     border: 1px solid var(--jg-border);
     border-radius: calc(var(--jg-radius) * 0.5);
     background: var(--jg-code);
@@ -97,7 +141,7 @@
   }
 
   /* a code block outside a code window, when the site doesn't use codeWindowPlugin */
-  .jg-prose pre:not(.jg-code-window pre) {
+  .jg-prose pre:not(.jg-code-window pre, .jg-code-plain pre, .jg-code-diff pre) {
     overflow-x: auto;
     border: 1px solid var(--jg-border);
     border-radius: calc(var(--jg-radius) * 1.25);

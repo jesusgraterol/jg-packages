@@ -1,0 +1,72 @@
+---
+import type { IConversationRole } from '../../contracts/index.ts';
+
+import Badge from '../badge/badge.astro';
+
+interface Props {
+  speaker: string;
+  role?: IConversationRole | undefined;
+  class?: string | undefined;
+}
+
+const { speaker, role, class: className } = Astro.props;
+const roleLabels = {
+  user: 'User',
+  assistant: 'Assistant',
+  system: 'System',
+  tool: 'Tool',
+} as const;
+const roleLabel = role === undefined ? undefined : roleLabels[role];
+const hasContent = Astro.slots.has('content') || Astro.slots.has('default');
+---
+
+<li
+  class:list={[
+    'relative min-w-0 border-l border-border pb-8 pl-5 last:border-transparent last:pb-0 before:absolute before:top-3 before:-left-[4.5px] before:size-2 before:rounded-full before:bg-border-strong',
+    className,
+  ]}
+>
+  <article
+    aria-label={roleLabel === undefined ? speaker : `${speaker} (${roleLabel})`}
+    class="min-w-0"
+  >
+    <header class="flex min-w-0 items-center gap-3">
+      {Astro.slots.has('avatar') && (
+        <span
+          class="flex size-8 shrink-0 items-center justify-center [&>img]:size-full [&>svg]:size-full"
+          aria-hidden="true"
+        >
+          <slot name="avatar" />
+        </span>
+      )}
+      <p class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+        <span class="min-w-0 font-semibold wrap-anywhere">{speaker}</span>
+        {roleLabel !== undefined && (
+          <Badge
+            variant="neutral"
+            mono={false}
+          >
+            {roleLabel}
+          </Badge>
+        )}
+      </p>
+    </header>
+    {hasContent && (
+      <div class="mt-3 min-w-0 max-w-prose wrap-anywhere">
+        <slot name="content">
+          <slot />
+        </slot>
+      </div>
+    )}
+    {Astro.slots.has('artifact') && (
+      <div class="mt-4 min-w-0">
+        <slot name="artifact" />
+      </div>
+    )}
+    {Astro.slots.has('footer') && (
+      <div class="mt-4 min-w-0 text-sm text-muted">
+        <slot name="footer" />
+      </div>
+    )}
+  </article>
+</li>

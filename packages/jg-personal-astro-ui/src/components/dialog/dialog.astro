@@ -1,15 +1,31 @@
 ---
 import { X } from '@lucide/astro';
 
+import { buildDialogHistoryBootstrap } from './dialog-history.ts';
+
 interface Props {
   class?: string | undefined;
   // the dialog's id, which its triggers name in data-dialog-open
   id: string;
   // the dialog's heading, and its accessible name
   title: string;
+  // md preserves the existing 40rem maximum
+  size?: 'sm' | 'md' | 'lg' | undefined;
+  mobilePresentation?: 'floating' | 'fullscreen' | undefined;
+  isOverlayCloseEnabled?: boolean | undefined;
+  // a CSS selector scoped to this dialog; invalid or missing targets keep native initial focus
+  initialFocus?: string | undefined;
 }
 
-const { class: className, id, title } = Astro.props;
+const {
+  class: className,
+  id,
+  title,
+  size = 'md',
+  mobilePresentation = 'floating',
+  isOverlayCloseEnabled = true,
+  initialFocus,
+} = Astro.props;
 const titleId = `${id}-title`;
 ---
 
@@ -21,21 +37,29 @@ const titleId = `${id}-title`;
   id={id}
   aria-labelledby={titleId}
   class:list={[
-    'm-auto max-h-[min(85vh,44rem)] w-[min(40rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-border-strong bg-background p-0 text-foreground shadow-raised backdrop:bg-foreground/40 open:flex',
+    'm-auto max-h-[min(85dvh,44rem)] w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-border-strong bg-background p-0 text-foreground shadow-raised backdrop:bg-foreground/40 open:flex',
+    size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-4xl' : 'max-w-[40rem]',
+    mobilePresentation === 'fullscreen' &&
+      'max-sm:m-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:w-full max-sm:max-w-none max-sm:rounded-none max-sm:border-0',
     className,
   ]}
   data-dialog
+  data-dialog-overlay-close={String(isOverlayCloseEnabled)}
+  data-dialog-mobile-presentation={mobilePresentation}
+  data-dialog-initial-focus={initialFocus}
 >
-  <div class="flex items-center justify-between gap-4 border-b border-border py-2 pr-2 pl-5">
+  <div class="flex shrink-0 items-center justify-between gap-4 border-b border-border py-2 pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] pl-[max(1.25rem,env(safe-area-inset-left))]">
     <h2
       id={titleId}
       class="text-base font-semibold tracking-tight"
+      tabindex="-1"
+      data-dialog-title
     >
       {title}
     </h2>
     <button
       type="button"
-      class="inline-flex size-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-secondary hover:text-foreground"
+      class="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-secondary hover:text-foreground pointer-coarse:size-11"
       data-dialog-close
     >
       <X
@@ -45,11 +69,18 @@ const titleId = `${id}-title`;
       <span class="sr-only">Close</span>
     </button>
   </div>
-  <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+  <div
+    class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 pr-[max(1.25rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))]"
+    data-dialog-body
+  >
     <slot />
   </div>
 </dialog>
 
+<script
+  is:inline
+  set:html={buildDialogHistoryBootstrap()}
+/>
 <script>
   import { registerDialogs } from './dialog-behavior.ts';
 

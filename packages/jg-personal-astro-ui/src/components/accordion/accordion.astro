@@ -1,0 +1,77 @@
+---
+import { ChevronDown } from '@lucide/astro';
+import type { HTMLAttributes } from 'astro/types';
+
+type Props = {
+  id: string;
+  title: string;
+  isOpen?: boolean | undefined;
+  // native exclusive group; nested disclosures should use a separate group
+  group?: string | undefined;
+  class?: string | undefined;
+} & Omit<HTMLAttributes<'details'>, 'id' | 'title' | 'open' | 'name' | 'class'>;
+
+const { id, title, isOpen = false, group, class: className, ...attributes } = Astro.props;
+const hasIcon = Astro.slots.has('icon');
+const hasStatus = Astro.slots.has('status');
+---
+
+<details
+  {...attributes}
+  id={id}
+  open={isOpen}
+  name={group}
+  class:list={[
+    'jg-accordion min-w-0 scroll-mt-24 rounded-xl border border-border bg-surface',
+    className,
+  ]}
+>
+  <summary
+    class:list={[
+      'grid min-h-11 cursor-pointer list-none items-center gap-x-3 gap-y-2 rounded-xl px-4 py-4 text-foreground outline-offset-[-4px] sm:flex [&::-webkit-details-marker]:hidden',
+      hasIcon ? 'grid-cols-[auto_minmax(0,1fr)_auto]' : 'grid-cols-[minmax(0,1fr)_auto]',
+    ]}
+  >
+    {hasIcon && (
+      <span
+        class:list={['row-start-1 shrink-0', hasStatus && 'row-span-2']}
+        aria-hidden="true"
+      >
+        <slot name="icon" />
+      </span>
+    )}
+    <span
+      class:list={[
+        'row-start-1 min-w-0 flex-1 wrap-anywhere font-semibold',
+        hasIcon ? 'col-start-2' : 'col-start-1',
+      ]}
+    >
+      <slot name="summary">{title}</slot>
+    </span>
+    {hasStatus && (
+      <span
+        class:list={[
+          'row-start-2 min-w-0 shrink wrap-anywhere text-sm',
+          hasIcon ? 'col-start-2' : 'col-start-1',
+        ]}
+      >
+        <slot name="status" />
+      </span>
+    )}
+    <ChevronDown
+      class="jg-accordion-chevron col-start-[-2] row-start-1 size-4 shrink-0"
+      aria-hidden="true"
+    />
+  </summary>
+  <div class="min-w-0 border-t border-border p-4 wrap-anywhere">
+    <slot name="body">
+      <slot />
+    </slot>
+  </div>
+</details>
+
+<script>
+  import { registerAccordionHash } from './accordion-hash.ts';
+
+  registerAccordionHash();
+</script>

@@ -1,7 +1,8 @@
 import { cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import { writeApiMarkdown } from '@jg-packages/api-reference';
@@ -31,6 +32,93 @@ const dependencies: IVerifyDependencies = {
   runCommand,
   log: () => undefined,
 };
+
+test('an interrupted gallery stops release orchestration before linting and registry work', async () => {
+  // this minimal workspace exercises real packing and fixture preparation; external installation
+  // reports a failure, then requested gallery shutdown must still stop the remaining checks
+  const sourceRoot = resolve(import.meta.dirname, '../../../..');
+  const uiManifest = JSON.parse(
+    await readFile(join(sourceRoot, 'packages', 'jg-personal-astro-ui', 'package.json'), 'utf8'),
+  ) as { devDependencies: Record<string, string> };
+  await rm(packageDirectory, { recursive: true });
+  await mkdir(join(packageDirectory, 'gallery', 'src', 'catalog'), { recursive: true });
+  await writeFile(
+    join(rootDirectory, 'pnpm-workspace.yaml'),
+    await readFile(join(sourceRoot, 'pnpm-workspace.yaml')),
+  );
+  await writeFile(
+    join(packageDirectory, 'package.json'),
+    JSON.stringify({
+      name: 'jg-personal-astro-ui',
+      version: '0.1.0',
+      exports: { './badge': './badge.astro' },
+      files: ['badge.astro'],
+      peerDependencies: { astro: '^7.4.0', tailwindcss: '^4.3.0' },
+      devDependencies: Object.fromEntries(
+        Object.entries(uiManifest.devDependencies).filter(
+          ([, version]) => !version.startsWith('workspace:'),
+        ),
+      ),
+    }),
+  );
+  await writeFile(join(packageDirectory, 'badge.astro'), '<span>Badge</span>');
+  await writeFile(
+    join(packageDirectory, 'gallery', 'src', 'catalog', 'index.ts'),
+    "export const GALLERY_EXAMPLES = [{subpath:'badge'}];",
+  );
+  await writeFile(join(packageDirectory, 'playwright.config.ts'), 'export default {};');
+  for (const name of ['jg-process', 'jg-playwright']) {
+    const directory = join(rootDirectory, 'packages', name);
+    await mkdir(directory);
+    await writeFile(
+      join(directory, 'package.json'),
+      JSON.stringify({ name, version: '0.1.0', exports: {} }),
+    );
+  }
+  const script = `
+    import {packAndCheck} from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, 'verify.ts')).href)};
+    import {runCommand} from ${JSON.stringify(pathToFileURL(resolve(import.meta.dirname, '../shared/run-command.ts')).href)};
+    let registryCalls=0;
+    let galleryCalls=0;
+    const commands=[];
+    const logs=[];
+    try {
+      await packAndCheck(${JSON.stringify(rootDirectory)},${JSON.stringify(outputDirectory)},{
+        registry:{getPackage:async()=>{registryCalls++;return undefined},downloadTarball:async()=>{throw new Error('Unexpected registry download')}},
+        runCommand:async(command,args,options)=>{
+          commands.push(args[0]);
+          return command==='pnpm'?runCommand(command,args,options):{exitCode:1,stdout:'',stderr:'installation unavailable in this test'};
+        },
+        log:message=>logs.push(message),
+        runGalleryCommand:async(_command,_args,options)=>{
+          galleryCalls++;
+          return new Promise((_resolve,reject)=>{
+            const timer=setTimeout(()=>reject(new Error('The test shutdown signal was not handled.')),5000);
+            options.signal.addEventListener('abort',()=>{clearTimeout(timer);reject(options.signal.reason)},{once:true});
+            process.kill(process.pid,'SIGTERM');
+          });
+        }
+      });
+      throw new Error('Gallery interruption was swallowed');
+    }catch(error){
+      process.stdout.write(JSON.stringify({code:error.code,message:error.message,registryCalls,galleryCalls,commands,continued:logs.some(message=>message.startsWith('Linting ')||message==='Comparing with the npm registry')}));
+      process.exitCode=2;
+    }
+  `;
+  const result = await runCommand(process.execPath, ['--input-type=module', '-e', script], {
+    cwd: rootDirectory,
+  });
+  expect(result.stderr).toBe('');
+  expect(result.exitCode).toBe(2);
+  expect(JSON.parse(result.stdout)).toStrictEqual({
+    code: 'PROCESS_INTERRUPTED',
+    message: 'The process was interrupted by SIGTERM.',
+    registryCalls: 0,
+    galleryCalls: 1,
+    commands: ['pack', 'pack', 'pack', 'install'],
+    continued: false,
+  });
+});
 
 // builds the fixture package the way a package's build script does, API.md included unless asked
 const buildFixture = async ({ writesApiMarkdown = true } = {}): Promise<void> => {

@@ -1,0 +1,78 @@
+---
+import { ClientRouter } from 'astro:transitions';
+
+import BrandLogo from 'jg-personal-astro-ui/brand-logo';
+import DocumentHead from 'jg-personal-astro-ui/document-head';
+import NavigationProgress from 'jg-personal-astro-ui/navigation-progress';
+import SearchDialog from 'jg-personal-astro-ui/search-dialog';
+import SiteFooter from 'jg-personal-astro-ui/site-footer';
+import SiteHeader from 'jg-personal-astro-ui/site-header';
+import SkipLink from 'jg-personal-astro-ui/skip-link';
+import ThemeControl from 'jg-personal-astro-ui/theme-control';
+import ThemeInitScript from 'jg-personal-astro-ui/theme-init-script';
+
+import { GALLERY_PAGES } from '../catalog/index.ts';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  clientRouter?: boolean;
+}
+const { title, clientRouter = false } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <DocumentHead
+      title={`${title} | Astro UI gallery`}
+      description="Private verification gallery for the shared personal Astro components."
+      siteName="Astro UI gallery"
+      noIndex
+    />
+    <ThemeInitScript storageKey="jg-ui-gallery-theme" />
+    {clientRouter && <ClientRouter />}
+  </head>
+  <body>
+    <SkipLink />
+    <NavigationProgress />
+    <SiteHeader
+      homeLabel="Astro UI gallery home"
+      currentPath={Astro.url.pathname}
+      items={GALLERY_PAGES}
+    >
+      <span
+        slot="brand"
+        data-example="brand-logo"
+      >
+        <BrandLogo
+          name="Astro UI"
+          tagline="Component gallery"
+        />
+      </span>
+      <SearchDialog
+        slot="search"
+        id="gallery-search"
+      />
+      <ThemeControl
+        slot="actions"
+        storageKey="jg-ui-gallery-theme"
+      />
+      <ThemeControl
+        slot="mobile-actions"
+        storageKey="jg-ui-gallery-theme"
+      />
+    </SiteHeader>
+    <main
+      id="main-content"
+      tabindex="-1"
+      data-pagefind-body
+    >
+      <slot />
+    </main>
+    <SiteFooter
+      columns={[{ title: 'Gallery', links: [{ href: '/', label: 'Overview' }, ...GALLERY_PAGES] }]}
+      notes={['Private component verification. Not part of a public website.']}
+    />
+  </body>
+</html>

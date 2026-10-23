@@ -1,0 +1,29 @@
+---
+import type { IFileTreeEntry } from '../../contracts/index.ts';
+
+import EntryList from './entry-list/entry-list.astro';
+import { buildFileTreePreview } from './utilities.ts';
+
+interface Props {
+  entries: readonly IFileTreeEntry[];
+  label?: string | undefined;
+  class?: string | undefined;
+}
+
+const { entries, label = 'Files', class: className } = Astro.props;
+const preview = buildFileTreePreview(entries);
+---
+
+<figure class:list={['min-w-0 rounded-xl border border-border bg-surface p-4', className]}>
+  <figcaption class="mb-4 font-semibold wrap-anywhere">{label}</figcaption>
+  {preview.entries.length === 0 ? (
+    <p class="text-sm text-muted">No files to preview.</p>
+  ) : (
+    <EntryList entries={preview.entries} />
+  )}
+  {preview.isPartial && (
+    <p class="mt-4 border-t border-border pt-3 text-sm text-muted">
+      Partial preview. Some entries are not shown.
+    </p>
+  )}
+</figure>

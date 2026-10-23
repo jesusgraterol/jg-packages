@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "typecheck": { "dependsOn": ["$TURBO_EXTENDS$", "build"] },
+    "test:e2e": {
+      "dependsOn": ["$TURBO_EXTENDS$", "typecheck"],
+      "env": ["$TURBO_EXTENDS$", "JG_UI_GALLERY_ROOT"],
+      "outputs": ["gallery/dist/**"]
+    }
+  }
+}

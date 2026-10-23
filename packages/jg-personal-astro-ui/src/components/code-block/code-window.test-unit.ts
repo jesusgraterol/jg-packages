@@ -3,6 +3,14 @@ import { describe, expect, test } from 'vitest';
 import { renderCodeWindowHeader } from './code-window.ts';
 
 describe('renderCodeWindowHeader', () => {
+  test('copies original literal source without newline normalization or markup injection', () => {
+    const html = renderCodeWindowHeader({
+      caption: 'Original',
+      copySource: { context: 'code', text: 'const label = "<世界>";\r\n' },
+    });
+    expect(html).toContain('data-copy-text="const label = &quot;&lt;世界&gt;&quot;;&#13;\n"');
+    expect(html).not.toContain('data-copy-source=');
+  });
   test('renders the dots, the caption, and a copy button for the code', () => {
     const html = renderCodeWindowHeader({ caption: 'vite.config.ts' });
 
@@ -54,5 +62,15 @@ describe('renderCodeWindowHeader', () => {
       `<span class="jg-code-window-caption" data-wrap>${caption}</span>`,
     );
     expect(renderCodeWindowHeader({ caption })).toContain('<span class="jg-code-window-caption">');
+  });
+  test('passes icon presentation to the shared copy markup without changing its caption or source', () => {
+    const html = renderCodeWindowHeader({
+      caption: 'ts',
+      copyDisplay: 'icon',
+      copySource: { context: 'source', sourceId: 'original' },
+    });
+    expect(html).toContain('data-copy-display="icon"');
+    expect(html).toContain('data-copy-source="original"');
+    expect(html).toContain('<span class="jg-code-window-caption">ts</span>');
   });
 });

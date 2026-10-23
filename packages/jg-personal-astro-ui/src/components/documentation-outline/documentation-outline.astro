@@ -1,0 +1,37 @@
+---
+import type { IDocumentationOutlineItem } from '../../contracts/index.ts';
+
+import OutlineList from './outline-list/outline-list.astro';
+
+interface Props {
+  items: readonly IDocumentationOutlineItem[];
+  label?: string | undefined;
+  class?: string | undefined;
+}
+
+const { items, label = 'On this page', class: className } = Astro.props;
+---
+
+{items.length > 0 && (
+  <nav
+    aria-label={label}
+    data-pagefind-ignore
+    class:list={[
+      'min-w-0 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:px-1 lg:pb-4',
+      className,
+    ]}
+  >
+    <details class="rounded-xl border border-border bg-surface lg:hidden">
+      <summary class="min-h-11 cursor-pointer px-4 py-3 font-semibold wrap-anywhere outline-offset-[-4px]">
+        {label}
+      </summary>
+      <div class="p-4">
+        <OutlineList items={items} />
+      </div>
+    </details>
+    <div class="hidden lg:block">
+      <p class="eyebrow mb-4 wrap-anywhere">{label}</p>
+      <OutlineList items={items} />
+    </div>
+  </nav>
+)}

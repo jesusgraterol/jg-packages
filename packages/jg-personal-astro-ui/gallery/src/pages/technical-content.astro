@@ -1,0 +1,793 @@
+---
+import { createSatteriMarkdownProcessor } from '@astrojs/markdown-satteri';
+import AgenticCodingMark from 'jg-personal-astro-ui/agentic-coding-mark';
+import Badge from 'jg-personal-astro-ui/badge';
+import BrandLogo from 'jg-personal-astro-ui/brand-logo';
+import Button from 'jg-personal-astro-ui/button';
+import Card from 'jg-personal-astro-ui/card';
+import CodeBlock from 'jg-personal-astro-ui/code-block';
+import CodeDiff from 'jg-personal-astro-ui/code-diff';
+import { renderCodeWindowHeader } from 'jg-personal-astro-ui/code-window';
+import { codeWindowPlugin, createCodeWindowPlugin } from 'jg-personal-astro-ui/code-window-plugin';
+import Container from 'jg-personal-astro-ui/container';
+import type { IFileTreeEntry } from 'jg-personal-astro-ui/contracts';
+import Conversation from 'jg-personal-astro-ui/conversation';
+import ConversationMessage from 'jg-personal-astro-ui/conversation-message';
+import CopyButton from 'jg-personal-astro-ui/copy-button';
+import { externalLinkPlugin } from 'jg-personal-astro-ui/external-link-plugin';
+import FilePreview from 'jg-personal-astro-ui/file-preview';
+import FileTree from 'jg-personal-astro-ui/file-tree';
+import InstallCommand from 'jg-personal-astro-ui/install-command';
+import JgMark from 'jg-personal-astro-ui/jg-mark';
+import { renderNewTabMarker } from 'jg-personal-astro-ui/new-tab-marker-markup';
+import PageHeader from 'jg-personal-astro-ui/page-header';
+import Prose from 'jg-personal-astro-ui/prose';
+import ResultSummary from 'jg-personal-astro-ui/result-summary';
+import { SYNTAX_THEME } from 'jg-personal-astro-ui/syntax-theme';
+import Table from 'jg-personal-astro-ui/table';
+import Tabs from 'jg-personal-astro-ui/tabs';
+import TerminalWindow from 'jg-personal-astro-ui/terminal-window';
+
+import GalleryLayout from '../layouts/gallery-layout.astro';
+import recipeSource from '../examples/hello.txt?raw';
+
+const code = 'export const greeting = "Hello from Astro UI";\nconsole.log(greeting);';
+const processor = await createSatteriMarkdownProcessor({
+  shikiConfig: { theme: SYNTAX_THEME },
+  hastPlugins: [codeWindowPlugin, externalLinkPlugin({ siteUrl: 'https://gallery.example' })],
+});
+const markdown = await processor.render(
+  [
+    'A real Markdown code fence:',
+    '',
+    '```ts',
+    code,
+    '```',
+    '',
+    '[Astro documentation](https://docs.astro.build/)',
+  ].join('\n'),
+);
+const iconProcessor = await createSatteriMarkdownProcessor({
+  shikiConfig: { theme: SYNTAX_THEME },
+  hastPlugins: [createCodeWindowPlugin({ copyDisplay: 'icon' })],
+});
+const iconCode = 'const message = "Hola, 世界 <Astro> & friends";\nconsole.log(message);';
+const iconMarkdown = await iconProcessor.render(['```ts', iconCode, '```'].join('\n'));
+const longSource = `${'// A long source line with Unicode 世界 and <tag> text '.repeat(8)}\n${Array.from({ length: 32 }, (_, index) => `console.log(${index});`).join('\n')}\n`;
+const fidelitySource = 'const greeting = "世界";\r\nconsole.log("<tag> & text");\r\n';
+const transcriptCode = 'export const ready = true;\r\nconsole.log("Hello, 世界");\r\n';
+const diffBefore = 'one\ntwo\nthree\nconst message = "old";\nfive\nsix\nseven\n';
+const diffAfter =
+  'one\ntwo\nthree\nconst message = "new 🌍";\nconst extra = true;\nfive\nsix\nseven\n';
+const wideDiffBefore = `const message = "${'old Unicode 世界 <tag> & text '.repeat(8)}";\nshort\nlast`;
+const wideDiffAfter = 'const message = "new 🌍";\nanother\nlast\n';
+const fileEntries: IFileTreeEntry[] = [
+  {
+    kind: 'directory',
+    name: 'src',
+    status: 'modified',
+    children: [
+      {
+        kind: 'file',
+        name: 'configuration-with-a-very-long-name-世界.ts',
+        href: '#preview-source',
+        status: 'added',
+      },
+      { kind: 'file', name: 'old-settings.ts', status: 'removed' },
+      { kind: 'file', name: 'stable.ts', status: 'unchanged' },
+    ],
+  },
+  { kind: 'directory', name: 'empty-directory', href: '#file-tree-title', children: [] },
+];
+const wideEntries: IFileTreeEntry[] = Array.from({ length: 257 }, (_, index) => ({
+  kind: 'file',
+  name: `entry-${String(index).padStart(3, '0')}.ts`,
+}));
+const cyclicEntry: IFileTreeEntry = { kind: 'directory', name: 'cycle', children: [] };
+cyclicEntry.children = [cyclicEntry];
+let deepEntry: IFileTreeEntry = { kind: 'file', name: 'beyond-preview.ts' };
+for (let level = 9; level >= 1; level--)
+  deepEntry = {
+    kind: 'directory',
+    name: `directory-${level}-with-a-long-name`,
+    children: [deepEntry],
+  };
+---
+
+<GalleryLayout title="Technical content">
+  <PageHeader
+    title="Technical content"
+    eyebrow="Code and commands"
+    lede="Build-time highlighting, real Markdown transforms, long lines, and responsive diffs."
+  />
+  <Container class="pb-16">
+    <section
+      class="gallery-example"
+      data-source-result-recipe
+      aria-labelledby="source-result-title"
+    >
+      <h2 id="source-result-title">Source and result composition</h2>
+      <Tabs
+        id="source-result"
+        label="Source and result"
+        tabs={[
+          { id: 'source', label: 'Source' },
+          { id: 'result', label: 'Result' },
+        ]}
+      >
+        <div
+          slot="source"
+          class="pt-4"
+        >
+          <FilePreview
+            path="examples/hello.txt"
+            label="Recipe source"
+          >
+            <div
+              slot="header-actions"
+              class="flex flex-wrap gap-2"
+            >
+              <CopyButton
+                text={recipeSource}
+                context="recipe source"
+                display="icon"
+                tone="outline"
+              />
+            </div>
+            <div
+              slot="footer"
+              class="flex flex-wrap gap-2"
+            >
+              <Button
+                href="/examples/hello.txt"
+                variant="outline"
+              >
+                Raw
+              </Button>
+              <Button
+                href="/examples/hello.txt"
+                download="hello.txt"
+                variant="outline"
+              >
+                Download
+              </Button>
+            </div>
+            <CodeBlock
+              code={recipeSource}
+              lang="ts"
+              appearance="plain"
+              copy={false}
+              ariaLabel="Recipe source content"
+            />
+          </FilePreview>
+        </div>
+        <div
+          slot="result"
+          class="pt-4"
+        >
+          <ResultSummary
+            title="Example result"
+            tone="success"
+            description="The supplied source produced this example result."
+          >
+            <Button
+              slot="action"
+              href="/examples/hello.txt"
+              variant="outline"
+            >
+              Inspect raw source
+            </Button>
+          </ResultSummary>
+        </div>
+      </Tabs>
+      <div class="mt-6 grid min-w-0 gap-6 lg:grid-cols-2">
+        <Card
+          as="section"
+          aria-label="Artifact metadata"
+        >
+          <h3 class="mb-4 text-lg font-semibold">Artifact metadata</h3>
+          <dl class="grid min-w-0 gap-4 sm:grid-cols-2">
+            <div>
+              <dt class="text-xs text-muted">Language</dt>
+              <dd>TypeScript</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-muted">File</dt>
+              <dd class="font-mono text-sm wrap-anywhere">hello.txt</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-muted">Status</dt>
+              <dd class="mt-1">
+                <Badge variant="neutral">Example</Badge>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-muted">Source</dt>
+              <dd>Caller supplied</dd>
+            </div>
+          </dl>
+        </Card>
+        <Table
+          caption="Source and result comparison"
+          scrollLabel="Source/result comparison"
+        >
+          <thead>
+            <tr>
+              <th scope="col">Aspect</th>
+              <th scope="col">Source</th>
+              <th scope="col">Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Content</th>
+              <td>Original authored text</td>
+              <td>Supplied outcome</td>
+            </tr>
+            <tr>
+              <th scope="row">Actions</th>
+              <td>Copy, raw, download</td>
+              <td>Inspect raw source</td>
+            </tr>
+          </tbody>
+        </Table>
+      </div>
+      <div
+        class="mt-6 grid min-w-0 gap-4 sm:grid-cols-2"
+        aria-label="Supplied logo grid"
+      >
+        <Card>
+          <BrandLogo
+            name="JG reference"
+            tagline="Supplied mark"
+          >
+            <JgMark
+              slot="mark"
+              class="size-8"
+            />
+          </BrandLogo>
+        </Card>
+        <Card>
+          <BrandLogo
+            name="Agentic Coding"
+            tagline="Supplied mark"
+          >
+            <AgenticCodingMark
+              slot="mark"
+              class="size-8"
+            />
+          </BrandLogo>
+        </Card>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="conversation"
+      aria-labelledby="conversation-title"
+    >
+      <h2 id="conversation-title">Conversations and artifacts</h2>
+      <Conversation label="Development example">
+        <div slot="header">
+          <h3 class="text-xl font-semibold">Source to result</h3>
+          <p class="mt-2 text-muted">
+            A transcript composed from caller-owned participants and content.
+          </p>
+        </div>
+        <ConversationMessage
+          speaker="Jordan Gray"
+          role="user"
+        >
+          <span
+            slot="avatar"
+            class="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
+          >
+            JG
+          </span>
+          <Prose>
+            <p>Show the change with its original source and a file summary.</p>
+          </Prose>
+          <time
+            slot="footer"
+            datetime="2026-10-22T10:32:00Z"
+          >
+            10:32
+          </time>
+        </ConversationMessage>
+        <ConversationMessage
+          speaker="Review assistant"
+          role="assistant"
+        >
+          <JgMark
+            slot="avatar"
+            class="size-8"
+          />
+          <div slot="content">
+            <p>The source preserves its original line endings and final newline.</p>
+            <p class="mt-3">
+              averylongunbrokenconversationidentifierthatmustwraponanarrowviewportwithoutclipping
+            </p>
+          </div>
+          <FilePreview
+            slot="artifact"
+            path="src/greeting.ts"
+            label="Conversation source"
+            status="modified"
+          >
+            <CopyButton
+              slot="header-actions"
+              text={transcriptCode}
+              context="conversation artifact"
+              display="icon"
+              tone="outline"
+            />
+            <CodeBlock
+              code={transcriptCode}
+              lang="ts"
+              appearance="plain"
+              copy={false}
+              ariaLabel="Conversation artifact source"
+            />
+          </FilePreview>
+          <p slot="footer">Source supplied by the caller.</p>
+        </ConversationMessage>
+        <ConversationMessage
+          speaker="Session context"
+          role="system"
+        >
+          <p>Keep the supplied message order.</p>
+        </ConversationMessage>
+        <ConversationMessage
+          speaker="Execution service"
+          role="tool"
+        >
+          <FileTree
+            slot="artifact"
+            entries={fileEntries}
+            label="Conversation files"
+          />
+        </ConversationMessage>
+        <p
+          slot="footer"
+          class="text-sm text-muted"
+        >
+          End of example transcript.
+        </p>
+      </Conversation>
+      <div
+        class="mt-8"
+        data-example="conversation-message"
+      >
+        <Conversation label="Minimal example">
+          <ConversationMessage speaker="Reviewer">
+            <p>A minimal message without optional slots or a role.</p>
+          </ConversationMessage>
+        </Conversation>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="file-preview"
+      aria-labelledby="file-preview-title"
+    >
+      <h2 id="file-preview-title">File content and actions</h2>
+      <div class="grid min-w-0 gap-6">
+        <FilePreview
+          path="src/configuration/with-a-long-directory-name/example-世界.ts"
+          label="Source preview"
+          status="modified"
+        >
+          <div
+            slot="header-actions"
+            class="flex flex-wrap items-center gap-2"
+          >
+            <CopyButton
+              text={longSource}
+              context="preview source"
+              display="icon"
+              tone="outline"
+            />
+            <Button
+              href={`data:text/plain;charset=utf-8,${encodeURIComponent(longSource)}`}
+              download="example.ts"
+              variant="outline"
+            >
+              Download
+            </Button>
+            <Button
+              href="#preview-source"
+              variant="outline"
+            >
+              Source
+            </Button>
+          </div>
+          <CodeBlock
+            code={longSource}
+            lang="ts"
+            appearance="plain"
+            copy={false}
+            maxHeight="12rem"
+            ariaLabel="Preview source content"
+          />
+          <p
+            slot="footer"
+            class="text-sm text-muted"
+          >
+            Caller-supplied source and download actions.
+          </p>
+        </FilePreview>
+        <FilePreview
+          path="src/settings.ts"
+          label="Change preview"
+          status="added"
+        >
+          <CodeDiff
+            appearance="plain"
+            lang="ts"
+            before={{ title: 'Before', code: 'const enabled = false;\n' }}
+            after={{ title: 'After', code: 'const enabled = true;\n' }}
+          />
+        </FilePreview>
+        <FilePreview path="notes.txt">
+          <p>Plain caller-supplied file content.</p>
+        </FilePreview>
+      </div>
+      <p
+        id="preview-source"
+        class="mt-4 scroll-mt-24"
+      >
+        Source link destination.
+      </p>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="file-tree"
+      aria-labelledby="file-tree-title"
+    >
+      <h2 id="file-tree-title">Semantic file previews</h2>
+      <div class="grid min-w-0 gap-6">
+        <FileTree
+          entries={fileEntries}
+          label="Project files"
+        />
+        <FileTree
+          entries={[]}
+          label="Empty file preview"
+        />
+        <FileTree
+          entries={[deepEntry]}
+          label="Deep file preview"
+        />
+        <FileTree
+          entries={[cyclicEntry]}
+          label="Cyclic file preview"
+        />
+        <details class="min-w-0 rounded-xl border border-border p-4">
+          <summary class="min-h-11 cursor-pointer font-semibold">Show wide file preview</summary>
+          <FileTree
+            entries={wideEntries}
+            label="Wide file preview"
+            class="mt-4"
+          />
+        </details>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="code-block"
+      aria-labelledby="code-title"
+    >
+      <h2 id="code-title">Code blocks</h2>
+      <div class="grid gap-6">
+        <CodeBlock
+          code={code}
+          lang="ts"
+          title="greeting.ts"
+        />
+        <CodeBlock
+          code={
+            'const destination = "https://example.com/a/very/long/path/that/stays/inside/the/code/window/without/overflowing/the/page";'
+          }
+          lang="ts"
+          title="a-long-directory-name/another-directory/configuration-with-a-long-name.ts"
+          copy={false}
+        />
+        <CodeBlock
+          code=""
+          lang="text"
+          title="Empty file"
+        />
+        <CodeBlock
+          code={iconCode}
+          lang="ts"
+          title="icon-example.ts"
+          copyDisplay="icon"
+        />
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-source-fidelity
+      aria-labelledby="fidelity-title"
+    >
+      <h2 id="fidelity-title">Original source fidelity</h2>
+      <CodeBlock
+        code={fidelitySource}
+        lang="ts"
+        title="original.ts"
+        copyDisplay="icon"
+      />
+      <CodeBlock
+        code={fidelitySource}
+        lang="ts"
+        title="original-plain.ts"
+        copyDisplay="icon"
+        appearance="plain"
+        overflow="wrap"
+      />
+    </section>
+    <section
+      class="gallery-example"
+      data-code-presentation
+      aria-labelledby="presentation-title"
+    >
+      <h2 id="presentation-title">Source presentation</h2>
+      <div class="grid grid-cols-1 gap-6">
+        <div data-fixed-code>
+          <CodeBlock
+            code={longSource}
+            lang="ts"
+            title="fixed-height.ts"
+            height="10rem"
+            ariaLabel="Scrollable source"
+            copyDisplay="icon"
+          />
+        </div>
+        <div data-wrapped-code>
+          <CodeBlock
+            code={longSource}
+            lang="ts"
+            title="wrapped.ts"
+            overflow="wrap"
+            maxHeight="12rem"
+            ariaLabel="Wrapped source"
+            copyDisplay="icon"
+          />
+        </div>
+        <div
+          class="rounded-xl border border-border bg-surface p-4"
+          data-plain-code
+        >
+          <Prose>
+            <CodeBlock
+              code={longSource}
+              lang="ts"
+              title="plain.ts"
+              appearance="plain"
+              overflow="wrap"
+              maxHeight="10rem"
+              ariaLabel="Plain source"
+              copyDisplay="icon"
+            />
+          </Prose>
+        </div>
+        <div data-plain-empty-code>
+          <CodeBlock
+            code=""
+            lang="text"
+            appearance="plain"
+            copy={false}
+            ariaLabel="Empty source"
+          />
+        </div>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="code-diff"
+      aria-labelledby="diff-title"
+    >
+      <h2 id="diff-title">Code differences</h2>
+      <div class="grid gap-6">
+        <CodeDiff
+          lang="ts"
+          before={{ title: 'Before', code: 'const retries = 2;\nconst enabled = false;' }}
+          after={{ title: 'After', code: 'const retries = 4;\nconst enabled = true;' }}
+        />
+        <CodeDiff
+          lang="text"
+          before={{ title: 'Empty file', code: '' }}
+          after={{ title: 'New file', code: 'First line\nSecond line' }}
+        />
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="install-command"
+      aria-labelledby="command-title"
+    >
+      <h2 id="command-title">Install command</h2>
+      <InstallCommand
+        id="long-install"
+        command="pnpm add jg-personal-astro-ui jg-site @astrojs/markdown-satteri"
+        title="Install the shared UI and the tools that render its Markdown code windows"
+        context="gallery install command"
+      />
+      <InstallCommand
+        id="icon-install"
+        command="pnpm add jg-site"
+        title="Compact install"
+        context="compact install command"
+        copyDisplay="icon"
+      />
+    </section>
+    <section
+      class="gallery-example"
+      data-diff-newline
+      aria-labelledby="diff-newline-title"
+    >
+      <h2 id="diff-newline-title">Line ending changes</h2>
+      <CodeDiff
+        lang="text"
+        before={{ title: 'Without final newline', code: 'last line' }}
+        after={{ title: 'With final newline', code: 'last line\n' }}
+      />
+    </section>
+    <section
+      class="gallery-example"
+      data-diff-options
+      aria-labelledby="diff-options-title"
+    >
+      <h2 id="diff-options-title">Diff presentation</h2>
+      <div class="grid grid-cols-1 gap-6">
+        <div data-diff-context>
+          <CodeDiff
+            lang="ts"
+            before={{ title: 'Original source', code: diffBefore }}
+            after={{ title: 'Updated source', code: diffAfter }}
+            view="unified"
+            lineNumbers
+            contextLines={1}
+            highlightWords
+          />
+        </div>
+        <div data-diff-wrap>
+          <CodeDiff
+            lang="ts"
+            before={{ title: 'Long original source', code: wideDiffBefore }}
+            after={{ title: 'Short updated source', code: wideDiffAfter }}
+            view="split"
+            lineNumbers
+            highlightWords
+            overflow="wrap"
+          />
+        </div>
+        <div data-diff-scroll>
+          <CodeDiff
+            lang="ts"
+            before={{ title: 'Scrollable original source', code: wideDiffBefore }}
+            after={{ title: 'Scrollable updated source', code: wideDiffAfter }}
+            view="split"
+          />
+        </div>
+        <div
+          class="rounded-xl border border-border bg-surface p-4"
+          data-diff-plain
+        >
+          <Prose>
+            <CodeDiff
+              lang="text"
+              before={{ title: 'Plain original', code: 'one\n' }}
+              after={{ title: 'Plain update', code: 'two\n' }}
+              appearance="plain"
+              overflow="wrap"
+            />
+          </Prose>
+        </div>
+        <div data-diff-empty>
+          <CodeDiff
+            lang="text"
+            before={{ title: 'Empty original', code: '' }}
+            after={{ title: 'Empty update', code: '' }}
+          />
+        </div>
+        {(['page', 'surface'] as const).map((surface) => (
+          <section
+            class:list={[
+              'min-w-0 rounded-xl border border-border p-4',
+              surface === 'page' ? 'bg-background' : 'bg-surface',
+            ]}
+            data-diff-contrast={surface}
+            aria-labelledby={`plain-diff-${surface}`}
+          >
+            <h3
+              id={`plain-diff-${surface}`}
+              class="mb-4 text-lg font-semibold"
+            >
+              Plain diff on {surface}
+            </h3>
+            <CodeDiff
+              lang="ts"
+              before={{
+                title: `Original ${surface} configuration`,
+                code: '// Configuration\nconst flag = false;\nconst mode = "off";\nconst count = 2;\nlet id: string = "a";\n',
+              }}
+              after={{
+                title: `Updated ${surface} configuration`,
+                code: '// Configuration\nconst flag = true;\nconst mode = "on";\nconst count = 4;\nlet id: string = "b";\n',
+              }}
+              appearance="plain"
+              view={surface === 'page' ? 'unified' : 'auto'}
+              overflow="wrap"
+              lineNumbers
+              highlightWords
+            />
+          </section>
+        ))}
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="terminal-window"
+      aria-labelledby="terminal-title"
+    >
+      <h2 id="terminal-title">Terminal output</h2>
+      <TerminalWindow
+        title="Build output"
+        copy={{ context: 'terminal output', sourceId: 'terminal-output' }}
+      >
+        <pre
+          id="terminal-output"
+          class="overflow-x-auto p-5 text-sm"
+        >pnpm build&#10;5 pages built successfully.</pre>
+      </TerminalWindow>
+      <TerminalWindow
+        title="Compact terminal"
+        copy={{ context: 'compact terminal output', sourceId: 'compact-terminal-output' }}
+        copyDisplay="icon"
+      >
+        <pre
+          id="compact-terminal-output"
+          class="overflow-x-auto p-5 text-sm"
+          tabindex="0"
+          role="region"
+          aria-label="Compact terminal source"
+        >{iconCode}</pre>
+      </TerminalWindow>
+    </section>
+    <section
+      class="gallery-example"
+      aria-labelledby="markdown-title"
+    >
+      <h2 id="markdown-title">Markdown pipeline</h2>
+      <Prose
+        data-markdown-example
+        set:html={markdown.code}
+      />
+      <Prose
+        data-icon-markdown-example
+        set:html={iconMarkdown.code}
+      />
+    </section>
+    <section
+      class="gallery-example"
+      aria-labelledby="markup-title"
+    >
+      <h2 id="markup-title">Markup modules</h2>
+      <figure class="jg-code-window">
+        <Fragment
+          set:html={renderCodeWindowHeader({ caption: 'Generated window header', copy: false })}
+        />
+        <pre class="p-5">Build-owned content</pre>
+      </figure>
+      <a
+        href="https://docs.astro.build/"
+        target="_blank"
+        rel="noreferrer"
+        class="mt-4 inline-block underline"
+      >
+        Generated link notice
+        <Fragment set:html={renderNewTabMarker()} />
+      </a>
+    </section>
+  </Container>
+</GalleryLayout>

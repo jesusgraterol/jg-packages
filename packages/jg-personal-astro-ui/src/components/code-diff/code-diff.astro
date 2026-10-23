@@ -1,157 +1,152 @@
 ---
-import { diffLines } from 'diff';
+import { highlightToLines } from '../../highlighting/index.ts';
 
-import { highlightToLines, renderLineTokens } from '../../highlighting/index.ts';
+import type { ICodeDiffProps } from './types.ts';
+import { buildDiffModel, toHighlightSource } from './utilities.ts';
+import { renderDiffMarkup } from './rendering.ts';
 
-// one side of the comparison
-interface IDiffSide {
-  code: string;
-  // the caption above the side, such as the package's name
-  title: string;
-}
+type Props = ICodeDiffProps;
 
-interface Props {
-  after: IDiffSide;
-  before: IDiffSide;
-  class?: string | undefined;
-  lang: string;
-}
-
-// one line of the unified view
-type IUnifiedLine = { kind: 'added' | 'context' | 'removed'; html: string };
-
-// one row of the split view: the line on each side, or nothing where the other side changed
-type ISplitRow = {
-  before: { kind: 'context' | 'removed'; html: string } | undefined;
-  after: { kind: 'added' | 'context'; html: string } | undefined;
-};
-
-// the marker and colour of each kind of line
-const LINE_STYLES = {
-  added: { marker: '+', classes: 'bg-diff-added', label: 'Added line' },
-  context: { marker: ' ', classes: '', label: undefined },
-  removed: { marker: '−', classes: 'bg-diff-removed', label: 'Removed line' },
-} as const;
-
-const { after, before, class: className, lang } = Astro.props;
-const beforeLines = (await highlightToLines(before.code, lang)).map(renderLineTokens);
-const afterLines = (await highlightToLines(after.code, lang)).map(renderLineTokens);
-
-const unified: IUnifiedLine[] = [];
-const split: ISplitRow[] = [];
-let beforeIndex = 0;
-let afterIndex = 0;
-// pairs consecutive removals and additions, so the split view shows a change side by side
-let pendingRemoved: string[] = [];
-const flushRemoved = (added: string[] = []): void => {
-  const rows = Math.max(pendingRemoved.length, added.length);
-  for (let row = 0; row < rows; row += 1) {
-    const removedHtml = pendingRemoved[row];
-    const addedHtml = added[row];
-    split.push({
-      before: removedHtml === undefined ? undefined : { kind: 'removed', html: removedHtml },
-      after: addedHtml === undefined ? undefined : { kind: 'added', html: addedHtml },
-    });
-  }
-  pendingRemoved = [];
-};
-for (const part of diffLines(before.code.replace(/\n?$/, '\n'), after.code.replace(/\n?$/, '\n'))) {
-  const count = part.count ?? 0;
-  if (part.removed) {
-    const lines = beforeLines.slice(beforeIndex, beforeIndex + count);
-    beforeIndex += count;
-    unified.push(...lines.map((html) => ({ kind: 'removed' as const, html })));
-    pendingRemoved.push(...lines);
-  } else if (part.added) {
-    const lines = afterLines.slice(afterIndex, afterIndex + count);
-    afterIndex += count;
-    unified.push(...lines.map((html) => ({ kind: 'added' as const, html })));
-    flushRemoved(lines);
-  } else {
-    flushRemoved();
-    const lines = afterLines.slice(afterIndex, afterIndex + count);
-    beforeIndex += count;
-    afterIndex += count;
-    unified.push(...lines.map((html) => ({ kind: 'context' as const, html })));
-    split.push(
-      ...lines.map((html) => ({
-        before: { kind: 'context' as const, html },
-        after: { kind: 'context' as const, html },
-      })),
-    );
-  }
-}
-flushRemoved();
-
-/**
- * Renders one line of a view: its marker, its kind for screen readers, and its code.
- * @param kind The kind of line.
- * @param html The line's highlighted HTML.
- * @returns The line's HTML.
- */
-const renderLine = (kind: keyof typeof LINE_STYLES, html: string): string => {
-  const { classes, label, marker } = LINE_STYLES[kind];
-  const kindLabel =
-    label === undefined ? '' : `<span class="sr-only select-none">${label}: </span>`;
-  return `<span class="flex min-w-fit pr-4 ${classes}"><span class="w-8 shrink-0 select-none text-center text-muted" aria-hidden="true">${marker}</span>${kindLabel}<span>${html.length === 0 ? ' ' : html}</span></span>`;
-};
-
-// an empty row, where the other side has a line this side doesn't
-const EMPTY_ROW =
-  '<span class="flex min-w-fit bg-secondary/40 pr-4" aria-hidden="true"><span class="w-8 shrink-0"></span> </span>';
-
-const unifiedHtml = `<code>${unified.map(({ kind, html }) => renderLine(kind, html)).join('')}</code>`;
-const splitHtml = {
-  before: `<code>${split.map(({ before: line }) => (line === undefined ? EMPTY_ROW : renderLine(line.kind, line.html))).join('')}</code>`,
-  after: `<code>${split.map(({ after: line }) => (line === undefined ? EMPTY_ROW : renderLine(line.kind, line.html))).join('')}</code>`,
-};
+const {
+  after,
+  appearance = 'window',
+  before,
+  class: className,
+  contextLines,
+  highlightWords = false,
+  lang,
+  lineNumbers = false,
+  overflow = 'scroll',
+  view = 'auto',
+} = Astro.props;
+const model = buildDiffModel(before.code, after.code, { contextLines, highlightWords });
+const [beforeTokens, afterTokens] = await Promise.all([
+  highlightToLines(toHighlightSource(model.beforeLines), lang),
+  highlightToLines(toHighlightSource(model.afterLines), lang),
+]);
+const markup = renderDiffMarkup(model, beforeTokens, afterTokens, { lineNumbers, overflow });
+const splitVisibility =
+  view === 'unified' ? 'hidden' : view === 'auto' ? 'hidden @3xl:grid' : 'grid';
+const columns =
+  view === 'unified' ? undefined : view === 'split' ? 'grid-cols-2' : '@3xl:grid-cols-2';
+const label = `Changes from ${before.title} to ${after.title}`;
+const numberDigits = Math.max(
+  2,
+  String(Math.max(model.beforeLines.length, model.afterLines.length)).length,
+);
 ---
 
-{/*
- * A comparison computed at build time. Narrow containers show one column with - and + lines;
- * wide ones show the two versions side by side. Screen readers hear each changed line's kind.
- */}
+{/* one build-time comparison supplies every view; wrapped split rows share their vertical sizing */}
 <figure
-  class:list={['@container overflow-hidden rounded-xl border border-border bg-code', className]}
+  class:list={[
+    'jg-code-diff @container min-w-0',
+    appearance === 'window' && 'overflow-hidden rounded-xl border border-border bg-code',
+    className,
+  ]}
   data-code-diff
+  data-code-diff-overflow={overflow}
+  style={{ '--jg-diff-number-width': `${numberDigits}ch` }}
 >
-  <figcaption class="grid border-b border-border font-mono text-xs @3xl:grid-cols-2">
-    <span class="flex min-h-10 items-center gap-2 px-4 text-muted">
+  <figcaption
+    class:list={[
+      'grid font-mono text-xs',
+      appearance === 'window' && 'border-b border-border',
+      columns,
+    ]}
+  >
+    <span class="flex min-h-10 min-w-0 items-center gap-2 px-4 text-muted wrap-anywhere">
       <span
-        class="size-2 rounded-full bg-danger"
+        class="size-2 shrink-0 rounded-full bg-danger"
         aria-hidden="true"
       ></span>
       {before.title}
     </span>
-    <span class="flex min-h-10 items-center gap-2 border-t border-border px-4 text-muted @3xl:border-t-0 @3xl:border-l">
+    <span
+      class:list={[
+        'flex min-h-10 min-w-0 items-center gap-2 px-4 text-muted wrap-anywhere',
+        appearance === 'window' &&
+          (view === 'split'
+            ? 'border-l border-border'
+            : view === 'auto'
+              ? 'border-t border-border @3xl:border-t-0 @3xl:border-l'
+              : 'border-t border-border'),
+      ]}
+    >
       <span
-        class="size-2 rounded-full bg-success"
+        class="size-2 shrink-0 rounded-full bg-success"
         aria-hidden="true"
       ></span>
       {after.title}
     </span>
   </figcaption>
+  {model.isFallback && (
+    <p
+      class="px-4 py-2 text-xs text-muted"
+      data-diff-fallback
+    >
+      Comparison exceeded the edit limit. Showing the complete before and after source as a
+      replacement.
+    </p>
+  )}
+  {markup.rows.length === 0 && <p class="px-4 py-3 text-sm text-muted">No changes.</p>}
   <pre
-    class="jg-code overflow-x-auto py-3 text-[0.8125rem] leading-6 outline-offset-[-2px] sm:text-sm @3xl:hidden"
+    class:list={[
+      'jg-code jg-diff-pre',
+      view === 'split' ? 'hidden' : view === 'auto' ? '@3xl:hidden' : undefined,
+    ]}
     tabindex="0"
     role="group"
-    aria-label={`Changes from ${before.title} to ${after.title}`}
-    set:html={unifiedHtml}
-  />
-  <div class="hidden grid-cols-2 @3xl:grid">
-    <pre
-      class="jg-code overflow-x-auto py-3 text-sm leading-6 outline-offset-[-2px]"
+    aria-label={label}
+    data-diff-unified
+  ><code set:html={markup.unified} /></pre>
+  {overflow === 'scroll' ? (
+    <div
+      class:list={[splitVisibility, 'grid-cols-2']}
+      data-diff-split
+    >
+      <pre
+        class="jg-code jg-diff-pre min-w-0"
+        tabindex="0"
+        role="group"
+        aria-label={before.title}
+      ><code set:html={markup.rows.map(row => row.before).join('')} /></pre>
+      <pre
+        class:list={[
+          'jg-code jg-diff-pre min-w-0',
+          appearance === 'window' && 'border-l border-border',
+        ]}
+        tabindex="0"
+        role="group"
+        aria-label={after.title}
+      ><code set:html={markup.rows.map(row => row.after).join('')} /></pre>
+    </div>
+  ) : (
+    <div
+      class:list={[splitVisibility, 'jg-diff-wrapped grid-cols-2 font-mono']}
       tabindex="0"
       role="group"
-      aria-label={before.title}
-      set:html={splitHtml.before}
-    />
-    <pre
-      class="jg-code overflow-x-auto border-l border-border py-3 text-sm leading-6 outline-offset-[-2px]"
-      tabindex="0"
-      role="group"
-      aria-label={after.title}
-      set:html={splitHtml.after}
-    />
-  </div>
+      aria-label={label + ' side by side'}
+      data-diff-split
+    >
+      {markup.rows.map((row) =>
+        row.isOmitted ? (
+          <div
+            class="col-span-2"
+            set:html={row.before}
+          />
+        ) : (
+          <>
+            <div class="min-w-0">
+              <span class="sr-only">{before.title}: </span>
+              <code set:html={row.before} />
+            </div>
+            <div class:list={['min-w-0', appearance === 'window' && 'border-l border-border']}>
+              <span class="sr-only">{after.title}: </span>
+              <code set:html={row.after} />
+            </div>
+          </>
+        ),
+      )}
+    </div>
+  )}
 </figure>

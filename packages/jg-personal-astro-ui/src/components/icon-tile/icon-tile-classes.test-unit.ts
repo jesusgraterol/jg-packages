@@ -13,4 +13,11 @@ describe('buildIconTileClasses', () => {
   test("draws a larger tile for a page's header", () => {
     expect(buildIconTileClasses('header')).toContain('size-14 rounded-xl [&>svg]:size-7');
   });
+
+  test('sizes a compact neutral tile without the primary palette', () => {
+    const classes = buildIconTileClasses('compact', 'neutral');
+    expect(classes).toContain('size-8 rounded-md [&>svg]:size-4');
+    expect(classes).toContain('bg-secondary text-foreground');
+    expect(classes).not.toContain('bg-primary');
+  });
 });

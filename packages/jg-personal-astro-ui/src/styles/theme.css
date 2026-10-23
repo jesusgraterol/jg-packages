@@ -58,7 +58,7 @@
   /* code colours, after GitHub's light theme */
   --jg-syntax-foreground: oklch(25.5% 0.012 260);
   --jg-syntax-background: transparent;
-  --jg-syntax-token-keyword: oklch(54% 0.2 25);
+  --jg-syntax-token-keyword: oklch(53% 0.2 25);
   --jg-syntax-token-string: oklch(33% 0.12 255);
   --jg-syntax-token-string-expression: oklch(42% 0.11 150);
   --jg-syntax-token-comment: oklch(50% 0.015 250);
@@ -69,7 +69,8 @@
   --jg-syntax-token-link: oklch(33% 0.12 255);
 }
 
-.dark {
+.dark,
+.jg-section-inverse {
   color-scheme: dark;
 
   --jg-background: oklch(27.837% 0.03355 257.693);
@@ -86,7 +87,7 @@
   --jg-code: oklch(24% 0.03 257.693);
   --jg-success: oklch(76.08% 0.12019 173.72);
   --jg-warning: oklch(83.007% 0.1399 77.932);
-  --jg-danger: oklch(72% 0.17 23.736);
+  --jg-danger: oklch(75% 0.17 23.736);
   --jg-diff-added: oklch(76.08% 0.12019 173.72 / 0.14);
   --jg-diff-removed: oklch(70.008% 0.19081 23.736 / 0.15);
 
@@ -96,9 +97,17 @@
   --jg-shadow-raised: 0 0 transparent;
 }
 
+/* inverse sections reuse the dark controls while retaining the established fixed inverse surface */
+.jg-section-inverse {
+  --jg-background: var(--jg-inverse);
+  --jg-foreground: var(--jg-inverse-foreground);
+  --jg-focus: var(--jg-inverse-foreground);
+}
+
 /* code colours after GitHub's dark theme, in the dark palette and in code windows, which stay dark */
 .dark,
-.jg-code-window {
+.jg-code-window,
+.jg-section-inverse {
   --jg-syntax-foreground: oklch(93% 0.012 250);
   --jg-syntax-token-keyword: oklch(72% 0.17 25);
   --jg-syntax-token-string: oklch(85% 0.08 245);
@@ -130,7 +139,7 @@
     --jg-code: oklch(24% 0.03 257.693);
     --jg-success: oklch(76.08% 0.12019 173.72);
     --jg-warning: oklch(83.007% 0.1399 77.932);
-    --jg-danger: oklch(72% 0.17 23.736);
+    --jg-danger: oklch(75% 0.17 23.736);
     --jg-diff-added: oklch(76.08% 0.12019 173.72 / 0.14);
     --jg-diff-removed: oklch(70.008% 0.19081 23.736 / 0.15);
 

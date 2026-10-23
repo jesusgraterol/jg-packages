@@ -1,0 +1,292 @@
+---
+import { Code, Layers } from '@lucide/astro';
+import AgenticCodingMark from 'jg-personal-astro-ui/agentic-coding-mark';
+import Badge from 'jg-personal-astro-ui/badge';
+import Button from 'jg-personal-astro-ui/button';
+import Card from 'jg-personal-astro-ui/card';
+import Callout from 'jg-personal-astro-ui/callout';
+import CodeBlock from 'jg-personal-astro-ui/code-block';
+import Container from 'jg-personal-astro-ui/container';
+import HeroBackdrop from 'jg-personal-astro-ui/hero-backdrop';
+import IconTile from 'jg-personal-astro-ui/icon-tile';
+import JgMark from 'jg-personal-astro-ui/jg-mark';
+import LinkCard from 'jg-personal-astro-ui/link-card';
+import NewTabMarker from 'jg-personal-astro-ui/new-tab-marker';
+import PageHeader from 'jg-personal-astro-ui/page-header';
+import Prose from 'jg-personal-astro-ui/prose';
+import Section from 'jg-personal-astro-ui/section';
+import SegmentedControl from 'jg-personal-astro-ui/segmented-control';
+import Stack from 'jg-personal-astro-ui/stack';
+import TextLink from 'jg-personal-astro-ui/text-link';
+
+import GalleryLayout from '../layouts/gallery-layout.astro';
+
+const tones = ['primary', 'neutral', 'accent', 'success', 'warning', 'danger'] as const;
+---
+
+<GalleryLayout title="Foundations">
+  <PageHeader
+    title="Foundations"
+    eyebrow="Brand and surfaces"
+    lede="Actions, status, and layout in the shared light and dark palettes."
+  />
+  <Container
+    class="pb-16"
+    data-example="container"
+  >
+    <section
+      class="gallery-example"
+      aria-labelledby="marks-title"
+    >
+      <h2 id="marks-title">Brand marks</h2>
+      <div class="flex flex-wrap items-center gap-8">
+        <span data-example="jg-mark">
+          <JgMark class="size-16" />
+        </span>
+        <span data-example="agentic-coding-mark">
+          <AgenticCodingMark class="size-16" />
+        </span>
+        <span data-example="icon-tile">
+          <IconTile>
+            <Layers
+              class="size-5"
+              aria-hidden="true"
+            />
+          </IconTile>
+        </span>
+        <IconTile size="header">
+          <Code
+            class="size-8"
+            aria-hidden="true"
+          />
+        </IconTile>
+      </div>
+      <div
+        class="mt-6 flex flex-wrap gap-4"
+        data-compact-tiles
+      >
+        {tones.map((tone) => (
+          <span data-icon-tone={tone}>
+            <IconTile
+              size="compact"
+              tone={tone}
+              data-icon-sample={tone}
+            >
+              <Layers aria-hidden="true" />
+            </IconTile>
+            <span class="sr-only">{tone} tile</span>
+          </span>
+        ))}
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="button"
+      aria-labelledby="actions-title"
+    >
+      <h2 id="actions-title">Actions</h2>
+      <div class="flex flex-wrap items-center gap-3">
+        <Button>Primary action</Button>
+        <Button variant="secondary">Secondary action</Button>
+        <Button variant="outline">Outline</Button>
+        <Button variant="ghost">Ghost</Button>
+        <Button disabled>Unavailable</Button>
+        <Button
+          size="sm"
+          href="/interactions/"
+        >
+          Small link
+        </Button>
+        <Button
+          size="lg"
+          external
+          href="https://astro.build/"
+        >
+          Astro
+        </Button>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="badge"
+      aria-labelledby="status-title"
+    >
+      <h2 id="status-title">Status</h2>
+      <div class="flex flex-wrap gap-3">
+        <Badge>Default</Badge>
+        <Badge
+          variant="neutral"
+          dot
+        >
+          Active
+        </Badge>
+        <Badge
+          variant="success"
+          dot
+        >
+          Complete
+        </Badge>
+        <Badge variant="warning">Attention</Badge>
+        <Badge variant="danger">Failed</Badge>
+        <Badge mono={false}>A longer human-readable status</Badge>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      aria-labelledby="surfaces-title"
+    >
+      <h2 id="surfaces-title">Cards and links</h2>
+      <div
+        class="grid gap-4 md:grid-cols-2"
+        data-example="stack"
+      >
+        <Card
+          class="p-6"
+          data-example="card"
+        >
+          <Stack gap="md">
+            <h3 class="text-lg font-semibold">A focused surface</h3>
+            <Badge variant="danger">Action required</Badge>
+            <p class="text-muted">Cards group related content without imposing a workflow.</p>
+            <TextLink
+              href="/documentation/"
+              data-example="text-link"
+            >
+              Read the documentation examples
+            </TextLink>
+          </Stack>
+        </Card>
+        <div data-example="link-card">
+          <LinkCard
+            href="/technical-content/"
+            title="Long technical content"
+            headingLevel={3}
+          >
+            <p>Check long paths, commands, and differences at small widths.</p>
+          </LinkCard>
+        </div>
+        <TextLink
+          external
+          href="https://astro.build/"
+        >
+          External text link
+        </TextLink>
+        <a
+          href="https://astro.build/"
+          target="_blank"
+          rel="noreferrer"
+          class="w-fit underline"
+          data-example="new-tab-marker"
+        >
+          Standalone new-tab notice
+          <NewTabMarker />
+        </a>
+      </div>
+    </section>
+    <section
+      class="gallery-example relative isolate overflow-hidden rounded-xl p-8"
+      data-example="hero-backdrop"
+      aria-labelledby="backdrop-title"
+    >
+      <HeroBackdrop />
+      <h2 id="backdrop-title">Hero backdrop</h2>
+      <p class="relative max-w-lg text-muted">
+        The brand's dot lattice and accent glow behind ordinary page content.
+      </p>
+    </section>
+  </Container>
+  <Section
+    id="inverse-example"
+    title="Inverse section"
+    eyebrow="Local palette"
+    lede="Controls, status, and source remain readable within a dark section in either theme."
+    tone="inverse"
+  >
+    <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <Card class="p-6">
+        <h3 class="text-lg font-semibold">Nested controls</h3>
+        <div class="mt-4 flex flex-wrap gap-3">
+          <Button>Inverse primary</Button>
+          <Button variant="secondary">Inverse secondary</Button>
+          <Button variant="outline">Inverse outline</Button>
+          <Button variant="ghost">Inverse ghost</Button>
+          <Button variant="destructive">Inverse destructive</Button>
+        </div>
+        <div
+          class="mt-4 flex flex-wrap gap-3"
+          data-inverse-status
+        >
+          <Badge variant="success">Complete</Badge>
+          <Badge variant="warning">Attention</Badge>
+          <Badge variant="danger">Failed</Badge>
+        </div>
+        <div
+          class="mt-4 flex flex-wrap gap-4"
+          data-compact-tiles
+        >
+          {tones.map((tone) => (
+            <span data-icon-tone={tone}>
+              <IconTile
+                size="compact"
+                tone={tone}
+                data-icon-sample={tone}
+              >
+                <Layers aria-hidden="true" />
+              </IconTile>
+              <span class="sr-only">{tone} tile</span>
+            </span>
+          ))}
+        </div>
+        <div class="mt-6 grid gap-2">
+          <label for="inverse-field">Example name</label>
+          <input
+            id="inverse-field"
+            type="text"
+            class="min-h-11 rounded-md border border-border-strong bg-background px-3 text-base text-foreground"
+          />
+        </div>
+        <div class="mt-6">
+          <SegmentedControl
+            name="inverse-density"
+            legend="Inverse reading density"
+            options={[
+              { value: 'comfortable', label: 'Comfortable' },
+              { value: 'compact', label: 'Compact' },
+            ]}
+          />
+        </div>
+      </Card>
+      <Card class="p-6">
+        <Prose>
+          <h3>Reading on an inverse surface</h3>
+          <p>
+            Foreground, <strong>emphasis</strong>, <code>inline code</code>, and{' '}
+            <a href="/technical-content/">source examples</a> inherit the local palette.
+          </p>
+          <CodeBlock
+            code={'// syntax remains meaningful\nconst enabled = true;'}
+            lang="ts"
+            appearance="plain"
+            copy={false}
+            ariaLabel="Inverse source"
+          />
+        </Prose>
+        <div class="mt-6">
+          <Callout
+            variant="warning"
+            title="Attention"
+          >
+            <p>Semantic colors remain distinct within this surface.</p>
+          </Callout>
+        </div>
+      </Card>
+    </div>
+  </Section>
+  <Container
+    class="py-8"
+    data-after-inverse
+  >
+    <p class="text-muted">The surrounding page keeps its selected theme.</p>
+    <TextLink href="/documentation/">Outside section link</TextLink>
+  </Container>
+</GalleryLayout>

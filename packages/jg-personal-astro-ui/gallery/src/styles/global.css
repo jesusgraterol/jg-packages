@@ -1,0 +1,21 @@
+@import 'tailwindcss' source('../');
+@import 'jg-personal-astro-ui/styles/contract.css';
+@import 'jg-personal-astro-ui/styles/theme.css';
+@import 'jg-personal-astro-ui/styles/prose.css';
+
+/* contract.css detects the installed components; this source covers the private examples */
+@layer components {
+  .gallery-example {
+    min-width: 0;
+    padding-block: 2rem;
+    border-bottom: 1px solid var(--jg-border);
+  }
+
+  .gallery-example > h2 {
+    scroll-margin-top: 6rem;
+    margin-bottom: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+}

@@ -1,0 +1,26 @@
+---
+import type { IProcessStatus } from '../../contracts/index.ts';
+
+import Badge from '../badge/badge.astro';
+
+interface Props {
+  status?: IProcessStatus | undefined;
+}
+const { status } = Astro.props;
+const presentations = {
+  pending: { label: 'Pending', variant: 'neutral' },
+  current: { label: 'Current', variant: 'default' },
+  complete: { label: 'Complete', variant: 'success' },
+  error: { label: 'Error', variant: 'danger' },
+} as const;
+const presentation = status === undefined ? undefined : presentations[status];
+---
+
+{presentation !== undefined && (
+  <Badge
+    variant={presentation.variant}
+    mono={false}
+  >
+    {presentation.label}
+  </Badge>
+)}

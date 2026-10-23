@@ -1,5 +1,5 @@
 import { escapeHtml } from '../../html/index.ts';
-import { renderCopyButton } from '../copy-button/copy-button-markup.ts';
+import { renderCopyButton, type ICopyButtonDisplay } from '../copy-button/copy-button-markup.ts';
 
 // what renderCodeWindowHeader needs
 export type ICodeWindowHeaderOptions = {
@@ -7,9 +7,10 @@ export type ICodeWindowHeaderOptions = {
   caption: string;
   // shows a copy button that copies the window's code. Defaults to true
   copy?: boolean | undefined;
-  // what the copy button copies instead of the window's code: the element with this id, named by
-  // context in its accessible name, such as "command"
-  copySource?: { context: string; sourceId: string } | undefined;
+  copyDisplay?: ICopyButtonDisplay | undefined;
+  // copies original text or an element's text, named by context in its accessible name
+  copySource?:
+    { context: string; sourceId: string } | { context: string; text: string } | undefined;
   // lets a long caption, such as a sentence, wrap onto more lines instead of ending in an ellipsis
   wrapCaption?: boolean | undefined;
 };
@@ -29,6 +30,7 @@ export type ICodeWindowHeaderOptions = {
 export const renderCodeWindowHeader = ({
   caption,
   copy = true,
+  copyDisplay,
   copySource,
   wrapCaption = false,
 }: ICodeWindowHeaderOptions): string =>
@@ -39,7 +41,10 @@ export const renderCodeWindowHeader = ({
     copy
       ? renderCopyButton({
           context: copySource?.context ?? 'code',
-          sourceId: copySource?.sourceId,
+          display: copyDisplay,
+          sourceId:
+            copySource !== undefined && 'sourceId' in copySource ? copySource.sourceId : undefined,
+          text: copySource !== undefined && 'text' in copySource ? copySource.text : undefined,
           tone: 'terminal',
         })
       : '',

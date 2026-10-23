@@ -5,11 +5,13 @@ import { getEntry, render } from 'astro:content';
 import Breadcrumb from 'jg-personal-astro-ui/breadcrumb';
 import Button from 'jg-personal-astro-ui/button';
 import CopyButton from 'jg-personal-astro-ui/copy-button';
+import DocumentationOutline from 'jg-personal-astro-ui/documentation-outline';
+import DocumentationShell from 'jg-personal-astro-ui/documentation-shell';
 import HeroBackdrop from 'jg-personal-astro-ui/hero-backdrop';
+import PageNavigation from 'jg-personal-astro-ui/page-navigation';
 import Prose from 'jg-personal-astro-ui/prose';
 import { buildStructuredData, SEARCH_TEXT_LIMITS } from 'jg-site';
 
-import OnThisPage from '../../../../components/on-this-page/on-this-page.astro';
 import PackageIcon from '../../../../components/package-icon/package-icon.astro';
 import BaseLayout from '../../../../layouts/base-layout.astro';
 import { PACKAGE_CATALOG, PACKAGES_DIRECTORY, SITE_CONFIG } from '../../../../site.config.ts';
@@ -101,7 +103,8 @@ const structuredData = buildStructuredData({
           <p class="eyebrow">Recipes</p>
           {/* the package page's title is the name too, so search names this one apart */}
           <h1
-            class="mt-2 font-mono text-[clamp(2rem,6vw,3.5rem)] leading-none font-bold tracking-tight wrap-anywhere"
+            class="jg-page-title mt-2"
+            data-jg-title-font="mono"
             data-pagefind-meta={`title:${listedPackage.name} recipes`}
           >
             {listedPackage.name}
@@ -122,23 +125,20 @@ const structuredData = buildStructuredData({
       </Button>
     </div>
   </header>
-  <div class="jg-container grid gap-10 py-10 sm:py-14 lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-14">
+  <DocumentationShell>
+    <DocumentationOutline
+      slot="outline"
+      items={contents}
+    />
     <div class="min-w-0 lg:max-w-[48rem]">
-      <div class="lg:hidden">
-        <OnThisPage
-          items={contents}
-          variant="disclosure"
-        />
-      </div>
-      <Prose class="mt-8 lg:mt-0">
+      <Prose>
         <Content />
       </Prose>
     </div>
-    <aside class="hidden lg:block">
-      <OnThisPage
-        items={contents}
-        variant="sidebar"
-      />
-    </aside>
-  </div>
+    <PageNavigation
+      slot="footer"
+      class="lg:max-w-[48rem]"
+      previous={{ href: packagePath, label: listedPackage.name, description: listedPackage.title }}
+    />
+  </DocumentationShell>
 </BaseLayout>

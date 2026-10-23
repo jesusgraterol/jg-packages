@@ -2,6 +2,7 @@ import { copyText } from 'jg-clipboard';
 import { getErrorCode } from 'jg-exception';
 
 import { COPY_OUTCOME_LABELS } from './copy-button-markup.ts';
+import { positionCopyHint, registerCopyDom } from './copy-dom.ts';
 import { getCopyGuidance } from './copy-guidance.ts';
 
 // how long the copied state shows before the button resets
@@ -91,7 +92,17 @@ const showOutcome = (
     (hint.querySelector('[data-copy-hint-text]') ?? hint).textContent =
       outcome?.state === 'error' ? outcome.message : '';
     hint.hidden = outcome?.state !== 'error';
+    if (!hint.hidden) positionCopyHint(hint);
   }
+};
+
+/** Releases feedback for a removed control or a document being dismissed. */
+const releaseCopyButton = (button: HTMLElement): void => {
+  clearTimeout(resetTimers.get(button));
+  resetTimers.delete(button);
+  latestAttempts.delete(button);
+  showOutcome(button, undefined);
+  defaultLabels.delete(button);
 };
 
 /**
@@ -101,6 +112,7 @@ const showOutcome = (
  * @returns A promise that resolves once the outcome shows.
  */
 export const copyFromButton = async (button: HTMLElement): Promise<void> => {
+  if (!button.isConnected) return;
   const attempt = {};
   latestAttempts.set(button, attempt);
   clearTimeout(resetTimers.get(button));
@@ -112,7 +124,7 @@ export const copyFromButton = async (button: HTMLElement): Promise<void> => {
     }
     await copyText(text);
   } catch (error) {
-    if (latestAttempts.get(button) !== attempt) {
+    if (latestAttempts.get(button) !== attempt || !button.isConnected) {
       return;
     }
     showOutcome(button, {
@@ -126,7 +138,7 @@ export const copyFromButton = async (button: HTMLElement): Promise<void> => {
     });
     return;
   }
-  if (latestAttempts.get(button) !== attempt) {
+  if (latestAttempts.get(button) !== attempt || !button.isConnected) {
     return;
   }
   showOutcome(button, {
@@ -137,7 +149,7 @@ export const copyFromButton = async (button: HTMLElement): Promise<void> => {
   resetTimers.set(
     button,
     setTimeout(() => {
-      showOutcome(button, undefined);
+      if (button.isConnected) showOutcome(button, undefined);
     }, RESET_DELAY_MS),
   );
 };
@@ -159,14 +171,10 @@ export const handleCopyClick = (event: Event): void => {
 
 /**
  * Makes every copy button on the page copy, through one click listener on the document. Each
- * component that renders copy buttons calls it from its script; the attribute it sets on the root
- * element keeps a second call, even from another bundle, from adding a second listener.
+ * component that renders copy buttons calls it from its script. A document-owned controller
+ * reveals current and future controls, keeps guidance in view, and releases detached feedback.
  * @param root The document. Defaults to the page's.
  */
 export const registerCopyButtons = (root: Document = document): void => {
-  if (root.documentElement.hasAttribute('data-copy-buttons')) {
-    return;
-  }
-  root.documentElement.setAttribute('data-copy-buttons', '');
-  root.addEventListener('click', handleCopyClick);
+  registerCopyDom(root, handleCopyClick, releaseCopyButton);
 };

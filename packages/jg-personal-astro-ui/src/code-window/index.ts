@@ -3,3 +3,6 @@ export {
   renderCodeWindowHeader,
   type ICodeWindowHeaderOptions,
 } from '../components/code-block/code-window.ts';
+
+// copy presentation shared by code windows and standalone controls
+export type { ICopyButtonDisplay } from '../components/copy-button/copy-button-markup.ts';

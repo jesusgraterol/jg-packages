@@ -20,6 +20,12 @@ describe('buildSectionClasses', () => {
     expect(classes.container).toBe('jg-container-prose');
   });
 
+  test('owns the inverse palette while keeping layout and optional borders independent', () => {
+    const classes = buildSectionClasses({ tone: 'inverse', border: false });
+    expect(classes.root).toBe('jg-section-space scroll-mt-16 jg-section-inverse');
+    expect(classes.container).toBe('jg-container');
+  });
+
   test('centers a stacked header, its lede included', () => {
     const classes = buildSectionClasses({ align: 'center' });
 

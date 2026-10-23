@@ -1,0 +1,20 @@
+---
+import type { IFileStatus } from '../../contracts/index.ts';
+
+import Badge from '../badge/badge.astro';
+
+interface Props {
+  status?: IFileStatus | undefined;
+}
+
+const { status } = Astro.props;
+const presentations = {
+  added: { label: 'Added', variant: 'success' },
+  modified: { label: 'Modified', variant: 'warning' },
+  removed: { label: 'Removed', variant: 'danger' },
+  unchanged: { label: 'Unchanged', variant: 'neutral' },
+} as const;
+const presentation = status === undefined ? undefined : presentations[status];
+---
+
+{presentation !== undefined && <Badge variant={presentation.variant}>{presentation.label}</Badge>}

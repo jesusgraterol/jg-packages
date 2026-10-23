@@ -36,7 +36,9 @@ beforeAll(() => {
   registerDialogs();
 });
 
-afterEach(() => {
+afterEach(async () => {
+  document.querySelectorAll<HTMLDialogElement>('dialog[open]').forEach((dialog) => dialog.close());
+  await expect.poll(() => document.body.style.position).not.toBe('fixed');
   document.body.innerHTML = '';
 });
 

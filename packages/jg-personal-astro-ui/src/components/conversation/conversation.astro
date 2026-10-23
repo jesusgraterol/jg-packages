@@ -1,0 +1,29 @@
+---
+interface Props {
+  label: string;
+  class?: string | undefined;
+}
+
+const { label, class: className } = Astro.props;
+---
+
+<div class:list={['min-w-0', className]}>
+  {Astro.slots.has('header') && (
+    <div class="mb-6 min-w-0">
+      <slot name="header" />
+    </div>
+  )}
+  {/* role preserves list semantics in Safari when the stylesheet removes markers */}
+  <ol
+    role="list"
+    aria-label={label}
+    class="min-w-0"
+  >
+    <slot />
+  </ol>
+  {Astro.slots.has('footer') && (
+    <div class="mt-6 min-w-0">
+      <slot name="footer" />
+    </div>
+  )}
+</div>

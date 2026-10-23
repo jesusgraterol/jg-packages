@@ -28,11 +28,21 @@ const readValue = (css: string, name: string): string | undefined =>
  * @returns The light `:root` block and everything after it.
  */
 const splitTheme = (theme: string): { dark: string; light: string } => {
-  const darkStart = theme.indexOf('.dark {');
+  const darkStart = theme.indexOf('\n.dark');
   return { light: theme.slice(0, darkStart), dark: theme.slice(darkStart) };
 };
 
 describe('the inverse surface', () => {
+  test('keeps dark semantic colors synchronized with the system-preference fallback', async () => {
+    const theme = await readFile(THEME_FILE, 'utf8');
+    const { dark } = splitTheme(theme);
+    const fallback = theme.slice(theme.indexOf('@media (prefers-color-scheme: dark)'));
+    for (const token of ['--jg-danger', '--jg-success', '--jg-warning']) {
+      const explicit = readValue(dark, token);
+      expect(explicit).toBeDefined();
+      expect(readValue(fallback, token)).toBe(explicit);
+    }
+  });
   test('stays dark in both themes, with the light palette values the jg sites already use', async () => {
     const { dark, light } = splitTheme(await readFile(THEME_FILE, 'utf8'));
 

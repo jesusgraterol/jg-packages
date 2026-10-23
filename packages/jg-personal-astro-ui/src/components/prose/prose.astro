@@ -1,15 +1,23 @@
 ---
 import type { HTMLAttributes } from 'astro/types';
 
-type Props = { class?: string | undefined } & Omit<HTMLAttributes<'div'>, 'class'>;
+import type { ITitleFont, ITitleVariant } from '../../typography/index.ts';
 
-const { class: className, ...attributes } = Astro.props;
+type Props = {
+  class?: string | undefined;
+  titleFont?: ITitleFont | undefined;
+  titleVariant?: ITitleVariant | undefined;
+} & Omit<HTMLAttributes<'div'>, 'class'>;
+
+const { class: className, titleFont, titleVariant = 'page', ...attributes } = Astro.props;
 ---
 
 {/* styled by prose.css, which the site imports with its stylesheet */}
 <div
   class:list={['jg-prose', className]}
   {...attributes}
+  data-jg-title-font={titleFont}
+  data-jg-title-variant={titleVariant}
 >
   <slot />
 </div>

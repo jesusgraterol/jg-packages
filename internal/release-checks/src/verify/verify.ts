@@ -23,6 +23,7 @@ import {
   type IWorkspacePackage,
 } from '../workspace/workspace.ts';
 import type { IPackedPackage, IRegistry } from '../checks/types.ts';
+import type { IRunAstroFixtureCommand } from '../checks/astro-fixture-command/index.ts';
 import type { IPackageManifest, IReleaseManifestEntry, IRunCommand } from '../shared/types.ts';
 
 // what the verify and pack commands need from their environment
@@ -30,6 +31,7 @@ export type IVerifyDependencies = {
   registry: IRegistry;
   runCommand: IRunCommand;
   log: (message: string) => void;
+  runGalleryCommand?: IRunAstroFixtureCommand;
 };
 
 // the outcome of checking the workspaces, then packing and checking every publishable package
@@ -104,11 +106,12 @@ const addProblems = (problems: Map<string, string[]>, name: string, additions: s
  * - No publishable packages were found under packages/.
  * - pnpm pack failed for {name}: {stderr}
  * - pnpm-workspace.yaml has a pattern the release checks can't read: {pattern}
+ * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
  */
 export const packAndCheck = async (
   rootDirectory: string,
   outputDirectory: string,
-  { registry, runCommand, log }: IVerifyDependencies,
+  { registry, runCommand, log, runGalleryCommand }: IVerifyDependencies,
 ): Promise<IReleaseCheckResult> => {
   log('Checking the workspaces');
   const workspaceProblems = checkWorkspaceScripts(await findWorkspaces(rootDirectory));
@@ -162,7 +165,11 @@ export const packAndCheck = async (
     await consumer.remove();
   }
   log('Building an Astro site from each package with Astro components');
-  for (const [name, packageProblems] of await checkAstroFixture(packages, runCommand)) {
+  for (const [name, packageProblems] of await checkAstroFixture(
+    packages,
+    runCommand,
+    runGalleryCommand,
+  )) {
     addProblems(problems, name, packageProblems);
   }
   for (const { packed, reference } of withReferences) {
@@ -223,6 +230,8 @@ const reportResult = (
  * @param rootDirectory The repository root.
  * @param dependencies The registry, command runner, and logger.
  * @returns A promise that resolves to the exit code: 0 when everything passes, 1 otherwise.
+ * @throws
+ * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
  */
 export const runVerify = async (
   rootDirectory: string,
@@ -246,6 +255,7 @@ export const runVerify = async (
  * @returns A promise that resolves to the exit code: 0 when the release is ready, 1 otherwise.
  * @throws
  * - The output directory isn't empty; remove it first: {outputDirectory}
+ * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
  */
 export const runPack = async (
   rootDirectory: string,

@@ -1,0 +1,15 @@
+---
+interface Props {
+  label: string;
+  class?: string | undefined;
+}
+const { label, class: className } = Astro.props;
+---
+
+<ol
+  role="list"
+  aria-label={label}
+  class:list={['min-w-0', className]}
+>
+  <slot />
+</ol>

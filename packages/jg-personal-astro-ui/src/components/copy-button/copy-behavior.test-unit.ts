@@ -20,6 +20,7 @@ type IFakeParts = {
   label: { textContent: string };
   status: { textContent: string };
   hint: {
+    ownerDocument: { defaultView: null };
     textContent: string;
     hidden: boolean;
     querySelector: () => { textContent: string } | null;
@@ -50,7 +51,12 @@ const createButton = ({
   const parts: IFakeParts = {
     label: { textContent: label },
     status: { textContent: '' },
-    hint: { textContent: '', hidden: true, querySelector: () => hintText },
+    hint: {
+      ownerDocument: { defaultView: null },
+      textContent: '',
+      hidden: true,
+      querySelector: () => hintText,
+    },
     hintText,
   };
   const wrapper = {
@@ -66,6 +72,9 @@ const createButton = ({
     },
   };
   const button = {
+    isConnected: true,
+    inert: true,
+    classList: { remove: vi.fn() },
     dataset: { ...dataset },
     getBoundingClientRect: () => ({ width: 72 }),
     style,
@@ -179,6 +188,43 @@ describe('readCopyText', () => {
 });
 
 describe('copyFromButton', () => {
+  test('ignores a detached control before starting a clipboard write', async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    stubClipboard(writeText);
+    const { button } = createButton({ dataset: { copyText: 'x' } });
+    Object.defineProperty(button, 'isConnected', { value: false });
+    await copyFromButton(button);
+    expect(writeText).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  test.each([true, false])(
+    'ignores a late clipboard completion after detachment (success: %s)',
+    async (succeeds) => {
+      const pending = Promise.withResolvers<void>();
+      stubClipboard(() => pending.promise);
+      const { button, label, status } = createButton({ dataset: { copyText: 'x' } });
+      const completion = copyFromButton(button);
+      Object.defineProperty(button, 'isConnected', { value: false });
+      if (succeeds) pending.resolve();
+      else pending.reject(new Error('Disk full.'));
+      await completion;
+      expect(button.dataset['copyState']).toBeUndefined();
+      expect(label.textContent).toBe('Copy');
+      expect(status.textContent).toBe('');
+      expect(vi.getTimerCount()).toBe(0);
+    },
+  );
+
+  test('does not mutate a detached control when its feedback timer finishes', async () => {
+    stubClipboard(() => Promise.resolve());
+    const { button, label } = createButton({ dataset: { copyText: 'x' } });
+    await copyFromButton(button);
+    Object.defineProperty(button, 'isConnected', { value: false });
+    vi.advanceTimersByTime(2_000);
+    expect(label.textContent).toBe('Copied');
+  });
+
   test('copies, shows Copied, and resets after two seconds', async () => {
     const writeText = vi.fn(() => Promise.resolve());
     stubClipboard(writeText);
@@ -394,6 +440,48 @@ describe('handleCopyClick', () => {
 });
 
 describe('registerCopyButtons', () => {
+  test('releases feedback timers and invalidates pending copies when the document is dismissed', async () => {
+    const completed = createButton({ dataset: { copyText: 'first' } });
+    const pendingButton = createButton({ dataset: { copyText: 'second' } });
+    const pending = Promise.withResolvers<void>();
+    stubClipboard((text) => (text === 'first' ? Promise.resolve() : pending.promise));
+    const events = new Map<string, () => void>();
+    class Observer {
+      public observe(): void {
+        /* this fixture does not mutate */
+      }
+      public disconnect(): void {
+        /* page dismissal is observed through its effects */
+      }
+      public takeRecords(): MutationRecord[] {
+        return [];
+      }
+    }
+    const root = {
+      contains: () => true,
+      querySelectorAll: () => [completed.button, pendingButton.button],
+      addEventListener: vi.fn(),
+      defaultView: {
+        MutationObserver: Observer,
+        addEventListener: (name: string, callback: () => void) => events.set(name, callback),
+      },
+    } as unknown as Document;
+    registerCopyButtons(root);
+    await copyFromButton(completed.button);
+    const completion = copyFromButton(pendingButton.button);
+    expect(vi.getTimerCount()).toBe(1);
+    events.get('pagehide')?.();
+    expect(vi.getTimerCount()).toBe(0);
+    expect(completed.label.textContent).toBe('Copy');
+    expect(completed.status.textContent).toBe('');
+    expect(completed.button.style.minWidth).toBe('');
+    pending.resolve();
+    await completion;
+    expect(pendingButton.label.textContent).toBe('Copy');
+    expect(pendingButton.button.dataset['copyState']).toBeUndefined();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   /**
    * Builds a fake document that records its click listeners.
    * @returns The document and its listeners.
@@ -402,6 +490,9 @@ describe('registerCopyButtons', () => {
     const attributes = new Set<string>();
     const listeners: unknown[] = [];
     const root = {
+      defaultView: null,
+      contains: () => true,
+      querySelectorAll: () => [],
       documentElement: {
         hasAttribute: (name: string) => attributes.has(name),
         setAttribute: (name: string) => attributes.add(name),
@@ -419,7 +510,10 @@ describe('registerCopyButtons', () => {
     registerCopyButtons(root);
     registerCopyButtons(root);
 
-    expect(listeners).toStrictEqual([['click', handleCopyClick]]);
+    expect(listeners).toStrictEqual([
+      ['click', handleCopyClick],
+      ['astro:page-load', expect.any(Function)],
+    ]);
   });
 
   test("registers on the page's document by default", () => {
@@ -428,6 +522,6 @@ describe('registerCopyButtons', () => {
 
     registerCopyButtons();
 
-    expect(listeners).toHaveLength(1);
+    expect(listeners).toHaveLength(2);
   });
 });

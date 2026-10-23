@@ -1,0 +1,65 @@
+---
+import { Check, Info, OctagonAlert, TriangleAlert } from '@lucide/astro';
+
+import type { IResultSummaryTone } from '../../contracts/index.ts';
+
+import Badge from '../badge/badge.astro';
+import Card from '../card/card.astro';
+import IconTile from '../icon-tile/icon-tile.astro';
+
+interface Props {
+  title: string;
+  description?: string | undefined;
+  tone?: IResultSummaryTone | undefined;
+  headingLevel?: 1 | 2 | 3 | 4 | 5 | 6 | undefined;
+  class?: string | undefined;
+}
+
+const { title, description, tone = 'neutral', headingLevel = 3, class: className } = Astro.props;
+const presentations = {
+  neutral: { label: 'Summary', icon: Info, variant: 'neutral' },
+  success: { label: 'Success', icon: Check, variant: 'success' },
+  warning: { label: 'Warning', icon: TriangleAlert, variant: 'warning' },
+  danger: { label: 'Danger', icon: OctagonAlert, variant: 'danger' },
+} as const;
+const { label, icon: Icon, variant } = presentations[tone];
+const Heading = `h${headingLevel}` as const;
+---
+
+<Card
+  as="section"
+  aria-label={title}
+  class={className}
+>
+  <div class="flex min-w-0 items-start gap-3">
+    <IconTile
+      size="compact"
+      tone={tone}
+    >
+      <slot name="icon">
+        <Icon />
+      </slot>
+    </IconTile>
+    <div class="min-w-0 flex-1">
+      <div class="mb-2 flex min-w-0 flex-wrap items-center gap-2">
+        <slot name="status">
+          <Badge
+            variant={variant}
+            mono={false}
+          >
+            {label}
+          </Badge>
+        </slot>
+      </div>
+      <Heading class="text-xl font-semibold wrap-anywhere">{title}</Heading>
+      {description !== undefined && (
+        <p class="mt-2 max-w-prose text-sm leading-6 text-muted wrap-anywhere">{description}</p>
+      )}
+      {Astro.slots.has('action') && (
+        <div class="mt-4 flex min-w-0 flex-wrap items-center gap-3">
+          <slot name="action" />
+        </div>
+      )}
+    </div>
+  </div>
+</Card>

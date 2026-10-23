@@ -1,0 +1,513 @@
+---
+import { Code } from '@lucide/astro';
+import Badge from 'jg-personal-astro-ui/badge';
+import Button from 'jg-personal-astro-ui/button';
+import Breadcrumb from 'jg-personal-astro-ui/breadcrumb';
+import Callout from 'jg-personal-astro-ui/callout';
+import Container from 'jg-personal-astro-ui/container';
+import type {
+  IDocumentationNavigationGroup,
+  IDocumentationOutlineItem,
+} from 'jg-personal-astro-ui/contracts';
+import DocumentationOutline from 'jg-personal-astro-ui/documentation-outline';
+import DocumentationShell from 'jg-personal-astro-ui/documentation-shell';
+import InlineCode from 'jg-personal-astro-ui/inline-code';
+import IconTile from 'jg-personal-astro-ui/icon-tile';
+import Kbd from 'jg-personal-astro-ui/kbd';
+import PageHeader from 'jg-personal-astro-ui/page-header';
+import PageNavigation from 'jg-personal-astro-ui/page-navigation';
+import Prose from 'jg-personal-astro-ui/prose';
+import ResultSummary from 'jg-personal-astro-ui/result-summary';
+import Section from 'jg-personal-astro-ui/section';
+import Step from 'jg-personal-astro-ui/step';
+import Steps from 'jg-personal-astro-ui/steps';
+import Table from 'jg-personal-astro-ui/table';
+import Timeline from 'jg-personal-astro-ui/timeline';
+import TimelineItem from 'jg-personal-astro-ui/timeline-item';
+
+import GalleryLayout from '../layouts/gallery-layout.astro';
+
+const documentationNavigation: IDocumentationNavigationGroup[] = [
+  {
+    label: 'Reference',
+    items: [
+      { href: '/foundations/', label: 'Foundations and shared design tokens' },
+      { href: '/documentation/', label: 'Documentation and component composition' },
+      {
+        href: '/technical-content/',
+        label: 'Technical content with a deliberately long navigation label',
+      },
+    ],
+  },
+  { label: 'Empty group', items: [] },
+];
+const documentationOutline: IDocumentationOutlineItem[] = [
+  {
+    href: '#reference-introduction',
+    label: 'Reference introduction',
+    children: [
+      {
+        href: '#reference-configuration',
+        label: 'Configuration and supported integration options',
+        children: [{ href: '#reference-boundaries', label: 'Integration boundaries' }],
+      },
+    ],
+  },
+  { href: '#reference-next', label: 'Next steps' },
+];
+---
+
+<GalleryLayout title="Documentation">
+  <div data-example="page-header">
+    <PageHeader
+      title="Documentation"
+      eyebrow="Reading and reference"
+      lede="Readable prose, clear hierarchy, and wide content in a narrow viewport."
+    />
+  </div>
+  <Container
+    width="prose"
+    class="pb-12"
+  >
+    <section
+      class="gallery-example"
+      data-document-header
+      aria-label="Document header options"
+    >
+      <PageHeader
+        title="Astro component API"
+        titleVariant="document"
+        titleFont="mono"
+        eyebrow="Reference"
+        lede="Props, examples, and the component contracts."
+        border={false}
+      >
+        <IconTile
+          slot="leading"
+          size="header"
+        >
+          <Code aria-hidden="true" />
+        </IconTile>
+        <time
+          slot="metadata"
+          datetime="2026-10-22"
+        >
+          Updated October 22, 2026
+        </time>
+        <span slot="metadata">API reference</span>
+        <div class="mt-6">
+          <Button href="/technical-content/">Read source examples</Button>
+        </div>
+      </PageHeader>
+    </section>
+    <section
+      class="gallery-example"
+      data-document-prose
+      aria-labelledby="document-prose-title"
+    >
+      <h2 id="document-prose-title">Document typography</h2>
+      <Prose
+        titleVariant="document"
+        titleFont="mono"
+      >
+        <h1>Component reference headings</h1>
+        <h2>Document section heading</h2>
+        <p>Document body copy retains the sans font while headings can use mono.</p>
+        <h3>Document subsection heading</h3>
+        <div data-nested-sans>
+          <Prose
+            titleVariant="document"
+            titleFont="sans"
+          >
+            <h2>Nested sans heading</h2>
+            <p>Font choices stay within their owning scope.</p>
+          </Prose>
+        </div>
+        <p data-after-nested>Outer prose keeps its own typography.</p>
+      </Prose>
+    </section>
+    <div
+      class="gallery-example"
+      data-example="breadcrumb"
+    >
+      <Breadcrumb
+        items={[
+          { href: '/', name: 'Gallery' },
+          { href: '/documentation/', name: 'Documentation' },
+        ]}
+      />
+    </div>
+    <section
+      class="gallery-example"
+      data-example="prose"
+      aria-labelledby="prose-title"
+    >
+      <h2 id="prose-title">Rich prose</h2>
+      <Prose>
+        <h3>One reading column</h3>
+        <p>
+          Documentation joins explanation with <strong>important details</strong>, <em>emphasis</em>
+          , and <a href="/technical-content/">useful examples</a>. The shared type system keeps
+          paragraphs readable in both themes.
+        </p>
+        <ul>
+          <li>Explain the behavior and its constraints.</li>
+          <li>Show a small working example.</li>
+        </ul>
+        <blockquote>
+          <p>Keep content and its presentation owned by the appropriate layer.</p>
+        </blockquote>
+        <hr />
+        <h4>Paths and keyboard notation</h4>
+        <p data-example="inline-code">
+          <InlineCode code="packages/jg-personal-astro-ui/src/components/documentation/very-long-reference-name.ts" />
+        </p>
+        <p data-example="kbd">
+          Open search with <Kbd>Ctrl</Kbd> + <Kbd>K</Kbd>.
+        </p>
+      </Prose>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="callout"
+      aria-labelledby="callouts-title"
+    >
+      <h2 id="callouts-title">Callouts</h2>
+      <div class="grid gap-4">
+        <Callout
+          title="Note"
+          role="note"
+        >
+          <p>Supplementary context for the reader.</p>
+        </Callout>
+        <Callout
+          variant="tip"
+          title="Tip"
+        >
+          <p>A practical shortcut.</p>
+        </Callout>
+        <Callout
+          variant="warning"
+          title="Warning"
+        >
+          <p>Check the selected environment before proceeding.</p>
+        </Callout>
+        <Callout
+          variant="danger"
+          title="Danger"
+        >
+          <p>This operation needs deliberate attention.</p>
+        </Callout>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="table"
+      aria-labelledby="table-title"
+    >
+      <h2 id="table-title">Wide reference table</h2>
+      <Table
+        caption="Example configuration"
+        scrollLabel="Configuration columns"
+        stickyFirstColumn
+      >
+        <thead>
+          <tr>
+            <th scope="col">Option</th>
+            <th scope="col">Default</th>
+            <th scope="col">Purpose</th>
+            <th scope="col">Supported environments</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">theme</th>
+            <td>system</td>
+            <td>Follows the selected color preference</td>
+            <td>Chromium, Firefox, and WebKit</td>
+          </tr>
+          <tr>
+            <th scope="row">content</th>
+            <td>empty</td>
+            <td>Caller-owned content and labels</td>
+            <td>Static Astro output</td>
+          </tr>
+        </tbody>
+      </Table>
+    </section>
+  </Container>
+  <div data-example="documentation-shell">
+    <DocumentationShell
+      navigation={documentationNavigation}
+      currentPath="/documentation/"
+      navigationLabel="Reference pages"
+    >
+      <div
+        slot="header"
+        class="min-w-0"
+      >
+        <h2 class="text-2xl font-bold">Documentation composition</h2>
+        <p class="mt-2 text-muted">Routes, headings, and content belong to the caller.</p>
+      </div>
+      <DocumentationOutline
+        slot="outline"
+        label="Reference contents"
+        items={documentationOutline}
+      />
+      <Prose titleVariant="document">
+        <h3 id="reference-introduction">Reference introduction</h3>
+        <p>
+          A reading frame composes navigation, prose, and an outline without adding a main landmark.
+        </p>
+        <h4 id="reference-configuration">Configuration and supported integration options</h4>
+        <p>Navigation labels wrap and every heading retains its original fragment identifier.</p>
+        <h5 id="reference-boundaries">Integration boundaries</h5>
+        <p>averylongunbrokenreferenceidentifierthatmustremainreadableonanarrowphoneviewport</p>
+        <h3 id="reference-next">Next steps</h3>
+        <p>The footer holds the caller's adjacent-page links and supporting context.</p>
+      </Prose>
+      <PageNavigation
+        slot="footer"
+        previous={{
+          href: '/foundations/',
+          label: 'Shared foundations',
+          description: 'Tokens and component surfaces.',
+        }}
+        next={{
+          href: '/technical-content/',
+          label: 'Technical examples with a deliberately long title',
+          description: 'Source code, diffs, and commands.',
+        }}
+      />
+    </DocumentationShell>
+  </div>
+  <div data-example="documentation-outline">
+    <DocumentationShell>
+      <DocumentationOutline
+        slot="outline"
+        label="Minimal reference contents"
+        items={[{ href: '#minimal-reference', label: 'Minimal reference' }]}
+      />
+      <h2
+        id="minimal-reference"
+        class="text-xl font-bold"
+      >
+        Minimal reference
+      </h2>
+      <p class="mt-4">This frame has an outline and no page navigation groups.</p>
+    </DocumentationShell>
+    <DocumentationOutline
+      items={[]}
+      label="Empty outline"
+    />
+  </div>
+  <DocumentationShell
+    navigation={documentationNavigation}
+    navigationLabel="Unselected reference pages"
+  >
+    <p>A frame with page groups and no outline.</p>
+  </DocumentationShell>
+  <DocumentationShell
+    navigation={[{ label: 'Empty group', items: [] }]}
+    navigationLabel="Empty reference pages"
+  >
+    <p>A frame without navigation or an outline.</p>
+  </DocumentationShell>
+  <Container class="pb-12">
+    <section
+      class="gallery-example grid gap-6"
+      data-example="page-navigation"
+      aria-label="Adjacent page recipes"
+    >
+      <PageNavigation
+        label="Previous page only"
+        previous={{
+          href: '/foundations/',
+          label: 'Previous reference only',
+          description: 'Start with the shared tokens.',
+        }}
+      />
+      <PageNavigation
+        label="Next page only"
+        next={{
+          href: '/technical-content/',
+          label: 'averylongunbrokenadjacentpagetitlethatmustwrapwithoutclipping',
+        }}
+      />
+      <PageNavigation label="Empty page navigation" />
+    </section>
+  </Container>
+  <Container class="pb-12">
+    <section
+      class="gallery-example"
+      data-example="steps"
+      aria-labelledby="steps-title"
+    >
+      <h2 id="steps-title">Supplied process steps</h2>
+      <Steps label="Release preparation">
+        <Step
+          title="Inspect source"
+          number="01"
+          status="complete"
+        >
+          <p>Review the caller-supplied source.</p>
+        </Step>
+        <Step
+          title="Verify output"
+          number={2}
+          status="current"
+        >
+          <span slot="title">
+            Verify output <span class="text-xs font-normal text-muted">Supplied metadata</span>
+          </span>
+          <p slot="content">
+            averylongunbrokenstepdescriptionthatmustwraponanarrowphonewithoutoverflow
+          </p>
+          <Button
+            slot="action"
+            href="/technical-content/#conversation-title"
+            variant="outline"
+          >
+            Inspect conversation example
+          </Button>
+        </Step>
+        <Step
+          title="Publish later"
+          number="04"
+          status="pending"
+        />
+        <Step
+          title="Recover failure"
+          status="error"
+        >
+          <p>Display an error supplied by the caller.</p>
+        </Step>
+      </Steps>
+      <div
+        class="mt-8"
+        data-example="step"
+      >
+        <Steps label="Minimal process">
+          <Step title="No optional fields" />
+        </Steps>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="timeline"
+      aria-labelledby="timeline-title"
+    >
+      <h2 id="timeline-title">Supplied timeline order and dates</h2>
+      <Timeline label="Release history">
+        <TimelineItem
+          date="October 23, 2026"
+          dateTime="2026-10-23"
+          label="Release review"
+          status="current"
+        >
+          <span slot="label">
+            Release review <span class="text-xs font-normal text-muted">Supplied metadata</span>
+          </span>
+          <p slot="content">The caller chose newest-first order.</p>
+          <Button
+            slot="action"
+            href="#steps-title"
+            variant="outline"
+          >
+            Inspect process steps
+          </Button>
+        </TimelineItem>
+        <TimelineItem
+          date="October 22, 2026"
+          dateTime="2026-10-22"
+          label="Implementation"
+          status="complete"
+        >
+          <p>Keep the supplied date and label.</p>
+        </TimelineItem>
+        <TimelineItem
+          date="Later"
+          label="Next iteration"
+          status="pending"
+        >
+          <p>averylongunbrokentimelinedescriptionthatmustwraponanarrowphonewithoutoverflow</p>
+        </TimelineItem>
+        <TimelineItem
+          date="Earlier attempt"
+          label="Recovery example"
+          status="error"
+        />
+      </Timeline>
+      <div
+        class="mt-8"
+        data-example="timeline-item"
+      >
+        <Timeline label="Minimal timeline">
+          <TimelineItem
+            date="Supplied display date"
+            label="Undated entry"
+          />
+        </Timeline>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="result-summary"
+      aria-labelledby="summaries-title"
+    >
+      <h2 id="summaries-title">Result summaries</h2>
+      <div class="grid min-w-0 gap-4 lg:grid-cols-2">
+        <ResultSummary
+          title="Neutral result"
+          description="A caller-owned summary."
+        />
+        <ResultSummary
+          title="Successful result"
+          tone="success"
+          description="The supplied checks completed."
+        />
+        <ResultSummary
+          title="Review warning"
+          tone="warning"
+          description="averylongunbrokenresultdescriptionthatmustremainreadableonanarrowphoneviewport"
+        />
+        <ResultSummary
+          title="Failed result"
+          tone="danger"
+        />
+      </div>
+      <h3 class="mt-8 mb-4 text-xl font-semibold">Nested summary context</h3>
+      <ResultSummary
+        title="Nested summary"
+        headingLevel={4}
+        tone="success"
+      >
+        <Code slot="icon" />
+        <Badge
+          slot="status"
+          variant="outline"
+        >
+          Reviewed
+        </Badge>
+        <Button
+          slot="action"
+          href="/technical-content/#file-preview-title"
+          variant="outline"
+        >
+          Inspect file example
+        </Button>
+      </ResultSummary>
+    </section>
+  </Container>
+  <div data-example="section">
+    <Section
+      id="reference-section"
+      title="A separate section"
+      eyebrow="Composition"
+      layout="split"
+      lede="The same section spacing used by the personal websites."
+    >
+      <p class="text-muted">Section content remains supplied by the site.</p>
+    </Section>
+  </div>
+</GalleryLayout>

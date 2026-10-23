@@ -3,6 +3,7 @@ import {
   createHighlighter,
   type BundledLanguage,
   type Highlighter,
+  type ShikiTransformer,
   type ThemedToken,
 } from 'shiki';
 
@@ -73,12 +74,18 @@ export const toSupportedLanguage = (language: string): string => {
  * Highlights code as HTML: a pre element whose tokens are coloured with --jg-syntax-* variables.
  * @param code The code.
  * @param language The language, such as 'ts'.
+ * @param transformers Optional transforms for the owning component's generated markup.
  * @returns A promise that resolves to the HTML.
  */
-export const highlightToHtml = async (code: string, language: string): Promise<string> =>
+export const highlightToHtml = async (
+  code: string,
+  language: string,
+  transformers: ShikiTransformer[] = [],
+): Promise<string> =>
   (await getHighlighter()).codeToHtml(code.replace(/\n$/, ''), {
     lang: toSupportedLanguage(language),
     theme: SYNTAX_THEME,
+    transformers,
   });
 
 /**

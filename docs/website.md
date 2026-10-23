@@ -40,6 +40,8 @@ The build fails when the catalog and `packages/` disagree: every published packa
 Both package pages carry a "Copy page" button beside their breadcrumb, which copies the page's [Markdown version](#markdown-versions-and-files-for-agents), fetched when clicked. When the copy fails, its guidance links to the Markdown file, so the text is a click away.
 | `/404.html` | A page-not-found page, `noindex` and without a canonical URL, linking back to the home page and the packages |
 
+The shared DocumentationShell owns the reading grid, and DocumentationOutline renders the supplied README/recipe headings and API groups. The outline is a sticky sidebar on desktop and a native disclosure above the content on narrow screens. Each page renders one outline navigation landmark; the website retains heading extraction, TypeDoc rendering, source links, and every fragment ID. PageNavigation links from a package to its recipes and back at the end of the reading column. The header's existing Recipes and Back links remain available. Package and recipe titles use the shared mono title styling.
+
 The home page's sections, in order:
 
 1. **The hero:** what coding agents gain, the two actions "Set up your agent" and "View all packages", and the packages as icon tiles, from `package-grid`. It shows the first 8, so the hero keeps its shape as packages are added, and below them a "View all <count> packages" link, with a down arrow, to the packages section.
@@ -137,6 +139,7 @@ The sitemap lists the HTML pages only. A recipes page's description is the sente
 - **Every route,** the public pages and the 404 page: the speculation rules, each page's Markdown version against its file, no axe violations in either theme, no overflow at 320 px, and no stacked dividers at 390 and 1280 px. A stacked divider is two horizontal hairlines within 48 px of each other that overlap, counting top and bottom borders without side borders, and not rows of one table, list, or code block.
 - **Navigation:** at most 8 hero tiles and the "View all <count> packages" link, and the progress bar showing while a page is held for 600 ms and hidden after going back. Chromium fetches a hovered link's page through the speculation rules, which Playwright's routing can't intercept, so a proxy in front of the preview holds the response. With reduced motion, the bar stands still and transitions are instant.
 - **Keyboard and remembered choices:** the skip link, the theme across reloads and pages, the mobile menu with Escape, and the package manager tabs by keyboard.
+- **Documentation:** package/API and recipe outline anchors clear the sticky header, adjacent-page links work by keyboard, and native disclosures and links remain available without JavaScript. Phone and desktop layouts run in both themes.
 - **Search:** opening from the button and the shortcuts, results from the index, and focus returning on Escape.
 - **Copying:** code windows in READMEs and recipes copy exactly their code, "Copy page" copies exactly the Markdown version and links to it when that fails, the agent setup's install command copies exactly, and the guidance when the clipboard is missing or fails. The setup links' destinations and new-tab notice are checked without loading jg-skills, so the suite doesn't depend on another site.
 
