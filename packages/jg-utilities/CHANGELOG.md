@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.1
+
+### Fixed
+
+- `createByteCache` copies bytes into new memory, with `new Uint8Array(bytes)`, where it used `bytes.slice()`, which for a Node.js `Buffer` is a view of the same memory: a `Buffer` passed to `set` stayed linked to the cached value, as did the copies `get` and a retention's `copyBytes` returned. What it returns is now always a `Uint8Array`, never a `Buffer`.
+
 ## 1.7.0
 
 ### Added

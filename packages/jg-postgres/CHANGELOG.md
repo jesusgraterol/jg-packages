@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.1
+
+### Fixed
+
+- `admitUsage`'s TSDoc lists `TRANSACTION_OUTCOME_UNKNOWN`, which its transaction rejects with when the connection breaks during `COMMIT`, and the README says the action may or may not have been recorded then.
+- The verification challenges' `issue` and `resend` TSDoc list `TRANSACTION_OUTCOME_UNKNOWN`, which their transactions reject with in the same case.
+
 ## 0.6.0
 
 ### Added

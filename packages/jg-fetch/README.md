@@ -93,7 +93,7 @@ const bytes = await readResponseBytes(response, 10_000_000); // RESPONSE_TOO_LAR
 const text = new TextDecoder().decode(bytes);
 ```
 
-It refuses a body whose content-length is over the limit before reading it, and otherwise stops, cancelling the rest, as soon as the count passes it. It throws an `Exception` with `RESPONSE_TOO_LARGE`, or `INVALID_OPTIONS` for a limit that isn't a positive safe integer.
+It refuses a body whose content-length is over the limit before reading it, and otherwise stops, cancelling the rest, as soon as the count passes it. However the read ends, including when the body's stream fails, it leaves the body unlocked, so `response.body.locked` is false. It throws an `Exception` with `RESPONSE_TOO_LARGE`, or `INVALID_OPTIONS` for a limit that isn't a positive safe integer.
 
 ### Timeouts and retries
 

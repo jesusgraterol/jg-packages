@@ -211,7 +211,7 @@ const admission = await admitUsage(postgres, {
 // { outcome: 'accepted' | 'cooldown' | 'limit', retryAt: an ISO timestamp, or null }
 ```
 
-Concurrent calls queue on transaction advisory locks, the scope's then the actor's, so two can never both pass, and every comparison uses the database's clock. The accepted actions go in a `usage_event` table:
+Concurrent calls queue on transaction advisory locks, the scope's then the actor's, so two can never both pass, and every comparison uses the database's clock. Like `transaction`, it rejects with `TRANSACTION_OUTCOME_UNKNOWN` when the connection breaks during `COMMIT`, and the action may or may not have been recorded. The accepted actions go in a `usage_event` table:
 
 ```sql
 CREATE TABLE usage_event (

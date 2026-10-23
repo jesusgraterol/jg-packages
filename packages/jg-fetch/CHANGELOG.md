@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+### Fixed
+
+- `readResponseBytes`, and `request`'s bounded reads, release the body's reader however the read ends, so a body cancelled past the limit, or whose stream failed, such as on an aborted fetch, is no longer left locked: `response.body.locked` is false.
+
 ## 0.5.0
 
 ### Added

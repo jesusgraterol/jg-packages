@@ -24,6 +24,35 @@ describe('createByteCache', () => {
     expect(cache.get('missing')).toBeUndefined();
   });
 
+  test('copies a Buffer it stores, so changing the Buffer changes nothing cached', () => {
+    const cache = createByteCache({ maxBytes: 8 });
+    const original = Buffer.from([1, 2]);
+
+    expect(cache.set('a', original)).toBe(true);
+    original[0] = 9;
+
+    expect(cache.get('a')).toStrictEqual(bytesOf(1, 2));
+    expect(cache.retain('a')?.copyBytes()).toStrictEqual(bytesOf(1, 2));
+  });
+
+  test('returns copies of a stored Buffer, so changing them changes neither it nor the cache', () => {
+    const cache = createByteCache({ maxBytes: 8 });
+    const original = Buffer.from([1, 2]);
+    cache.set('a', original);
+
+    const read = cache.get('a');
+    const retention = cache.retain('a');
+    const retained = retention?.copyBytes();
+    if (read !== undefined && retained !== undefined) {
+      read[0] = 9;
+      retained[1] = 9;
+    }
+
+    expect(cache.get('a')).toStrictEqual(bytesOf(1, 2));
+    expect(retention?.copyBytes()).toStrictEqual(bytesOf(1, 2));
+    expect(original).toStrictEqual(Buffer.from([1, 2]));
+  });
+
   test('evicts the least recently used entries until the bytes fit', () => {
     const cache = createByteCache({ maxBytes: 5 });
     cache.set('a', bytesOf(1, 1));
