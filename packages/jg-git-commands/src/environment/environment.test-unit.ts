@@ -8,6 +8,7 @@ import { createGitEnvironment } from './environment.js';
 const NON_INTERACTIVE = {
   GIT_TERMINAL_PROMPT: '0',
   GIT_ASKPASS: '',
+  GCM_INTERACTIVE: 'never',
   GIT_OPTIONAL_LOCKS: '0',
   GIT_NO_REPLACE_OBJECTS: '1',
   GIT_NO_LAZY_FETCH: '1',
@@ -39,6 +40,7 @@ describe('createGitEnvironment', () => {
         GIT_TERMINAL_PROMPT: '1',
         SSH_ASKPASS: '/bin/ssh-askpass',
         SSH_ASKPASS_REQUIRE: 'force',
+        GCM_INTERACTIVE: 'always',
         GIT_ALLOW_PROTOCOL: 'file:ext',
         LC_ALL: 'de_DE.UTF-8',
         LANG: 'de_DE.UTF-8',
@@ -56,6 +58,7 @@ describe('createGitEnvironment', () => {
         git_dir: 'C:\\elsewhere\\.git',
         Git_Config_Parameters: "'core.askpass'='C:\\askpass.exe'",
         ssh_askpass: 'C:\\ssh-askpass.exe',
+        Gcm_Interactive: 'always',
         Lc_All: 'de_DE.UTF-8',
         lang: 'de_DE.UTF-8',
       },

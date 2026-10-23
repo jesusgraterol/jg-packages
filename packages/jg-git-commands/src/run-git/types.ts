@@ -21,12 +21,13 @@ export type IRunGitOptions<TEncoding extends IProcessOutputEncoding = 'utf-8'> =
   isolateConfig?: boolean | undefined;
 
   // whether the configured credential helpers run, such as for authenticated HTTPS; they still
-  // can't use an askpass program or the terminal. Defaults to false, which empties their list
+  // can't use an askpass program or the terminal, and Git Credential Manager can't open a sign-in
+  // window. Defaults to false, which empties their list
   useCredentialHelpers?: boolean | undefined;
 
   // more variables, such as GIT_SSL_CAINFO, set after the inherited Git variables are removed; an
-  // undefined value unsets one. GIT_ASKPASS, GIT_TERMINAL_PROMPT, SSH_ASKPASS, and
-  // SSH_ASKPASS_REQUIRE are ignored, so nothing the caller passes lets a prompt through. Set
+  // undefined value unsets one. GIT_ASKPASS, GIT_TERMINAL_PROMPT, GCM_INTERACTIVE, SSH_ASKPASS,
+  // and SSH_ASKPASS_REQUIRE are ignored, so nothing the caller passes lets a prompt through. Set
   // GIT_ALLOW_PROTOCOL to allow a transport, such as `file` or `https`, which every command
   // refuses by default
   env?: NodeJS.ProcessEnv | undefined;

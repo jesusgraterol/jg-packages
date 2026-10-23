@@ -30,6 +30,23 @@ const IS_WINDOWS = process.platform === 'win32';
 // the credentials the credential helper answers with
 const BASIC_CREDENTIALS = `Basic ${Buffer.from('jg:secret').toString('base64')}`;
 
+/*
+ * The seconds a credential test's git command may run. The first one starts Git's HTTP helper
+ * cold, which took over 10 seconds on a loaded Windows runner, while a git that waited on a
+ * prompt would still fail with PROCESS_TIMED_OUT, its process tree stopped, inside Vitest's
+ * 30-second test timeout.
+ */
+const CREDENTIAL_COMMAND_TIMEOUT_SECONDS = 20;
+
+/*
+ * The retries of a temporary directory's removal. Windows can keep a file busy for a moment after
+ * the processes using it have exited, such as while a stopped git's handles close or an antivirus
+ * scan reads what git wrote, and rm then fails with EBUSY. rm retries only on such busy or locked
+ * file errors, waiting 100 ms longer each time, for about 5.5 seconds in all, so a process that
+ * never exits still fails the cleanup.
+ */
+const REMOVAL_MAX_RETRIES = 10;
+
 /**
  * Starts a server on 127.0.0.1 and a free port that answers every request with a handler.
  * @param handler What answers each request.
@@ -73,7 +90,7 @@ describe('runGit', () => {
 
   afterEach(async () => {
     vi.unstubAllEnvs();
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: REMOVAL_MAX_RETRIES });
   });
 
   test('resolves with the exit code and the output, whatever the exit code', async () => {
@@ -192,7 +209,7 @@ describe('runGit', () => {
     const listRefs = (options: Omit<IRunGitOptions, 'cwd'> = {}): Promise<IProcessResult> =>
       runGit(['ls-remote', '--end-of-options', url], {
         cwd: repository,
-        timeoutSeconds: 10,
+        timeoutSeconds: CREDENTIAL_COMMAND_TIMEOUT_SECONDS,
         ...options,
         env: { ...homeEnv, ...options.env },
       });
@@ -381,7 +398,7 @@ describe('runGit', () => {
       await mkdir(bin);
       await writeFile(
         join(bin, 'git'),
-        '#!/bin/sh\nprintf "%s|%s|%s|%s|%s" "$GIT_TERMINAL_PROMPT" "$GIT_ASKPASS" "${SSH_ASKPASS-unset}" "$GIT_SSL_CAINFO" "$*"\n',
+        '#!/bin/sh\nprintf "%s|%s|%s|%s|%s|%s" "$GIT_TERMINAL_PROMPT" "$GIT_ASKPASS" "${SSH_ASKPASS-unset}" "$GCM_INTERACTIVE" "$GIT_SSL_CAINFO" "$*"\n',
         { mode: 0o755 },
       );
 
@@ -392,12 +409,13 @@ describe('runGit', () => {
           GIT_TERMINAL_PROMPT: '1',
           GIT_ASKPASS: '/bin/askpass',
           SSH_ASKPASS: '/bin/askpass',
+          GCM_INTERACTIVE: 'always',
           GIT_SSL_CAINFO: '/etc/ssl/internal.pem',
         },
       });
 
       expect(result.stdout).toBe(
-        '0||unset|/etc/ssl/internal.pem|-c core.fsmonitor= -c core.askPass= -c core.pager=cat -c color.ui=false -c submodule.recurse=false -c credential.helper= --no-pager status',
+        '0||unset|never|/etc/ssl/internal.pem|-c core.fsmonitor= -c core.askPass= -c core.pager=cat -c color.ui=false -c submodule.recurse=false -c credential.helper= --no-pager status',
       );
     },
   );

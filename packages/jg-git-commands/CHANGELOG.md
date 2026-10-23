@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0
+
+### Changed
+
+- Every command runs with `GCM_INTERACTIVE=never`, so Git Credential Manager, which `useCredentialHelpers: true` lets run, fails instead of opening a sign-in window; it still answers with the credentials it has stored. `env` ignores `GCM_INTERACTIVE` in any case, as it does the other prompt variables. A command that used to wait for someone to sign in now fails.
+
+### Fixed
+
+- On Windows, a command stopped for its timeout or its signal rejects only once every process it started has exited, with jg-process 1.6.2, so its working directory can be removed at once. A helper such as `git-remote-https` could still hold it, and removing it failed with `EBUSY`.
+
 ## 0.3.1
 
 ### Fixed
