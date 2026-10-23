@@ -1,18 +1,20 @@
 import { UNKNOWN_ERROR_CODE } from '../shared/constants.js';
 import type { IJsonValue } from '../shared/types.js';
+import { stringifyWithinDepth } from '../shared/utilities.js';
 import { EXCEPTION_BRAND, EXCEPTION_SEVERITIES } from './constants.js';
 import { redactExceptionParts } from './redaction.js';
 import type { IExceptionJson, IExceptionOptions, IExceptionSeverity } from './types.js';
 
 /**
  * Makes data safe to serialize by passing it through JSON. A type can't rule out an object that
- * refers back to itself, or a value cast from `any`, so whatever JSON can't hold becomes `null`.
+ * refers back to itself, data nested more than 256 levels deep, or a value cast from `any`, so
+ * whatever JSON can't hold, or would hold only while the call stack lasts, becomes `null`.
  * @param data The exception's data.
  * @returns The data as JSON would carry it, or `null` when there's none or it can't be serialized.
  */
 const toSerializableData = (data: IJsonValue | undefined): IJsonValue => {
   try {
-    const serialized = JSON.stringify(data);
+    const serialized = stringifyWithinDepth(data);
     return serialized === undefined ? null : (JSON.parse(serialized) as IJsonValue);
   } catch {
     return null;
@@ -118,8 +120,8 @@ export class Exception extends Error {
 
   /**
    * Converts the exception to a plain object, which `JSON.stringify` calls.
-   * @returns The name, code, message, and data, with `null` for data that is missing or can't be
-   * serialized.
+   * @returns The name, code, message, and data, with `null` for data that is missing, can't be
+   * serialized, or is nested more than 256 levels deep.
    * @example
    * import { Exception } from 'jg-exception';
    *

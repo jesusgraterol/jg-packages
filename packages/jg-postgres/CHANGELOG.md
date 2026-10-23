@@ -6,6 +6,7 @@
 
 - `admitUsage`'s TSDoc lists `TRANSACTION_OUTCOME_UNKNOWN`, which its transaction rejects with when the connection breaks during `COMMIT`, and the README says the action may or may not have been recorded then.
 - The verification challenges' `issue` and `resend` TSDoc list `TRANSACTION_OUTCOME_UNKNOWN`, which their transactions reject with in the same case.
+- The error log stores a payload, or user info, nested up to 256 levels deep, and leaves out deeper ones, as it does an oversized payload, whatever is left of the call stack. Before, whether data a few thousand levels deep was stored depended on the stack.
 
 ## 0.6.0
 

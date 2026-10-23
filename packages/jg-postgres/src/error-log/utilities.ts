@@ -14,6 +14,13 @@ import type { IErrorLogEntry, IErrorLogOptions } from './types.js';
 // what a cut message ends with
 const TRUNCATION_SUFFIX = ' [truncated]';
 
+/*
+ * The most levels of objects and arrays a stored value may hold, as in jg-exception. Data nested
+ * deeper is left out like data that can't be serialized, so whether it's stored never depends on
+ * how much of the call stack is left.
+ */
+const MAX_NESTING_DEPTH = 256;
+
 // one entry, as its row stores it
 export type IErrorLogRow = {
   origin: string;
@@ -59,12 +66,15 @@ export const areOptionsValid = ({
  * Copies JSON-like data so PostgreSQL's jsonb takes it: an object or array it's already inside is
  * left out, as JSON.stringify would leave out a function, null characters are removed from keys
  * and strings, a BigInt becomes its digits, and a value with toJSON, such as a Date, is replaced by
- * what it returns.
+ * what it returns, in its place.
  * @param value The data.
  * @param ancestors The objects the value is inside.
+ * @param depth How many objects and arrays the value is inside, 0 for the data itself.
  * @returns The copy.
+ * @throws
+ * - The value is nested too deeply to store.
  */
-const toStorableJson = (value: unknown, ancestors: Set<object> = new Set()): unknown => {
+const toStorableJson = (value: unknown, ancestors: Set<object>, depth: number): unknown => {
   if (typeof value === 'string') {
     return value.replaceAll('\0', '');
   }
@@ -79,15 +89,20 @@ const toStorableJson = (value: unknown, ancestors: Set<object> = new Set()): unk
   }
   const { toJSON } = value as { toJSON?: unknown };
   if (typeof toJSON === 'function') {
-    return toStorableJson((toJSON as () => unknown).call(value), ancestors);
+    return toStorableJson((toJSON as () => unknown).call(value), ancestors, depth);
+  }
+  // the copy stops at a fixed depth rather than where the call stack runs out; serializeObject
+  // catches this
+  if (depth >= MAX_NESTING_DEPTH) {
+    throw new RangeError('The value is nested too deeply to store.');
   }
   ancestors.add(value);
   const copy = Array.isArray(value)
-    ? value.map((item: unknown) => toStorableJson(item, ancestors))
+    ? value.map((item: unknown) => toStorableJson(item, ancestors, depth + 1))
     : Object.fromEntries(
         Object.entries(value).map(([key, field]) => [
           key.replaceAll('\0', ''),
-          toStorableJson(field, ancestors),
+          toStorableJson(field, ancestors, depth + 1),
         ]),
       );
   ancestors.delete(value);
@@ -96,7 +111,8 @@ const toStorableJson = (value: unknown, ancestors: Set<object> = new Set()): unk
 
 /**
  * Serializes an object for a jsonb column, or gives null when it isn't a plain object, can't be
- * serialized, or takes more than the bytes allowed.
+ * serialized, is nested more than `MAX_NESTING_DEPTH` levels deep, or takes more than the bytes
+ * allowed.
  * @param value The object.
  * @param maxBytes The most bytes its JSON may take.
  * @returns The JSON, or null.
@@ -106,10 +122,11 @@ export const serializeObject = (value: unknown, maxBytes: number): string | null
     return null;
   }
   try {
-    const json = JSON.stringify(toStorableJson(value));
+    const json = JSON.stringify(toStorableJson(value, new Set(), 0));
     return Buffer.byteLength(json, 'utf8') <= maxBytes ? json : null;
   } catch {
-    // data so deeply nested that copying it overflows the stack is left out, like oversized data
+    // data that can't be copied, such as data nested too deeply or a getter that throws, is left
+    // out, like oversized data
     return null;
   }
 };

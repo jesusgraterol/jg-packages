@@ -21,7 +21,9 @@ export type IExceptionOptions = {
 
   // values to replace with `[redacted]`, as written and URL-encoded, such as a token the cause may
   // hold. They're redacted from the message, the data, and every cause, which becomes a copy that
-  // keeps its name, code, and plain fields without running the cause's own code. Nothing keeps them
+  // keeps its name, code, and plain fields without running the cause's own code. Nothing keeps them.
+  // The copies go 256 levels deep: data nested deeper becomes `null`, and causes further down the
+  // chain are left out
   redact?: readonly string[] | undefined;
 
   // how serious the failure is, set where an app throws it. Packages never set it, and it's never

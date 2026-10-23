@@ -74,7 +74,7 @@ An app's throw sites can also say how serious a failure is, for the code that re
 throw new Exception('The user was not found.', { code: 'USER_NOT_FOUND', severity: 'expected' });
 ```
 
-`data` must be a JSON value, so a `BigInt`, a `Date`, or a class instance is a type error. An object's values may be `undefined`, so `{ email }` works when `email` is optional. An interface has no index signature, so pass an interface-typed value as `{ ...user }`, or declare its type with `type`. Whatever can't be serialized at runtime, such as an object that refers back to itself, becomes `null` in `toJSON()`, and `NaN` and `Infinity` become `null` as in any JSON.
+`data` must be a JSON value, so a `BigInt`, a `Date`, or a class instance is a type error. An object's values may be `undefined`, so `{ email }` works when `email` is optional. An interface has no index signature, so pass an interface-typed value as `{ ...user }`, or declare its type with `type`. Whatever can't be serialized at runtime, such as an object that refers back to itself or data nested more than 256 levels deep, becomes `null` in `toJSON()`, and `NaN` and `Infinity` become `null` as in any JSON.
 
 Extract a readable message from anything a `catch` block receives: strings, errors with their causes, ZodErrors, and objects with a `message`, `error`, or `reason`:
 
@@ -124,7 +124,7 @@ try {
 ```
 
 - **Pass whole secrets.** Each value is matched as written and URL-encoded, so a token in a request URL is found too. A fragment as short as `at` would also rewrite names and every stack frame. A value transformed another way, such as base64-encoded or hashed, isn't found, so pass each form a cause may hold.
-- **What it costs:** each cause becomes a copy that keeps its name, code, message, stack, and plain fields, redacted, and leaves out fields holding objects, such as an HTTP client's `config`. The copy runs none of the cause's own code, such as a custom inspect hook, which could hold a value no redaction reaches. So `instanceof` the cause's original class no longer holds: read its `name` and `code` instead. An Exception cause stays an Exception, so `isException`, `hasErrorCode`, and `toJSON()` work on it.
+- **What it costs:** each cause becomes a copy that keeps its name, code, message, stack, and plain fields, redacted, and leaves out fields holding objects, such as an HTTP client's `config`. The copy runs none of the cause's own code, such as a custom inspect hook, which could hold a value no redaction reaches. So `instanceof` the cause's original class no longer holds: read its `name` and `code` instead. An Exception cause stays an Exception, so `isException`, `hasErrorCode`, and `toJSON()` work on it. The copies go 256 levels deep: data nested deeper becomes `null`, and causes further down the chain are left out.
 - The values are used while the exception is built, and kept nowhere.
 
 To log an error you caught, without rethrowing it, `extractRedactedMessage` gives its message, causes included, with the values redacted:
