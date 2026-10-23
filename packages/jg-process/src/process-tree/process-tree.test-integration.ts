@@ -3,12 +3,12 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { expectToThrowCode } from 'jg-exception/testing';
-import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 
 import { ERRORS } from '../shared/index.js';
 
@@ -169,6 +169,60 @@ describe.skipIf(IS_WINDOWS)('startProcess & stopProcessTree', () => {
     await stopProcessTree(child, 0.5);
     expect(child.signalCode).toBe('SIGKILL');
     expect(isGone(child.pid!)).toBe(true);
+  });
+});
+
+describe.runIf(IS_WINDOWS)('stopProcessTree on Windows', () => {
+  let directory: string;
+  let child: ChildProcess | undefined;
+  let grandchildPid: number | undefined;
+
+  beforeEach(async () => {
+    directory = await mkdtemp(join(tmpdir(), 'jg-process-'));
+  });
+
+  afterEach(async () => {
+    child?.kill();
+    if (grandchildPid !== undefined && isProcessRunning(grandchildPid)) {
+      process.kill(grandchildPid);
+    }
+    child = undefined;
+    grandchildPid = undefined;
+    await rm(directory, { recursive: true, force: true, maxRetries: 10 });
+  });
+
+  test('resolves once the grandchild has exited, so its working directory can be removed', async () => {
+    // Windows keeps a running process's working directory from being removed
+    const workingDirectory = join(directory, 'grandchild');
+    await mkdir(workingDirectory);
+    const pidFile = join(directory, 'grandchild.pid');
+    child = startProcess(
+      process.execPath,
+      [
+        '-e',
+        `
+          const { spawn } = require('node:child_process');
+          const { renameSync, writeFileSync } = require('node:fs');
+          const grandchild = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {
+            cwd: ${JSON.stringify(workingDirectory)},
+            stdio: 'ignore',
+          });
+          writeFileSync(${JSON.stringify(`${pidFile}.tmp`)}, String(grandchild.pid));
+          renameSync(${JSON.stringify(`${pidFile}.tmp`)}, ${JSON.stringify(pidFile)});
+          setInterval(() => {}, 1000);
+        `,
+      ],
+      { stdio: 'ignore' },
+    );
+    // the child renames the file into place, so it's whole once it exists
+    await expect.poll(() => existsSync(pidFile), { timeout: 10_000 }).toBe(true);
+    grandchildPid = Number(readFileSync(pidFile, 'utf-8'));
+
+    await stopProcessTree(child);
+
+    expect(isProcessRunning(grandchildPid)).toBe(false);
+    // no retries: the directory must be free the moment the stop resolves
+    await expect(rm(workingDirectory, { recursive: true })).resolves.toBeUndefined();
   });
 });
 
