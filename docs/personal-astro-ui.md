@@ -80,6 +80,7 @@ Each component is its own subpath, such as `jg-personal-astro-ui/button`. Most t
 | Documentation          | `documentation-shell`, `documentation-outline`, and `page-navigation`: a responsive reading frame, hierarchical fragments, and adjacent pages with caller-owned content and routes                                                                                                                                                           |
 | File presentation      | `file-preview` and `file-tree`: caller-supplied paths and statuses, source/diff composition, actions, and bounded semantic file lists                                                                                                                                                                                                        |
 | Conversations          | `conversation` and `conversation-message`: ordered transcripts with caller-owned participants, roles, avatars, content, and artifacts                                                                                                                                                                                                        |
+| Process and results    | `steps`, `step`, `timeline`, `timeline-item`, and `result-summary`: supplied process, chronological, and outcome presentation                                                                                                                                                                                                                |
 | `document-head`        | The title, description, canonical URL, robots, Open Graph and X tags, JSON-LD, icons, and agent links; `openGraphType` with its `article:*` or `profile:*` tags, and an `alternate` version of the page                                                                                                                                      |
 | `new-tab-marker`       | The arrow and screen-reader notice that end a link opening a new tab, with `data-new-tab-marker` on the arrow                                                                                                                                                                                                                                |
 | `theme-init-script`    | The inline script that applies the stored or system theme before the first paint                                                                                                                                                                                                                                                             |
@@ -146,6 +147,20 @@ Section's `tone="default" | "inverse"` defaults to the current inherited surface
 IconTile accepts `size="compact" | "card" | "header"` and `tone="primary" | "neutral" | "accent" | "success" | "warning" | "danger"`, retaining `card` and `primary` defaults. Compact tiles fit dense rows, size their slotted SVG, and remain decorative; nearby content supplies their name. All tones use the surrounding palette, including inverse sections.
 
 External links show an arrow after their text. On a `button`, `externalIcon={false}` hides it, and so does `externalIcon: false` on a `site-footer` link; the jg-packages site does that on the links to its own repository.
+
+### Process and outcome presentation
+
+`steps` and `timeline` require an accessible `label` and accept `class`. Their direct children are Step and TimelineItem components, respectively, or native list items. Both retain labelled ordered-list semantics and responsive vertical connectors. Callers supply order and bounded content, including loading or pagination outside the list when records grow.
+
+`step` requires `title` and accepts optional `number` (a supplied string or number), `status`, and `class`. Numbers display without padding or renumbering. The `title` slot replaces the title's visible fallback, `content` replaces ordinary body children, and `action` accepts one or more existing controls. Empty optional content renders no placeholder. A current step receives `aria-current="step"`.
+
+`timeline-item` requires displayed `date` and `label`, with optional `dateTime`, `status`, and `class`. A supplied HTML-compatible `dateTime` produces a time element; without it the date remains ordinary display text. The `label`, `content` (ordinary children as fallback), and `action` slots accept rich caller content. A current item receives `aria-current="true"`. No dates are parsed, formatted, sorted, or inferred.
+
+Both item components use `IProcessStatus` from `jg-personal-astro-ui/contracts`: `pending | current | complete | error`. Supplied statuses have visible text labels and semantic badges. They describe presentation, with transitions and domain meaning owned by the caller.
+
+`result-summary` requires `title` and accepts `description`, `tone`, `headingLevel`, and `class`. `IResultSummaryTone`, from the same contracts entry, is `neutral | success | warning | danger`, default `neutral`. The summary reuses Card, IconTile, and Badge, with a semantic icon and a visible Summary/Success/Warning/Danger label. The `icon` and `status` slots replace those defaults; custom status content should retain a meaningful text label. `action` accepts existing controls. `headingLevel` is 1 through 6, default 3; choose the level fitting the surrounding document. The component adds no workflow execution, finding codes, or scoring.
+
+The gallery's source/result recipe composes Tabs, FilePreview, and ResultSummary with an authored text fixture shared by the rendered source and raw/download actions. Metadata rows, comparison tables, and supplied logo grids use existing Card, Badge, Table, BrandLogo, and mark components.
 
 ### Conversations
 

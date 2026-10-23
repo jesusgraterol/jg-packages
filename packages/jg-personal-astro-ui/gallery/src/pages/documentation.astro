@@ -1,5 +1,6 @@
 ---
 import { Code } from '@lucide/astro';
+import Badge from 'jg-personal-astro-ui/badge';
 import Button from 'jg-personal-astro-ui/button';
 import Breadcrumb from 'jg-personal-astro-ui/breadcrumb';
 import Callout from 'jg-personal-astro-ui/callout';
@@ -16,8 +17,13 @@ import Kbd from 'jg-personal-astro-ui/kbd';
 import PageHeader from 'jg-personal-astro-ui/page-header';
 import PageNavigation from 'jg-personal-astro-ui/page-navigation';
 import Prose from 'jg-personal-astro-ui/prose';
+import ResultSummary from 'jg-personal-astro-ui/result-summary';
 import Section from 'jg-personal-astro-ui/section';
+import Step from 'jg-personal-astro-ui/step';
+import Steps from 'jg-personal-astro-ui/steps';
 import Table from 'jg-personal-astro-ui/table';
+import Timeline from 'jg-personal-astro-ui/timeline';
+import TimelineItem from 'jg-personal-astro-ui/timeline-item';
 
 import GalleryLayout from '../layouts/gallery-layout.astro';
 
@@ -329,6 +335,168 @@ const documentationOutline: IDocumentationOutlineItem[] = [
         }}
       />
       <PageNavigation label="Empty page navigation" />
+    </section>
+  </Container>
+  <Container class="pb-12">
+    <section
+      class="gallery-example"
+      data-example="steps"
+      aria-labelledby="steps-title"
+    >
+      <h2 id="steps-title">Supplied process steps</h2>
+      <Steps label="Release preparation">
+        <Step
+          title="Inspect source"
+          number="01"
+          status="complete"
+        >
+          <p>Review the caller-supplied source.</p>
+        </Step>
+        <Step
+          title="Verify output"
+          number={2}
+          status="current"
+        >
+          <span slot="title">
+            Verify output <span class="text-xs font-normal text-muted">Supplied metadata</span>
+          </span>
+          <p slot="content">
+            averylongunbrokenstepdescriptionthatmustwraponanarrowphonewithoutoverflow
+          </p>
+          <Button
+            slot="action"
+            href="/technical-content/#conversation-title"
+            variant="outline"
+          >
+            Inspect conversation example
+          </Button>
+        </Step>
+        <Step
+          title="Publish later"
+          number="04"
+          status="pending"
+        />
+        <Step
+          title="Recover failure"
+          status="error"
+        >
+          <p>Display an error supplied by the caller.</p>
+        </Step>
+      </Steps>
+      <div
+        class="mt-8"
+        data-example="step"
+      >
+        <Steps label="Minimal process">
+          <Step title="No optional fields" />
+        </Steps>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="timeline"
+      aria-labelledby="timeline-title"
+    >
+      <h2 id="timeline-title">Supplied timeline order and dates</h2>
+      <Timeline label="Release history">
+        <TimelineItem
+          date="October 23, 2026"
+          dateTime="2026-10-23"
+          label="Release review"
+          status="current"
+        >
+          <span slot="label">
+            Release review <span class="text-xs font-normal text-muted">Supplied metadata</span>
+          </span>
+          <p slot="content">The caller chose newest-first order.</p>
+          <Button
+            slot="action"
+            href="#steps-title"
+            variant="outline"
+          >
+            Inspect process steps
+          </Button>
+        </TimelineItem>
+        <TimelineItem
+          date="October 22, 2026"
+          dateTime="2026-10-22"
+          label="Implementation"
+          status="complete"
+        >
+          <p>Keep the supplied date and label.</p>
+        </TimelineItem>
+        <TimelineItem
+          date="Later"
+          label="Next iteration"
+          status="pending"
+        >
+          <p>averylongunbrokentimelinedescriptionthatmustwraponanarrowphonewithoutoverflow</p>
+        </TimelineItem>
+        <TimelineItem
+          date="Earlier attempt"
+          label="Recovery example"
+          status="error"
+        />
+      </Timeline>
+      <div
+        class="mt-8"
+        data-example="timeline-item"
+      >
+        <Timeline label="Minimal timeline">
+          <TimelineItem
+            date="Supplied display date"
+            label="Undated entry"
+          />
+        </Timeline>
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-example="result-summary"
+      aria-labelledby="summaries-title"
+    >
+      <h2 id="summaries-title">Result summaries</h2>
+      <div class="grid min-w-0 gap-4 lg:grid-cols-2">
+        <ResultSummary
+          title="Neutral result"
+          description="A caller-owned summary."
+        />
+        <ResultSummary
+          title="Successful result"
+          tone="success"
+          description="The supplied checks completed."
+        />
+        <ResultSummary
+          title="Review warning"
+          tone="warning"
+          description="averylongunbrokenresultdescriptionthatmustremainreadableonanarrowphoneviewport"
+        />
+        <ResultSummary
+          title="Failed result"
+          tone="danger"
+        />
+      </div>
+      <h3 class="mt-8 mb-4 text-xl font-semibold">Nested summary context</h3>
+      <ResultSummary
+        title="Nested summary"
+        headingLevel={4}
+        tone="success"
+      >
+        <Code slot="icon" />
+        <Badge
+          slot="status"
+          variant="outline"
+        >
+          Reviewed
+        </Badge>
+        <Button
+          slot="action"
+          href="/technical-content/#file-preview-title"
+          variant="outline"
+        >
+          Inspect file example
+        </Button>
+      </ResultSummary>
     </section>
   </Container>
   <div data-example="section">

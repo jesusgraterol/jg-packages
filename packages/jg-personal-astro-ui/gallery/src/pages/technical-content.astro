@@ -1,6 +1,10 @@
 ---
 import { createSatteriMarkdownProcessor } from '@astrojs/markdown-satteri';
+import AgenticCodingMark from 'jg-personal-astro-ui/agentic-coding-mark';
+import Badge from 'jg-personal-astro-ui/badge';
+import BrandLogo from 'jg-personal-astro-ui/brand-logo';
 import Button from 'jg-personal-astro-ui/button';
+import Card from 'jg-personal-astro-ui/card';
 import CodeBlock from 'jg-personal-astro-ui/code-block';
 import CodeDiff from 'jg-personal-astro-ui/code-diff';
 import { renderCodeWindowHeader } from 'jg-personal-astro-ui/code-window';
@@ -18,10 +22,14 @@ import JgMark from 'jg-personal-astro-ui/jg-mark';
 import { renderNewTabMarker } from 'jg-personal-astro-ui/new-tab-marker-markup';
 import PageHeader from 'jg-personal-astro-ui/page-header';
 import Prose from 'jg-personal-astro-ui/prose';
+import ResultSummary from 'jg-personal-astro-ui/result-summary';
 import { SYNTAX_THEME } from 'jg-personal-astro-ui/syntax-theme';
+import Table from 'jg-personal-astro-ui/table';
+import Tabs from 'jg-personal-astro-ui/tabs';
 import TerminalWindow from 'jg-personal-astro-ui/terminal-window';
 
 import GalleryLayout from '../layouts/gallery-layout.astro';
+import recipeSource from '../examples/hello.txt?raw';
 
 const code = 'export const greeting = "Hello from Astro UI";\nconsole.log(greeting);';
 const processor = await createSatteriMarkdownProcessor({
@@ -93,6 +101,165 @@ for (let level = 9; level >= 1; level--)
     lede="Build-time highlighting, real Markdown transforms, long lines, and responsive diffs."
   />
   <Container class="pb-16">
+    <section
+      class="gallery-example"
+      data-source-result-recipe
+      aria-labelledby="source-result-title"
+    >
+      <h2 id="source-result-title">Source and result composition</h2>
+      <Tabs
+        id="source-result"
+        label="Source and result"
+        tabs={[
+          { id: 'source', label: 'Source' },
+          { id: 'result', label: 'Result' },
+        ]}
+      >
+        <div
+          slot="source"
+          class="pt-4"
+        >
+          <FilePreview
+            path="examples/hello.txt"
+            label="Recipe source"
+          >
+            <div
+              slot="header-actions"
+              class="flex flex-wrap gap-2"
+            >
+              <CopyButton
+                text={recipeSource}
+                context="recipe source"
+                display="icon"
+                tone="outline"
+              />
+            </div>
+            <div
+              slot="footer"
+              class="flex flex-wrap gap-2"
+            >
+              <Button
+                href="/examples/hello.txt"
+                variant="outline"
+              >
+                Raw
+              </Button>
+              <Button
+                href="/examples/hello.txt"
+                download="hello.txt"
+                variant="outline"
+              >
+                Download
+              </Button>
+            </div>
+            <CodeBlock
+              code={recipeSource}
+              lang="ts"
+              appearance="plain"
+              copy={false}
+              ariaLabel="Recipe source content"
+            />
+          </FilePreview>
+        </div>
+        <div
+          slot="result"
+          class="pt-4"
+        >
+          <ResultSummary
+            title="Example result"
+            tone="success"
+            description="The supplied source produced this example result."
+          >
+            <Button
+              slot="action"
+              href="/examples/hello.txt"
+              variant="outline"
+            >
+              Inspect raw source
+            </Button>
+          </ResultSummary>
+        </div>
+      </Tabs>
+      <div class="mt-6 grid min-w-0 gap-6 lg:grid-cols-2">
+        <Card
+          as="section"
+          aria-label="Artifact metadata"
+        >
+          <h3 class="mb-4 text-lg font-semibold">Artifact metadata</h3>
+          <dl class="grid min-w-0 gap-4 sm:grid-cols-2">
+            <div>
+              <dt class="text-xs text-muted">Language</dt>
+              <dd>TypeScript</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-muted">File</dt>
+              <dd class="font-mono text-sm wrap-anywhere">hello.txt</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-muted">Status</dt>
+              <dd class="mt-1">
+                <Badge variant="neutral">Example</Badge>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-muted">Source</dt>
+              <dd>Caller supplied</dd>
+            </div>
+          </dl>
+        </Card>
+        <Table
+          caption="Source and result comparison"
+          scrollLabel="Source/result comparison"
+        >
+          <thead>
+            <tr>
+              <th scope="col">Aspect</th>
+              <th scope="col">Source</th>
+              <th scope="col">Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Content</th>
+              <td>Original authored text</td>
+              <td>Supplied outcome</td>
+            </tr>
+            <tr>
+              <th scope="row">Actions</th>
+              <td>Copy, raw, download</td>
+              <td>Inspect raw source</td>
+            </tr>
+          </tbody>
+        </Table>
+      </div>
+      <div
+        class="mt-6 grid min-w-0 gap-4 sm:grid-cols-2"
+        aria-label="Supplied logo grid"
+      >
+        <Card>
+          <BrandLogo
+            name="JG reference"
+            tagline="Supplied mark"
+          >
+            <JgMark
+              slot="mark"
+              class="size-8"
+            />
+          </BrandLogo>
+        </Card>
+        <Card>
+          <BrandLogo
+            name="Agentic Coding"
+            tagline="Supplied mark"
+          >
+            <AgenticCodingMark
+              slot="mark"
+              class="size-8"
+            />
+          </BrandLogo>
+        </Card>
+      </div>
+    </section>
     <section
       class="gallery-example"
       data-example="conversation"

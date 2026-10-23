@@ -61,8 +61,13 @@ export const GALLERY_EXAMPLES: IGalleryExample[] = [
     'page-header',
     'page-navigation',
     'prose',
+    'result-summary',
     'section',
+    'step',
+    'steps',
     'table',
+    'timeline',
+    'timeline-item',
   ].map((subpath) => ({
     subpath,
     path: '/documentation/',

@@ -32,3 +32,9 @@ export type IFileTreeEntry = {
 
 // optional display roles independent of a provider or participant's identity
 export type IConversationRole = 'user' | 'assistant' | 'system' | 'tool';
+
+// supplied process presentation, independent of execution or persisted workflow state
+export type IProcessStatus = 'pending' | 'current' | 'complete' | 'error';
+
+// semantic presentation of a caller-owned result
+export type IResultSummaryTone = 'neutral' | 'success' | 'warning' | 'danger';

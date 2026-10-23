@@ -60,6 +60,7 @@
     "./page-header": "./src/components/page-header/page-header.astro",
     "./page-navigation": "./src/components/page-navigation/page-navigation.astro",
     "./prose": "./src/components/prose/prose.astro",
+    "./result-summary": "./src/components/result-summary/result-summary.astro",
     "./search-dialog": "./src/components/search-dialog/search-dialog.astro",
     "./section": "./src/components/section/section.astro",
     "./segmented-control": "./src/components/segmented-control/segmented-control.astro",
@@ -67,12 +68,16 @@
     "./site-header": "./src/components/site-header/site-header.astro",
     "./skip-link": "./src/components/skip-link/skip-link.astro",
     "./stack": "./src/components/stack/stack.astro",
+    "./step": "./src/components/step/step.astro",
+    "./steps": "./src/components/steps/steps.astro",
     "./table": "./src/components/table/table.astro",
     "./tabs": "./src/components/tabs/tabs.astro",
     "./terminal-window": "./src/components/terminal-window/terminal-window.astro",
     "./text-link": "./src/components/text-link/text-link.astro",
     "./theme-control": "./src/components/theme-control/theme-control.astro",
-    "./theme-init-script": "./src/components/theme-init-script/theme-init-script.astro"
+    "./theme-init-script": "./src/components/theme-init-script/theme-init-script.astro",
+    "./timeline": "./src/components/timeline/timeline.astro",
+    "./timeline-item": "./src/components/timeline-item/timeline-item.astro"
   },
   "files": [
     "src",

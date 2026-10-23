@@ -7,4 +7,6 @@ export type {
   IFileStatus,
   IFileTreeEntry,
   IPageNavigationLink,
+  IProcessStatus,
+  IResultSummaryTone,
 } from './types.ts';

@@ -86,6 +86,8 @@ Section supports `tone="inverse"` for a dark surface with its own readable contr
 
 `conversation` and `conversation-message` present ordered transcripts with caller-owned speakers, optional display roles, decorative avatars, content, artifacts, and footers. File previews and file lists compose directly into messages; the components add no provider catalog or transcript parser.
 
+`steps`, `step`, `timeline`, `timeline-item`, and `result-summary` present supplied process and outcome information. Explicit statuses retain text meaning, dates and order remain caller-owned, and summary heading levels fit their surrounding document. Existing controls compose into action slots.
+
 ## Private gallery
 
 From a repository checkout, run `pnpm --filter jg-personal-astro-ui gallery:dev` to inspect the components, or `pnpm --filter jg-personal-astro-ui test:e2e` to build the gallery and test it in Chromium, Firefox, and WebKit. The gallery uses public package imports, real Markdown transforms, and a Pagefind index. Its source, preview tooling, and tests are excluded from npm and public website output. See the [gallery workflow](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md#private-gallery).
