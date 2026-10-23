@@ -29,3 +29,6 @@ export type IFileTreeEntry = {
   href?: string | undefined;
   status?: IFileStatus | undefined;
 } & ({ kind: 'file' } | { kind: 'directory'; children: readonly IFileTreeEntry[] });
+
+// optional display roles independent of a provider or participant's identity
+export type IConversationRole = 'user' | 'assistant' | 'system' | 'tool';

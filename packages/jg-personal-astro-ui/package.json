@@ -36,6 +36,8 @@
     "./code-block": "./src/components/code-block/code-block.astro",
     "./code-diff": "./src/components/code-diff/code-diff.astro",
     "./container": "./src/components/container/container.astro",
+    "./conversation": "./src/components/conversation/conversation.astro",
+    "./conversation-message": "./src/components/conversation-message/conversation-message.astro",
     "./copy-button": "./src/components/copy-button/copy-button.astro",
     "./dialog": "./src/components/dialog/dialog.astro",
     "./document-head": "./src/components/document-head/document-head.astro",

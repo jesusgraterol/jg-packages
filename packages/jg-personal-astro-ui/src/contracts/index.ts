@@ -1,5 +1,6 @@
 // shared presentation contracts
 export type {
+  IConversationRole,
   IDocumentationLink,
   IDocumentationNavigationGroup,
   IDocumentationOutlineItem,

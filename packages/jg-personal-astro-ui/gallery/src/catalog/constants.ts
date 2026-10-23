@@ -71,6 +71,8 @@ export const GALLERY_EXAMPLES: IGalleryExample[] = [
   ...[
     'code-block',
     'code-diff',
+    'conversation',
+    'conversation-message',
     'file-preview',
     'file-tree',
     'install-command',
