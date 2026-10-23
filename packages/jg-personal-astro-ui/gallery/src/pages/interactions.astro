@@ -131,12 +131,15 @@ import GalleryLayout from '../layouts/gallery-layout.astro';
           packages="jg-site"
           storageKey="gallery-package-manager"
         />
-        <PackageManagerTabs
-          id="install-dev"
-          packages="jg-playwright"
-          dev
-          storageKey="gallery-package-manager"
-        />
+        <div data-icon-package-manager>
+          <PackageManagerTabs
+            id="install-dev"
+            packages="jg-playwright"
+            dev
+            copyDisplay="icon"
+            storageKey="gallery-package-manager"
+          />
+        </div>
       </div>
     </section>
     <section
@@ -295,6 +298,20 @@ import GalleryLayout from '../layouts/gallery-layout.astro';
         <CopyButton
           url="/missing-copy-source.txt"
           context="unavailable document"
+          tone="outline"
+          size="md"
+        />
+        <CopyButton
+          text={'Hola, 世界 <Astro> & friends\nSecond line\n'}
+          context="Unicode example"
+          display="icon"
+          tone="outline"
+          size="md"
+        />
+        <CopyButton
+          url="/copy-example.txt"
+          context="Unicode document"
+          display="icon"
           tone="outline"
           size="md"
         />

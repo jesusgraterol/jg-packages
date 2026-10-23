@@ -1,2 +1,5 @@
 // plugins
-export { codeWindowPlugin } from './code-window-plugin.ts';
+export { codeWindowPlugin, createCodeWindowPlugin } from './code-window-plugin.ts';
+
+// types
+export type { ICodeWindowPluginOptions } from './types.ts';

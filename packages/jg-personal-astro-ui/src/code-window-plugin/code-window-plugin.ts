@@ -1,5 +1,7 @@
 import { renderCodeWindowHeader } from '../components/code-block/code-window.ts';
 
+import type { ICodeWindowPluginOptions } from './types.ts';
+
 // the parts of a hast element the plugin reads
 type IHastElement = {
   type: 'element';
@@ -38,20 +40,22 @@ export const readCodeLanguage = (pre: IHastElement): string => {
 };
 
 /**
- * A hast plugin for Astro's Markdown processor, Sätteri, that puts every code block in a code window,
+ * Creates a hast plugin for Astro's Markdown processor, Sätteri, that puts every code block in a code window,
  * like the code-block component's, with the language as its caption and a copy button. The prose
  * component loads what makes the copy buttons work, so render the Markdown inside it.
+ * @param options The copy presentation. Defaults to visible labels.
+ * @returns A Sätteri plugin with the selected copy controls.
  * @example
  * // astro.config.ts
  * import { satteri } from '@astrojs/markdown-satteri';
  * import { defineConfig } from 'astro/config';
- * import { codeWindowPlugin } from 'jg-personal-astro-ui/code-window-plugin';
+ * import { createCodeWindowPlugin } from 'jg-personal-astro-ui/code-window-plugin';
  *
  * export default defineConfig({
- *   markdown: { processor: satteri({ hastPlugins: [codeWindowPlugin] }) },
+ *   markdown: { processor: satteri({ hastPlugins: [createCodeWindowPlugin({ copyDisplay: 'icon' })] }) },
  * });
  */
-export const codeWindowPlugin = {
+export const createCodeWindowPlugin = ({ copyDisplay }: ICodeWindowPluginOptions = {}) => ({
   name: 'jg-code-window',
   element: {
     filter: ['pre'],
@@ -63,10 +67,13 @@ export const codeWindowPlugin = {
       children: [
         {
           type: 'raw' as const,
-          value: renderCodeWindowHeader({ caption: readCodeLanguage(node) }),
+          value: renderCodeWindowHeader({ caption: readCodeLanguage(node), copyDisplay }),
         },
         node,
       ],
     }),
   },
-};
+});
+
+// the existing plugin retains default label controls and its original processor contract
+export const codeWindowPlugin = createCodeWindowPlugin();

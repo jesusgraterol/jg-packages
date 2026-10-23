@@ -1,5 +1,6 @@
 ---
 import { highlightToHtml } from '../../highlighting/index.ts';
+import type { ICopyButtonDisplay } from '../../code-window/index.ts';
 import { renderCodeWindowHeader } from './code-window.ts';
 
 interface Props {
@@ -7,13 +8,14 @@ interface Props {
   code: string;
   // shows a copy button in the header. Defaults to true
   copy?: boolean | undefined;
+  copyDisplay?: ICopyButtonDisplay | undefined;
   // the language, such as 'ts', which the header shows when there's no title
   lang: string;
   // a file name or caption for the header, such as 'vite.config.ts'
   title?: string | undefined;
 }
 
-const { class: className, code, copy = true, lang, title } = Astro.props;
+const { class: className, code, copy = true, copyDisplay, lang, title } = Astro.props;
 const html = await highlightToHtml(code, lang);
 ---
 
@@ -22,7 +24,7 @@ const html = await highlightToHtml(code, lang);
   class:list={['jg-code-window', className]}
   data-code-window
 >
-  <Fragment set:html={renderCodeWindowHeader({ caption: title ?? lang, copy })} />
+  <Fragment set:html={renderCodeWindowHeader({ caption: title ?? lang, copy, copyDisplay })} />
   <Fragment set:html={html} />
 </figure>
 

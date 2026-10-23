@@ -45,6 +45,7 @@ const renderCodeWindow = (): HTMLButtonElement => {
 const clickAndRead = async (
   button: HTMLButtonElement,
 ): Promise<{ state: string | undefined; label: string; status: string; hint: string | null }> => {
+  await expect.poll(() => button.inert).toBe(false);
   button.click();
   await expect.poll(() => button.dataset['copyState']).toBeDefined();
   const wrapper = button.parentElement as HTMLElement;

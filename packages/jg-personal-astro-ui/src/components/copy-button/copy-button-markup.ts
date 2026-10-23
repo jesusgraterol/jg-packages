@@ -8,6 +8,9 @@ export type ICopyButtonTone = 'outline' | 'surface' | 'terminal';
 // as a default-sized button beside it
 export type ICopyButtonSize = 'md' | 'sm';
 
+// visible label or a compact icon with the same accessible name and outcome feedback
+export type ICopyButtonDisplay = 'icon' | 'label';
+
 // the height, gap, and text of each size
 const SIZE_CLASSES: Record<ICopyButtonSize, string> = {
   sm: 'min-h-8 items-center gap-1.5 text-xs',
@@ -19,6 +22,7 @@ export type ICopyButtonOptions = {
   class?: string | undefined;
   // what the button copies, added to its accessible name and its guidance, such as "install command"
   context?: string | undefined;
+  display?: ICopyButtonDisplay | undefined;
   label?: string | undefined;
   // defaults to 'sm'
   size?: ICopyButtonSize | undefined;
@@ -77,7 +81,7 @@ const renderAttribute = (name: string, value: string | undefined): string =>
  */
 const renderHint = (url: string | undefined): string =>
   [
-    '<span class="absolute top-full right-0 z-20 mt-1.5 w-60 rounded-lg border border-border bg-surface p-2.5 text-xs leading-5 font-medium text-foreground shadow-raised" data-copy-hint hidden>',
+    '<span class="absolute top-full right-0 z-20 mt-1.5 w-60 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-surface p-2.5 text-xs leading-5 font-medium text-foreground shadow-raised" data-copy-hint hidden>',
     url === undefined
       ? ''
       : `<span data-copy-hint-text></span><a href="${escapeHtml(url)}" class="mt-1.5 block font-semibold underline underline-offset-2 wrap-anywhere">${escapeHtml(url)}</a>`,
@@ -94,6 +98,7 @@ const renderHint = (url: string | undefined): string =>
 export const renderCopyButton = ({
   class: className,
   context = 'text',
+  display = 'label',
   label = 'Copy',
   size = 'sm',
   sourceId,
@@ -103,12 +108,12 @@ export const renderCopyButton = ({
 }: ICopyButtonOptions = {}): string =>
   [
     `<span class="${escapeHtml(['relative inline-flex shrink-0 items-center', className].filter(Boolean).join(' '))}" data-pagefind-ignore>`,
-    `<button type="button" class="inline-flex ${SIZE_CLASSES[size]} font-semibold transition-colors ${TONE_CLASSES[tone]}" data-copy-button${renderAttribute('data-copy-context', context)}${renderAttribute('data-copy-source', sourceId)}${renderAttribute('data-copy-text', text)}${renderAttribute('data-copy-url', url)}>`,
+    `<button type="button" inert class="invisible inline-flex ${SIZE_CLASSES[size]} font-semibold transition-colors ${TONE_CLASSES[tone]}${display === 'icon' ? ` ${size === 'sm' ? 'w-8' : 'w-11'} justify-center data-[copy-display=icon]:gap-0 data-[copy-display=icon]:px-0 pointer-coarse:min-h-11 pointer-coarse:min-w-11` : ''}" data-copy-button${renderAttribute('data-copy-display', display === 'icon' ? 'icon' : undefined)}${renderAttribute('data-copy-context', context)}${renderAttribute('data-copy-source', sourceId)}${renderAttribute('data-copy-text', text)}${renderAttribute('data-copy-url', url)}>`,
     ICONS,
-    `<span class="${LABEL_CELL_CLASSES}"><span class="col-start-1 row-start-1" data-copy-label>${escapeHtml(label)}</span></span>`,
+    `<span class="${display === 'icon' ? 'sr-only' : LABEL_CELL_CLASSES}"><span class="col-start-1 row-start-1" data-copy-label>${escapeHtml(label)}</span></span>`,
     `<span class="sr-only"> ${escapeHtml(context)}</span>`,
     '</button>',
-    '<span class="sr-only" data-copy-status aria-live="polite"></span>',
+    '<span class="sr-only" data-copy-status role="status" aria-live="polite" aria-atomic="true"></span>',
     renderHint(url),
     '</span>',
   ].join('');

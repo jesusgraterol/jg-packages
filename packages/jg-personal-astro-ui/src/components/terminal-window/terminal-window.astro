@@ -1,4 +1,6 @@
 ---
+import type { ICopyButtonDisplay } from '../../code-window/index.ts';
+
 import { renderCodeWindowHeader } from '../code-block/code-window.ts';
 
 interface Props {
@@ -6,13 +8,14 @@ interface Props {
   // copies the element with this id; context completes the copy button's accessible name, such as
   // "install command"
   copy?: { context: string; sourceId: string } | undefined;
+  copyDisplay?: ICopyButtonDisplay | undefined;
   // the window's caption, such as 'Terminal'
   title: string;
   // lets a long title, such as a sentence, wrap onto more lines instead of ending in an ellipsis
   wrapTitle?: boolean | undefined;
 }
 
-const { class: className, copy, title, wrapTitle } = Astro.props;
+const { class: className, copy, copyDisplay, title, wrapTitle } = Astro.props;
 ---
 
 {/*
@@ -27,6 +30,7 @@ const { class: className, copy, title, wrapTitle } = Astro.props;
     set:html={renderCodeWindowHeader({
       caption: title,
       copy: copy !== undefined,
+      copyDisplay,
       copySource: copy,
       wrapCaption: wrapTitle,
     })}

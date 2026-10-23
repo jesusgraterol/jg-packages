@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'vitest';
 
 import { renderCodeWindowHeader } from '../components/code-block/code-window.ts';
-import { codeWindowPlugin, readCodeLanguage } from './code-window-plugin.ts';
+import {
+  codeWindowPlugin,
+  createCodeWindowPlugin,
+  readCodeLanguage,
+} from './code-window-plugin.ts';
 
 /**
  * Builds a hast code block.
@@ -63,5 +67,20 @@ describe('codeWindowPlugin', () => {
       properties: { className: ['jg-code-window'], dataCodeWindow: '' },
       children: [{ type: 'raw', value: renderCodeWindowHeader({ caption: 'ts' }) }, pre],
     });
+  });
+  test('creates independently configured Markdown plugins while preserving the default export', () => {
+    const pre = createPre({ dataLanguage: 'ts' });
+    const icon = createCodeWindowPlugin({ copyDisplay: 'icon' });
+    const label = createCodeWindowPlugin({ copyDisplay: 'label' });
+    expect(icon.element.visit(pre).children[0]).toStrictEqual({
+      type: 'raw',
+      value: renderCodeWindowHeader({ caption: 'ts', copyDisplay: 'icon' }),
+    });
+    expect(label.element.visit(pre)).toStrictEqual(codeWindowPlugin.element.visit(pre));
+    expect(codeWindowPlugin.element.visit(pre).children[0]).toStrictEqual({
+      type: 'raw',
+      value: renderCodeWindowHeader({ caption: 'ts' }),
+    });
+    expect(icon.element.visit(pre).children[1]).toBe(pre);
   });
 });

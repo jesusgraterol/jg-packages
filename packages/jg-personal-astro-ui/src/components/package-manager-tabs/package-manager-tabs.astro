@@ -1,9 +1,12 @@
 ---
+import type { ICopyButtonDisplay } from '../../code-window/index.ts';
+
 import CopyButton from '../copy-button/copy-button.astro';
 import Tabs from '../tabs/tabs.astro';
 
 interface Props {
   class?: string | undefined;
+  copyDisplay?: ICopyButtonDisplay | undefined;
   // installs as a development dependency
   dev?: boolean | undefined;
   // a prefix for the ids, unique on the page
@@ -17,7 +20,7 @@ interface Props {
 // shell prompt shown before each command but never copied
 const SHELL_PROMPT = '$';
 
-const { class: className, dev = false, id, packages, storageKey } = Astro.props;
+const { class: className, copyDisplay, dev = false, id, packages, storageKey } = Astro.props;
 const commands = [
   { id: 'npm', label: 'npm', command: `npm install${dev ? ' --save-dev' : ''} ${packages}` },
   { id: 'pnpm', label: 'pnpm', command: `pnpm add${dev ? ' --save-dev' : ''} ${packages}` },
@@ -55,6 +58,7 @@ const commands = [
         <CopyButton
           text={command}
           context={`${commandId} install command`}
+          display={copyDisplay}
           tone="terminal"
         />
       </div>

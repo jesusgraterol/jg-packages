@@ -55,4 +55,14 @@ describe('renderCodeWindowHeader', () => {
     );
     expect(renderCodeWindowHeader({ caption })).toContain('<span class="jg-code-window-caption">');
   });
+  test('passes icon presentation to the shared copy markup without changing its caption or source', () => {
+    const html = renderCodeWindowHeader({
+      caption: 'ts',
+      copyDisplay: 'icon',
+      copySource: { context: 'source', sourceId: 'original' },
+    });
+    expect(html).toContain('data-copy-display="icon"');
+    expect(html).toContain('data-copy-source="original"');
+    expect(html).toContain('<span class="jg-code-window-caption">ts</span>');
+  });
 });

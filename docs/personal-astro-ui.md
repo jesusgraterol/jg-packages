@@ -117,6 +117,12 @@ Only `theme-control`, the copy buttons, `tabs`, `dialog`, `search-dialog`, the h
 
 Code window headers and copy buttons carry `data-pagefind-ignore`, so a site's Pagefind excerpts show its content rather than "Copy" or a language name.
 
+CopyButton accepts `display="label" | "icon"` (default `label`). CodeBlock, TerminalWindow, InstallCommand, PackageManagerTabs, and `renderCodeWindowHeader` expose the same choice as `copyDisplay`. Icon mode retains the accessible label and context, success/error announcements, and stable dimensions; its touch target expands under a coarse pointer. Existing `text`, `sourceId`, `url`, label, context, size, and tone behavior remains available. Fetched text goes directly to `jg-clipboard` as a promise so the clipboard write starts during the user gesture.
+
+Copy controls start invisible and inert, preserving their reserved layout space while keeping inactive actions out of keyboard and assistive navigation. One document-owned handler reveals current controls, observes inserted subtrees, and survives Astro page swaps. Removal and page dismissal release feedback timers and invalidate late completions. Failure guidance stays until the next attempt and is positioned within the visual viewport; URL failures retain a link to the source.
+
+For icon-only Markdown controls, import `createCodeWindowPlugin` from `jg-personal-astro-ui/code-window-plugin` and pass `createCodeWindowPlugin({ copyDisplay: 'icon' })` in Sätteri's `hastPlugins`. `codeWindowPlugin` remains the default label configuration, and `createCodeWindowPlugin()` produces the same output. Render transformed Markdown inside `prose` to install the shared copy behavior.
+
 External links show an arrow after their text. On a `button`, `externalIcon={false}` hides it, and so does `externalIcon: false` on a `site-footer` link; the jg-packages site does that on the links to its own repository.
 
 ## Navigation
@@ -140,8 +146,8 @@ Chromium supports both, Safari only the transitions, and Firefox neither; where 
 
 | Subpath                                      | What it exports                                                                                                                                     |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `jg-personal-astro-ui/code-window`           | `renderCodeWindowHeader`, the markup of a code window's header, for a site whose build checks allow only the markup Markdown produces               |
-| `jg-personal-astro-ui/code-window-plugin`    | `codeWindowPlugin`, the Sätteri hast plugin that puts Markdown code blocks in code windows                                                          |
+| `jg-personal-astro-ui/code-window`           | `renderCodeWindowHeader`, its header options, and `ICopyButtonDisplay`, for shared build-time code window markup                                    |
+| `jg-personal-astro-ui/code-window-plugin`    | `codeWindowPlugin`, `createCodeWindowPlugin`, and `ICodeWindowPluginOptions`, for default or configured Sätteri code windows                        |
 | `jg-personal-astro-ui/external-link-plugin`  | `externalLinkPlugin`, the Sätteri hast plugin that opens Markdown links to other sites in a new tab, with `rel="noreferrer"` and the new-tab marker |
 | `jg-personal-astro-ui/new-tab-marker-markup` | `renderNewTabMarker`, the markup that ends a link opening a new tab, and `NEW_TAB_NOTICE`, its screen-reader text                                   |
 | `jg-personal-astro-ui/syntax-theme`          | `SYNTAX_THEME`, the Shiki theme that colours code with the `--jg-syntax-*` properties                                                               |

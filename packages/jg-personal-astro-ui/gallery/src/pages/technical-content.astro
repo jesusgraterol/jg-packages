@@ -3,7 +3,7 @@ import { createSatteriMarkdownProcessor } from '@astrojs/markdown-satteri';
 import CodeBlock from 'jg-personal-astro-ui/code-block';
 import CodeDiff from 'jg-personal-astro-ui/code-diff';
 import { renderCodeWindowHeader } from 'jg-personal-astro-ui/code-window';
-import { codeWindowPlugin } from 'jg-personal-astro-ui/code-window-plugin';
+import { codeWindowPlugin, createCodeWindowPlugin } from 'jg-personal-astro-ui/code-window-plugin';
 import Container from 'jg-personal-astro-ui/container';
 import { externalLinkPlugin } from 'jg-personal-astro-ui/external-link-plugin';
 import InstallCommand from 'jg-personal-astro-ui/install-command';
@@ -31,6 +31,12 @@ const markdown = await processor.render(
     '[Astro documentation](https://docs.astro.build/)',
   ].join('\n'),
 );
+const iconProcessor = await createSatteriMarkdownProcessor({
+  shikiConfig: { theme: SYNTAX_THEME },
+  hastPlugins: [createCodeWindowPlugin({ copyDisplay: 'icon' })],
+});
+const iconCode = 'const message = "Hola, 世界 <Astro> & friends";\nconsole.log(message);';
+const iconMarkdown = await iconProcessor.render(['```ts', iconCode, '```'].join('\n'));
 ---
 
 <GalleryLayout title="Technical content">
@@ -65,6 +71,12 @@ const markdown = await processor.render(
           lang="text"
           title="Empty file"
         />
+        <CodeBlock
+          code={iconCode}
+          lang="ts"
+          title="icon-example.ts"
+          copyDisplay="icon"
+        />
       </div>
     </section>
     <section
@@ -98,6 +110,13 @@ const markdown = await processor.render(
         title="Install the shared UI and the tools that render its Markdown code windows"
         context="gallery install command"
       />
+      <InstallCommand
+        id="icon-install"
+        command="pnpm add jg-site"
+        title="Compact install"
+        context="compact install command"
+        copyDisplay="icon"
+      />
     </section>
     <section
       class="gallery-example"
@@ -114,6 +133,19 @@ const markdown = await processor.render(
           class="overflow-x-auto p-5 text-sm"
         >pnpm build&#10;5 pages built successfully.</pre>
       </TerminalWindow>
+      <TerminalWindow
+        title="Compact terminal"
+        copy={{ context: 'compact terminal output', sourceId: 'compact-terminal-output' }}
+        copyDisplay="icon"
+      >
+        <pre
+          id="compact-terminal-output"
+          class="overflow-x-auto p-5 text-sm"
+          tabindex="0"
+          role="region"
+          aria-label="Compact terminal source"
+        >{iconCode}</pre>
+      </TerminalWindow>
     </section>
     <section
       class="gallery-example"
@@ -123,6 +155,10 @@ const markdown = await processor.render(
       <Prose
         data-markdown-example
         set:html={markdown.code}
+      />
+      <Prose
+        data-icon-markdown-example
+        set:html={iconMarkdown.code}
       />
     </section>
     <section

@@ -1,4 +1,6 @@
 ---
+import type { ICopyButtonDisplay } from '../../code-window/index.ts';
+
 import TerminalWindow from '../terminal-window/terminal-window.astro';
 
 interface Props {
@@ -7,6 +9,7 @@ interface Props {
   // what the copy button copies, completing its accessible name, as in "Copy install command".
   // Defaults to 'command'
   context?: string | undefined;
+  copyDisplay?: ICopyButtonDisplay | undefined;
   // the id of the command's element, which the copy button copies; unique on the page
   id: string;
   // the window's caption, which wraps when it's long, such as a sentence. Defaults to 'Terminal'
@@ -17,7 +20,14 @@ interface Props {
 // stay whole
 const MAX_UNBROKEN_WORD_LENGTH = 16;
 
-const { class: className, command, context = 'command', id, title = 'Terminal' } = Astro.props;
+const {
+  class: className,
+  command,
+  context = 'command',
+  copyDisplay,
+  id,
+  title = 'Terminal',
+} = Astro.props;
 const words = command.split(' ');
 ---
 
@@ -25,6 +35,7 @@ const words = command.split(' ');
 <TerminalWindow
   class={className}
   copy={{ context, sourceId: id }}
+  copyDisplay={copyDisplay}
   title={title}
   wrapTitle
 >

@@ -66,6 +66,10 @@ Tabs expose labeled panels and ordinary panel links without JavaScript. Once enh
 
 `search-dialog` accepts `title`, `inputLabel`, and `placeholder`, with the existing text as defaults. It announces loading, result counts, empty results, and errors, offers retry after failure, and keeps touch input text at 16px. Pagefind indexes remain shared, results stay bounded to eight, and stale queries cannot replace newer results.
 
+`copy-button` supports `display="icon"`; CodeBlock, TerminalWindow, InstallCommand, PackageManagerTabs, and `renderCodeWindowHeader` accept `copyDisplay="icon"`. The default remains a visible label. Icon mode keeps the label and context accessible, reserves its size through feedback, and provides actionable failure guidance. Controls stay invisible and inert until their shared handler is installed; source content remains readable without JavaScript. The handler also supports dynamically inserted controls and Astro navigation.
+
+For compact Markdown windows, replace `codeWindowPlugin` with `createCodeWindowPlugin({ copyDisplay: 'icon' })` from the same `./code-window-plugin` subpath. The original plugin remains available with its existing defaults. Render the result inside `prose` to enable copying.
+
 ## Private gallery
 
 From a repository checkout, run `pnpm --filter jg-personal-astro-ui gallery:dev` to inspect the components, or `pnpm --filter jg-personal-astro-ui test:e2e` to build the gallery and test it in Chromium, Firefox, and WebKit. The gallery uses public package imports, real Markdown transforms, and a Pagefind index. Its source, preview tooling, and tests are excluded from npm and public website output. See the [gallery workflow](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md#private-gallery).

@@ -1,5 +1,5 @@
 import { escapeHtml } from '../../html/index.ts';
-import { renderCopyButton } from '../copy-button/copy-button-markup.ts';
+import { renderCopyButton, type ICopyButtonDisplay } from '../copy-button/copy-button-markup.ts';
 
 // what renderCodeWindowHeader needs
 export type ICodeWindowHeaderOptions = {
@@ -7,6 +7,7 @@ export type ICodeWindowHeaderOptions = {
   caption: string;
   // shows a copy button that copies the window's code. Defaults to true
   copy?: boolean | undefined;
+  copyDisplay?: ICopyButtonDisplay | undefined;
   // what the copy button copies instead of the window's code: the element with this id, named by
   // context in its accessible name, such as "command"
   copySource?: { context: string; sourceId: string } | undefined;
@@ -29,6 +30,7 @@ export type ICodeWindowHeaderOptions = {
 export const renderCodeWindowHeader = ({
   caption,
   copy = true,
+  copyDisplay,
   copySource,
   wrapCaption = false,
 }: ICodeWindowHeaderOptions): string =>
@@ -39,6 +41,7 @@ export const renderCodeWindowHeader = ({
     copy
       ? renderCopyButton({
           context: copySource?.context ?? 'code',
+          display: copyDisplay,
           sourceId: copySource?.sourceId,
           tone: 'terminal',
         })
