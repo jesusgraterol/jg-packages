@@ -53,7 +53,10 @@ const isCallerVariable = (key: string): boolean => {
   // Windows compares names without case
   const name = key.toUpperCase();
   return (
-    name !== 'GIT_ASKPASS' && name !== 'GIT_TERMINAL_PROMPT' && !name.startsWith('SSH_ASKPASS')
+    name !== 'GIT_ASKPASS' &&
+    name !== 'GIT_TERMINAL_PROMPT' &&
+    name !== 'GCM_INTERACTIVE' &&
+    !name.startsWith('SSH_ASKPASS')
   );
 };
 
@@ -61,8 +64,10 @@ const isCallerVariable = (key: string): boolean => {
  * Runs a git command that never prompts: without a terminal prompt or an askpass program, in an
  * environment without inherited Git variables, with an SSH command in batch mode, without a file
  * system monitor or a pager, and, unless `useCredentialHelpers`, without credential helpers, the
- * repository's included. Without credential helpers, authenticate with SSH keys or credentials
- * you pass yourself, such as a header set as config in `env`. It also runs without colors or
+ * repository's included. A helper that does run can't prompt either: Git Credential Manager runs
+ * with `GCM_INTERACTIVE=never`, so it fails rather than open a sign-in window. Without credential
+ * helpers, authenticate with SSH keys or credentials you pass yourself, such as a header set as
+ * config in `env`. It also runs without colors or
  * recursing into submodules, in the C locale, and allows no transport unless `env` sets
  * `GIT_ALLOW_PROTOCOL`, so reading a partial clone never fetches. It resolves with the exit code,
  * whatever it is, and the output, decoded as UTF-8 or as bytes with `encoding: 'buffer'`; a

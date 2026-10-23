@@ -66,8 +66,9 @@ assertGitSucceeded(result, 'log');
 - `GIT_TERMINAL_PROMPT=0`, so it never waits at a terminal.
 - An empty `GIT_ASKPASS` and `-c core.askPass=`, so no askpass program runs, whether `GIT_ASKPASS`, `core.askPass`, or `SSH_ASKPASS` names one.
 - `-c credential.helper=`, unless `useCredentialHelpers` is set, which empties the helper list from every config, the repository's included.
+- `GCM_INTERACTIVE=never`, so Git Credential Manager, a helper that opens its own sign-in window, fails instead of prompting when `useCredentialHelpers` lets it run. It overrides the `credential.interactive` config.
 - `GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=10`, which overrides `core.sshCommand`, so SSH never asks for a password or a passphrase either.
-- None of the inherited `GIT_*` variables, such as `GIT_DIR`, `GIT_WORK_TREE`, or `GIT_CONFIG_PARAMETERS`, nor `SSH_ASKPASS`, in any case, since Windows reads `git_dir` as `GIT_DIR`. Pass the ones you need, such as `GIT_SSL_CAINFO`, in `env`, which ignores `GIT_ASKPASS`, `GIT_TERMINAL_PROMPT`, and `SSH_ASKPASS`, in any case too, so nothing passed there turns a prompt back on.
+- None of the inherited `GIT_*` variables, such as `GIT_DIR`, `GIT_WORK_TREE`, or `GIT_CONFIG_PARAMETERS`, nor `SSH_ASKPASS`, in any case, since Windows reads `git_dir` as `GIT_DIR`. Pass the ones you need, such as `GIT_SSL_CAINFO`, in `env`, which ignores `GIT_ASKPASS`, `GIT_TERMINAL_PROMPT`, `GCM_INTERACTIVE`, and `SSH_ASKPASS`, in any case too, so nothing passed there turns a prompt back on.
 - No file system monitor, no pager, no colors, and no recursing into submodules, whatever the config says, and `GIT_OPTIONAL_LOCKS=0`, `GIT_NO_REPLACE_OBJECTS=1`, `GIT_NO_LAZY_FETCH=1`, and `GIT_LITERAL_PATHSPECS=1`.
 - The C locale, `LC_ALL=C`, `LANG=C`, and `LANGUAGE=C`, so Git writes its messages in English and a failure can be classified.
 - No transport, with an empty `GIT_ALLOW_PROTOCOL`, so no command reaches another repository unless you allow it. `readRemoteRefs` and `fetchCommit` allow HTTPS and SSH by default; pass `GIT_ALLOW_PROTOCOL` in `env` for others, such as `file` for a local remote.
@@ -100,7 +101,7 @@ const refs = await readRemoteRefs(
 );
 ```
 
-With `useCredentialHelpers: true`, the configured helpers answer, still without an askpass program or a terminal. A helper you opt into, such as Git Credential Manager, may still prompt through its own window.
+With `useCredentialHelpers: true`, the configured helpers answer, still without an askpass program or a terminal. Git Credential Manager still answers with the credentials it has stored, but it never opens a sign-in window: where it would need one, the command fails instead.
 
 ### Trust boundary
 
