@@ -1,5 +1,4 @@
-import { execFile, spawn, type ChildProcess } from 'node:child_process';
-import { setTimeout as sleep } from 'node:timers/promises';
+import { spawn, type ChildProcess } from 'node:child_process';
 import { Exception } from 'jg-exception';
 
 import {
@@ -9,11 +8,9 @@ import {
   type IStartProcessOptions,
 } from '../shared/index.js';
 
-import {
-  FORCED_STOP_SECONDS,
-  STOP_POLL_INTERVAL_MILLISECONDS,
-  WINDOWS_STOP_SECONDS,
-} from './constants.js';
+import { FORCED_STOP_SECONDS } from './constants.js';
+import { stopWindowsTree } from './stop-windows-tree.js';
+import { hasExited, treeSurvived, waitFor } from './utilities.js';
 
 // whether the package runs on Windows, which has no process groups to signal
 const IS_WINDOWS = process.platform === 'win32';
@@ -69,14 +66,6 @@ export function startProcess(
 }
 
 /**
- * Checks whether a child process has exited and Node.js has processed its exit.
- * @param child The child process.
- * @returns True when the child has an exit code or a terminating signal.
- */
-const hasExited = (child: ChildProcess): boolean =>
-  child.exitCode !== null || child.signalCode !== null;
-
-/**
  * Checks whether a process, or a process group when the target is negative, still exists.
  * @param target A pid, or a negated process-group id.
  * @returns True unless the target is gone.
@@ -129,33 +118,6 @@ const signalTree = (child: ChildProcess, pid: number, signal: NodeJS.Signals): v
 };
 
 /**
- * Polls a condition until it holds or the time runs out.
- * @param condition The condition to check.
- * @param milliseconds The maximum time to wait.
- * @returns A promise that resolves to whether the condition held in time.
- */
-const waitFor = async (condition: () => boolean, milliseconds: number): Promise<boolean> => {
-  const deadline = Date.now() + milliseconds;
-  while (!condition()) {
-    if (Date.now() >= deadline) {
-      return false;
-    }
-    await sleep(STOP_POLL_INTERVAL_MILLISECONDS);
-  }
-  return true;
-};
-
-/**
- * Builds the error thrown when part of a process tree outlives the forced stop.
- * @param pid The child's pid.
- * @returns The error.
- */
-const treeSurvived = (pid: number): Exception =>
-  new Exception(`The process tree of pid ${pid} is still running after it was force-stopped.`, {
-    code: ERRORS.PROCESS_TREE_SURVIVED,
-  });
-
-/**
  * Stops a process tree on POSIX: SIGTERM to the group, then SIGKILL after the grace period.
  * @param child The child process.
  * @param pid The child's pid.
@@ -185,33 +147,6 @@ const stopPosixTree = async (
 };
 
 /**
- * Stops a process tree on Windows with taskkill, which finds descendants by walking down from a
- * live root process. Descendants orphaned after the root exited can't be found this way.
- * @param child The child process.
- * @param pid The child's pid.
- * @returns A promise that resolves once the root process has exited.
- * @throws
- * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped.
- */
-const stopWindowsTree = async (child: ChildProcess, pid: number): Promise<void> => {
-  if (hasExited(child)) {
-    return;
-  }
-  // a failed taskkill is detected below, by the root that keeps running
-  await new Promise<void>((resolve) => {
-    execFile(
-      'taskkill',
-      ['/PID', String(pid), '/T', '/F'],
-      { timeout: WINDOWS_STOP_SECONDS * 1000, windowsHide: true },
-      () => resolve(),
-    );
-  });
-  if (!(await waitFor(() => hasExited(child), WINDOWS_STOP_SECONDS * 1000))) {
-    throw treeSurvived(pid);
-  }
-};
-
-/**
  * Stops a child started by startProcess or runProcess together with its descendants, and
  * resolves once they are gone. It resolves immediately for a child without a pid.
  *
@@ -221,9 +156,11 @@ const stopWindowsTree = async (child: ChildProcess, pid: number): Promise<void> 
  * child alone. Descendants that start their own session or process group, for example with
  * setsid, aren't stopped.
  *
- * On Windows, it runs taskkill /T /F, which reaches only descendants of a root process that is
- * still running: when the root has already exited, it resolves and orphaned descendants may
- * remain.
+ * On Windows, it lists the child's descendants with PowerShell's Get-CimInstance, runs
+ * taskkill /T /F, and waits up to ten seconds until the child and each listed descendant have
+ * exited, so their working directories can be removed once it resolves. taskkill reaches only
+ * descendants of a root process that is still running: when the root has already exited, it
+ * resolves and orphaned descendants may remain. Without PowerShell, it waits for the child alone.
  * @param child The child process to stop.
  * @param gracePeriodSeconds? The seconds to wait after SIGTERM. Defaults to DEFAULT_GRACE_PERIOD_SECONDS.
  * @returns A promise that resolves once the process tree is gone.

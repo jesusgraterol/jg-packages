@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.2
+
+### Fixed
+
+- On Windows, `stopProcessTree`, and so `runProcess` when it stops a timed-out, aborted, or overflowing command, waits until every descendant has exited, not only the root process. It lists them with PowerShell's `Get-CimInstance` before `taskkill /T /F`, since `taskkill` only starts each exit, and a descendant could still hold its working directory, so removing it failed with `EBUSY`. Without PowerShell, it waits for the root alone, as before.
+
 ## 1.6.1
 
 ### Fixed

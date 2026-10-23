@@ -139,7 +139,8 @@ const stopTree = async (child: ChildProcess): Promise<void> => {
  * output never ends up in an error message. The call rejects only when the command can't start,
  * the timeout passes, the output exceeds maxOutputBytes, or the signal aborts; in those cases the
  * process tree is stopped first, so the rejection can arrive up to the grace period plus two
- * seconds after the trigger.
+ * seconds after the trigger on POSIX, and up to 30 seconds after it on Windows, where the stop
+ * lists the tree, runs taskkill, and waits for every process to exit, each within 10 seconds.
  *
  * Input that the child never reads is discarded without an error. When the child exits,
  * descendants left in its process group are stopped. If one that couldn't be reached, such as a
