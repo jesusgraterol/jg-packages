@@ -8,9 +8,9 @@ export type ICodeWindowHeaderOptions = {
   // shows a copy button that copies the window's code. Defaults to true
   copy?: boolean | undefined;
   copyDisplay?: ICopyButtonDisplay | undefined;
-  // what the copy button copies instead of the window's code: the element with this id, named by
-  // context in its accessible name, such as "command"
-  copySource?: { context: string; sourceId: string } | undefined;
+  // copies original text or an element's text, named by context in its accessible name
+  copySource?:
+    { context: string; sourceId: string } | { context: string; text: string } | undefined;
   // lets a long caption, such as a sentence, wrap onto more lines instead of ending in an ellipsis
   wrapCaption?: boolean | undefined;
 };
@@ -42,7 +42,9 @@ export const renderCodeWindowHeader = ({
       ? renderCopyButton({
           context: copySource?.context ?? 'code',
           display: copyDisplay,
-          sourceId: copySource?.sourceId,
+          sourceId:
+            copySource !== undefined && 'sourceId' in copySource ? copySource.sourceId : undefined,
+          text: copySource !== undefined && 'text' in copySource ? copySource.text : undefined,
           tone: 'terminal',
         })
       : '',

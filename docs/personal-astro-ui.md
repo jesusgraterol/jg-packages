@@ -123,6 +123,10 @@ Copy controls start invisible and inert, preserving their reserved layout space 
 
 For icon-only Markdown controls, import `createCodeWindowPlugin` from `jg-personal-astro-ui/code-window-plugin` and pass `createCodeWindowPlugin({ copyDisplay: 'icon' })` in Sätteri's `hastPlugins`. `codeWindowPlugin` remains the default label configuration, and `createCodeWindowPlugin()` produces the same output. Render transformed Markdown inside `prose` to install the shared copy behavior.
 
+CodeBlock keeps `code`, `lang`, `title`, `copy`, `copyDisplay`, and `class`. Its `appearance="window" | "plain"` defaults to the existing always-dark window; `plain` removes window chrome and inherits the surrounding syntax palette. A plain block keeps its optional title and copy action, and composes within another frame, including inside Prose. `overflow="scroll" | "wrap"` defaults to scrolling. CSS-length `height` and `maxHeight` apply to the source body, leaving the caption and copy control outside it. The source remains keyboard-focusable; `ariaLabel` gives it a named region. Copying uses the original `code`, preserving line endings and final newlines rather than reconstructing highlighted text.
+
+`renderCodeWindowHeader` also accepts a literal `copySource: { context, text }`, alongside its existing `{ context, sourceId }` form. Literal attributes preserve carriage returns through HTML parsing. This is source transport for copying, not an additional highlighter or source cache; all code blocks retain the shared build-time Shiki instance.
+
 External links show an arrow after their text. On a `button`, `externalIcon={false}` hides it, and so does `externalIcon: false` on a `site-footer` link; the jg-packages site does that on the links to its own repository.
 
 ## Navigation

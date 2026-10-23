@@ -1,30 +1,93 @@
 ---
 import { highlightToHtml } from '../../highlighting/index.ts';
 import type { ICopyButtonDisplay } from '../../code-window/index.ts';
+
+import CopyButton from '../copy-button/copy-button.astro';
 import { renderCodeWindowHeader } from './code-window.ts';
 
 interface Props {
+  // a framed dark window, or unframed code inheriting its surrounding surface
+  appearance?: 'plain' | 'window' | undefined;
+  // names the keyboard-focusable source region
+  ariaLabel?: string | undefined;
   class?: string | undefined;
   code: string;
   // shows a copy button in the header. Defaults to true
   copy?: boolean | undefined;
   copyDisplay?: ICopyButtonDisplay | undefined;
+  // CSS lengths applied to the source scroll body, independently of the caption
+  height?: string | undefined;
+  maxHeight?: string | undefined;
+  overflow?: 'scroll' | 'wrap' | undefined;
   // the language, such as 'ts', which the header shows when there's no title
   lang: string;
   // a file name or caption for the header, such as 'vite.config.ts'
   title?: string | undefined;
 }
 
-const { class: className, code, copy = true, copyDisplay, lang, title } = Astro.props;
-const html = await highlightToHtml(code, lang);
+const {
+  appearance = 'window',
+  ariaLabel,
+  class: className,
+  code,
+  copy = true,
+  copyDisplay,
+  height,
+  lang,
+  maxHeight,
+  overflow = 'scroll',
+  title,
+} = Astro.props;
+const html = await highlightToHtml(code, lang, [
+  {
+    pre(node) {
+      node.properties['dataCodeBody'] = '';
+      if (ariaLabel !== undefined) {
+        node.properties['role'] = 'region';
+        node.properties['ariaLabel'] = ariaLabel;
+      }
+    },
+  },
+]);
 ---
 
-{/* a code window, styled by contract.css: dark in both themes, with the dark syntax colours */}
+{/* the source owns scrolling; plain composition inherits syntax colors and adds no frame */}
 <figure
-  class:list={['jg-code-window', className]}
+  class:list={[
+    'jg-code-block',
+    appearance === 'window' ? 'jg-code-window' : 'jg-code-plain',
+    className,
+  ]}
   data-code-window
+  data-code-overflow={overflow}
+  style={{ '--jg-code-height': height, '--jg-code-max-height': maxHeight }}
 >
-  <Fragment set:html={renderCodeWindowHeader({ caption: title ?? lang, copy, copyDisplay })} />
+  {appearance === 'window' ? (
+    <Fragment
+      set:html={renderCodeWindowHeader({
+        caption: title ?? lang,
+        copy,
+        copyDisplay,
+        copySource: { context: 'code', text: code },
+      })}
+    />
+  ) : (
+    (title !== undefined || copy) && (
+      <figcaption
+        class="flex min-w-0 items-center justify-between gap-3 px-4 py-1 text-xs text-muted"
+        data-pagefind-ignore
+      >
+        <span class="min-w-0 truncate font-mono">{title}</span>
+        {copy && (
+          <CopyButton
+            text={code}
+            context="code"
+            display={copyDisplay}
+          />
+        )}
+      </figcaption>
+    )
+  )}
   <Fragment set:html={html} />
 </figure>
 

@@ -252,8 +252,42 @@
     outline-offset: -2px;
   }
 
+  .jg-code-plain {
+    min-width: 0;
+    color: inherit;
+  }
+
+  /* component-owned source dimensions leave captions and copy controls outside the scroll body */
+  .jg-code-block [data-code-body] {
+    height: var(--jg-code-height, auto);
+    max-height: var(--jg-code-max-height, none);
+    margin: 0;
+    overflow: auto;
+    background: transparent;
+    padding: 0.875rem 1rem;
+    font-size: 0.8125rem;
+    line-height: 1.5rem;
+    white-space: pre;
+  }
+
+  .jg-code-block[data-code-overflow='wrap'] [data-code-body] {
+    overflow-x: hidden;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  .jg-code-block [data-code-body] code {
+    white-space: inherit;
+  }
+
+  .jg-code-plain [data-code-body]:focus-visible {
+    outline: 2px solid var(--jg-focus);
+    outline-offset: -2px;
+  }
+
   @media (min-width: 40rem) {
-    .jg-code-window pre {
+    .jg-code-window pre,
+    .jg-code-block [data-code-body] {
       font-size: 0.875rem;
     }
   }

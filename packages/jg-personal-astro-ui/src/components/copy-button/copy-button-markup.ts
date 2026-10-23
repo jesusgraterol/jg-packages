@@ -71,7 +71,8 @@ const ICONS = [
  * @returns The attribute with a leading space, or an empty string.
  */
 const renderAttribute = (name: string, value: string | undefined): string =>
-  value === undefined ? '' : ` ${name}="${escapeHtml(value)}"`;
+  // literal CRs are normalized by the HTML parser; character references retain original CRLF text
+  value === undefined ? '' : ` ${name}="${escapeHtml(value).replaceAll('\r', '&#13;')}"`;
 
 /**
  * Renders the guidance shown under a button after a failed copy, hidden until then. A button that

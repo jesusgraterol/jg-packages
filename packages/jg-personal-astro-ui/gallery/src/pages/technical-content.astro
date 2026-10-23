@@ -37,6 +37,8 @@ const iconProcessor = await createSatteriMarkdownProcessor({
 });
 const iconCode = 'const message = "Hola, 世界 <Astro> & friends";\nconsole.log(message);';
 const iconMarkdown = await iconProcessor.render(['```ts', iconCode, '```'].join('\n'));
+const longSource = `${'// A long source line with Unicode 世界 and <tag> text '.repeat(8)}\n${Array.from({ length: 32 }, (_, index) => `console.log(${index});`).join('\n')}\n`;
+const fidelitySource = 'const greeting = "世界";\r\nconsole.log("<tag> & text");\r\n';
 ---
 
 <GalleryLayout title="Technical content">
@@ -77,6 +79,83 @@ const iconMarkdown = await iconProcessor.render(['```ts', iconCode, '```'].join(
           title="icon-example.ts"
           copyDisplay="icon"
         />
+      </div>
+    </section>
+    <section
+      class="gallery-example"
+      data-source-fidelity
+      aria-labelledby="fidelity-title"
+    >
+      <h2 id="fidelity-title">Original source fidelity</h2>
+      <CodeBlock
+        code={fidelitySource}
+        lang="ts"
+        title="original.ts"
+        copyDisplay="icon"
+      />
+      <CodeBlock
+        code={fidelitySource}
+        lang="ts"
+        title="original-plain.ts"
+        copyDisplay="icon"
+        appearance="plain"
+        overflow="wrap"
+      />
+    </section>
+    <section
+      class="gallery-example"
+      data-code-presentation
+      aria-labelledby="presentation-title"
+    >
+      <h2 id="presentation-title">Source presentation</h2>
+      <div class="grid grid-cols-1 gap-6">
+        <div data-fixed-code>
+          <CodeBlock
+            code={longSource}
+            lang="ts"
+            title="fixed-height.ts"
+            height="10rem"
+            ariaLabel="Scrollable source"
+            copyDisplay="icon"
+          />
+        </div>
+        <div data-wrapped-code>
+          <CodeBlock
+            code={longSource}
+            lang="ts"
+            title="wrapped.ts"
+            overflow="wrap"
+            maxHeight="12rem"
+            ariaLabel="Wrapped source"
+            copyDisplay="icon"
+          />
+        </div>
+        <div
+          class="rounded-xl border border-border bg-surface p-4"
+          data-plain-code
+        >
+          <Prose>
+            <CodeBlock
+              code={longSource}
+              lang="ts"
+              title="plain.ts"
+              appearance="plain"
+              overflow="wrap"
+              maxHeight="10rem"
+              ariaLabel="Plain source"
+              copyDisplay="icon"
+            />
+          </Prose>
+        </div>
+        <div data-plain-empty-code>
+          <CodeBlock
+            code=""
+            lang="text"
+            appearance="plain"
+            copy={false}
+            ariaLabel="Empty source"
+          />
+        </div>
       </div>
     </section>
     <section

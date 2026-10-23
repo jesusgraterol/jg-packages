@@ -10,6 +10,11 @@ import { COPY_OUTCOME_LABELS, renderCopyButton } from './copy-button-markup.ts';
 const readButtonTag = (html: string): string => /<button[^>]*>/.exec(html)?.[0] ?? '';
 
 describe('renderCopyButton', () => {
+  test('preserves carriage returns in literal source attributes', () => {
+    expect(renderCopyButton({ text: 'first\r\nsecond\n' })).toContain(
+      'data-copy-text="first&#13;\nsecond\n"',
+    );
+  });
   test('renders a button that copies its code window, labelled Copy, on the page surface', () => {
     const html = renderCopyButton();
 

@@ -23,6 +23,21 @@ describe('toSupportedLanguage', () => {
 });
 
 describe('highlightToHtml', () => {
+  test('applies component-owned pre attributes through the shared highlighter', async () => {
+    const html = await highlightToHtml('<tag>', 'text', [
+      {
+        pre(node) {
+          node.properties['dataCodeBody'] = '';
+          node.properties['role'] = 'region';
+          node.properties['ariaLabel'] = 'Source "<tag>"';
+        },
+      },
+    ]);
+    expect(html).toContain('data-code-body=""');
+    expect(html).toContain('role="region"');
+    expect(html).toContain('aria-label="Source &#x22;<tag>&#x22;"');
+    expect(html).toContain('tabindex="0"');
+  });
   test('colours tokens with --jg-syntax-* variables, without a trailing empty line', async () => {
     const html = await highlightToHtml('const a = 1;\n', 'ts');
 

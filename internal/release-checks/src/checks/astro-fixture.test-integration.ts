@@ -107,6 +107,12 @@ describe('the installed personal UI gallery', () => {
         await expect(
           access(join(options.cwd, 'component-tests', 'tabs', 'tabs.test-e2e.ts')),
         ).resolves.toBeUndefined();
+        expect(
+          await readFile(
+            join(options.cwd, 'component-tests', 'copy-button', 'copy-button.test-utils.ts'),
+            'utf8',
+          ),
+        ).toContain('export const captureCopiedText');
         expect(JSON.parse(await readFile(join(options.cwd, 'package.json'), 'utf8'))).toStrictEqual(
           { name: 'release-check-astro-gallery', private: true, type: 'module' },
         );

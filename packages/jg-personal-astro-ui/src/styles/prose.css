@@ -46,7 +46,17 @@
     font-size: 1.0625rem;
   }
 
-  .jg-prose :is(p, ul, ol, blockquote, table, .jg-code-window, pre:not(.jg-code-window pre)) {
+  .jg-prose
+    :is(
+      p,
+      ul,
+      ol,
+      blockquote,
+      table,
+      .jg-code-window,
+      .jg-code-plain,
+      pre:not(.jg-code-window pre, .jg-code-plain pre)
+    ) {
     margin-top: 1.25rem;
   }
 
@@ -97,7 +107,7 @@
   }
 
   /* a code block outside a code window, when the site doesn't use codeWindowPlugin */
-  .jg-prose pre:not(.jg-code-window pre) {
+  .jg-prose pre:not(.jg-code-window pre, .jg-code-plain pre) {
     overflow-x: auto;
     border: 1px solid var(--jg-border);
     border-radius: calc(var(--jg-radius) * 1.25);

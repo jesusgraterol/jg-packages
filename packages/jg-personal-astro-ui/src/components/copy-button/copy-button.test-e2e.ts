@@ -1,30 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-// native clipboard calls are the controlled boundary; the real jg-clipboard and ClipboardItem run
-interface IClipboardRecorder {
-  recordCopiedText: (text: string) => Promise<void>;
-}
+import { captureCopiedText } from './copy-button.test-utils.ts';
 
 for (const colorScheme of ['light', 'dark'] as const) {
   test(`icon controls copy through every producer in ${colorScheme}`, async ({ page }) => {
-    const copied: string[] = [];
-    await page.exposeFunction('recordCopiedText', (text: string) => {
-      copied.push(text);
-    });
-    await page.addInitScript(() => {
-      const capture = (text: string): Promise<void> =>
-        (window as unknown as IClipboardRecorder).recordCopiedText(text);
-      Object.defineProperty(navigator, 'clipboard', {
-        configurable: true,
-        value: {
-          writeText: capture,
-          write: async (items: ClipboardItem[]): Promise<void> => {
-            for (const item of items)
-              await capture(await (await item.getType('text/plain')).text());
-          },
-        },
-      });
-    });
+    const copied = await captureCopiedText(page);
     await page.emulateMedia({ colorScheme });
     await page.setViewportSize({ width: 320, height: 800 });
     await page.goto('/technical-content/');

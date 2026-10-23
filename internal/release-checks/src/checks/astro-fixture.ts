@@ -355,11 +355,14 @@ const buildGalleryFixture = async (
       join(uiDirectory, 'playwright.config.ts'),
       join(projectDirectory, 'playwright.config.ts'),
     );
-    // co-located component scenarios run against this consumer, alongside the gallery scenarios
-    for await (const path of glob('src/components/**/*.test-e2e.ts', {
-      cwd: uiDirectory,
-      exclude: [...EXCLUDED_GALLERY_DIRECTORIES].map((name) => `**/${name}/**`),
-    })) {
+    // scenarios and their adjacent test support retain relative imports in the installed consumer
+    for await (const path of glob(
+      ['src/components/**/*.test-e2e.ts', 'src/components/**/*.test-utils.ts'],
+      {
+        cwd: uiDirectory,
+        exclude: [...EXCLUDED_GALLERY_DIRECTORIES].map((name) => `**/${name}/**`),
+      },
+    )) {
       scope.signal.throwIfAborted();
       const source = join(uiDirectory, path);
       if ((await realpath(source)) !== resolve(source))
