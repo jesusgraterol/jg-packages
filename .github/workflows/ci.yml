@@ -68,9 +68,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # the React packages' coverage includes their browser tests' Chromium run; the integration
-      # tests start PostgreSQL and Redis containers in the runner's Docker
+      # tests start PostgreSQL and Redis containers in the runner's Docker. The script bounds the
+      # downloads, falling back to Ubuntu's own mirror when the runner's Azure one crawls
       - name: Install Chromium
-        run: pnpm --filter jg-sw exec playwright install --with-deps chromium
+        run: .github/scripts/install-browsers.sh packages/jg-sw chromium
 
       # four packages at a time on the runner's four CPUs, except the three whose coverage runs
       # Chromium: beside the other suites, their browser projects didn't start within a minute
@@ -103,7 +104,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install the browsers
-        run: pnpm --filter jg-sw exec playwright install --with-deps chromium firefox webkit
+        run: .github/scripts/install-browsers.sh packages/jg-sw chromium firefox webkit
 
       - name: Run the browser tests
         run: node internal/vitest-config/src/run-test-suite.ts full run test:browser
@@ -138,7 +139,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install the browsers
-        run: pnpm --filter jg-sw exec playwright install --with-deps chromium firefox webkit
+        run: .github/scripts/install-browsers.sh packages/jg-sw chromium firefox webkit
 
       # builds the site, which verify-build checks, and runs this shard of each end-to-end suite;
       # turbo passes the shard to the test:e2e tasks only, not to the builds they wait for
@@ -179,7 +180,7 @@ jobs:
         run: pnpm turbo run build --filter='./packages/*'
 
       - name: Install the rendered Astro fixture's browsers
-        run: pnpm --filter jg-personal-astro-ui exec playwright install --with-deps chromium firefox webkit
+        run: .github/scripts/install-browsers.sh packages/jg-personal-astro-ui chromium firefox webkit
 
       - name: Check the release
         if: github.event_name != 'push' || github.ref != 'refs/heads/main'
