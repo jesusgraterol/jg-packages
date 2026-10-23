@@ -497,6 +497,10 @@
   }
 }
 
+.jg-documentation-content :where([id]) {
+  scroll-margin-top: 6rem;
+}
+
 .jg-accordion > summary > .jg-accordion-chevron {
   transition: transform 150ms ease;
 }

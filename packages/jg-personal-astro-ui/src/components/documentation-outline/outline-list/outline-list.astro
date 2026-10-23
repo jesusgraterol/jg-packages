@@ -1,0 +1,23 @@
+---
+import type { IDocumentationOutlineItem } from '../../../contracts/index.ts';
+
+interface Props {
+  items: readonly IDocumentationOutlineItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<ul class="grid min-w-0 gap-1 border-l border-border pl-3">
+  {items.map(({ href, label, children }) => (
+    <li class="min-w-0">
+      <a
+        href={href}
+        class="flex min-h-11 items-center py-2 text-sm text-muted no-underline hover:text-foreground hover:underline"
+      >
+        <span class="min-w-0 wrap-anywhere">{label}</span>
+      </a>
+      {children !== undefined && children.length > 0 && <Astro.self items={children} />}
+    </li>
+  ))}
+</ul>

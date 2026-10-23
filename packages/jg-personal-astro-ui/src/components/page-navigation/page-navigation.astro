@@ -1,0 +1,61 @@
+---
+import { ArrowLeft, ArrowRight } from '@lucide/astro';
+
+import type { IPageNavigationLink } from '../../contracts/index.ts';
+
+interface Props {
+  previous?: IPageNavigationLink | undefined;
+  next?: IPageNavigationLink | undefined;
+  label?: string | undefined;
+  class?: string | undefined;
+}
+
+const { previous, next, label = 'Page navigation', class: className } = Astro.props;
+---
+
+{(previous !== undefined || next !== undefined) && (
+  <nav
+    aria-label={label}
+    data-pagefind-ignore
+    class:list={['grid min-w-0 gap-4 sm:grid-cols-2', className]}
+  >
+    {previous !== undefined && (
+      <a
+        href={previous.href}
+        rel="prev"
+        class="flex min-w-0 items-start gap-3 rounded-xl border border-border bg-surface p-4 no-underline transition-colors hover:border-border-strong"
+      >
+        <ArrowLeft
+          class="mt-1 size-4 shrink-0"
+          aria-hidden="true"
+        />
+        <span class="grid min-w-0 gap-1 wrap-anywhere">
+          <span class="text-xs text-muted">Previous</span>
+          <span class="font-semibold text-foreground">{previous.label}</span>
+          {previous.description !== undefined && (
+            <span class="text-sm text-muted">{previous.description}</span>
+          )}
+        </span>
+      </a>
+    )}
+    {next !== undefined && (
+      <a
+        href={next.href}
+        rel="next"
+        class="flex min-w-0 items-start justify-end gap-3 rounded-xl border border-border bg-surface p-4 text-right no-underline transition-colors hover:border-border-strong sm:col-start-2"
+      >
+        <span class="grid min-w-0 gap-1 wrap-anywhere">
+          <span class="text-xs text-muted">Next</span>
+          <span class="font-semibold text-foreground">{next.label}</span>
+          {next.description !== undefined && (
+            <span class="text-sm text-muted">{next.description}</span>
+          )}
+        </span>
+        <ArrowRight
+          class="mt-1 size-4 shrink-0"
+          aria-hidden="true"
+        />
+      </a>
+    )}
+  </nav>
+)}

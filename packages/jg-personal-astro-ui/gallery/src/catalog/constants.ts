@@ -54,9 +54,12 @@ export const GALLERY_EXAMPLES: IGalleryExample[] = [
   ...[
     'breadcrumb',
     'callout',
+    'documentation-shell',
+    'documentation-outline',
     'inline-code',
     'kbd',
     'page-header',
+    'page-navigation',
     'prose',
     'section',
     'table',

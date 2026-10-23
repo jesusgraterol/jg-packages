@@ -77,6 +77,7 @@ Each component is its own subpath, such as `jg-personal-astro-ui/button`. Most t
 | Component              | What it renders                                                                                                                                                                                                                                                                                                                              |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `accordion`            | Native details and summary with rich summary, icon, status, and body slots; exclusive groups and progressive deep-link opening                                                                                                                                                                                                               |
+| Documentation          | `documentation-shell`, `documentation-outline`, and `page-navigation`: a responsive reading frame, hierarchical fragments, and adjacent pages with caller-owned content and routes                                                                                                                                                           |
 | `document-head`        | The title, description, canonical URL, robots, Open Graph and X tags, JSON-LD, icons, and agent links; `openGraphType` with its `article:*` or `profile:*` tags, and an `alternate` version of the page                                                                                                                                      |
 | `new-tab-marker`       | The arrow and screen-reader notice that end a link opening a new tab, with `data-new-tab-marker` on the arrow                                                                                                                                                                                                                                |
 | `theme-init-script`    | The inline script that applies the stored or system theme before the first paint                                                                                                                                                                                                                                                             |
@@ -143,6 +144,43 @@ Section's `tone="default" | "inverse"` defaults to the current inherited surface
 IconTile accepts `size="compact" | "card" | "header"` and `tone="primary" | "neutral" | "accent" | "success" | "warning" | "danger"`, retaining `card` and `primary` defaults. Compact tiles fit dense rows, size their slotted SVG, and remain decorative; nearby content supplies their name. All tones use the surrounding palette, including inverse sections.
 
 External links show an arrow after their text. On a `button`, `externalIcon={false}` hides it, and so does `externalIcon: false` on a `site-footer` link; the jg-packages site does that on the links to its own repository.
+
+### Documentation composition
+
+`documentation-shell` accepts optional `navigation` groups (`label` and `items` containing `href`/`label`), `currentPath`, `navigationLabel` (default `Documentation`), and `class`. An exact `currentPath`/`href` match receives `aria-current="page"`; pass the same path format in both. Empty groups are omitted. The `header` slot precedes the reading grid, ordinary children are its content, `outline` supplies the right column, and `footer` follows the content. The outline slot renders once. The shell adds no main landmark, route loading, heading parsing, or scrollspy.
+
+On screens below `lg`, page navigation groups use a native disclosure and the outline precedes the content. At `lg`, supplied groups and an outline occupy side columns around the reading column. Either column can be omitted. Anchored elements inside the content receive a six-rem scroll margin for the shared sticky site header.
+
+`documentation-outline` accepts a finite, acyclic `items` tree with `href`, `label`, and optional `children`; `label` defaults to `On this page`. It retains real nested lists and anchor links, uses a compact native disclosure below `lg`, and stays readable without JavaScript. An empty outline renders nothing. Callers own heading IDs and supply the hierarchy; no runtime heading scan is performed.
+
+`page-navigation` accepts optional `previous` and `next` objects with `href`, `label`, and optional `description`. Visible Previous/Next names and `rel` attributes identify direction. A lone previous link aligns left and a lone next link aligns right on wider screens; links stack at phone widths. With neither link, it renders nothing. Its accessible `label` defaults to `Page navigation`.
+
+```astro
+<DocumentationShell
+  navigation={groups}
+  currentPath={Astro.url.pathname}
+>
+  <PageHeader
+    slot="header"
+    title="Reference"
+    titleVariant="document"
+  />
+  <DocumentationOutline
+    slot="outline"
+    items={outline}
+  />
+  <Prose>
+    <Content />
+  </Prose>
+  <PageNavigation
+    slot="footer"
+    previous={previousPage}
+    next={nextPage}
+  />
+</DocumentationShell>
+```
+
+Import these components from their named `jg-personal-astro-ui` subpaths. Shared types come from `jg-personal-astro-ui/contracts`: `IDocumentationLink`, `IDocumentationNavigationGroup`, `IDocumentationOutlineItem`, and `IPageNavigationLink`. The types describe supplied presentation content; sites keep validation and content loading at their existing boundaries.
 
 ### Native accordion
 

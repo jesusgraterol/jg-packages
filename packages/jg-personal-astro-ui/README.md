@@ -80,6 +80,8 @@ Section supports `tone="inverse"` for a dark surface with its own readable contr
 
 `accordion` uses native details and summary elements, with optional `isOpen` and exclusive `group`. Its summary, decorative icon, status, and body slots preserve rich portfolio content. Native disclosure works without JavaScript; the shared script opens collapsed ancestors when following a deep link, including after Astro navigation.
 
+`documentation-shell`, `documentation-outline`, and `page-navigation` compose a responsive reading grid, hierarchical anchor links, and adjacent pages. They accept caller-owned navigation and content, retain native disclosures without JavaScript, and add no main landmark or route loading. Their shared types are exported from `jg-personal-astro-ui/contracts`.
+
 ## Private gallery
 
 From a repository checkout, run `pnpm --filter jg-personal-astro-ui gallery:dev` to inspect the components, or `pnpm --filter jg-personal-astro-ui test:e2e` to build the gallery and test it in Chromium, Firefox, and WebKit. The gallery uses public package imports, real Markdown transforms, and a Pagefind index. Its source, preview tooling, and tests are excluded from npm and public website output. See the [gallery workflow](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md#private-gallery).

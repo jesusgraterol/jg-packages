@@ -1,0 +1,34 @@
+---
+import type { IDocumentationNavigationGroup } from '../../../contracts/index.ts';
+
+interface Props {
+  navigation: readonly IDocumentationNavigationGroup[];
+  currentPath?: string | undefined;
+}
+
+const { navigation, currentPath } = Astro.props;
+---
+
+<div class="grid min-w-0 gap-6">
+  {navigation.map(
+    ({ label, items }) =>
+      items.length > 0 && (
+        <div class="min-w-0">
+          <p class="eyebrow mb-2 wrap-anywhere">{label}</p>
+          <ul class="grid gap-1">
+            {items.map(({ href, label: linkLabel }) => (
+              <li class="min-w-0">
+                <a
+                  href={href}
+                  aria-current={currentPath === href ? 'page' : undefined}
+                  class="flex min-h-11 items-center rounded-md px-3 py-2 text-sm text-muted no-underline transition-colors hover:bg-secondary hover:text-foreground aria-[current=page]:bg-secondary aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
+                >
+                  <span class="min-w-0 wrap-anywhere">{linkLabel}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ),
+  )}
+</div>

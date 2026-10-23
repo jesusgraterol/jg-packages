@@ -1,0 +1,91 @@
+---
+import type { IDocumentationNavigationGroup } from '../../contracts/index.ts';
+
+import Container from '../container/container.astro';
+import DocumentationLinks from './links/links.astro';
+
+interface Props {
+  class?: string | undefined;
+  navigation?: readonly IDocumentationNavigationGroup[] | undefined;
+  currentPath?: string | undefined;
+  navigationLabel?: string | undefined;
+}
+
+const {
+  class: className,
+  navigation = [],
+  currentPath,
+  navigationLabel = 'Documentation',
+} = Astro.props;
+const hasNavigation = navigation.some(({ items }) => items.length > 0);
+const hasOutline = Astro.slots.has('outline');
+---
+
+<Container class:list={['jg-documentation-shell py-10 sm:py-14', className]}>
+  {Astro.slots.has('header') && (
+    <div class="mb-8 min-w-0">
+      <slot name="header" />
+    </div>
+  )}
+  <div
+    class:list={[
+      'grid min-w-0 items-start gap-8 lg:gap-10',
+      hasNavigation && hasOutline
+        ? 'lg:grid-cols-[12rem_minmax(0,1fr)_12rem] xl:grid-cols-[14rem_minmax(0,1fr)_14rem]'
+        : hasNavigation
+          ? 'lg:grid-cols-[14rem_minmax(0,1fr)]'
+          : hasOutline
+            ? 'lg:grid-cols-[minmax(0,1fr)_15rem]'
+            : '',
+    ]}
+  >
+    {hasNavigation && (
+      <nav
+        aria-label={navigationLabel}
+        data-pagefind-ignore
+        class="min-w-0 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:px-1 lg:pb-4"
+      >
+        <details class="rounded-xl border border-border bg-surface lg:hidden">
+          <summary class="min-h-11 cursor-pointer px-4 py-3 font-semibold wrap-anywhere outline-offset-[-4px]">
+            {navigationLabel}
+          </summary>
+          <div class="p-3">
+            <DocumentationLinks
+              navigation={navigation}
+              currentPath={currentPath}
+            />
+          </div>
+        </details>
+        <div class="hidden lg:block">
+          <DocumentationLinks
+            navigation={navigation}
+            currentPath={currentPath}
+          />
+        </div>
+      </nav>
+    )}
+    {hasOutline && (
+      <aside
+        class:list={[
+          'min-w-0 lg:sticky lg:top-24 lg:row-start-1',
+          hasNavigation ? 'lg:col-start-3' : 'lg:col-start-2',
+        ]}
+      >
+        <slot name="outline" />
+      </aside>
+    )}
+    <div
+      class:list={[
+        'jg-documentation-content min-w-0 lg:row-start-1',
+        hasNavigation ? 'lg:col-start-2' : 'lg:col-start-1',
+      ]}
+    >
+      <slot />
+      {Astro.slots.has('footer') && (
+        <div class="mt-10 min-w-0">
+          <slot name="footer" />
+        </div>
+      )}
+    </div>
+  </div>
+</Container>

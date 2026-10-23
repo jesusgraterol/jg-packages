@@ -4,15 +4,51 @@ import Button from 'jg-personal-astro-ui/button';
 import Breadcrumb from 'jg-personal-astro-ui/breadcrumb';
 import Callout from 'jg-personal-astro-ui/callout';
 import Container from 'jg-personal-astro-ui/container';
+import type {
+  IDocumentationNavigationGroup,
+  IDocumentationOutlineItem,
+} from 'jg-personal-astro-ui/contracts';
+import DocumentationOutline from 'jg-personal-astro-ui/documentation-outline';
+import DocumentationShell from 'jg-personal-astro-ui/documentation-shell';
 import InlineCode from 'jg-personal-astro-ui/inline-code';
 import IconTile from 'jg-personal-astro-ui/icon-tile';
 import Kbd from 'jg-personal-astro-ui/kbd';
 import PageHeader from 'jg-personal-astro-ui/page-header';
+import PageNavigation from 'jg-personal-astro-ui/page-navigation';
 import Prose from 'jg-personal-astro-ui/prose';
 import Section from 'jg-personal-astro-ui/section';
 import Table from 'jg-personal-astro-ui/table';
 
 import GalleryLayout from '../layouts/gallery-layout.astro';
+
+const documentationNavigation: IDocumentationNavigationGroup[] = [
+  {
+    label: 'Reference',
+    items: [
+      { href: '/foundations/', label: 'Foundations and shared design tokens' },
+      { href: '/documentation/', label: 'Documentation and component composition' },
+      {
+        href: '/technical-content/',
+        label: 'Technical content with a deliberately long navigation label',
+      },
+    ],
+  },
+  { label: 'Empty group', items: [] },
+];
+const documentationOutline: IDocumentationOutlineItem[] = [
+  {
+    href: '#reference-introduction',
+    label: 'Reference introduction',
+    children: [
+      {
+        href: '#reference-configuration',
+        label: 'Configuration and supported integration options',
+        children: [{ href: '#reference-boundaries', label: 'Integration boundaries' }],
+      },
+    ],
+  },
+  { href: '#reference-next', label: 'Next steps' },
+];
 ---
 
 <GalleryLayout title="Documentation">
@@ -192,6 +228,107 @@ import GalleryLayout from '../layouts/gallery-layout.astro';
           </tr>
         </tbody>
       </Table>
+    </section>
+  </Container>
+  <div data-example="documentation-shell">
+    <DocumentationShell
+      navigation={documentationNavigation}
+      currentPath="/documentation/"
+      navigationLabel="Reference pages"
+    >
+      <div
+        slot="header"
+        class="min-w-0"
+      >
+        <h2 class="text-2xl font-bold">Documentation composition</h2>
+        <p class="mt-2 text-muted">Routes, headings, and content belong to the caller.</p>
+      </div>
+      <DocumentationOutline
+        slot="outline"
+        label="Reference contents"
+        items={documentationOutline}
+      />
+      <Prose titleVariant="document">
+        <h3 id="reference-introduction">Reference introduction</h3>
+        <p>
+          A reading frame composes navigation, prose, and an outline without adding a main landmark.
+        </p>
+        <h4 id="reference-configuration">Configuration and supported integration options</h4>
+        <p>Navigation labels wrap and every heading retains its original fragment identifier.</p>
+        <h5 id="reference-boundaries">Integration boundaries</h5>
+        <p>averylongunbrokenreferenceidentifierthatmustremainreadableonanarrowphoneviewport</p>
+        <h3 id="reference-next">Next steps</h3>
+        <p>The footer holds the caller's adjacent-page links and supporting context.</p>
+      </Prose>
+      <PageNavigation
+        slot="footer"
+        previous={{
+          href: '/foundations/',
+          label: 'Shared foundations',
+          description: 'Tokens and component surfaces.',
+        }}
+        next={{
+          href: '/technical-content/',
+          label: 'Technical examples with a deliberately long title',
+          description: 'Source code, diffs, and commands.',
+        }}
+      />
+    </DocumentationShell>
+  </div>
+  <div data-example="documentation-outline">
+    <DocumentationShell>
+      <DocumentationOutline
+        slot="outline"
+        label="Minimal reference contents"
+        items={[{ href: '#minimal-reference', label: 'Minimal reference' }]}
+      />
+      <h2
+        id="minimal-reference"
+        class="text-xl font-bold"
+      >
+        Minimal reference
+      </h2>
+      <p class="mt-4">This frame has an outline and no page navigation groups.</p>
+    </DocumentationShell>
+    <DocumentationOutline
+      items={[]}
+      label="Empty outline"
+    />
+  </div>
+  <DocumentationShell
+    navigation={documentationNavigation}
+    navigationLabel="Unselected reference pages"
+  >
+    <p>A frame with page groups and no outline.</p>
+  </DocumentationShell>
+  <DocumentationShell
+    navigation={[{ label: 'Empty group', items: [] }]}
+    navigationLabel="Empty reference pages"
+  >
+    <p>A frame without navigation or an outline.</p>
+  </DocumentationShell>
+  <Container class="pb-12">
+    <section
+      class="gallery-example grid gap-6"
+      data-example="page-navigation"
+      aria-label="Adjacent page recipes"
+    >
+      <PageNavigation
+        label="Previous page only"
+        previous={{
+          href: '/foundations/',
+          label: 'Previous reference only',
+          description: 'Start with the shared tokens.',
+        }}
+      />
+      <PageNavigation
+        label="Next page only"
+        next={{
+          href: '/technical-content/',
+          label: 'averylongunbrokenadjacentpagetitlethatmustwrapwithoutclipping',
+        }}
+      />
+      <PageNavigation label="Empty page navigation" />
     </section>
   </Container>
   <div data-example="section">
