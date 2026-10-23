@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.1
+
+### Fixed
+
+- The Vite plugin writes `sw.js` only after `vite build`. Closing a dev server or a Vitest run, which close every environment's bundle too, wrote a worker over an existing `dist/sw.js`.
+
 ## 1.6.0
 
 ### Changed

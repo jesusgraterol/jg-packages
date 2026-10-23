@@ -1,6 +1,6 @@
 {
   "name": "jg-playwright",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Playwright helpers for end-to-end tests: horizontal overflow, loaded assets, motion, accessibility scans, secrets, and a fake microphone.",
   "author": "Jesus Graterol",
   "license": "MIT",

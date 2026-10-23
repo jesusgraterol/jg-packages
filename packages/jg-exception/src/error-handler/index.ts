@@ -1,4 +1,5 @@
-import { DEFAULT_MESSAGE } from '../shared/constants.js';
+import { DEFAULT_MESSAGE, MAX_NESTING_DEPTH } from '../shared/constants.js';
+import { stringifyWithinDepth } from '../shared/utilities.js';
 import { extractZodErrorMessage, isZodErrorLike, redactSensitiveValues } from './utilities.js';
 
 /*
@@ -21,12 +22,19 @@ const MESSAGE_PROPERTIES = [
 ] as const;
 
 /**
- * Extracts an error message while avoiding circular object traversal.
+ * Extracts an error message while avoiding circular object traversal. It follows at most
+ * `MAX_NESTING_DEPTH` causes and properties, so the result never depends on how much of the call
+ * stack is left.
  * @param error The error to extract the message from.
  * @param visitedErrors The object references already inspected in this extraction.
+ * @param depth How many causes and properties were followed to reach the error.
  * @returns The extracted message, or the default message when extraction fails.
  */
-const extractMessageFrom = (error: unknown, visitedErrors: WeakSet<object>): string => {
+const extractMessageFrom = (
+  error: unknown,
+  visitedErrors: WeakSet<object>,
+  depth: number,
+): string => {
   // a non-empty string is the message itself
   if (typeof error === 'string' && error.length) {
     return error;
@@ -45,10 +53,12 @@ const extractMessageFrom = (error: unknown, visitedErrors: WeakSet<object>): str
   }
   visitedErrors.add(error);
 
-  // an Error returns its message, followed by its cause's when it has one
+  const canFollow = depth < MAX_NESTING_DEPTH;
+
+  // an Error returns its message, followed by its cause's when it has one and it can be followed
   if (error instanceof Error && error.message) {
-    if (error.cause) {
-      return `${error.message}; [CAUSE]: ${extractMessageFrom(error.cause, visitedErrors)}`;
+    if (error.cause && canFollow) {
+      return `${error.message}; [CAUSE]: ${extractMessageFrom(error.cause, visitedErrors, depth + 1)}`;
     }
     return error.message;
   }
@@ -57,10 +67,12 @@ const extractMessageFrom = (error: unknown, visitedErrors: WeakSet<object>): str
   const record = error as Record<string, unknown>;
   const property = MESSAGE_PROPERTIES.find((name) => Boolean(record[name]));
   if (property !== undefined) {
-    return extractMessageFrom(record[property], visitedErrors);
+    return canFollow
+      ? extractMessageFrom(record[property], visitedErrors, depth + 1)
+      : DEFAULT_MESSAGE;
   }
   try {
-    return JSON.stringify(error);
+    return stringifyWithinDepth(error) ?? DEFAULT_MESSAGE;
   } catch {
     return DEFAULT_MESSAGE;
   }
@@ -70,7 +82,8 @@ const extractMessageFrom = (error: unknown, visitedErrors: WeakSet<object>): str
  * Extracts a message from an error of any shape: a string, an `Error` (with its causes), a
  * ZodError, or an object holding the message in a common property such as `message`, `error`, or
  * `reason`. Other objects are stringified. When nothing can be extracted, it returns the default
- * message.
+ * message. It follows at most 256 causes and properties, so the causes of a longer chain are left
+ * out, and stringifies objects nested at most 256 levels deep.
  * @param error The error to extract the message from.
  * @returns The extracted message, or `DEFAULT_MESSAGE`.
  * @example
@@ -80,7 +93,8 @@ const extractMessageFrom = (error: unknown, visitedErrors: WeakSet<object>): str
  * extractMessage({ reason: 'Timed out' }); // => 'Timed out'
  * extractMessage(undefined) === DEFAULT_MESSAGE; // => true
  */
-export const extractMessage = (error: unknown): string => extractMessageFrom(error, new WeakSet());
+export const extractMessage = (error: unknown): string =>
+  extractMessageFrom(error, new WeakSet(), 0);
 
 /**
  * Extracts an error message and replaces every exact, case-sensitive occurrence of the sensitive

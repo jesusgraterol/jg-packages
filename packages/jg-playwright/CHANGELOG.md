@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+### Added
+
+- `expectNoAxeViolations`'s `ruleSet` option, `IAxeRuleSet`: `'wcag21aa'`, the default and the rules it ran before, WCAG 2.0 and 2.1 levels A and AA; `'wcag22aa'`, those and WCAG 2.2 level AA; or `'axe-default'`, every rule axe runs by default, best practices included.
+- `ERRORS.INVALID_AXE_OPTIONS`, which `expectNoAxeViolations` throws for any other `ruleSet`, before it scans anything.
+
 ## 0.1.0
 
 The first release.

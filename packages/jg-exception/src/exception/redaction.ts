@@ -1,4 +1,5 @@
 import { redactSensitiveValues } from '../error-handler/utilities.js';
+import { MAX_NESTING_DEPTH } from '../shared/constants.js';
 import type { IJsonValue } from '../shared/types.js';
 import { EXCEPTION_BRAND } from './constants.js';
 
@@ -175,12 +176,16 @@ const redactPrimitive = (value: IPrimitive, values: string[]): IPrimitive => {
  * @param value The value.
  * @param values The values to redact.
  * @param ancestors The objects around the value, which a cycle would lead back to.
+ * @param depth How many objects and arrays are around the value, 0 for the data itself.
  * @returns The redacted copy, or `undefined` when the value is left out.
+ * @throws
+ * - The data is nested too deeply to copy.
  */
 const redactJson = (
   value: unknown,
   values: string[],
   ancestors: Set<object>,
+  depth: number,
 ): IJsonValue | undefined => {
   if (typeof value !== 'object' || value === null) {
     // JSON holds no function, symbol, or BigInt
@@ -191,6 +196,14 @@ const redactJson = (
   if (ancestors.has(value)) {
     return undefined;
   }
+  /*
+   * The walk stops at a fixed depth rather than where the call stack runs out, which could happen
+   * inside one of the reads that skip what fails, and leave the data partly copied instead of
+   * `null`.
+   */
+  if (depth >= MAX_NESTING_DEPTH) {
+    throw new RangeError('The data is nested too deeply to copy.');
+  }
   ancestors.add(value);
   try {
     const entries = readDataEntries(value);
@@ -198,14 +211,14 @@ const redactJson = (
       const copy: IJsonValue[] = [];
       for (const [key, item] of entries) {
         if (ARRAY_INDEX.test(key)) {
-          copy[Number(key)] = redactJson(item, values, ancestors) ?? null;
+          copy[Number(key)] = redactJson(item, values, ancestors, depth + 1) ?? null;
         }
       }
       return copy;
     }
     const copy: { [key: string]: IJsonValue | undefined } = {};
     for (const [key, item] of entries) {
-      const redacted = redactJson(item, values, ancestors);
+      const redacted = redactJson(item, values, ancestors, depth + 1);
       if (redacted !== undefined) {
         defineValue(copy, key, redacted, true);
       }
@@ -218,14 +231,14 @@ const redactJson = (
 
 /**
  * Copies JSON data with every string redacted, or gives `null` when it can't be copied, such as
- * data nested too deeply to walk.
+ * data nested more than `MAX_NESTING_DEPTH` levels deep.
  * @param data The data.
  * @param values The values to redact.
  * @returns The redacted copy.
  */
 const redactData = (data: unknown, values: string[]): IJsonValue | undefined => {
   try {
-    return redactJson(data, values, new Set());
+    return redactJson(data, values, new Set(), 0);
   } catch {
     return null;
   }
@@ -233,14 +246,16 @@ const redactData = (data: unknown, values: string[]): IJsonValue | undefined => 
 
 /**
  * Builds a cause's snapshot: an `Error` with the cause's name, message, stack, plain fields, and
- * cause, redacted, that runs none of the cause's code. Fields holding objects are left out. A
- * recognised Exception's snapshot is an Exception, with its brand and data, so `isException` and
- * `toJSON()` still work on it.
+ * cause, redacted, that runs none of the cause's code. Fields holding objects are left out, and so
+ * is the cause of a snapshot `MAX_NESTING_DEPTH` levels down the chain. A recognised Exception's
+ * snapshot is an Exception, with its brand and data, so `isException` and `toJSON()` still work on
+ * it.
  * @param cause The cause.
  * @param context The values and the snapshots built so far.
+ * @param depth How far down the chain the cause is, 1 for the exception's own cause.
  * @returns The snapshot.
  */
-const createSnapshot = (cause: object, context: IRedactionContext): Error => {
+const createSnapshot = (cause: object, context: IRedactionContext, depth: number): Error => {
   const { values, exceptionClass, snapshots } = context;
   const isRecognisedException = readProperty(cause, EXCEPTION_BRAND, false) === true;
   const message = readProperty(cause, 'message', false);
@@ -284,11 +299,12 @@ const createSnapshot = (cause: object, context: IRedactionContext): Error => {
   } catch {
     hasCause = false;
   }
-  if (hasCause) {
+  // the chain stops at a fixed depth rather than where the call stack runs out
+  if (hasCause && depth < MAX_NESTING_DEPTH) {
     defineValue(
       snapshot,
       'cause',
-      redactCause(readProperty(cause, 'cause', false), context),
+      redactCause(readProperty(cause, 'cause', false), context, depth + 1),
       false,
     );
   }
@@ -299,21 +315,17 @@ const createSnapshot = (cause: object, context: IRedactionContext): Error => {
  * Redacts a cause: a primitive like any value, and an object as its snapshot.
  * @param cause The cause.
  * @param context The values and the snapshots built so far.
- * @returns The redacted cause, or `undefined` when it can't be copied, such as a chain too deep to
- * walk.
+ * @param depth How far down the chain the cause is, 1 for the exception's own cause.
+ * @returns The redacted cause.
  */
-const redactCause = (cause: unknown, context: IRedactionContext): unknown => {
+const redactCause = (cause: unknown, context: IRedactionContext, depth: number): unknown => {
   if (isPrimitive(cause)) {
     return redactPrimitive(cause, context.values);
   }
   if (context.snapshots.has(cause)) {
     return context.snapshots.get(cause);
   }
-  try {
-    return createSnapshot(cause, context);
-  } catch {
-    return undefined;
-  }
+  return createSnapshot(cause, context, depth);
 };
 
 /**
@@ -369,6 +381,6 @@ export const redactExceptionParts = (
   return {
     message,
     data: parts.data === undefined ? undefined : redactData(parts.data, values),
-    cause: redactCause(parts.cause, { values, exceptionClass, snapshots: new Map() }),
+    cause: redactCause(parts.cause, { values, exceptionClass, snapshots: new Map() }, 1),
   };
 };

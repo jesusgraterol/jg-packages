@@ -71,6 +71,37 @@ describe('readResponseBytes', () => {
     expect(readCount()).toBeLessThan(5);
   });
 
+  test('unlocks the body once it cancels a read past the limit', async () => {
+    const { stream } = streamOf([[1, 2], [3, 4], [5]]);
+    const response = new Response(stream);
+
+    await expectToRejectCode(readResponseBytes(response, 4), ERRORS.RESPONSE_TOO_LARGE);
+
+    expect(response.body?.locked).toBe(false);
+    await expect(response.body?.cancel()).resolves.toBeUndefined();
+  });
+
+  test('unlocks the body when its stream fails, as an aborted fetch fails it', async () => {
+    const abort = new DOMException('The operation was aborted.', 'AbortError');
+    let pulls = 0;
+    const response = new Response(
+      new ReadableStream<Uint8Array>({
+        pull: (controller) => {
+          pulls += 1;
+          if (pulls === 1) {
+            controller.enqueue(new Uint8Array([1]));
+          } else {
+            controller.error(abort);
+          }
+        },
+      }),
+    );
+
+    await expect(readResponseBytes(response, 4)).rejects.toBe(abort);
+
+    expect(response.body?.locked).toBe(false);
+  });
+
   test.each([[0], [-1], [1.5], [Number.NaN]])(
     'readResponseBytes(response, %d) -> rejects with INVALID_OPTIONS',
     async (maxBytes) => {

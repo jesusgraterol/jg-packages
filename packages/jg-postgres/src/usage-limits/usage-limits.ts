@@ -75,6 +75,7 @@ const assertInput = ({
  * }
  * @throws
  * - INVALID_USAGE_ADMISSION: The usage admission needs an actor id of 1 to 256 characters, an action id of 1 to 128, a scope key of 1 to 256 when given, a whole positive limit, and positive seconds, with a cooldown only for a scope.
+ * - TRANSACTION_OUTCOME_UNKNOWN: The connection was lost during COMMIT, so the transaction may or may not have committed.
  */
 export const admitUsage = (
   postgres: IPostgres,

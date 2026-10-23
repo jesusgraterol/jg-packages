@@ -97,4 +97,23 @@ describe('serializeObject', () => {
 
     expect(serializeObject(root, Number.POSITIVE_INFINITY)).toBeNull();
   });
+
+  test('keeps data nested 256 levels deep, and gives null for data one level deeper', () => {
+    const nest = (levels: number, innermost: unknown): Record<string, unknown> => {
+      let value: Record<string, unknown> = { innermost };
+      for (let level = 1; level < levels; level += 1) {
+        value = { next: value };
+      }
+      return value;
+    };
+    const wrap = (innermost: string) => `${'{"next":'.repeat(255)}${innermost}${'}'.repeat(255)}`;
+
+    expect(serializeObject(nest(256, 1), Number.POSITIVE_INFINITY)).toBe(wrap('{"innermost":1}'));
+    expect(serializeObject(nest(257, 1), Number.POSITIVE_INFINITY)).toBeNull();
+    // a value toJSON turns into a string takes no level, as in JSON.stringify, and an array takes one
+    expect(
+      serializeObject(nest(256, new Date('2026-01-01T00:00:00.000Z')), Number.POSITIVE_INFINITY),
+    ).toBe(wrap('{"innermost":"2026-01-01T00:00:00.000Z"}'));
+    expect(serializeObject(nest(256, []), Number.POSITIVE_INFINITY)).toBeNull();
+  });
 });

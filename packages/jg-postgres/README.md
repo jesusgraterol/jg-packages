@@ -211,7 +211,7 @@ const admission = await admitUsage(postgres, {
 // { outcome: 'accepted' | 'cooldown' | 'limit', retryAt: an ISO timestamp, or null }
 ```
 
-Concurrent calls queue on transaction advisory locks, the scope's then the actor's, so two can never both pass, and every comparison uses the database's clock. The accepted actions go in a `usage_event` table:
+Concurrent calls queue on transaction advisory locks, the scope's then the actor's, so two can never both pass, and every comparison uses the database's clock. Like `transaction`, it rejects with `TRANSACTION_OUTCOME_UNKNOWN` when the connection breaks during `COMMIT`, and the action may or may not have been recorded. The accepted actions go in a `usage_event` table:
 
 ```sql
 CREATE TABLE usage_event (
@@ -378,7 +378,7 @@ await errorLog.recordMany(
 );
 ```
 
-A row's `error` is the error's message, prefixed with its code, such as `NOT_FOUND: The user doesn't exist.`, without null characters, and cut to `maxMessageLength` characters, ending in ` [truncated]`. An `Exception`'s data, when it's an object, is its `payload`, with `redactKeys` replaced, cycles left out, and null characters removed; data larger than `maxPayloadBytes` as JSON is left out of that row alone. `userInfo` is stored as given, without its undefined fields. An entry's own `origin` overrides the log's, and an origin that isn't 1 to 256 characters falls back to it.
+A row's `error` is the error's message, prefixed with its code, such as `NOT_FOUND: The user doesn't exist.`, without null characters, and cut to `maxMessageLength` characters, ending in ` [truncated]`. An `Exception`'s data, when it's an object, is its `payload`, with `redactKeys` replaced, cycles left out, and null characters removed; data larger than `maxPayloadBytes` as JSON, or nested more than 256 levels deep, is left out of that row alone. `userInfo` is stored as given, without its undefined fields, and left out the same way when it's nested more than 256 levels deep. An entry's own `origin` overrides the log's, and an origin that isn't 1 to 256 characters falls back to it.
 
 A `deduplicationKey` is stored as its SHA-256 digest in lowercase hex, the same digest as Node.js's `createHash('sha256').update(key).digest('hex')`, and the table keeps one row per origin and digest: a repeat inserts nothing and resolves to `false`, or counts 0. An app moving digests it computed itself onto the log passes the strings it hashed, not the digests, so its stored rows keep their identity. Without a key, every record inserts a row.
 

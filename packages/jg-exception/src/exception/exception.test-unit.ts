@@ -17,6 +17,47 @@ import { isException } from './utilities.js';
 const inspectAll = (value: unknown): string =>
   inspect(value, { depth: null, showHidden: true, maxArrayLength: null, maxStringLength: null });
 
+/**
+ * Nests a value in arrays, one inside the other.
+ * @param levels How many arrays are around the value.
+ * @param value The innermost value.
+ * @returns The outermost array, or the value itself for no levels.
+ */
+const nestInArrays = (levels: number, value: IJsonValue): IJsonValue => {
+  let nested = value;
+  for (let level = 0; level < levels; level += 1) {
+    nested = [nested];
+  }
+  return nested;
+};
+
+/**
+ * Lists an error's chain of causes, from its own cause down.
+ * @param error The error.
+ * @returns Each cause that is an Error.
+ */
+const listCauses = (error: Error): Error[] => {
+  const causes: Error[] = [];
+  for (let cause = error.cause; cause instanceof Error; cause = cause.cause) {
+    causes.push(cause);
+  }
+  return causes;
+};
+
+/**
+ * Builds a chain of errors, `cause 1` at its head and the given value in the deepest message.
+ * @param length How many errors the chain holds.
+ * @param value The value the deepest message holds.
+ * @returns The head of the chain.
+ */
+const buildChain = (length: number, value: string): Error => {
+  let chain = new Error(`cause ${length} ${value}`);
+  for (let position = length - 1; position >= 1; position -= 1) {
+    chain = new Error(`cause ${position}`, { cause: chain });
+  }
+  return chain;
+};
+
 describe('Exception', () => {
   test('is an Error with the message, the code, and the data', () => {
     const exception = new Exception('The user was not found.', {
@@ -222,13 +263,22 @@ describe('Exception with redact', () => {
   });
 
   test('uses null for data nested too deeply to copy', () => {
-    let data: IJsonValue = 'tok_live_6';
-    for (let depth = 0; depth < 100_000; depth += 1) {
-      data = [data];
-    }
+    const data = nestInArrays(100_000, 'tok_live_6');
     const exception = new Exception('Failed', { code: 'FAILED', data, redact: ['tok_live_6'] });
 
     expect(exception.data).toBeNull();
+  });
+
+  test('copies data nested 256 levels deep, and uses null for data one level deeper', () => {
+    const build = (levels: number) =>
+      new Exception('Failed', {
+        code: 'FAILED',
+        data: nestInArrays(levels, 'tok_live_19'),
+        redact: ['tok_live_19'],
+      });
+
+    expect(build(256).data).toStrictEqual(nestInArrays(256, '[redacted]'));
+    expect(build(257).data).toBeNull();
   });
 
   test('turns a number whose digits hold a value into its redacted text', () => {
@@ -460,6 +510,28 @@ describe('Exception with redact', () => {
 
     expect(build).not.toThrow();
     expect((build().cause as Error).message).toBe('layer');
+    expect(listCauses(build())).toHaveLength(256);
+  });
+
+  test('copies a chain of 256 causes, and leaves out the causes past them', () => {
+    const build = (length: number) =>
+      new Exception('Failed', {
+        code: 'FAILED',
+        cause: buildChain(length, 'tok_live_20'),
+        redact: ['tok_live_20'],
+      });
+    const atLimit = listCauses(build(256));
+    const pastLimit = listCauses(build(257));
+    const deepestPastLimit = pastLimit.at(-1);
+
+    expect(atLimit.map(({ message }) => message)).toStrictEqual(
+      Array.from({ length: 256 }, (_, index) =>
+        index === 255 ? 'cause 256 [redacted]' : `cause ${index + 1}`,
+      ),
+    );
+    expect(pastLimit).toHaveLength(256);
+    expect(deepestPastLimit?.message).toBe('cause 256');
+    expect(deepestPastLimit !== undefined && 'cause' in deepestPastLimit).toBe(false);
   });
 
   test('reads what an untyped caller passes, skipping what it cannot use', () => {
@@ -639,6 +711,19 @@ describe('Exception#toJSON', () => {
     expect(data).toStrictEqual({ ids: [1, 2] });
   });
 
+  test('gives data nested 256 levels deep, counting each level where an object is held', () => {
+    const shared = { inner: [] };
+    const toJsonData = (data: IJsonValue) =>
+      new Exception('Failed', { code: 'FAILED', data }).toJSON().data;
+
+    expect(toJsonData(nestInArrays(256, 1))).toStrictEqual(nestInArrays(256, 1));
+    // the shared object's array is 256 levels down in its deeper place
+    expect(toJsonData([shared, nestInArrays(253, shared)])).toStrictEqual([
+      { inner: [] },
+      nestInArrays(253, { inner: [] }),
+    ]);
+  });
+
   test.each([
     [
       'refers back to itself',
@@ -651,6 +736,15 @@ describe('Exception#toJSON', () => {
     ['contains a BigInt', { id: 1n }],
     ['is a function', () => 1],
     ['is a symbol', Symbol('data')],
+    ['is nested 257 levels deep', nestInArrays(257, 1)],
+    ['is nested 100,000 levels deep', nestInArrays(100_000, 1)],
+    [
+      'holds an object high up that, held again deeper, nests 257 levels deep',
+      (() => {
+        const shared = { inner: [] };
+        return [shared, nestInArrays(254, shared)];
+      })(),
+    ],
   ])('uses null for data that %s', (_, data) => {
     const exception = new Exception('Failed', {
       code: 'FAILED',

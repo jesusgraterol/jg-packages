@@ -104,7 +104,7 @@ export default defineConfig({
 });
 ```
 
-The plugin works with Vite 7 and 8. `vite build` writes `dist/sw.js` after the app's files. `vite` serves a worker without caching at `/sw.js`, so you can test registration and updates while every request still reaches the dev server. That worker's cache is named `<cacheNamePrefix>--development`, so it's the same on every request and the browser doesn't install it again on each reload; a built worker gets a random name instead, so each deployment replaces the previous one's cache.
+The plugin works with Vite 7 and 8. `vite build` writes `dist/sw.js` after the app's files, and only a build does: closing `vite`'s dev server or a Vitest run leaves an existing `dist/sw.js` as it is. `vite` serves a worker without caching at `/sw.js`, so you can test registration and updates while every request still reaches the dev server. That worker's cache is named `<cacheNamePrefix>--development`, so it's the same on every request and the browser doesn't install it again on each reload; a built worker gets a random name instead, so each deployment replaces the previous one's cache.
 
 ### Generate it with the CLI
 

@@ -179,7 +179,7 @@ class ContactController {
 export class ContactModule {}
 ```
 
-A missing, invalid, expired, or reused token, or one solved on another hostname or for another action, gets a 403 with `TURNSTILE_FAILED`, which isn't reported. When siteverify can't be reached, fails, or refuses the secret key, the request gets a 503 with `TURNSTILE_UNAVAILABLE`, which is reported with the reason as its cause. Neither tells the client what Cloudflare answered. Siteverify is called through [jg-fetch](https://jg-packages.jesusgraterol.dev/packages/jg-fetch/), which retries a network error, a timeout, or a 5xx with the same idempotency key, so a token is verified once. Each token verifies once, so the page resets its widget after every request.
+A missing, invalid, expired, or reused token, or one solved on another hostname or for another action, gets a 403 with `TURNSTILE_FAILED`, which isn't reported. When siteverify refused the token, the error's cause holds its `error-codes` as `data.errorCodes`, for an app that logs or reports these failures. When siteverify can't be reached, fails, or refuses the secret key, the request gets a 503 with `TURNSTILE_UNAVAILABLE`, which is reported with the reason as its cause. Neither tells the client what Cloudflare answered. Siteverify is called through [jg-fetch](https://jg-packages.jesusgraterol.dev/packages/jg-fetch/), which retries a network error, a timeout, or a 5xx with the same idempotency key, so a token is verified once. Each token verifies once, so the page resets its widget after every request.
 
 ### Bootstrapping an app
 

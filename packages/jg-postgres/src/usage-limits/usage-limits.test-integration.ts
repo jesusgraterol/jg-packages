@@ -2,12 +2,14 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 
+import { expectToRejectCode } from 'jg-exception/testing';
 import type { PoolClient } from 'pg';
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 
 import { createAdvisoryLockKey } from '../locks/index.js';
 import type { IPostgres } from '../postgres/index.js';
 import { deleteExpiredInBatches } from '../retention/index.js';
+import { ERRORS } from '../shared/index.js';
 import { connectTestPostgres } from '../test-utils/database.js';
 
 import type { IUsageAdmissionInput } from './types.js';
@@ -211,6 +213,27 @@ describe('admitUsage', () => {
 
     expect(await admitUsage(postgres, input)).toMatchObject({ outcome: 'accepted' });
     expect(await countEvents(input.actorId)).toBe(1);
+  });
+
+  test('rejects with TRANSACTION_OUTCOME_UNKNOWN when its COMMIT gets no answer', async () => {
+    const input = createInput();
+    const client: PoolClient = await postgres.pool.connect();
+    const connectionError = new Error('Connection terminated unexpectedly');
+    const realQuery = client.query.bind(client) as (...args: unknown[]) => unknown;
+    vi.spyOn(client, 'query').mockImplementation((...args: unknown[]) =>
+      args[0] === 'COMMIT' ? Promise.reject(connectionError) : realQuery(...args),
+    );
+    vi.spyOn(postgres.pool, 'connect').mockResolvedValueOnce(client as never);
+
+    await expectToRejectCode(
+      admitUsage(postgres, input),
+      ERRORS.TRANSACTION_OUTCOME_UNKNOWN,
+      'The connection was lost during COMMIT, so the transaction may or may not have committed.',
+    );
+    vi.restoreAllMocks();
+
+    // the pool destroyed the client, so the next admission gets a working one
+    expect(await admitUsage(postgres, input)).toMatchObject({ outcome: 'accepted' });
   });
 });
 

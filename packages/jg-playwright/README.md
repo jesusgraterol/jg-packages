@@ -34,6 +34,13 @@ await expectNoAxeViolations(page);
 await expectNoAxeViolations(page, { include: '[role="dialog"]' });
 ```
 
+`ruleSet` picks other rules: `'wcag22aa'` adds WCAG 2.2 level AA, such as targets of at least 24 by 24 pixels, and `'axe-default'` runs every rule axe runs by default, its best practices included, such as headings that aren't empty:
+
+```ts
+await expectNoAxeViolations(page, { ruleSet: 'wcag22aa' });
+await expectNoAxeViolations(page, { ruleSet: 'axe-default' });
+```
+
 Wait until web fonts and every image have loaded, and layout has settled, before a screenshot. A broken image fails it, by its URL:
 
 ```ts
@@ -75,7 +82,7 @@ await waitForRecordedAudio(page);
 
 ### Errors
 
-`fillProtectedField` throws an `Exception` with the code `PROTECTED_FIELD_FILL_FAILED` when the fill fails. The other helpers fail through Playwright's `expect`, so their failures read like any other assertion's.
+`fillProtectedField` throws an `Exception` with the code `PROTECTED_FIELD_FILL_FAILED` when the fill fails, and `expectNoAxeViolations` one with `INVALID_AXE_OPTIONS` for a `ruleSet` it doesn't know, before it scans anything. The other failures go through Playwright's `expect`, so they read like any other assertion's.
 
 ### Browser limits
 

@@ -4,7 +4,9 @@ import { readFileSync } from 'node:fs';
 
 import { hashValue } from 'jg-crypto';
 import { extractMessage } from 'jg-exception';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { expectToRejectCode } from 'jg-exception/testing';
+import type { PoolClient } from 'pg';
+import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 
 import type { IPostgres } from '../postgres/index.js';
 import { deleteExpiredInBatches } from '../retention/index.js';
@@ -205,6 +207,26 @@ const insertPastChallenge = async (
   );
 };
 
+/**
+ * Makes the next transaction's COMMIT fail without an answer, as when the connection breaks
+ * during it, by handing the pool's next client a COMMIT that rejects.
+ * @returns A promise that resolves once the client is in place.
+ */
+const loseNextCommitAnswer = async (): Promise<void> => {
+  const client: PoolClient = await postgres.pool.connect();
+  const realQuery = client.query.bind(client) as (...args: unknown[]) => unknown;
+  vi.spyOn(client, 'query').mockImplementation((...args: unknown[]) =>
+    args[0] === 'COMMIT'
+      ? Promise.reject(new Error('Connection terminated unexpectedly'))
+      : realQuery(...args),
+  );
+  vi.spyOn(postgres.pool, 'connect').mockResolvedValueOnce(client as never);
+};
+
+// the message of a transaction whose COMMIT got no answer
+const OUTCOME_UNKNOWN_MESSAGE =
+  'The connection was lost during COMMIT, so the transaction may or may not have committed.';
+
 beforeAll(async () => {
   postgres = connectTestPostgres({ max: 8 });
   await postgres.query('DROP TABLE IF EXISTS verification_challenge;');
@@ -219,6 +241,10 @@ beforeAll(async () => {
       'verify-cooldown': { ...POLICY, resendLimit: 5, resendCooldownSeconds: 60 },
     },
   });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 afterAll(async () => {
@@ -375,6 +401,18 @@ describe('issue', () => {
     expect(extractMessage(error)).not.toContain(code);
     expect(row).toMatchObject({ used_at: null, superseded_at: null });
     expect(await challenges.issue(binding, () => undefined)).toMatchObject({ outcome: 'limit' });
+  });
+
+  test('rejects with TRANSACTION_OUTCOME_UNKNOWN when its COMMIT gets no answer, delivering nothing', async () => {
+    const deliver = vi.fn();
+    await loseNextCommitAnswer();
+
+    await expectToRejectCode(
+      challenges.issue(createBinding(), deliver),
+      ERRORS.TRANSACTION_OUTCOME_UNKNOWN,
+      OUTCOME_UNKNOWN_MESSAGE,
+    );
+    expect(deliver).not.toHaveBeenCalled();
   });
 });
 
@@ -727,6 +765,20 @@ describe('resend', () => {
     if (code !== newCode) {
       expect(await challenges.consume({ ...binding, challengeToken, code })).toBe(false);
     }
+  });
+
+  test('rejects with TRANSACTION_OUTCOME_UNKNOWN when its COMMIT gets no answer, delivering nothing', async () => {
+    const binding = createBinding({ actionId: 'verify-resend' });
+    const { challengeToken } = await issueWithCode(binding);
+    const deliver = vi.fn();
+    await loseNextCommitAnswer();
+
+    await expectToRejectCode(
+      challenges.resend({ ...binding, challengeToken }, deliver),
+      ERRORS.TRANSACTION_OUTCOME_UNKNOWN,
+      OUTCOME_UNKNOWN_MESSAGE,
+    );
+    expect(deliver).not.toHaveBeenCalled();
   });
 });
 

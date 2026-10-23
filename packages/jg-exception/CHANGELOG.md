@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.1
+
+### Fixed
+
+- An `Exception` built with `redact` copies its data, and the chain of its causes, 256 levels deep, and `toJSON()` serializes data 256 levels deep, whatever is left of the call stack: data nested deeper becomes `null`, and causes further down are left out. Before, the depth depended on the stack, so redacted data could come back cut off part way instead of `null`.
+- `extractMessage` follows at most 256 causes and nested properties, and stringifies objects nested at most 256 levels deep, so a longer chain gives its first 257 messages instead of throwing `RangeError: Maximum call stack size exceeded`. An object JSON leaves out, such as one whose `toJSON` returns nothing, gives the default message instead of `undefined`.
+
 ## 1.7.0
 
 ### Added
