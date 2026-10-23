@@ -76,6 +76,7 @@ describe('runGit environment', () => {
         git_askpass: '/bin/askpass',
         Git_Terminal_Prompt: '1',
         ssh_askpass: '/bin/ssh-askpass',
+        Gcm_Interactive: 'always',
         GIT_SSL_CAINFO: '/certs/ca.pem',
       },
     });
@@ -84,8 +85,10 @@ describe('runGit environment', () => {
     expect(env['git_askpass']).toBeUndefined();
     expect(env['Git_Terminal_Prompt']).toBeUndefined();
     expect(env['ssh_askpass']).toBeUndefined();
+    expect(env['Gcm_Interactive']).toBeUndefined();
     expect(env['GIT_SSL_CAINFO']).toBe('/certs/ca.pem');
     expect(env['GIT_ASKPASS']).toBe('');
     expect(env['GIT_TERMINAL_PROMPT']).toBe('0');
+    expect(env['GCM_INTERACTIVE']).toBe('never');
   });
 });

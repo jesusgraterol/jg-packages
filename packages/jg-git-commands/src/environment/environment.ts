@@ -22,7 +22,8 @@ const isBaseVariableKept = (key: string): boolean => {
  * change what Git does, every `GIT_*` one, such as `GIT_DIR` or `GIT_CONFIG_PARAMETERS`, and
  * `SSH_ASKPASS` with `SSH_ASKPASS_REQUIRE`, then the variables that keep it from prompting:
  * `GIT_TERMINAL_PROMPT=0`, an empty `GIT_ASKPASS`, which ends Git's askpass lookup before
- * `core.askPass` and `SSH_ASKPASS`, and an SSH command in batch mode. It also allows no transport,
+ * `core.askPass` and `SSH_ASKPASS`, `GCM_INTERACTIVE=never`, so Git Credential Manager fails
+ * rather than open a sign-in window, and an SSH command in batch mode. It also allows no transport,
  * with an empty `GIT_ALLOW_PROTOCOL`, so reading a partial clone never fetches a missing object,
  * and sets the C locale, so Git's messages are in English. Names are compared without case, as
  * Windows does, so a `git_dir` or `Lc_All` from the base environment can't stand in for the
