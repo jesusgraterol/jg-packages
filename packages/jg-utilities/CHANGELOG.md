@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.2
+
+### Fixed
+
+- `createTaskRunner`'s `run` and `trigger` claim the key, and start tracking the task, before the task starts, where they did it just after the task's synchronous start. A same-key `run` or `trigger` from that synchronous part started a second task, `isIdle(key)` returned `true` while the first one ran, and a `close()` called there resolved without waiting for it.
+
 ## 1.7.1
 
 ### Fixed
