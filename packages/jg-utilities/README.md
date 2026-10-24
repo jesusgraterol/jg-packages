@@ -206,7 +206,7 @@ try {
 }
 ```
 
-`run` claims its `key` before the task awaits anything, and another `run` with the key rejects with `TASK_RUNNER_BUSY`, or, with `ifBusy: 'join'`, resolves to the running task's result. `close` makes later runs reject with `TASK_RUNNER_CLOSED` and later triggers resolve to `false`, and never rejects. A deadline's `child({ timeoutSeconds })` bounds one step within it, and `stopReason()` says whether the caller's signal, `'cancelled'`, or the deadline, `'deadline'`, ended the work.
+`run` claims its `key` before the task starts, and another `run` with the key, even one from inside the task, rejects with `TASK_RUNNER_BUSY`, or, with `ifBusy: 'join'`, resolves to the running task's result. A task must not join its own key or await its own runner's `close()`, because it would wait for itself. `close` makes later runs reject with `TASK_RUNNER_CLOSED` and later triggers resolve to `false`, and never rejects. A deadline's `child({ timeoutSeconds })` bounds one step within it, and `stopReason()` says whether the caller's signal, `'cancelled'`, or the deadline, `'deadline'`, ended the work.
 
 Save a file from a browser, keeping the object URL long enough for the download to start:
 

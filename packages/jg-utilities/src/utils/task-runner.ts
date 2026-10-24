@@ -23,11 +23,13 @@ const createClosedError = (): Exception =>
  * shutdown can drain: `close` stops new tasks at once, optionally aborts the running ones through
  * the signal each task receives, and resolves once every task has settled.
  *
- * `run` starts a task now and passes its result or error through, after claiming its `key`, so
- * only one task with that key runs at a time: another `run` with the key rejects with
- * TASK_RUNNER_BUSY, or, with `ifBusy: 'join'`, resolves to the running task's result. `trigger`
- * is for timers: it skips a tick while the key's task runs or the runner is closing, resolving to
- * false, and sends a task's error to `onError` instead of rejecting.
+ * `run` starts a task now and passes its result or error through. It claims its `key` before the
+ * task starts, so only one task with that key runs at a time: another `run` with the key, even
+ * from inside the task, rejects with TASK_RUNNER_BUSY, or, with `ifBusy: 'join'`, resolves to the
+ * running task's result. A task must not join its own key or await its own runner's `close`,
+ * because it would wait for itself. `trigger` is for timers: it skips a tick while the key's task
+ * runs or the runner is closing, resolving to false, and sends a task's error to `onError` instead
+ * of rejecting.
  * @param options Where trigger's errors go.
  * @returns The runner.
  * @example
@@ -66,10 +68,15 @@ export const createTaskRunner = ({ onError }: ITaskRunnerOptions): ITaskRunner =
   ): Promise<T> => {
     const taskSignal =
       signal === undefined ? controller.signal : AbortSignal.any([controller.signal, signal]);
-    // the executor runs now, so the task starts in this tick, and a synchronous throw rejects
-    const promise = new Promise<T>((resolve) => {
-      resolve(task(taskSignal));
+    // assigned by the executor, which runs before the constructor returns
+    let resolveTask!: (result: T | PromiseLike<T>) => void;
+    let rejectTask!: (reason: unknown) => void;
+    const promise = new Promise<T>((resolve, reject) => {
+      resolveTask = resolve;
+      rejectTask = reject;
     });
+    // the key and the settlement are recorded before the task starts, so the task itself finds its
+    // key taken and close waits for it
     if (key !== undefined) {
       tasksByKey.set(key, promise);
     }
@@ -83,6 +90,12 @@ export const createTaskRunner = ({ onError }: ITaskRunnerOptions): ITaskRunner =
     };
     const settlement: Promise<void> = promise.then(finish, finish);
     settlements.add(settlement);
+    // the task starts in this tick, and a synchronous throw rejects
+    try {
+      resolveTask(task(taskSignal));
+    } catch (error) {
+      rejectTask(error);
+    }
     return promise;
   };
 
