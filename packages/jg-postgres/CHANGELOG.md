@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0
+
+### Changed
+
+- The verification challenges' `consume` runs in a transaction, so it rejects with `TRANSACTION_OUTCOME_UNKNOWN` when the connection breaks during `COMMIT`, like `issue` and `resend`.
+
+### Fixed
+
+- `consume` and `resend` lock the challenge's row before they judge its expiry, on `clock_timestamp()`. They decided it in the statement that waited for the lock, and PostgreSQL rechecks that decision after the wait only when the lock's holder updated the row, so a call that waited past the expiry for a holder that changed nothing could still use the code or resend it. At exactly `expires_at`, `consume` now fails, as `resend` already did.
+
 ## 0.6.1
 
 ### Fixed

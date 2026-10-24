@@ -1,5 +1,6 @@
 import { generateRandomBytes, generateRandomDigits, hashValue } from 'jg-crypto';
 import { Exception } from 'jg-exception';
+import type { PoolClient } from 'pg';
 
 import { lockTransaction } from '../locks/index.js';
 import type { IPostgres } from '../postgres/index.js';
@@ -51,15 +52,13 @@ type IResendDecision =
   | { outcome: 'invalid' };
 
 /*
- * Locks the binding's active challenge for the token, and reads when its cooldown ends, counted
- * from its last send. A challenge that's used, superseded, expired, or out of attempts matches no
- * row. Concurrent resends wait for the lock, and each then reads the row as the other left it.
+ * Locks the binding's challenge for the token while it's unused, not superseded, and has attempts
+ * left. Expiry isn't part of it: PostgreSQL rechecks these conditions after a wait for the lock only
+ * when the call holding it updated the row, so a call judges expiry once it holds the lock, on
+ * clock_timestamp(). Concurrent calls wait for the lock, and each then sees the row as the other
+ * left it.
  */
-const RESEND_LOCK_QUERY = `SELECT id,
-  resend_count,
-  expires_at,
-  COALESCE(resent_at, created_at) + make_interval(secs => $6) AS cooldown_ends_at,
-  COALESCE(resent_at, created_at) + make_interval(secs => $6) > clock_timestamp() AS is_cooling_down
+const CHALLENGE_LOCK_QUERY = `SELECT id
 FROM verification_challenge
 WHERE token_hash = $1
   AND actor_id = $2
@@ -67,9 +66,17 @@ WHERE token_hash = $1
   AND target_id = $4
   AND used_at IS NULL
   AND superseded_at IS NULL
-  AND expires_at > clock_timestamp()
   AND failed_attempt_count < $5
 FOR UPDATE;`;
+
+// reads a locked challenge's resend count and, on the clock after any wait for the lock, whether it
+// expired and when its cooldown, counted from its last send, ends
+const RESEND_STATE_QUERY = `SELECT resend_count,
+  expires_at <= clock_timestamp() AS is_expired,
+  COALESCE(resent_at, created_at) + make_interval(secs => $2) AS cooldown_ends_at,
+  COALESCE(resent_at, created_at) + make_interval(secs => $2) > clock_timestamp() AS is_cooling_down
+FROM verification_challenge
+WHERE id = $1;`;
 
 // stores the new code's hash and counts the resend, keeping the expiry and the failed attempts
 const RESEND_UPDATE_QUERY = `UPDATE verification_challenge
@@ -82,32 +89,14 @@ RETURNING resend_count,
   GREATEST(0, floor(extract(epoch FROM expires_at - clock_timestamp())))::integer
     AS remaining_seconds;`;
 
-/*
- * Uses the binding's challenge when the code's hash matches, or counts one failed attempt, in one
- * statement. The row lock makes concurrent attempts wait, and each then sees the row as the other
- * left it, so a code is used once. A challenge that's used, superseded, expired, or out of attempts
- * matches no row, and nothing changes.
- */
-const CONSUME_QUERY = `WITH challenge AS (
-  SELECT id, code_hash = $5 AS is_match
-  FROM verification_challenge
-  WHERE token_hash = $1
-    AND actor_id = $2
-    AND action_id = $3
-    AND target_id = $4
-    AND used_at IS NULL
-    AND superseded_at IS NULL
-    AND expires_at >= now()
-    AND failed_attempt_count < $6
-  FOR UPDATE
-)
-UPDATE verification_challenge
-SET used_at = CASE WHEN challenge.is_match THEN now() END,
-  failed_attempt_count = verification_challenge.failed_attempt_count
-    + CASE WHEN challenge.is_match THEN 0 ELSE 1 END
-FROM challenge
-WHERE verification_challenge.id = challenge.id
-RETURNING challenge.is_match;`;
+// uses a locked challenge when the code's hash matches, or counts one failed attempt, unless it
+// expired, which leaves it unchanged
+const CONSUME_UPDATE_QUERY = `UPDATE verification_challenge
+SET used_at = CASE WHEN code_hash = $2 THEN clock_timestamp() END,
+  failed_attempt_count = failed_attempt_count + CASE WHEN code_hash = $2 THEN 0 ELSE 1 END
+WHERE id = $1
+  AND expires_at > clock_timestamp()
+RETURNING code_hash = $2 AS is_match;`;
 
 /**
  * Creates the functions that issue and consume verification challenges, such as the code that
@@ -193,6 +182,31 @@ export const createVerificationChallenges = (
         redact: [delivery.code, challengeToken],
       });
     }
+  };
+
+  /**
+   * Locks the binding's challenge for the token until the transaction ends.
+   * @param client The transaction's client.
+   * @param challengeToken The challenge's token.
+   * @param binding The actor, action, and target.
+   * @param maxFailedAttempts The policy's failed-attempt limit.
+   * @returns A promise that resolves to the challenge's id, or to undefined when it's used,
+   * superseded, out of attempts, or another binding's.
+   */
+  const lockChallenge = async (
+    client: PoolClient,
+    challengeToken: string,
+    { actorId, actionId, targetId }: IVerificationBinding,
+    maxFailedAttempts: number,
+  ): Promise<string | undefined> => {
+    const { rows } = await client.query<{ id: string }>(CHALLENGE_LOCK_QUERY, [
+      hashValue(challengeToken),
+      actorId,
+      actionId,
+      targetId,
+      maxFailedAttempts,
+    ]);
+    return rows[0]?.id;
   };
 
   /**
@@ -323,42 +337,51 @@ export const createVerificationChallenges = (
     const { actorId, actionId, targetId } = binding;
     const code = generateRandomDigits(codeLength);
     const decision = await postgres.transaction(async (client): Promise<IResendDecision> => {
-      const { rows } = await client.query<{
-        id: string;
-        resend_count: number;
-        expires_at: string;
-        cooldown_ends_at: string;
-        is_cooling_down: boolean;
-      }>(RESEND_LOCK_QUERY, [
-        hashValue(challengeToken),
-        actorId,
-        actionId,
-        targetId,
+      const challengeId = await lockChallenge(
+        client,
+        challengeToken,
+        binding,
         policy.maxFailedAttempts,
-        resendCooldownSeconds,
-      ]);
-      const [challenge] = rows;
-      if (challenge === undefined) {
+      );
+      if (challengeId === undefined) {
         return { outcome: 'invalid' };
       }
-      if (challenge.resend_count >= resendLimit) {
+      const { rows: states } = await client.query<{
+        resend_count: number;
+        is_expired: boolean;
+        cooldown_ends_at: string;
+        is_cooling_down: boolean;
+      }>(RESEND_STATE_QUERY, [challengeId, resendCooldownSeconds]);
+      // the lock keeps the one row in place
+      const [state] = states as [
+        {
+          resend_count: number;
+          is_expired: boolean;
+          cooldown_ends_at: string;
+          is_cooling_down: boolean;
+        },
+      ];
+      if (state.is_expired) {
+        return { outcome: 'invalid' };
+      }
+      if (state.resend_count >= resendLimit) {
         return { outcome: 'limit' };
       }
-      if (challenge.is_cooling_down) {
-        return { outcome: 'cooldown', retryAt: challenge.cooldown_ends_at };
+      if (state.is_cooling_down) {
+        return { outcome: 'cooldown', retryAt: state.cooldown_ends_at };
       }
       const { rows: updated } = await client.query<{
         resend_count: number;
         expires_at: string;
         remaining_seconds: number;
-      }>(RESEND_UPDATE_QUERY, [challenge.id, hashChallengeCode(challengeToken, code)]);
+      }>(RESEND_UPDATE_QUERY, [challengeId, hashChallengeCode(challengeToken, code)]);
       // RETURNING gives the one updated row, which the lock keeps in place
       const [row] = updated as [
         { resend_count: number; expires_at: string; remaining_seconds: number },
       ];
       return {
         outcome: 'resent',
-        challengeId: challenge.id,
+        challengeId,
         resendCount: row.resend_count,
         expiresAt: row.expires_at,
         remainingSeconds: row.remaining_seconds,
@@ -390,11 +413,14 @@ export const createVerificationChallenges = (
    * Uses a challenge when its code matches, or counts one failed attempt against it. A token or
    * code without the expected shape resolves to false without touching the database, and so does
    * every other failure: a used, superseded, or expired challenge, one out of attempts, a wrong
-   * code, or another binding's token.
+   * code, or another binding's token. Expiry is judged on the database's clock once the
+   * challenge's row is locked, so an attempt that waited for another call past the expiry fails
+   * without writing.
    * @param attempt The binding, the challenge's token, and the code.
    * @returns A promise that resolves to whether the code matched.
    * @throws
    * - INVALID_VERIFICATION_INPUT: The verification input needs an actor id of 1 to 256 characters, an action id with a policy, a target id of 1 to 256 characters, and, to issue or resend, a delivery function, and to resend, a policy with a resend limit.
+   * - TRANSACTION_OUTCOME_UNKNOWN: The connection was lost during COMMIT, so the transaction may or may not have committed.
    */
   const consume = async ({
     challengeToken,
@@ -405,15 +431,23 @@ export const createVerificationChallenges = (
     if (!isChallengeTokenValid(challengeToken) || !isCodeValid(code, codeLength)) {
       return false;
     }
-    const [result] = await postgres.query<{ is_match: boolean }>(CONSUME_QUERY, [
-      hashValue(challengeToken),
-      binding.actorId,
-      binding.actionId,
-      binding.targetId,
-      hashChallengeCode(challengeToken, code),
-      policy.maxFailedAttempts,
-    ]);
-    return result?.is_match === true;
+    return postgres.transaction(async (client): Promise<boolean> => {
+      const challengeId = await lockChallenge(
+        client,
+        challengeToken,
+        binding,
+        policy.maxFailedAttempts,
+      );
+      if (challengeId === undefined) {
+        return false;
+      }
+      const { rows } = await client.query<{ is_match: boolean }>(CONSUME_UPDATE_QUERY, [
+        challengeId,
+        hashChallengeCode(challengeToken, code),
+      ]);
+      // no row when the challenge expired
+      return rows[0]?.is_match === true;
+    });
   };
 
   return { issue, resend, consume };

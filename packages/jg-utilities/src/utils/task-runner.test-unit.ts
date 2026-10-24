@@ -87,6 +87,34 @@ describe('run', () => {
     );
   });
 
+  test('claims the key before the task starts, refusing a synchronous run or trigger with it', async () => {
+    const runner = createTaskRunner({ onError: vi.fn() });
+    const gate = createGate();
+    const nested = vi.fn(() => Promise.resolve());
+    let wasIdle = true;
+    let nestedRun: Promise<void> = Promise.resolve();
+    let nestedTrigger: Promise<boolean> = Promise.resolve(true);
+
+    const outer = runner.run(
+      () => {
+        wasIdle = runner.isIdle('sync');
+        nestedRun = runner.run(nested, { key: 'sync' });
+        nestedTrigger = runner.trigger(nested, { key: 'sync' });
+        return gate.promise;
+      },
+      { key: 'sync' },
+    );
+
+    expect(wasIdle).toBe(false);
+    await expectToRejectCode(nestedRun, ERRORS.TASK_RUNNER_BUSY);
+    await expect(nestedTrigger).resolves.toBe(false);
+    expect(nested).not.toHaveBeenCalled();
+    expect(runner.isIdle('sync')).toBe(false);
+    gate.resolve();
+    await outer;
+    expect(runner.isIdle('sync')).toBe(true);
+  });
+
   test("joins the running task with ifBusy: 'join', running it once for three callers", async () => {
     const runner = createTaskRunner({ onError: vi.fn() });
     const gate = createGate<number>();
@@ -214,6 +242,31 @@ describe('close', () => {
     await closing;
     expect(hasClosed).toBe(true);
     expect(runner.signal.aborted).toBe(false);
+  });
+
+  test('waits for a task that called close while it started', async () => {
+    const runner = createTaskRunner({ onError: vi.fn() });
+    const gate = createGate();
+    const closings: Promise<void>[] = [];
+    let hasClosed = false;
+
+    const running = runner.run(() => {
+      closings.push(
+        runner.close().then(() => {
+          hasClosed = true;
+        }),
+      );
+      return gate.promise;
+    });
+    // a macrotask runs only after every pending microtask, so a close with nothing to wait for has resolved by then
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(closings).toHaveLength(1);
+    expect(hasClosed).toBe(false);
+    gate.resolve();
+    await running;
+    await Promise.all(closings);
+    expect(hasClosed).toBe(true);
   });
 
   test('resolves even when tasks reject', async () => {
