@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+
+- The `CONNECTION_FAILED` and `INVALID_CONNECT_TIMEOUT` error codes.
+
+### Changed
+
+- A failed first connection rejects with `CONNECTION_FAILED` instead of node-redis's own error, including when a custom `reconnectStrategy` gives up. Its cause is the error node-redis rejected with, or, at the deadline, the latest attempt's error.
+- `connectRedis` refuses a `socket.connectTimeout` that isn't a whole number of milliseconds from 1 to 2,147,483,647 with `INVALID_CONNECT_TIMEOUT`, before it creates the client.
+
+### Fixed
+
+- The first connection gives up once `socket.connectTimeout` passes, as documented: node-redis only bounded each attempt, and its default reconnect strategy retried failed attempts forever, so an unreachable server kept `connectRedis` pending. After it gives up, no attempt outlives it, including one still connecting at the deadline, which `destroy()` alone would miss.
+
 ## 0.3.0
 
 ### Changed
