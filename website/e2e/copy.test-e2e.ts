@@ -153,10 +153,28 @@ test.describe('the agent setup', () => {
     expect(external).toStrictEqual([]);
   });
 
-  test('copies exactly the install command', async ({ page }) => {
-    await page.goto('/');
-    const button = page.locator('#setup [data-copy-button]');
-
-    expect(await copyWith(page, button)).toBe(SITE_CONFIG.agentSetup.installCommand);
-  });
+  for (const colorScheme of ['light', 'dark'] as const) {
+    for (const width of [320, 1440]) {
+      test(`${colorScheme} ${width}px: wraps and copies exactly the install command`, async ({
+        page,
+      }) => {
+        await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto('/');
+        const setup = page.locator('#setup');
+        const source = setup.getByRole('figure').locator('pre');
+        await expect(source).toHaveCSS('white-space', 'pre-wrap');
+        const button = setup.getByRole('button');
+        expect(await copyWith(page, button)).toBe(SITE_CONFIG.agentSetup.installCommand);
+        expect(await source.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+          true,
+        );
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+          ),
+        ).toBe(true);
+      });
+    }
+  }
 });
