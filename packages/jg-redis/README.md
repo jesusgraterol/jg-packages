@@ -24,7 +24,7 @@ const redis = await connectRedis({
 await redis.close(); // waits for pending replies, and never flushes any data
 ```
 
-The client sends its errors, such as a dropped connection, to `onError`, `console.error` by default, instead of crashing the process. A command sent while it's disconnected is rejected instead of queued and replayed later, and connecting gives up after 10 seconds unless `socket.connectTimeout` says otherwise. `redis.client` is the node-redis client, for every other command.
+The client sends its errors, such as a dropped connection, to `onError`, `console.error` by default, instead of crashing the process. A command sent while it's disconnected is rejected instead of queued and replayed later. `connectRedis` rejects with `CONNECTION_FAILED` once `socket.connectTimeout`, 10 seconds by default, passes without a first connection, or sooner when its reconnect strategy gives up, and it then closes every attempt, including one still connecting. `redis.client` is the node-redis client, for every other command.
 
 ### A read-through cache
 
@@ -101,6 +101,8 @@ The list has no expiry, but a flush or an eviction empties it, and then it lets 
 
 | Code                         | When                                                                              |
 | ---------------------------- | --------------------------------------------------------------------------------- |
+| `CONNECTION_FAILED`          | `connectRedis` couldn't make a first connection within `socket.connectTimeout`    |
+| `INVALID_CONNECT_TIMEOUT`    | A connect timeout isn't a whole number of milliseconds, from 1 to 2,147,483,647   |
 | `INVALID_TTL`                | A time-to-live isn't a whole number of seconds, from 1                            |
 | `COORDINATION_FAILED`        | Redis couldn't complete a claim, a store, or a take                               |
 | `COORDINATION_VALUE_INVALID` | A single-use value isn't valid JSON or doesn't match its schema                   |
