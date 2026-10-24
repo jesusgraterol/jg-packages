@@ -227,6 +227,64 @@ const loseNextCommitAnswer = async (): Promise<void> => {
 const OUTCOME_UNKNOWN_MESSAGE =
   'The connection was lost during COMMIT, so the transaction may or may not have committed.';
 
+/**
+ * Runs a call while another connection holds the actor's active challenge's row lock without
+ * changing the row, and lets the challenge expire while the call waits for that lock. PostgreSQL
+ * rechecks a locked row's conditions after the wait only when the row was updated, so this is
+ * the case where a decision made before the wait would go stale.
+ * @param actorId The challenge's actor.
+ * @param call Starts the call that waits.
+ * @returns A promise that resolves to the call's result.
+ */
+const runWhileLockedPastExpiry = async <T>(actorId: string, call: () => Promise<T>): Promise<T> => {
+  // 2 seconds leave the call time to start waiting before the challenge expires
+  const [challenge] = await postgres.query<{ expires_at: string }>(
+    `UPDATE verification_challenge
+    SET expires_at = clock_timestamp() + interval '2 seconds'
+    WHERE actor_id = $1
+      AND used_at IS NULL
+      AND superseded_at IS NULL
+    RETURNING expires_at;`,
+    [actorId],
+  );
+  if (challenge === undefined) throw new Error('The actor has no active challenge.');
+  const holder = await postgres.pool.connect();
+  try {
+    await holder.query('BEGIN;');
+    await holder.query('SELECT id FROM verification_challenge WHERE actor_id = $1 FOR UPDATE;', [
+      actorId,
+    ]);
+    const result = call();
+    // the call waits for the row lock, and it started before the challenge expired
+    await vi.waitFor(async () => {
+      const waits = await postgres.query<{ is_before_expiry: boolean }>(
+        `SELECT query_start < $1::timestamptz AS is_before_expiry
+        FROM pg_stat_activity
+        WHERE datname = current_database()
+          AND wait_event_type = 'Lock'
+          AND query LIKE '%verification_challenge%';`,
+        [challenge.expires_at],
+      );
+      expect(waits).toStrictEqual([{ is_before_expiry: true }]);
+    });
+    await vi.waitFor(
+      async () => {
+        const [clock] = await postgres.query<{ has_expired: boolean }>(
+          'SELECT clock_timestamp() > $1::timestamptz AS has_expired;',
+          [challenge.expires_at],
+        );
+        expect(clock?.has_expired).toBe(true);
+      },
+      { timeout: 4_000, interval: 100 },
+    );
+    await holder.query('COMMIT;');
+    return await result;
+  } finally {
+    await holder.query('ROLLBACK;').catch(() => undefined);
+    holder.release();
+  }
+};
+
 beforeAll(async () => {
   postgres = connectTestPostgres({ max: 8 });
   await postgres.query('DROP TABLE IF EXISTS verification_challenge;');
@@ -506,6 +564,32 @@ describe('consume', () => {
 
     expect(await readChallenges(binding.actorId)).toStrictEqual([before]);
   });
+
+  test("resolves to false for the right code when the challenge expires while the attempt waits for another's row lock", async () => {
+    const binding = createBinding();
+    const { challengeToken, code } = await issueWithCode(binding);
+
+    const isVerified = await runWhileLockedPastExpiry(binding.actorId, () =>
+      challenges.consume({ ...binding, challengeToken, code }),
+    );
+
+    expect(isVerified).toBe(false);
+    expect(await readChallenges(binding.actorId)).toMatchObject([
+      { used_at: null, failed_attempt_count: 0 },
+    ]);
+  });
+
+  test('rejects with TRANSACTION_OUTCOME_UNKNOWN when its COMMIT gets no answer', async () => {
+    const binding = createBinding();
+    const { challengeToken, code } = await issueWithCode(binding);
+    await loseNextCommitAnswer();
+
+    await expectToRejectCode(
+      challenges.consume({ ...binding, challengeToken, code }),
+      ERRORS.TRANSACTION_OUTCOME_UNKNOWN,
+      OUTCOME_UNKNOWN_MESSAGE,
+    );
+  });
 });
 
 describe('resend', () => {
@@ -765,6 +849,22 @@ describe('resend', () => {
     if (code !== newCode) {
       expect(await challenges.consume({ ...binding, challengeToken, code })).toBe(false);
     }
+  });
+
+  test("resolves to invalid without delivering when the challenge expires while the resend waits for another's row lock", async () => {
+    const binding = createBinding({ actionId: 'verify-resend' });
+    const { challengeToken } = await issueWithCode(binding);
+    const [before] = await readChallenges(binding.actorId);
+
+    const { resent, deliveries } = await runWhileLockedPastExpiry(binding.actorId, () =>
+      resendWithDeliveries(binding, challengeToken),
+    );
+
+    expect(resent).toStrictEqual({ outcome: 'invalid' });
+    expect(deliveries).toStrictEqual([]);
+    expect(await readChallenges(binding.actorId)).toMatchObject([
+      { resend_count: 0, code_hash: before?.code_hash },
+    ]);
   });
 
   test('rejects with TRANSACTION_OUTCOME_UNKNOWN when its COMMIT gets no answer, delivering nothing', async () => {
