@@ -32,6 +32,7 @@ const sourceUrl = `${SITE_CONFIG.repositoryUrl}/tree/main/packages/${listedPacka
         ]}
       />
       <CopyButton
+        display="icon"
         class="ml-auto"
         context="as Markdown"
         label="Copy page"
@@ -68,6 +69,7 @@ const sourceUrl = `${SITE_CONFIG.repositoryUrl}/tree/main/packages/${listedPacka
       </div>
       <div class="grid gap-4">
         <PackageManagerTabs
+          copyDisplay="icon"
           id="install"
           packages={listedPackage.name}
           storageKey={SITE_CONFIG.storageKeys.packageManager}

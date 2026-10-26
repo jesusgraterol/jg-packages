@@ -17,6 +17,7 @@ test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
  * @returns A promise that resolves to what the clipboard holds afterwards.
  */
 const copyWith = async (page: Page, button: Locator): Promise<string> => {
+  await expect(button).toHaveAttribute('data-copy-display', 'icon');
   await page.evaluate(() => navigator.clipboard.writeText(''));
   await button.click();
   await expect(button).toHaveAttribute('data-copy-state', /^(?:success|error)$/u);
