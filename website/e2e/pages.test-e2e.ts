@@ -39,6 +39,7 @@ for (const path of PAGE_PATHS) {
     const response = await page.goto(path);
 
     expect(response?.status()).toBe(200);
+    await expect(page.locator('[data-copy-button]:not([data-copy-display="icon"])')).toHaveCount(0);
     await expect(page.locator('h1')).toHaveCount(1);
     // the rules are JSON the browser reads, with prerendering on hover
     const rules = JSON.parse(
