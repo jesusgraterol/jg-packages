@@ -62,7 +62,7 @@ const personalGalleryPackages = async (): Promise<IPackedPackage[]> => {
 
 /** Emulates installation's filesystem output while leaving preparation and cleanup real. */
 const writeInstalledClis = async (root: string): Promise<void> => {
-  for (const name of ['astro', 'pagefind', '@playwright/test']) {
+  for (const name of ['astro', 'vite', 'pagefind', '@playwright/test']) {
     const directory = join(root, 'node_modules', name);
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'package.json'), JSON.stringify({ name, bin: 'cli.mjs' }));
@@ -318,6 +318,67 @@ describe('the installed personal UI gallery', () => {
       if (consumer !== '') await rm(consumer, { recursive: true });
     }
   });
+});
+
+test('the installed React gallery uses the packed closure, exact tools, identity probe, and shared teardown', async () => {
+  const names = [
+    'jg-personal-react-ui',
+    'jg-personal-ui',
+    'jg-react-ui',
+    'jg-utilities',
+    'jg-exception',
+    'jg-process',
+    'jg-playwright',
+  ];
+  const packages = await Promise.all(
+    names.map(async (name) => {
+      const directory = resolve(import.meta.dirname, '../../../../packages', name);
+      const manifest = JSON.parse(
+        await readFile(join(directory, 'package.json'), 'utf8'),
+      ) as IPackageManifest;
+      return {
+        ...toPacked(manifest),
+        workspacePackage: { name, version: manifest.version, directory, manifest },
+      };
+    }),
+  );
+  const commands: string[][] = [];
+  let consumer = '';
+  const runner: IRunAstroFixtureCommand = async (_executable, args, options) => {
+    consumer = options.cwd;
+    expect(options.env?.['JG_REACT_UI_GALLERY_ROOT']).toBe(consumer);
+    commands.push(args);
+    if (commands.length === 1) {
+      expect(await readFile(join(consumer, 'src/gallery.component.tsx'), 'utf8')).toContain(
+        "from 'jg-personal-react-ui'",
+      );
+      await access(join(consumer, 'src/gallery.component.test-e2e.tsx'));
+      await access(join(consumer, 'vite.config.ts'));
+      await writeInstalledClis(consumer);
+    }
+    return COMMAND_SUCCESS;
+  };
+  expect(
+    (await checkAstroFixture(packages, createRunner([]).runCommand, runner)).get(
+      'jg-personal-react-ui',
+    ),
+  ).toStrictEqual([]);
+  expect(commands).toHaveLength(4);
+  expect(commands[0]).toEqual(
+    expect.arrayContaining([
+      'vite@8.3.4',
+      'react@19.2.4',
+      'react-dom@19.2.4',
+      'tailwindcss@4.3.3',
+      '/release/jg-personal-ui-0.1.0.tgz',
+      '/release/jg-react-ui-0.1.0.tgz',
+    ]),
+  );
+  expect(commands[1]?.at(-1)).toBe('build');
+  expect(commands[2]).toEqual(expect.arrayContaining(['--input-type=module', '--eval']));
+  expect(commands[2]?.at(-1)).toContain('assert.equal(base.Button, personal.Button)');
+  expect(commands[3]?.slice(1)).toStrictEqual(['test', '--retries=0']);
+  await expect(access(consumer)).rejects.toThrow();
 });
 const SIBLING = toPacked({ name: 'jg-exception', version: '1.0.1' });
 const UNRELATED = toPacked({ name: 'jg-fs', version: '1.0.1' });

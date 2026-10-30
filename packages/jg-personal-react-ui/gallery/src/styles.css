@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+@import 'jg-personal-react-ui/styles.css';
+@import 'jg-personal-react-ui/system-theme-fallback.css';
+
+@layer base {
+  body {
+    margin: 0;
+    background: var(--jg-background);
+    color: var(--jg-foreground);
+    font-family: var(--jg-font-sans);
+  }
+  main {
+    max-width: 64rem;
+    margin-inline: auto;
+    padding: 3rem max(1rem, env(safe-area-inset-left)) max(2rem, env(safe-area-inset-bottom));
+  }
+  header {
+    max-width: 44rem;
+    margin-bottom: 3rem;
+  }
+  h1 {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 650;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+    margin-block: 1rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 650;
+    margin-block: 0 0.5rem;
+  }
+  section {
+    padding-block: 1.5rem;
+  }
+  section > p,
+  footer,
+  .intro {
+    color: var(--jg-muted);
+  }
+  .intro {
+    font-size: 1.125rem;
+    line-height: 1.6;
+  }
+  .eyebrow {
+    font-family: var(--jg-font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    color: var(--jg-accent);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-block: 1.5rem;
+  }
+  footer {
+    font-family: var(--jg-font-mono);
+    font-size: 0.75rem;
+    margin-top: 2rem;
+  }
+}

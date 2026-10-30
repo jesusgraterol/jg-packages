@@ -15,7 +15,7 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "check": "node internal/vitest-config/src/run-test-suite.ts full run lint typecheck build test:e2e && node internal/vitest-config/src/run-test-suite.ts full run test:coverage --concurrency=4 --filter=!jg-react --filter=!jg-react-router --filter=!jg-tanstack-query && node internal/vitest-config/src/run-test-suite.ts full run test:coverage --concurrency=1 --filter=jg-react --filter=jg-react-router --filter=jg-tanstack-query && node internal/vitest-config/src/run-test-suite.ts full run test:browser && pnpm format:check && pnpm release:verify",
+    "check": "node internal/vitest-config/src/run-test-suite.ts full run lint typecheck build test:e2e && node internal/vitest-config/src/run-test-suite.ts full run test:coverage --concurrency=4 --filter=!jg-react --filter=!jg-react-router --filter=!jg-tanstack-query --filter=!jg-react-ui && node internal/vitest-config/src/run-test-suite.ts full run test:coverage --concurrency=1 --filter=jg-react --filter=jg-react-router --filter=jg-tanstack-query --filter=jg-react-ui && node internal/vitest-config/src/run-test-suite.ts full run test:browser && pnpm format:check && pnpm release:verify",
     "check:essential": "node internal/vitest-config/src/run-test-suite.ts essential run lint typecheck build test:unit test:integration test:browser test:e2e && pnpm format:check",
     "dev": "turbo run dev --filter=@jg-packages/website",
     "format": "prettier --write .",
@@ -28,7 +28,7 @@
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
-    "jg-plans": "0.3.0",
+    "jg-plans": "0.4.0",
     "prettier": "3.9.10",
     "prettier-plugin-astro": "1.1.1",
     "prettier-plugin-tailwindcss": "0.8.1",

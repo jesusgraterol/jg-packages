@@ -1,0 +1,10 @@
+{
+  "extends": ["@jg-packages/tsconfig/browser.json", "@jg-packages/tsconfig/library.json"],
+  "compilerOptions": {
+    "sourceMap": false,
+    "inlineSources": false,
+    "jsx": "react-jsx"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test-*.*", "src/**/test-utils/**"]
+}

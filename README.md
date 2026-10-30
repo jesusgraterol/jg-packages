@@ -33,7 +33,9 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 
 [`jg-personal-astro-ui`](packages/jg-personal-astro-ui) is also published from `packages/`: the Astro components and theme Jesus Graterol's own sites share. It isn't meant for general use, so the website doesn't list it.
 
-Each package gets a row here when it's added to `packages/`.
+`jg-personal-ui`, `jg-react-ui`, and `jg-personal-react-ui` provide shared JG foundations and React components for personal apps. They are published for personal use and excluded from the website catalog. See [`docs/personal-ui.md`](docs/personal-ui.md) for package ownership and the private React gallery.
+
+General-purpose packages get a row here when added to `packages/`.
 
 ## Quick start
 
@@ -75,6 +77,7 @@ Preview the shared Astro components locally with `pnpm --filter jg-personal-astr
 │   ├── deployment.md         # GitHub Pages, the domain, and the Cloudflare rules for Markdown
 │   ├── development.md        # setup, commands, dependencies, branches, troubleshooting
 │   ├── package-guidelines.md # conventions every package follows
+│   ├── personal-ui.md        # JG foundation, shared React components, and the private gallery
 │   ├── personal-astro-ui.md  # the shared Astro components and their token contract
 │   ├── releasing.md          # versions, the release checks, publishing, and tags
 │   └── website.md            # the website: its content, pages, search, checks, and tests
@@ -86,6 +89,7 @@ Preview the shared Astro components locally with `pnpm --filter jg-personal-astr
 │   ├── tsconfig/             # base, library, browser and node TypeScript configurations
 │   └── vitest-config/        # createVitestConfig(), one Vitest project per test category, and the suites
 ├── packages/                 # the published jg-* packages, and jg-personal-astro-ui
+│   ├── jg-personal-react-ui/gallery/ # private React consumer using published exports
 │   └── jg-personal-astro-ui/gallery/ # private rendered examples and preview lifecycle tests
 ├── website/                  # the Astro site at jg-packages.jesusgraterol.dev, private
 ├── LICENSE

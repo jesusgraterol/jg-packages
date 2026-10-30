@@ -46,7 +46,9 @@ A version with a prerelease part, such as `1.2.0-beta.0`, is published under the
 
 For `jg-personal-astro-ui`, the Astro fixture copies the maintained private gallery and Playwright scenarios, including co-located `src/components/**/*.test-e2e.ts` files and adjacent `*.test-utils.ts` support modules, into a temporary consumer, installs the exact UI and required sibling tarballs, and uses tool versions from the checked-in UI manifest and workspace catalog. Relative test imports remain intact. It compares component exports with the gallery inventory, builds real pages and Pagefind, then runs Chromium, Firefox, and WebKit against the installed package. No UI import resolves through the workspace.
 
-This fixture has one 15-minute deadline, with stage limits of five minutes for installation, five for building, one for indexing, and ten for the browser suite. The overall deadline takes precedence. Commands capture at most 64 MiB of combined output; reported diagnostics retain at most 20 lines and 8192 characters. A timeout, output overflow, nonzero exit, or child signal fails the named stage. Process-tree shutdown can take its bounded grace period after a deadline fires. The legacy runner for other release checks is unchanged.
+`jg-personal-react-ui` uses the same fixture lifecycle: it installs the exact foundation, generic React, and personal React tarballs, builds the maintained Vite/Tailwind gallery, verifies shared component and React identity, and runs its Chromium, Firefox, and WebKit scenarios. It does not add website pages or use workspace aliases.
+
+Each fixture has one 15-minute deadline, with stage limits of five minutes for installation, five for building, one for indexing, and ten for the browser suite. The overall deadline takes precedence. Commands capture at most 64 MiB of combined output; reported diagnostics retain at most 20 lines and 8192 characters. A timeout, output overflow, nonzero exit, or child signal fails the named stage. Process-tree shutdown can take its bounded grace period after a deadline fires. The legacy runner for other release checks is unchanged.
 
 SIGINT or SIGTERM during the UI fixture stops owned work, removes the consumer after confirmed teardown, and propagates `PROCESS_INTERRUPTED: The process was interrupted by {signal}.` through verification to the CLI, which exits nonzero without starting another stage or registry check. If process-tree teardown cannot be confirmed, the failure names the retained consumer path and the process diagnostic, including a PID when available. Stop any reported surviving process before removing that consumer. A consumer-removal failure also names the retained path. The release job installs all three browsers before verification or packing.
 
@@ -117,7 +119,7 @@ CI only publishes packages that already exist on npm, because a package's truste
 
    npm can refuse a new name at this point as "too similar to existing package". Rename the package, following [Choose the name](creating-a-package.md#1-choose-the-name), merge the rename, and pack again.
 
-3. Approve the release on npmjs.com. A new package's first publish is staged: until you approve it, npm shows only a `0.0.0-stage` version, which `latest` points to. Expected result: `npm view <name> dist-tags` shows the new version as `latest`.
+3. Follow the approval instructions returned by `npm publish`. If npm stages the first publish, approve it on npmjs.com. Verify the actual registry result in either case: `npm view <name> dist-tags` must show the intended version as `latest`.
 
 4. On the package's settings page, `https://www.npmjs.com/package/<name>/access`:
    - add a trusted publisher: GitHub Actions, user `jesusgraterol`, repository `jg-packages`, workflow `ci.yml`, no environment, and tick **npm publish** under Allowed actions, which new entries leave off
