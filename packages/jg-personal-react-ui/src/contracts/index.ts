@@ -12,3 +12,9 @@ export {
   type ICodeDiffView,
   type IUiPreferences,
 } from 'jg-react-ui/contracts';
+
+// error policy
+export type { IErrorFeedbackResolver } from 'jg-react-ui/contracts';
+
+// preference namespaces
+export { getUiPreferencesStorageKey } from 'jg-react-ui/contracts';

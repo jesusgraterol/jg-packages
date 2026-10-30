@@ -3,6 +3,7 @@
 
 @theme inline {
   --font-sans: var(--jg-ui-font-sans);
+  --shadow-raised: var(--jg-ui-shadow-raised);
   --font-mono: var(--jg-ui-font-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);

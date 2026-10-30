@@ -9,7 +9,10 @@
     <title>JG personal React UI</title>
     <script>
       const theme = new URLSearchParams(location.search).get('theme');
-      if (theme === 'light' || theme === 'dark') document.documentElement.classList.add(theme);
+      if (theme === 'light' || theme === 'dark') {
+        document.documentElement.classList.remove('light', 'dark');
+        document.documentElement.classList.add(theme);
+      }
     </script>
   </head>
   <body>

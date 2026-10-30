@@ -1,6 +1,6 @@
 {
   "name": "jg-personal-react-ui",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "JG-branded React components and styles, sharing Moldea-derived APIs with the unbranded jg-react-ui implementation.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -49,6 +49,26 @@
     "./components/jg-mark": {
       "types": "./dist/components/jg-mark/index.d.ts",
       "default": "./dist/components/jg-mark/index.js"
+    },
+    "./components/error-feedback-provider": {
+      "types": "./dist/components/error-feedback-provider/index.d.ts",
+      "default": "./dist/components/error-feedback-provider/index.js"
+    },
+    "./components/ui-preferences-provider": {
+      "types": "./dist/components/ui-preferences-provider/index.d.ts",
+      "default": "./dist/components/ui-preferences-provider/index.js"
+    },
+    "./components/theme-provider": {
+      "types": "./dist/components/theme-provider/index.d.ts",
+      "default": "./dist/components/theme-provider/index.js"
+    },
+    "./components/toastr": {
+      "types": "./dist/components/toastr/index.d.ts",
+      "default": "./dist/components/toastr/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "default": "./dist/errors/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -96,6 +116,7 @@
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "jg-exception": "workspace:*",
     "@jg-packages/eslint-config": "workspace:*",
     "@jg-packages/tsconfig": "workspace:*",
     "@types/node": "catalog:",

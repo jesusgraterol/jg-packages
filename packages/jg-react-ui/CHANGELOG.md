@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- Scoped error-feedback policy for application-owned messages and access-loss decisions.
+- Isolated, namespaced UI preferences with local, read-only, and ordered remote persistence; pre-paint theme initialization, theme controls, and themed notifications.
+- Storage-ID validation aligned with jg-storage and nullable dismissal resets.
+
 ## 0.2.0
 
 ### Added

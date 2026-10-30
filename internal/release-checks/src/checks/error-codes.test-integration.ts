@@ -1,7 +1,7 @@
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import { runCommand } from '../shared/run-command.ts';
@@ -49,7 +49,9 @@ const checkFixtureCodes = async (
   });
   expect(build).toMatchObject({ exitCode: 0 });
   if (test !== undefined) {
-    await writeFile(join(packageDirectory, 'src', testFileName), test);
+    const testFile = join(packageDirectory, 'src', testFileName);
+    await mkdir(dirname(testFile), { recursive: true });
+    await writeFile(testFile, test);
   }
   const output = join(workDirectory, 'tarballs');
   await mkdir(output, { recursive: true });
@@ -78,6 +80,22 @@ afterEach(async () => {
 });
 
 describe('checkErrorCodes', { tags: ['full'] }, () => {
+  test.each([
+    ['view.test-unit.tsx', 'const view = <div>Fixture</div>;'],
+    ['build/config.test-unit.ts', 'const view = "fixture";'],
+  ])(
+    'reads owned assertions from %s',
+    async (testFileName, prefix) => {
+      await addErrors();
+      const problems = await checkFixtureCodes(
+        prefix +
+          '\nexpectToThrowCode(() => render(view), ERRORS.GREETING_TOO_LONG);\nexpect(error).toMatchObject({ code: ERRORS.NAME_MISSING });',
+        testFileName,
+      );
+      expect(problems).toStrictEqual([]);
+    },
+    180_000,
+  );
   test('names each code no test asserts, reading ERRORS from the installed tarball', async () => {
     await addErrors();
 

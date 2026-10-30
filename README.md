@@ -1,6 +1,6 @@
 # jg-packages
 
-Jesus Graterol's personal npm packages, published under `jg-*` names and built, tested, and released from one pnpm and Turborepo monorepo. Every package is ESM only, does no work when it's imported, exports its error codes, and is tested from the exact tarball that gets published.
+Jesus Graterol's personal npm packages, published under `jg-*` names and built, tested, and released from one pnpm and Turborepo monorepo. Every package is ESM only, performs no application initialization when imported, exports its error codes, and is tested from the exact tarball that gets published. React notifications retain Sonner's browser style injection; package theme styles use explicit CSS imports.
 
 ## Packages
 

@@ -477,7 +477,8 @@ const buildGalleryFixture = async (
         import * as base from 'jg-react-ui';
         import * as personal from 'jg-personal-react-ui';
         assert.equal(base.Button, personal.Button);
-        for (const name of ['Badge', 'IconTile', 'Alert', 'AlertTitle', 'AlertDescription', 'AlertAction', 'badgeVariants', 'iconTileVariants', 'alertVariants']) {
+        for (const name of ['Badge', 'IconTile', 'Alert', 'AlertTitle', 'AlertDescription', 'AlertAction', 'badgeVariants', 'iconTileVariants', 'alertVariants', 'ErrorFeedbackProvider', 'useErrorFeedbackResolver', 'UiPreferencesProvider', 'useUiPreferences', 'useUiPreferencesCapabilities', 'ThemeProvider', 'ThemeInitializationScript', 'ThemeToggleButton', 'useTheme', 'Toastr', 'toastr', 'getUiPreferencesStorageKey', 'ERRORS']) {
+          assert.notEqual(base[name], undefined, name + ' must be public');
           assert.equal(base[name], personal[name], name + ' must share its implementation');
         }
         const { createElement } = await import('react');
@@ -488,6 +489,10 @@ const buildGalleryFixture = async (
         assert.match(markup, /viewBox="0 0 64 64"/u);
         assert.match(markup, /fill="#111827"/u);
         assert.match(markup, /fill="#6EE7B7"/u);
+        const script = renderToStaticMarkup(createElement(personal.ThemeInitializationScript, { storageId: 'installed-gallery', nonce: 'fixture-nonce' }));
+        assert.match(script, /jg-storage:installed-gallery/u);
+        assert.match(script, /nonce="fixture-nonce"/u);
+        assert.equal(base.getUiPreferencesStorageKey(), 'jg-storage:jg-ui-preferences');
         const baseRequire = createRequire(import.meta.resolve('jg-react-ui'));
         const personalRequire = createRequire(import.meta.resolve('jg-personal-react-ui'));
         assert.equal(baseRequire.resolve('react'), personalRequire.resolve('react'));

@@ -32,7 +32,9 @@ for (const theme of ['light', 'dark'] as const) {
       expect((await new AxeBuilder({ page }).analyze()).violations).toStrictEqual([]);
       await page.getByRole('button', { name: 'default', exact: true }).focus();
       await page.keyboard.press('Enter');
-      await expect(page.getByRole('status')).toHaveText('Actions completed: 1');
+      await expect(page.getByRole('status', { name: 'Completed actions' })).toHaveText(
+        'Actions completed: 1',
+      );
       expect(
         await page
           .getByRole('button', { name: 'default', exact: true })
@@ -41,7 +43,9 @@ for (const theme of ['light', 'dark'] as const) {
       await expect(page.getByRole('button', { name: 'Unavailable' })).toBeDisabled();
       await page.getByRole('button', { name: 'Try syncing again', exact: false }).focus();
       await page.keyboard.press('Space');
-      await expect(page.getByRole('status')).toHaveText('Actions completed: 2');
+      await expect(page.getByRole('status', { name: 'Completed actions' })).toHaveText(
+        'Actions completed: 2',
+      );
       await expect(
         page.getByRole('button', { name: 'Try syncing again', exact: false }),
       ).toBeFocused();

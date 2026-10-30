@@ -2,8 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 const consumerRoot = process.env['JG_REACT_UI_GALLERY_ROOT'];
 export default defineConfig({
-  testDir: consumerRoot ?? './gallery',
-  testMatch: '**/*.test-e2e.tsx',
+  testDir: consumerRoot ?? '.',
+  testMatch: '**/*.test-e2e.{ts,tsx}',
   testIgnore: [
     '**/node_modules/**',
     '**/dist/**',

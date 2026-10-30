@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { createErrorFeedback } from 'jg-exception';
+
 /** Theme preferences accepted by shared UI consumers.
  * @see IAppTheme
  */
@@ -40,3 +42,8 @@ export const UiPreferencesSchema = z.object({
  * @see UiPreferencesSchema
  */
 export type IUiPreferences = z.infer<typeof UiPreferencesSchema>;
+
+/** Application-owned error copy, cancellation, and access-loss policy.
+ * @see ErrorFeedbackProvider
+ */
+export type IErrorFeedbackResolver = ReturnType<typeof createErrorFeedback>;

@@ -20,4 +20,4 @@ Both are under the [Ubuntu Font Licence 1.0](https://ubuntu.com/legal/font-licen
 
 ## Icons
 
-The interface icons and each package's icon are [Lucide](https://lucide.dev/) icons, drawn as inline SVG through `@lucide/astro`, under the [ISC License](https://lucide.dev/license). [`website.md`](website.md#package-icons) lists the package icons. No package uses a technology's mark.
+The interface icons and each package's icon are [Lucide](https://lucide.dev/) icons, drawn as inline SVG through `@lucide/astro` and through `lucide-react` in the shared React theme and notification components, under the [ISC License](https://lucide.dev/license). [`website.md`](website.md#package-icons) lists the package icons. No package uses a technology's mark.

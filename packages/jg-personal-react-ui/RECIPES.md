@@ -59,3 +59,48 @@ const home = createElement(
   'JG workspace',
 );
 ```
+
+## Scope application error feedback
+
+Applications own their error messages and decide which codes mean that access was lost. Keep the resolver outside render so its identity remains stable.
+
+```ts
+import { createElement } from 'react';
+import { createErrorFeedback } from 'jg-exception';
+import { ErrorFeedbackProvider } from 'jg-personal-react-ui/components/error-feedback-provider';
+const resolveErrorFeedback = createErrorFeedback({
+  fallbackMessage: 'We could not complete this action. Please try again.',
+  messagesByCode: { SESSION_EXPIRED: 'Please sign in again.' },
+  accessDeniedCodes: ['SESSION_EXPIRED'],
+});
+const app = createElement(ErrorFeedbackProvider, { resolveErrorFeedback, children: 'App' });
+```
+
+## Compose preferences, theme, and notifications
+
+Place the initialization element in the document head. Keep the same namespace on the provider. A local tree needs no server adapter; use `mode: 'remote'` with complete authoritative preferences and a rejecting `persistPreferences` promise when the application saves settings remotely.
+
+```ts
+import { createElement } from 'react';
+import {
+  ThemeInitializationScript,
+  ThemeProvider,
+  ThemeToggleButton,
+  Toastr,
+  UiPreferencesProvider,
+} from 'jg-personal-react-ui';
+const storageId = 'personal-hq';
+const head = createElement(ThemeInitializationScript, { storageId, nonce: 'example-nonce' });
+const app = createElement(UiPreferencesProvider, {
+  mode: 'local',
+  storageId,
+  children: createElement(ThemeProvider, {
+    children: [
+      createElement(ThemeToggleButton, { key: 'theme', size: 'icon-touch' }),
+      createElement(Toastr, { key: 'toasts', closeButton: true }),
+    ],
+  }),
+});
+```
+
+Read `useUiPreferences()` for the snapshot, update function, capability, and pending state. Use `useUiPreferencesCapabilities()` when only capability or the stable update callback is needed. `useTheme()` requires a ThemeProvider and returns the selected theme, resolved light/dark theme, and setter. Changing a captured namespace requires a keyed provider remount.

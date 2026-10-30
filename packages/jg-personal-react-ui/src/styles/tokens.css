@@ -1,5 +1,6 @@
 /* JG values bind to the retained generic component roles. */
 :root {
+  --jg-ui-shadow-raised: var(--jg-shadow-raised);
   --jg-ui-font-sans: var(--jg-font-sans);
   --jg-ui-font-mono: var(--jg-font-mono);
   --background: var(--jg-background);
@@ -19,5 +20,18 @@
 @layer utilities {
   [data-slot='button'][data-variant='link'] {
     color: var(--jg-primary);
+  }
+
+  /* translucent dark hover surfaces need JG's light foreground rather than inverse text. */
+  @media (hover: hover) {
+    .dark
+      [data-slot='button'][data-variant='default']:not(:disabled):not(
+        [aria-disabled='true']
+      ):hover {
+      color: var(--jg-foreground);
+    }
+    .dark [data-sonner-toast] [data-button]:not([data-cancel]):enabled:hover {
+      color: var(--jg-foreground) !important;
+    }
   }
 }

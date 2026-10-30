@@ -2,6 +2,8 @@ import { useState } from 'react';
 
 import markUrl from 'jg-personal-ui/jg-mark.svg';
 import faviconUrl from 'jg-personal-ui/jg-favicon.svg';
+import { PreferencesDemo } from './preferences-demo/preferences-demo.component.js';
+import { RemotePreferences } from './remote-preferences/remote-preferences.component.js';
 import {
   Alert,
   AlertAction,
@@ -68,7 +70,12 @@ export const Gallery = () => {
             </Button>
           ))}
         </div>
-        <p role="status">Actions completed: {savedCount}</p>
+        <p
+          role="status"
+          aria-label="Completed actions"
+        >
+          Actions completed: {savedCount}
+        </p>
       </section>
       <section aria-labelledby="states-title">
         <h2 id="states-title">States and badges</h2>
@@ -245,6 +252,8 @@ export const Gallery = () => {
           />
         </div>
       </section>
+      <PreferencesDemo />
+      <RemotePreferences />
       <footer>Ubuntu Sans · Shared JG tokens · React 19</footer>
     </main>
   );
