@@ -9,6 +9,8 @@
   --secondary: var(--jg-secondary);
   --secondary-foreground: var(--jg-foreground);
   --destructive: var(--jg-danger);
+  --chart-1: var(--jg-success);
+  --chart-2: var(--jg-warning);
   --border: var(--jg-border);
   --radius: var(--jg-radius);
 }

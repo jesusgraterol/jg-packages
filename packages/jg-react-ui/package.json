@@ -1,6 +1,6 @@
 {
   "name": "jg-react-ui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Consumer-themed React components with Moldea-derived APIs, explicit styling contracts, and reusable application behavior.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -29,6 +29,18 @@
     "./tokens.css": {
       "style": "./dist/styles/tokens.css",
       "default": "./dist/styles/tokens.css"
+    },
+    "./components/badge": {
+      "types": "./dist/components/badge/index.d.ts",
+      "default": "./dist/components/badge/index.js"
+    },
+    "./components/icon-tile": {
+      "types": "./dist/components/icon-tile/index.d.ts",
+      "default": "./dist/components/icon-tile/index.js"
+    },
+    "./components/alert": {
+      "types": "./dist/components/alert/index.d.ts",
+      "default": "./dist/components/alert/index.js"
     }
   },
   "main": "./dist/index.js",

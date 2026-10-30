@@ -1093,6 +1093,9 @@ importers:
       eslint:
         specifier: 'catalog:'
         version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      jg-fs:
+        specifier: workspace:*
+        version: link:../jg-fs
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3

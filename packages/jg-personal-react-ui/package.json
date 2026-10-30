@@ -1,6 +1,6 @@
 {
   "name": "jg-personal-react-ui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "JG-branded React components and styles, sharing Moldea-derived APIs with the unbranded jg-react-ui implementation.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -33,6 +33,22 @@
     "./system-theme-fallback.css": {
       "style": "./dist/styles/system-theme-fallback.css",
       "default": "./dist/styles/system-theme-fallback.css"
+    },
+    "./components/badge": {
+      "types": "./dist/components/badge/index.d.ts",
+      "default": "./dist/components/badge/index.js"
+    },
+    "./components/icon-tile": {
+      "types": "./dist/components/icon-tile/index.d.ts",
+      "default": "./dist/components/icon-tile/index.js"
+    },
+    "./components/alert": {
+      "types": "./dist/components/alert/index.d.ts",
+      "default": "./dist/components/alert/index.js"
+    },
+    "./components/jg-mark": {
+      "types": "./dist/components/jg-mark/index.d.ts",
+      "default": "./dist/components/jg-mark/index.js"
     }
   },
   "main": "./dist/index.js",

@@ -55,6 +55,17 @@
     gap: 1rem;
     margin-block: 1.5rem;
   }
+  .callouts {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .tile-example {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
   footer {
     font-family: var(--jg-font-mono);
     font-size: 0.75rem;

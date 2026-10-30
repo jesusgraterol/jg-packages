@@ -1,0 +1,14 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "typecheck": {
+      "dependsOn": ["$TURBO_EXTENDS$", "build"]
+    },
+    "lint": {
+      "dependsOn": ["$TURBO_EXTENDS$", "build"]
+    },
+    "test:unit": {
+      "dependsOn": ["$TURBO_EXTENDS$", "build"]
+    }
+  }
+}
