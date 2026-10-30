@@ -107,9 +107,13 @@ describe('public API', () => {
     expect(MAX_EMAIL_LENGTH).toBe(320);
   });
 
-  test('exports composable reading-time utilities from the package entry point', () => {
-    expect(prettifyTime(estimateReadingTime('word '.repeat(200)))).toBe('1m');
-  });
+  test(
+    'exports composable reading-time utilities from the package entry point',
+    { tags: ['full'] },
+    () => {
+      expect(prettifyTime(estimateReadingTime('word '.repeat(200)))).toBe('1m');
+    },
+  );
 
   test('exports the base64url transformers from the package entry point', () => {
     expect(decodeBase64Url(encodeBase64Url('{"page":2}'))).toBe('{"page":2}');
@@ -139,7 +143,7 @@ describe('public API', () => {
     expect(createEventBus({ onError: () => undefined }).emit).toBeTypeOf('function');
   });
 
-  test('keeps the date formatting constants internal', async () => {
+  test('keeps the date formatting constants internal', { tags: ['full'] }, async () => {
     const publicApi = await import('./index.js');
 
     expect(publicApi).not.toHaveProperty('DATE_LOCALE');

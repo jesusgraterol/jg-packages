@@ -1,5 +1,6 @@
 import { playwright } from '@vitest/browser-playwright';
 import {
+  configDefaults,
   defineConfig,
   type TestProjectInlineConfiguration,
   type ViteUserConfig,
@@ -38,6 +39,9 @@ export type IVitestConfigOptions = {
   // a file the integration project runs once before its tests and tears down after them, such as
   // one that starts a database container and provides its connection details
   globalSetup?: string;
+
+  // secondary files omitted before imports/setup only when the essential suite is selected
+  fullOnlyFiles?: string[];
 };
 
 // file suffix that identifies each category's test files; a test of a `.tsx` file is `.tsx` too
@@ -51,6 +55,15 @@ const CATEGORY_FILE_PATTERNS: Record<ITestCategory, string> = {
 // how long a test or hook may run before it fails: long enough that a CI runner several times
 // slower than a laptop never fails a working test, short enough to catch one that hangs
 const TEST_TIMEOUT_MS = 30_000;
+
+// repository context exclusions also apply to native test discovery
+const TEST_EXCLUDE = [
+  ...configDefaults.exclude,
+  '**/_archive/**',
+  '**/_archives/**',
+  '**/_backup/**',
+  '**/_backups/**',
+];
 
 // the browsers the browser category runs every test in, headless
 export const BROWSER_INSTANCES = ['chromium', 'firefox', 'webkit'] as const;
@@ -71,6 +84,7 @@ const COVERAGE_EXCLUDE = [
  * @param environment The environment its tests run in, for every category but browser.
  * @param globalSetup The file the integration project runs once around its tests, if any.
  * @param suite The suite the run selected, which decides whether tests tagged `full` are skipped.
+ * @param fullOnlyFiles Secondary file patterns excluded before imports in essential.
  * @returns The inline project configuration.
  */
 const buildProject = (
@@ -78,10 +92,12 @@ const buildProject = (
   environment: ITestEnvironment,
   globalSetup: string | undefined,
   suite: ITestSuite,
+  fullOnlyFiles: string[],
 ): TestProjectInlineConfiguration => {
   const pattern = CATEGORY_FILE_PATTERNS[category];
   const shared = {
     name: category,
+    exclude: [...TEST_EXCLUDE, ...(suite === 'essential' ? fullOnlyFiles : [])],
     fsModuleCache: false,
     unstubEnvs: true,
     unstubGlobals: true,
@@ -90,7 +106,7 @@ const buildProject = (
     tags: [
       {
         name: FULL_TEST_TAG,
-        description: 'Slow tests the essential suite skips.',
+        description: 'Secondary coverage outside the essential guarantees.',
         skip: suite === 'essential',
       },
     ],
@@ -131,10 +147,11 @@ const buildProject = (
  * any. A `globalSetup` file runs once around the integration project, such as to start a database
  * container for it, and the other projects never run it.
  *
- * Every project defines the `full` tag, for slow tests, such as ones that pack tarballs. They run
- * unless the JG_TEST_SUITE environment variable selects the essential suite, which skips them.
+ * Every project defines the `full` tag for useful secondary coverage. Those cases run
+ * unless JG_TEST_SUITE selects essential. Wholly secondary files are excluded before imports;
+ * empty projects do not run global setup, and unexpectedly empty required selections fail.
  * @param options The categories the package has, the environment its tests run in, its coverage
- * thresholds, and the integration project's global setup.
+ * thresholds, the integration project's global setup, and wholly secondary file patterns.
  * @returns The Vitest configuration.
  * @example
  * export default createVitestConfig({ categories: ['unit', 'integration'] });
@@ -158,6 +175,7 @@ export const createVitestConfig = ({
   environment = 'node',
   coverage = {},
   globalSetup,
+  fullOnlyFiles = [],
 }: IVitestConfigOptions): ViteUserConfig => {
   if (categories.length === 0) {
     throw new Error('createVitestConfig needs at least one test category.');
@@ -177,7 +195,7 @@ export const createVitestConfig = ({
        */
       fsModuleCache: false,
       projects: categories.map((category) =>
-        buildProject(category, environment, globalSetup, suite),
+        buildProject(category, environment, globalSetup, suite, fullOnlyFiles),
       ),
       coverage: {
         provider: 'v8',

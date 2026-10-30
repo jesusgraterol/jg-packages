@@ -7,7 +7,7 @@ import {
   extractSubstitutionPlaceholderNames,
 } from './markdown.js';
 
-describe('extractFirstMarkdownHeadingName', () => {
+describe('extractFirstMarkdownHeadingName', { tags: ['full'] }, () => {
   test('reads a heading after a fence indented by four spaces, which is code, not a fence', () => {
     expect(extractFirstMarkdownHeadingName(['    ```', '# Title', '    ```'].join('\n'))).toBe(
       'Title',

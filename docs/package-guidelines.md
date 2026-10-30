@@ -110,6 +110,8 @@ Test by risk, not by a coverage percentage, with the [categories in `development
 - **Browser APIs,** with `.test-browser.ts` files, which run in Chromium, Firefox, and WebKit, because engines differ there. Everything else runs in Node.js.
 - **Coverage** finds what the tests missed. Every uncovered branch gets a test or is deleted as dead code, unless a test can't reach it, such as a Windows-only path or a fallback the type checker requires, and each published package's thresholds keep what was measured.
 
+Essential/full select scenarios across the existing categories. Keep consequential boundaries, privacy, value correctness, persistence, primary workflows and required recovery essential even when expensive. Full adds useful secondary presentation and permutations. Unassessed families stay essential. Classify mixed families with `full` tags and declare wholly secondary files in `fullOnlyFiles` so essential omits them before imports/setup. Never change assertions merely to obtain a faster passing selection. Keep granular/focused commands complete by default, and run full locally only on explicit request. See [development](development.md#foundational-family-classification) for assessed family examples and current aggregate/CI behavior.
+
 Don't test what can't break on its own: re-exports, constants, types without generics, or behavior a contract test already proves.
 
 ## Naming

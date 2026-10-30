@@ -23,7 +23,7 @@ import {
 // ASCII and C1 control characters that search normalization replaces with word separators
 const CONTROL_CHARACTERS = String.fromCharCode(0, 31, 127, 159);
 
-describe('capitalizeFirst', () => {
+describe('capitalizeFirst', { tags: ['full'] }, () => {
   test.each([
     ['', ''],
     ['hello world', 'Hello world'],
@@ -34,7 +34,7 @@ describe('capitalizeFirst', () => {
   });
 });
 
-describe('toTitleCase', () => {
+describe('toTitleCase', { tags: ['full'] }, () => {
   test.each([
     ['', ''],
     ['hello world', 'Hello World'],
@@ -80,7 +80,7 @@ describe('toSlug', () => {
   });
 });
 
-describe('truncateText', () => {
+describe('truncateText', { tags: ['full'] }, () => {
   test.each([
     ['This is a message', 18, 'This is a message'],
     ['This is a message', 17, 'This is a message'],
@@ -314,7 +314,7 @@ describe('escapeHtml', () => {
   });
 });
 
-describe('pluralize', () => {
+describe('pluralize', { tags: ['full'] }, () => {
   test.each([
     [1, 'file', undefined, 'file'],
     [0, 'file', undefined, 'files'],
