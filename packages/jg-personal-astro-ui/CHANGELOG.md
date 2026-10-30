@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+### Fixed
+
+- Pages keep their crossfade when the site's stylesheet arrives late, such as on a slow network or device. Chromium settles a page's view-transition opt-in when its body starts, so a stylesheet that arrived after that skipped the transition and left an unhandled "Transition was aborted because of invalid state" error in the console. `document-head` now repeats `contract.css`'s opt-in, and its reduced-motion opt-out, in an inline style.
+
 ## 0.5.0
 
 ### Added
