@@ -93,6 +93,19 @@ const createHeldSocket = (): net.Socket => {
   return socket;
 };
 
+/**
+ * Creates a socket whose attempt fails on the next tick, before any timer can fire. A refused
+ * connection is reported only once the event loop polls, which a stalled loop reaches after timers
+ * that came due meanwhile, such as connectRedis's deadline.
+ * @param error The error the attempt fails with.
+ * @returns The socket.
+ */
+const createRefusedSocket = (error: Error): net.Socket => {
+  const socket = new net.Socket();
+  socket.destroy(error);
+  return socket;
+};
+
 describe('connectRedis', () => {
   test('rejects commands while disconnected instead of queueing them, and gives up connecting after 10 seconds', async () => {
     const redis = await connectTestRedis();
@@ -151,22 +164,27 @@ describe('connectRedis', () => {
     { timeout: 5_000 },
     async () => {
       const port = await findClosedPort();
+      const refusal = new Error('the first attempt was refused');
+      // the first attempt fails at once, and its retry is due only after the deadline, so the
+      // deadline always finds the client waiting to retry
+      const createConnection = vi
+        .spyOn(net, 'createConnection')
+        .mockImplementationOnce(() => createRefusedSocket(refusal));
 
       const connecting = connectRedis({
-        socket: { host: '127.0.0.1', port, connectTimeout: 300 },
+        socket: { host: '127.0.0.1', port, connectTimeout: 300, reconnectStrategy: () => 600 },
         onError: () => undefined,
       });
 
       await expectToRejectCode(connecting, ERRORS.CONNECTION_FAILED, 'Could not connect to Redis.');
       const failure = await connecting.catch((error: unknown) => error);
-      expect(failure).toHaveProperty('cause', expect.any(Error));
+      expect(failure).toHaveProperty('cause', refusal);
       const { client, connect } = readLastClient();
-      // an attempt still running at the deadline closes the client when it fails, just after
-      await vi.waitFor(() => {
-        expect(client.isOpen).toBe(false);
-      });
+      // the deadline closes a client that's waiting to retry as it rejects
+      expect(client.isOpen).toBe(false);
       // node-redis's own connect ends instead of retrying forever
       await expect(connect.mock.results[0]?.value).resolves.toBe(client);
+      expect(createConnection).toHaveBeenCalledOnce();
     },
   );
 
@@ -194,10 +212,11 @@ describe('connectRedis', () => {
     held.once('connect', () => {
       hasConnected = true;
     });
-    // the first attempt is refused, and the retry gets the held socket
+    // the first attempt fails at once, so its retry, due within 250 ms, always gets the held socket
+    // before the deadline
     const createConnection = vi
       .spyOn(net, 'createConnection')
-      .mockImplementationOnce(net.createConnection)
+      .mockImplementationOnce(() => createRefusedSocket(new Error('the first attempt was refused')))
       .mockImplementationOnce(() => held);
     try {
       const connecting = connectRedis({
