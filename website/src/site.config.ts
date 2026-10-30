@@ -191,6 +191,14 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     runtimes: ['node'],
     order: 23,
   },
+  'jg-locks': {
+    title: 'Locks',
+    description:
+      'Machine-wide named locks for Node.js scripts, agents, and apps: waits, a status of every holder, explicit recovery, and a CLI.',
+    icon: 'door-closed-locked',
+    runtimes: ['node'],
+    order: 24,
+  },
 };
 
 // the workspace's packages, which the catalog and the package pages read; the site builds from website/

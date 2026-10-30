@@ -12,6 +12,7 @@ export type IPackageIcon =
   | 'container'
   | 'cpu'
   | 'database'
+  | 'door-closed-locked'
   | 'drama'
   | 'folder-open'
   | 'git-branch'
