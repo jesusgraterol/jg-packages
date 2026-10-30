@@ -112,6 +112,8 @@ Test by risk, not by a coverage percentage, with the [categories in `development
 
 Essential/full select scenarios across the existing categories. Keep consequential boundaries, privacy, value correctness, persistence, primary workflows and required recovery essential even when expensive. Full adds useful secondary presentation and permutations. Unassessed families stay essential. Classify mixed families with `full` tags and declare wholly secondary files in `fullOnlyFiles` so essential omits them before imports/setup. Never change assertions merely to obtain a faster passing selection. Keep granular/focused commands complete by default, and run full locally only on explicit request. See [development](development.md#foundational-family-classification) for assessed family examples and current aggregate/CI behavior.
 
+Host and credential tests retain real files, child processes, Git repositories, Docker/Compose resources and local HTTP servers where those establish the boundary. Keep stale-write/no-follow defenses, exclusive ownership and recovery nonces, secret-value redaction, process-tree cleanup, local/loopback Docker checks and token/webhook scope essential. Human-readable duration formatting can be full-only; owner identity, recovery commands and machine-readable status remain essential. The [host classification](development.md#host-and-credential-boundaries) records each assessed family.
+
 Don't test what can't break on its own: re-exports, constants, types without generics, or behavior a contract test already proves.
 
 ## Naming

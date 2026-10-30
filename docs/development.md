@@ -87,6 +87,20 @@ Secondary utility coverage includes reading-time estimates, heading-name present
 
 Complete focused verification is still required for changed behavior and affected consumers, including their full-only cases. Reuse passing checks only while their relevant source, dependencies, configuration, selection and environment inputs remain unchanged. A shared-selector change requires native discovery/default/failure checks and its real-runner fixture, which proves import/setup omission as well as complete full/focused coverage.
 
+### Host and credential boundaries
+
+| Boundary        | Essential guarantee                                                                                                                                             | Full-only coverage                    |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| jg-fs           | Atomic/stale-write integrity, no-follow/private-file defenses, bounded reads, traversal refusal, lock ownership and explicit recovery.                          | None.                                 |
+| jg-process      | Shell-free arguments, byte/deadline limits, cancellation, stdin integrity, readiness and complete owned-process teardown.                                       | None.                                 |
+| jg-locks        | Exclusive ownership, nonce-bound recovery, liveness, secure roots, CLI admission/exit codes and accurate holder/recovery evidence.                              | Human-readable duration permutations. |
+| jg-env          | Strict parsing, source precedence, private secret files and errors that never expose values.                                                                    | None.                                 |
+| jg-git-commands | Exact repository/ref/status interpretation, argument validation, bounded commands and isolation from inherited Git state.                                       | None.                                 |
+| jg-local-docker | Local endpoint validation, exact container ownership, loopback-only ports and cleanup after failure or owner exit. Real Docker/Compose fixtures stay essential. | None.                                 |
+| jg-github       | Signature/JWT validation, exact repository/permission scopes, token revocation on mismatch, safe URLs/headers and bounded rate-limit recovery.                  | None.                                 |
+
+The host selections retain their complete unit/integration categories except six lock-duration display cases. These stay co-located with essential CLI parsing, owner/status and nonce-bound recovery checks. A slow filesystem, child-process, container or credential test is not secondary by cost. Platform-specific permission, signal, Windows-process and shim cases retain their existing platform conditions; essential selection does not remove them. No host global setup or category is omitted. Use a local Docker endpoint for the owned integration fixtures; their temporary resources and run-specific containers must be removed by teardown.
+
 ### Runner mechanics
 
 - **No file module cache.** `createVitestConfig` turns off Vitest's file module cache, `fsModuleCache`, in the root and every project. The cache is one directory, `node_modules/.vitest-cache`, that every run in the workspace shares, and a lockfile change makes each run clear it, so runs started together failed with `ENOTEMPTY`. It saved no measurable time.
