@@ -236,6 +236,7 @@ const readGalleryTools = async (uiDirectory: string, react: boolean): Promise<st
         'vite',
         'react',
         'react-dom',
+        'react-router',
         'tailwindcss',
         '@tailwindcss/vite',
         '@playwright/test',
@@ -476,7 +477,11 @@ const buildGalleryFixture = async (
         import {createRequire} from 'node:module';
         import * as base from 'jg-react-ui';
         import * as personal from 'jg-personal-react-ui';
+        import * as router from 'jg-react-router';
         assert.equal(base.Button, personal.Button);
+        for (const name of ['DialogNavigationProvider', 'DialogNavigationObserver', 'useDialogNavigationDismissal']) {
+          assert.equal(base[name], router[name], name + ' must share the router context');
+        }
         for (const name of Object.keys(base)) {
           assert.notEqual(base[name], undefined, name + ' must be public');
           assert.equal(base[name], personal[name], name + ' must share its implementation');

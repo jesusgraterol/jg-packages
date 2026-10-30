@@ -4,6 +4,7 @@ import markUrl from 'jg-personal-ui/jg-mark.svg';
 import faviconUrl from 'jg-personal-ui/jg-favicon.svg';
 import { ControlsDemo } from './controls-demo/controls-demo.component.js';
 import { TypographyDemo } from './typography-demo/typography-demo.component.js';
+import { OverlayDemo } from './overlay-demo/index.js';
 import { PreferencesDemo } from './preferences-demo/preferences-demo.component.js';
 import { RemotePreferences } from './remote-preferences/remote-preferences.component.js';
 import {
@@ -44,7 +45,7 @@ const MARK_SIZES = [16, 32, 64] as const;
 export const Gallery = () => {
   const [savedCount, setSavedCount] = useState(0);
   return (
-    <main>
+    <main className="gallery-home">
       <header>
         <JgMark className="size-12" />
         <p className="eyebrow">JG / PERSONAL UI</p>
@@ -57,6 +58,7 @@ export const Gallery = () => {
           Moldea’s component APIs, with the typography and palette shared by JG interfaces.
         </p>
       </header>
+      <OverlayDemo />
       <section aria-labelledby="actions-title">
         <h2 id="actions-title">Actions</h2>
         <p>One implementation, ready for native buttons and linked actions.</p>

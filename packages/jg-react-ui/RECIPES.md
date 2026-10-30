@@ -191,3 +191,85 @@ const tableRegion = createElement(
   'Table content',
 );
 ```
+
+## Compose a responsive dialog
+
+Keep the header, scrolling body, and optional footer as direct regions. An asChild panel uses a role-compatible element such as a div. Put a form inside the body and give fixed submit buttons its form ID. Small dialogs use their header close control instead of DialogCancel; medium and large dialogs expose mobile Back and desktop cancellation.
+
+```ts
+import { createElement as h } from 'react';
+import {
+  Button,
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
+  DialogCancel,
+  DialogClose,
+} from 'jg-react-ui';
+const dialog = h(
+  Dialog,
+  null,
+  h(DialogTrigger, { asChild: true }, h(Button, { size: 'touch' }, 'Edit workspace')),
+  h(
+    DialogContent,
+    { size: 'medium' },
+    h(
+      DialogHeader,
+      null,
+      h(DialogTitle, null, 'Workspace settings'),
+      h(DialogDescription, null, 'Review your changes.'),
+    ),
+    h(
+      DialogBody,
+      null,
+      h('input', { 'aria-label': 'Workspace name', defaultValue: 'Personal workspace' }),
+    ),
+    h(
+      DialogFooter,
+      null,
+      h(
+        DialogCancel,
+        { asChild: true },
+        h(Button, { size: 'touch', variant: 'outline' }, 'Cancel'),
+      ),
+      h(DialogClose, { asChild: true }, h(Button, { size: 'touch' }, 'Done')),
+    ),
+  ),
+);
+```
+
+## Share route dismissal and confirmation sessions
+
+The navigation primitives share jg-react-router's context. Place one observer inside the router, and keep persistent dialog hosts under the same provider. Committed navigation cancels outgoing sessions without adding history entries. The host owns route history and drawer dismissal; compose DrawerClose around a navigation action when it should close the drawer.
+
+```ts
+import { createElement as h, Fragment } from 'react';
+import { createBrowserRouter, RouterProvider } from 'react-router';
+import {
+  ConfirmationDialog,
+  DialogNavigationObserver,
+  DialogNavigationProvider,
+  useConfirmationDialogStore,
+} from 'jg-react-ui';
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: h(Fragment, null, h(DialogNavigationObserver), h('main', null, 'Workspace')),
+  },
+]);
+const app = h(DialogNavigationProvider, null, h(RouterProvider, { router }), h(ConfirmationDialog));
+const requestConfirmation = (onDecision: (isConfirmed: true | undefined) => void) =>
+  useConfirmationDialogStore.getState().openConfirmationDialog({
+    title: 'Archive workspace?',
+    description: 'You can restore it from the archive.',
+    confirmText: 'Archive',
+    onConfirmationDialogClose: onDecision,
+  });
+```
+
+Mount one ConfirmationDialog per document. Its store is imperative and document-wide, so do not mutate it while rendering on the server. Completion resets before invoking the application callback, which owns its async work and errors.

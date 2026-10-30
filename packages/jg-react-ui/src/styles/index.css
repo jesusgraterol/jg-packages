@@ -3,14 +3,56 @@
 
 /* paths are relative to this stylesheet in the installed dist directory */
 @source '../components';
+@source '../shared';
+
+/* the returning page covers the old mobile dialog snapshot without cross-fading. */
+html[data-dialog-return]::view-transition-group(root) {
+  animation: none;
+}
+html[data-dialog-return]::view-transition-image-pair(root) {
+  isolation: isolate;
+}
+html[data-dialog-return]::view-transition-old(root),
+html[data-dialog-return]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+  opacity: 1;
+}
+html[data-dialog-return]::view-transition-old(root) {
+  z-index: 0;
+}
+html[data-dialog-return]::view-transition-new(root) {
+  z-index: 1;
+  transform-origin: center;
+  animation: dialog-return 300ms ease-out both;
+}
+@keyframes dialog-return {
+  from {
+    transform: scale(0.96);
+  }
+  to {
+    transform: scale(1);
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
+  html[data-dialog-return]::view-transition-new(root) {
+    animation: none;
+  }
   [data-sonner-toaster] {
     transition: none !important;
   }
 }
 
 @layer base {
+  /* Base UI retains modal-lock ownership while right drawers consume its desktop gutter. */
+  html.app-ui-right-drawer-scroll-lock {
+    overflow-y: hidden !important;
+    scrollbar-gutter: auto !important;
+  }
+  html.app-ui-right-drawer-scroll-lock body {
+    width: calc(100vw - var(--app-ui-right-drawer-scrollbar-width)) !important;
+  }
   [data-slot='field']:has(
       [data-slot='checkbox']:disabled,
       [data-slot='input']:disabled,

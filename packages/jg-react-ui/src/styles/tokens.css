@@ -4,7 +4,9 @@
 @theme inline {
   --font-sans: var(--jg-ui-font-sans);
   --shadow-raised: var(--jg-ui-shadow-raised);
+  --shadow-surface: var(--jg-ui-shadow-surface);
   --shadow-inset: var(--jg-ui-shadow-inset);
+  --spacing-page-gutter: clamp(1rem, 2vw, 2rem);
   --font-mono: var(--jg-ui-font-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);

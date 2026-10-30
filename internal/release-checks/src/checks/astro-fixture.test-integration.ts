@@ -330,6 +330,7 @@ test('the installed React gallery uses the packed closure, exact tools, identity
     'jg-process',
     'jg-playwright',
     'jg-react',
+    'jg-react-router',
     'jg-storage',
     'jg-site',
   ];
@@ -357,6 +358,8 @@ test('the installed React gallery uses the packed closure, exact tools, identity
       );
       await access(join(consumer, 'src/gallery.component.test-e2e.tsx'));
       await access(join(consumer, 'src/controls-demo/controls-demo.component.tsx'));
+      await access(join(consumer, 'src/overlay-demo/overlay-demo.component.tsx'));
+      await access(join(consumer, 'src/layout-demo/layout-demo.component.tsx'));
       await access(join(consumer, 'component-tests/theme-provider/index.test-e2e.ts'));
       await access(join(consumer, 'vite.config.ts'));
       await writeInstalledClis(consumer);
@@ -374,9 +377,11 @@ test('the installed React gallery uses the packed closure, exact tools, identity
       'vite@8.3.4',
       'react@19.2.4',
       'react-dom@19.2.4',
+      'react-router@7.14.2',
       'tailwindcss@4.3.3',
       '/release/jg-personal-ui-0.2.0.tgz',
       '/release/jg-react-ui-0.3.0.tgz',
+      '/release/jg-react-router-0.4.0.tgz',
     ]),
   );
   expect(commands[1]?.at(-1)).toBe('build');

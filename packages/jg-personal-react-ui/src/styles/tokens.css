@@ -1,6 +1,7 @@
 /* JG values bind to the retained generic component roles. */
 :root {
   --jg-ui-shadow-raised: var(--jg-shadow-raised);
+  --jg-ui-shadow-surface: var(--jg-shadow-surface);
   --jg-ui-shadow-inset: none;
   --jg-ui-font-sans: var(--jg-font-sans);
   --jg-ui-font-mono: var(--jg-font-mono);

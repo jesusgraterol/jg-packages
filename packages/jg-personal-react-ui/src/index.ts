@@ -330,3 +330,153 @@ export {
   TableHeaderCell,
   TableCell,
 } from './components/typography/index.js';
+
+// dialog
+// types
+export type {
+  IDialogBodyProps,
+  IDialogCancelProps,
+  IDialogCloseProps,
+  IDialogContentProps,
+  IDialogDescriptionProps,
+  IDialogFooterProps,
+  IDialogHeaderProps,
+  IDialogProps,
+  IDialogSize,
+  IDialogTitleProps,
+  IDialogTriggerProps,
+} from './components/dialog/index.js';
+
+// components
+export {
+  Dialog,
+  DialogBody,
+  DialogCancel,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './components/dialog/index.js';
+
+// drawer
+// types
+export type {
+  IDrawerBodyProps,
+  IDrawerCloseProps,
+  IDrawerContentProps,
+  IDrawerDensity,
+  IDrawerDescriptionProps,
+  IDrawerFooterProps,
+  IDrawerHeaderProps,
+  IDrawerProps,
+  IDrawerSide,
+  IDrawerSize,
+  IDrawerTitleProps,
+  IDrawerTriggerProps,
+} from './components/drawer/index.js';
+
+// components
+export {
+  Drawer,
+  DrawerBody,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from './components/drawer/index.js';
+
+// alert-dialog
+// types
+export type {
+  IAlertDialogActionProps,
+  IAlertDialogContentProps,
+  IAlertDialogDescriptionProps,
+  IAlertDialogFooterProps,
+  IAlertDialogHeaderProps,
+  IAlertDialogProps,
+  IAlertDialogTitleProps,
+  IAlertDialogTriggerProps,
+} from './components/alert-dialog/index.js';
+
+// components
+export {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from './components/alert-dialog/index.js';
+
+// confirmation-dialog
+// types
+export type {
+  IConfirmationDialogCloseHandler,
+  IConfirmationDialogStore,
+  IOpenConfirmationDialogOptions,
+} from './components/confirmation-dialog/index.js';
+
+// components
+export { ConfirmationDialog } from './components/confirmation-dialog/index.js';
+
+// stores
+export { useConfirmationDialogStore } from './components/confirmation-dialog/index.js';
+
+// dialog-navigation
+// shared navigation contracts
+export type {
+  IDialogNavigationDismissalOptions,
+  IDialogNavigationObserverProps,
+  IDialogNavigationProviderProps,
+  IDialogNavigationSessionReader,
+} from './components/dialog-navigation/index.js';
+
+// shared provider, observer, and registration hook
+export {
+  DialogNavigationObserver,
+  DialogNavigationProvider,
+  useDialogNavigationDismissal,
+} from './components/dialog-navigation/index.js';
+
+// layout
+// types
+export type {
+  IInlineProps,
+  IPageDescriptionProps,
+  IPageHeaderMetadataProps,
+  IPageHeaderProps,
+  IPageHeaderRowProps,
+  IPageHeaderTitleGroupProps,
+  IPageShellProps,
+  IPageTitleProps,
+  IStackProps,
+  ISurfaceProps,
+} from './components/layout/index.js';
+
+// constants
+export {
+  APP_PAGE_CONTENT_HEAVY_LOAD_ANIMATION_CLASS_NAME,
+  APP_PAGE_CONTENT_LIGHT_LOAD_ANIMATION_CLASS_NAME,
+} from './components/layout/index.js';
+
+// components
+export {
+  Inline,
+  PageDescription,
+  PageHeader,
+  PageHeaderMetadata,
+  PageHeaderRow,
+  PageHeaderTitleGroup,
+  PageShell,
+  PageTitle,
+  Stack,
+  Surface,
+} from './components/layout/index.js';

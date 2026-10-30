@@ -1059,6 +1059,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.4(react@19.2.4)
+      react-router:
+        specifier: 7.14.2
+        version: 7.14.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3
@@ -1356,6 +1359,9 @@ importers:
       jg-react:
         specifier: workspace:^
         version: link:../jg-react
+      jg-react-router:
+        specifier: workspace:^
+        version: link:../jg-react-router
       jg-storage:
         specifier: workspace:^
         version: link:../jg-storage
@@ -1414,6 +1420,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.4(react@19.2.4)
+      react-router:
+        specifier: 7.14.2
+        version: 7.14.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3

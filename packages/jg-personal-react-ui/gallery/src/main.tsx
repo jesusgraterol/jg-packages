@@ -1,8 +1,12 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter, Route, Routes } from 'react-router';
 
 import {
   DEFAULT_UI_PREFERENCES,
+  ConfirmationDialog,
+  DialogNavigationObserver,
+  DialogNavigationProvider,
   ErrorFeedbackProvider,
   ThemeProvider,
   Toastr,
@@ -11,6 +15,7 @@ import {
 } from 'jg-personal-react-ui';
 
 import { Gallery } from './gallery.component.js';
+import { LayoutDemo } from './layout-demo/layout-demo.component.js';
 import './styles.css';
 
 declare const __JG_UI_STORAGE_ID__: string;
@@ -31,7 +36,22 @@ createRoot(root).render(
         {...(initialPreferences === undefined ? {} : { initialPreferences })}
       >
         <ThemeProvider>
-          <Gallery />
+          <DialogNavigationProvider>
+            <BrowserRouter>
+              <DialogNavigationObserver />
+              <Routes>
+                <Route
+                  path="/"
+                  element={<Gallery />}
+                />
+                <Route
+                  path="/layout"
+                  element={<LayoutDemo />}
+                />
+              </Routes>
+              <ConfirmationDialog />
+            </BrowserRouter>
+          </DialogNavigationProvider>
           <Toastr
             closeButton
             toastOptions={{ duration: Infinity }}

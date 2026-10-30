@@ -117,6 +117,30 @@
     "./components/typography": {
       "types": "./dist/components/typography/index.d.ts",
       "default": "./dist/components/typography/index.js"
+    },
+    "./components/dialog": {
+      "types": "./dist/components/dialog/index.d.ts",
+      "default": "./dist/components/dialog/index.js"
+    },
+    "./components/drawer": {
+      "types": "./dist/components/drawer/index.d.ts",
+      "default": "./dist/components/drawer/index.js"
+    },
+    "./components/alert-dialog": {
+      "types": "./dist/components/alert-dialog/index.d.ts",
+      "default": "./dist/components/alert-dialog/index.js"
+    },
+    "./components/confirmation-dialog": {
+      "types": "./dist/components/confirmation-dialog/index.d.ts",
+      "default": "./dist/components/confirmation-dialog/index.js"
+    },
+    "./components/dialog-navigation": {
+      "types": "./dist/components/dialog-navigation/index.d.ts",
+      "default": "./dist/components/dialog-navigation/index.js"
+    },
+    "./components/layout": {
+      "types": "./dist/components/layout/index.d.ts",
+      "default": "./dist/components/layout/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -180,6 +204,7 @@
     "@tailwindcss/vite": "catalog:",
     "jg-playwright": "workspace:*",
     "jg-process": "workspace:*",
-    "vite": "8.3.4"
+    "vite": "8.3.4",
+    "react-router": "7.14.2"
   }
 }

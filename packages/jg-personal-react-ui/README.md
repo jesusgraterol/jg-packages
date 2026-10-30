@@ -38,6 +38,18 @@ Render `ThemeInitializationScript` in the document head before application JavaS
 
 The forms, menus, tabs, tooltips, copy commands, progress, empty states, typography, tables, links, and inline code are direct exports of `jg-react-ui`. Their refs, native attributes, slots, event aliases, and cancellation behavior share the same implementation and contexts. JG styles bind field, code, menu, and inverse dark-theme roles; set `font-sans bg-background text-foreground` on the application root. Keep compact choice glyphs inside associated label rows of at least 44px, and give overflowing tables a labelled, focusable region with visible focus. See the recipes for compositions.
 
+## Dialogs, drawers, and layout
+
+Dialog, AlertDialog, Drawer, ConfirmationDialog, and page/layout primitives retain the pinned compound APIs. DialogContent requires a size and direct DialogHeader, DialogBody, and optional DialogFooter children; asChild accepts one panel element containing those regions. Use an element that permits the dialog role, such as a div; place a form inside the body and associate fixed submit actions with its form ID. Drawer requires a side, its content requires a size, and its direct regions are ordered header, body, optional footer. AlertDialogContent requires a direct header and footer. Invalid composition and invalid slotted children retain native Error guards.
+
+Medium and large dialogs become full-screen pages on phones, with generated Back and desktop close controls. Body regions own scrolling, while headers and actions stay fixed. Compact modal close controls retain their fine-pointer appearance and have actual 44px targets under a coarse pointer. The default initial focus skips unusable controls; initialFocus and generated control icons/labels remain configurable. Overlay dismissal stays disabled by default for dialogs. isDismissalDisabled blocks on-page dismissal; committed navigation still cancels obsolete dialogs.
+
+DialogNavigationProvider, DialogNavigationObserver, and useDialogNavigationDismissal directly reuse jg-react-router's implementations and context. Place the observer inside the router, with persistent dialog hosts under the same provider. Navigation dismissal does not create history entries. The host application owns route history and its navigation UI; drawers close on route actions through an explicit DrawerClose composition or application state.
+
+Mount one ConfirmationDialog per document and use useConfirmationDialogStore.getState().openConfirmationDialog(options). This imperative store retains the source's document-wide session API; do not mutate it while server rendering. Completion resets the session before calling the application callback, which receives true on confirmation and undefined on cancellation. The application owns async work and callback errors. Controlled dialog children remain immutable through closing transitions, then release at completion. Mobile return snapshots ignore stale callbacks and are skipped for reduced motion or unsupported browsers.
+
+PageShell, PageHeader, PageHeaderRow, PageHeaderTitleGroup, PageHeaderMetadata, PageTitle, PageDescription, Stack, Inline, and Surface preserve the native semantic props and shared geometry. JG binds the generic surface shadow role to the shared foundation. The stylesheet supplies source page-gutter spacing and the drawer gutter hooks; it does not reset the document's palette or typography.
+
 ## Documentation
 
 The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.3.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.3.0/RECIPES.md). These personal-use packages are unlisted on the public package website.
