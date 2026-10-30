@@ -12,8 +12,12 @@ const HEADING_IDS = ['first', 'second', 'third'];
 // the page these tests scroll: each heading after a tall block of text
 let article: HTMLElement;
 
-// the URL before each test, restored whole after it, because Vitest's browser runner keeps the
-// session it reconnects with in the query string
+/*
+ * The URL before each test, restored whole after a test that changed it, because Vitest's browser
+ * runner keeps the session it reconnects with in the query string. Only a changed URL is restored:
+ * WebKit throws a SecurityError on the 101st History API call within 10 seconds, and a restore
+ * after every test used up that budget under --repeats.
+ */
 let originalUrl: string;
 
 beforeEach(async () => {
@@ -39,7 +43,9 @@ afterEach(() => {
   cleanup();
   window.scrollTo(0, 0);
   article.remove();
-  window.history.replaceState(null, '', originalUrl);
+  if (window.location.href !== originalUrl) {
+    window.history.replaceState(null, '', originalUrl);
+  }
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
