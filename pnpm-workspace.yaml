@@ -39,3 +39,6 @@ allowBuilds:
   esbuild: false
   protobufjs: false
   ssh2: false
+
+minimumReleaseAgeExclude:
+  - jg-plans@0.4.0
