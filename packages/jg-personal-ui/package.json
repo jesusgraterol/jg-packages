@@ -1,6 +1,6 @@
 {
   "name": "jg-personal-ui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "JG colors, fonts, semantic CSS tokens, and visual foundations shared by personal React and Astro interfaces.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -21,7 +21,13 @@
     "./styles/contract.css": {
       "style": "./dist/styles/contract.css",
       "default": "./dist/styles/contract.css"
-    }
+    },
+    "./brand": {
+      "types": "./dist/brand/index.d.ts",
+      "default": "./dist/brand/index.js"
+    },
+    "./jg-mark.svg": "./dist/assets/jg-mark.svg",
+    "./jg-favicon.svg": "./dist/assets/jg-favicon.svg"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -50,12 +56,14 @@
     "url": "https://github.com/jesusgraterol/jg-packages/issues"
   },
   "scripts": {
-    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/build-tools/src/copy-assets.ts 'styles/*.css' && node ../../internal/api-reference/src/write-api-markdown.ts",
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node scripts/brand-assets/generate.ts --check && node ../../internal/build-tools/src/copy-assets.ts 'styles/*.css' && node ../../internal/build-tools/src/copy-assets.ts 'assets/*.svg' && node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json",
     "test": "pnpm test:unit",
     "test:unit": "vitest run --project unit",
-    "test:coverage": "vitest run --coverage --project unit"
+    "test:coverage": "vitest run --coverage --project unit",
+    "brand:generate": "tsc -p tsconfig.build.json && node scripts/brand-assets/generate.ts",
+    "brand:check": "node scripts/brand-assets/generate.ts --check"
   },
   "dependencies": {
     "@fontsource-variable/ubuntu-sans": "^5.3.0",
@@ -73,6 +81,7 @@
     "eslint": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "tailwindcss": "catalog:"
+    "tailwindcss": "catalog:",
+    "jg-fs": "workspace:*"
   }
 }

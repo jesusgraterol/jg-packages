@@ -370,13 +370,15 @@ test('the installed React gallery uses the packed closure, exact tools, identity
       'react@19.2.4',
       'react-dom@19.2.4',
       'tailwindcss@4.3.3',
-      '/release/jg-personal-ui-0.1.0.tgz',
-      '/release/jg-react-ui-0.1.0.tgz',
+      '/release/jg-personal-ui-0.2.0.tgz',
+      '/release/jg-react-ui-0.2.0.tgz',
     ]),
   );
   expect(commands[1]?.at(-1)).toBe('build');
   expect(commands[2]).toEqual(expect.arrayContaining(['--input-type=module', '--eval']));
   expect(commands[2]?.at(-1)).toContain('assert.equal(base.Button, personal.Button)');
+  expect(commands[2]?.at(-1)).toContain('base[name], personal[name]');
+  expect(commands[2]?.at(-1)).toContain('personal.JgMark');
   expect(commands[3]?.slice(1)).toStrictEqual(['test', '--retries=0']);
   await expect(access(consumer)).rejects.toThrow();
 });

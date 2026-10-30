@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+### Added
+
+- Retained Badge, IconTile, and Alert APIs with their variants, types, and slotted rendering.
+
 ## 0.1.0
 
 ### Added

@@ -484,6 +484,7 @@ describe('useAppliedTheme', () => {
   };
 
   afterEach(() => {
+    vi.useRealTimers();
     document.documentElement.classList.remove('light', 'dark');
   });
 
@@ -525,15 +526,19 @@ describe('useAppliedTheme', () => {
     expect(document.documentElement.classList.contains('light')).toBe(true);
   });
 
-  test('turns transitions off while the class changes, and back on after two frames', async () => {
+  test('turns transitions off while the class changes, and back on after two frames', () => {
     stubSystemScheme(false);
     document.documentElement.classList.add('light');
+    // an earlier test's theme change leaves its style until real frames remove it, so count only
+    // the styles this test adds
+    const earlierStyles = new Set(document.head.querySelectorAll('style'));
     const transitionStyles = () =>
-      [...document.head.querySelectorAll('style')].filter((style) =>
-        style.textContent.includes('transition:none!important'),
+      [...document.head.querySelectorAll('style')].filter(
+        (style) =>
+          !earlierStyles.has(style) && style.textContent.includes('transition:none!important'),
       );
-    // an earlier test's theme change removes its style only after two animation frames
-    await expect.poll(() => transitionStyles().length).toBe(0);
+    // the test runs the frames itself, because a busy CI runner can go over a second without one
+    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame'] });
     const { rerender } = renderHook(
       ({ preference }: { preference: IThemePreference }) => useAppliedTheme(preference),
       { initialProps: { preference: 'light' } },
@@ -543,7 +548,10 @@ describe('useAppliedTheme', () => {
     rerender({ preference: 'dark' });
     expect(transitionStyles()).toHaveLength(1);
 
-    await expect.poll(() => transitionStyles().length).toBe(0);
+    vi.advanceTimersToNextFrame();
+    expect(transitionStyles()).toHaveLength(1);
+    vi.advanceTimersToNextFrame();
+    expect(transitionStyles()).toHaveLength(0);
   });
 
   test('leaves transitions alone when asked to', () => {

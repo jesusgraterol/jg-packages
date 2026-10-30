@@ -10,6 +10,7 @@ import {
   type IOpenGraphImage,
   type IOpenGraphType,
 } from './head-meta.ts';
+import { PAGE_TRANSITION_STYLE } from './page-transitions.ts';
 import { SPECULATION_RULES } from './speculation-rules.ts';
 
 interface Props {
@@ -134,5 +135,10 @@ const serializedStructuredData =
   is:inline
   type="speculationrules"
   set:html={JSON.stringify(SPECULATION_RULES)}
+/>
+{/* inline, so the opt-in is active before the body starts, however late the stylesheet arrives */}
+<style
+  is:inline
+  set:html={PAGE_TRANSITION_STYLE}
 />
 <slot />

@@ -245,7 +245,7 @@ Native disclosure, focus, and exclusive grouping work without JavaScript. With J
 
 Every page the package's components build crossfades into the next, and prerenders when the pointer rests on its link, without JavaScript:
 
-- `contract.css` turns on cross-document view transitions with `@view-transition { navigation: auto; }`, with a 180 ms crossfade, and turns them off under `prefers-reduced-motion: reduce`.
+- `contract.css` turns on cross-document view transitions with `@view-transition { navigation: auto; }`, with a 180 ms crossfade, and turns them off under `prefers-reduced-motion: reduce`. `document-head` repeats the opt-in and its reduced-motion opt-out in an inline style, because Chromium settles a page's opt-in when its body starts, and a stylesheet that arrives later would skip the transition with an unhandled error.
 - `site-header` carries `view-transition-name: jg-site-header`, so the header stays still while the page under it changes. The footer moves with the page, because its position differs from page to page.
 - `document-head` adds a `<script type="speculationrules">`, JSON the browser reads rather than code it runs. It prerenders same-site pages with `moderate` eagerness, which waits for the pointer to rest on a link, and never links to `.md`, `.txt`, `.xml` or `.png` files.
 

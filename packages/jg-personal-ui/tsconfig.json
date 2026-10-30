@@ -2,7 +2,8 @@
   "extends": "@jg-packages/tsconfig/browser.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    "allowImportingTsExtensions": true
   },
-  "include": ["src", "*.config.ts", "gallery/**/*.ts", "gallery/**/*.tsx"]
+  "include": ["src", "*.config.ts", "gallery/**/*.ts", "gallery/**/*.tsx", "scripts"]
 }
