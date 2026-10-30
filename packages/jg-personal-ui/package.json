@@ -1,0 +1,78 @@
+{
+  "name": "jg-personal-ui",
+  "version": "0.1.0",
+  "description": "JG colors, fonts, semantic CSS tokens, and visual foundations shared by personal React and Astro interfaces.",
+  "author": "Jesus Graterol",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./tokens": {
+      "types": "./dist/tokens/index.d.ts",
+      "default": "./dist/tokens/index.js"
+    },
+    "./styles/theme.css": {
+      "style": "./dist/styles/theme.css",
+      "default": "./dist/styles/theme.css"
+    },
+    "./styles/contract.css": {
+      "style": "./dist/styles/contract.css",
+      "default": "./dist/styles/contract.css"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "API.md",
+    "RECIPES.md"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "engines": {
+    "node": ">=22.17.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesusgraterol/jg-packages.git",
+    "directory": "packages/jg-personal-ui"
+  },
+  "homepage": "https://github.com/jesusgraterol/jg-packages/tree/main/packages/jg-personal-ui#readme",
+  "bugs": {
+    "url": "https://github.com/jesusgraterol/jg-packages/issues"
+  },
+  "scripts": {
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/build-tools/src/copy-assets.ts 'styles/*.css' && node ../../internal/api-reference/src/write-api-markdown.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json",
+    "test": "pnpm test:unit",
+    "test:unit": "vitest run --project unit",
+    "test:coverage": "vitest run --coverage --project unit"
+  },
+  "dependencies": {
+    "@fontsource-variable/ubuntu-sans": "^5.3.0",
+    "@fontsource-variable/ubuntu-sans-mono": "^5.3.0"
+  },
+  "peerDependencies": {
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@jg-packages/eslint-config": "workspace:*",
+    "@jg-packages/tsconfig": "workspace:*",
+    "@jg-packages/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "tailwindcss": "catalog:"
+  }
+}

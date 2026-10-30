@@ -225,13 +225,24 @@ const buildFixture = async (
  * @throws
  * - No exact workspace version is configured for gallery tool {name}.
  */
-const readGalleryTools = async (uiDirectory: string): Promise<string[]> => {
+const readGalleryTools = async (uiDirectory: string, react: boolean): Promise<string[]> => {
   const manifest = JSON.parse(
     await readFile(join(uiDirectory, 'package.json'), 'utf8'),
   ) as IPackageManifest;
   const workspace = await readFile(resolve(uiDirectory, '..', '..', 'pnpm-workspace.yaml'), 'utf8');
   const catalog = workspace.split('\ncatalog:\n')[1]?.split(/\n\S/u)[0]?.split('\n') ?? [];
-  return GALLERY_TOOLS.map((name) => {
+  const tools = react
+    ? [
+        'vite',
+        'react',
+        'react-dom',
+        'tailwindcss',
+        '@tailwindcss/vite',
+        '@playwright/test',
+        '@axe-core/playwright',
+      ]
+    : GALLERY_TOOLS;
+  return tools.map((name) => {
     const declared = manifest.devDependencies?.[name];
     const catalogLine = catalog.find(
       (line) => line.startsWith(`  '${name}': `) || line.startsWith(`  ${name}: `),
@@ -339,7 +350,8 @@ const buildGalleryFixture = async (
     await mkdir(projectDirectory);
     ownsProject = true;
     const uiDirectory = packed.workspacePackage.directory;
-    const tools = await readGalleryTools(uiDirectory);
+    const react = packed.packedManifest.name === 'jg-personal-react-ui';
+    const tools = await readGalleryTools(uiDirectory, react);
     const tarballs = galleryTarballs(packed, packages);
     await cp(join(uiDirectory, 'gallery'), projectDirectory, {
       recursive: true,
@@ -379,18 +391,22 @@ const buildGalleryFixture = async (
       join(projectDirectory, 'package.json'),
       JSON.stringify({ name: 'release-check-astro-gallery', private: true, type: 'module' }),
     );
-    const catalog = (await import(
-      pathToFileURL(join(projectDirectory, 'src', 'catalog', 'index.ts')).href
-    )) as { GALLERY_EXAMPLES: { subpath: string }[] };
-    const represented = new Set(
-      catalog.GALLERY_EXAMPLES.map(({ subpath }) => `${packed.packedManifest.name}/${subpath}`),
-    );
-    const missing = classifyExports(
-      packed.packedManifest.name,
-      packed.packedManifest.exports,
-    ).components.filter((specifier) => !represented.has(specifier));
-    if (missing.length > 0)
-      throw new Error(`The gallery has no rendered example for ${missing.join(', ')}.`);
+    if (react)
+      await cp(join(uiDirectory, 'vite.config.ts'), join(projectDirectory, 'vite.config.ts'));
+    if (!react) {
+      const catalog = (await import(
+        pathToFileURL(join(projectDirectory, 'src', 'catalog', 'index.ts')).href
+      )) as { GALLERY_EXAMPLES: { subpath: string }[] };
+      const represented = new Set(
+        catalog.GALLERY_EXAMPLES.map(({ subpath }) => `${packed.packedManifest.name}/${subpath}`),
+      );
+      const missing = classifyExports(
+        packed.packedManifest.name,
+        packed.packedManifest.exports,
+      ).components.filter((specifier) => !represented.has(specifier));
+      if (missing.length > 0)
+        throw new Error(`The gallery has no rendered example for ${missing.join(', ')}.`);
+    }
 
     /**
      * Runs a stage within both deadlines and rejects unexpected command termination.
@@ -417,7 +433,12 @@ const buildGalleryFixture = async (
       scope.signal.throwIfAborted();
       const result = await scope.run(executable, args, {
         cwd: projectDirectory,
-        env: { ...process.env, JG_UI_GALLERY_ROOT: projectDirectory },
+        env: {
+          ...process.env,
+          ...(react
+            ? { JG_REACT_UI_GALLERY_ROOT: projectDirectory }
+            : { JG_UI_GALLERY_ROOT: projectDirectory }),
+        },
         signal: scope.signal,
         timeoutSeconds: ASTRO_FIXTURE_LIMITS[name],
       });
@@ -443,15 +464,32 @@ const buildGalleryFixture = async (
     await runStage('install', npm.command, npm.args);
     stage = 'build';
     await runStage('build', process.execPath, [
-      await galleryCli(projectDirectory, 'astro', 'astro'),
+      await galleryCli(projectDirectory, react ? 'vite' : 'astro', react ? 'vite' : 'astro'),
       'build',
     ]);
-    stage = 'index';
-    await runStage('index', process.execPath, [
-      await galleryCli(projectDirectory, 'pagefind', 'pagefind'),
-      '--site',
-      'dist',
-    ]);
+    if (react) {
+      await runStage('build', process.execPath, [
+        '--input-type=module',
+        '--eval',
+        `
+        import assert from 'node:assert/strict';
+        import {createRequire} from 'node:module';
+        import * as base from 'jg-react-ui';
+        import * as personal from 'jg-personal-react-ui';
+        assert.equal(base.Button, personal.Button);
+        const baseRequire = createRequire(import.meta.resolve('jg-react-ui'));
+        const personalRequire = createRequire(import.meta.resolve('jg-personal-react-ui'));
+        assert.equal(baseRequire.resolve('react'), personalRequire.resolve('react'));
+      `,
+      ]);
+    } else {
+      stage = 'index';
+      await runStage('index', process.execPath, [
+        await galleryCli(projectDirectory, 'pagefind', 'pagefind'),
+        '--site',
+        'dist',
+      ]);
+    }
     stage = 'browser';
     await runStage('browser', process.execPath, [
       await galleryCli(projectDirectory, '@playwright/test', 'playwright'),
@@ -492,7 +530,8 @@ const buildGalleryFixture = async (
 /**
  * Check 4: for each package that ships Astro components, a temporary Astro site installed from the
  * tarball imports every component, stylesheet, and module, and `astro build` must pass. The
- * personal UI instead renders its maintained gallery and runs the installed browser suite.
+ * personal Astro and React UI packages instead render their maintained galleries and run the
+ * installed browser suites.
  * @param packages The packed packages.
  * @param runCommand Runs a command.
  * @param runGalleryCommand Runs the installed UI fixture with bounded process ownership.
@@ -510,16 +549,17 @@ export const checkAstroFixture = async (
     const { name, exports: exportsMap } = packed.packedManifest;
     if (
       name === 'jg-personal-astro-ui' ||
+      name === 'jg-personal-react-ui' ||
       classifyExports(name, exportsMap).components.length > 0
     ) {
-      const missingPeers = FIXTURE_PEERS.filter(
-        (peer) => packed.packedManifest.peerDependencies?.[peer] === undefined,
-      );
+      const missingPeers = (
+        name === 'jg-personal-react-ui' ? ['react', 'react-dom', 'tailwindcss'] : FIXTURE_PEERS
+      ).filter((peer) => packed.packedManifest.peerDependencies?.[peer] === undefined);
       problems.set(
         name,
         missingPeers.length > 0
           ? [`ships Astro components without the peer dependencies ${missingPeers.join(' and ')}`]
-          : await (name === 'jg-personal-astro-ui'
+          : await (name === 'jg-personal-astro-ui' || name === 'jg-personal-react-ui'
               ? buildGalleryFixture(packed, packages, runGalleryCommand)
               : buildFixture(packed, packages, runCommand)),
       );

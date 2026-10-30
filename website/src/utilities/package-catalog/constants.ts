@@ -1,7 +1,12 @@
 import type { IRuntime } from './types.ts';
 
 // packages published from packages/ that the site never lists
-export const UNLISTED_PACKAGES: readonly string[] = ['jg-personal-astro-ui'];
+export const UNLISTED_PACKAGES: readonly string[] = [
+  'jg-personal-astro-ui',
+  'jg-personal-ui',
+  'jg-react-ui',
+  'jg-personal-react-ui',
+];
 
 // how each runtime is named on badges and in the home page's groups
 export const RUNTIMES: Record<IRuntime, { label: string; heading: string; summary: string }> = {

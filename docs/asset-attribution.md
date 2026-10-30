@@ -1,6 +1,6 @@
 # Asset attribution
 
-Where the marks, fonts, and icons the website and `jg-personal-astro-ui` use come from, and the terms they're used under.
+Where the marks, fonts, and icons the website and personal UI packages use come from, and the terms they're used under.
 
 ## jg/ mark
 
@@ -14,7 +14,7 @@ The website's favicons are rendered from `jg-favicon.svg`, as jesusgraterol.dev'
 
 ## Fonts
 
-`jg-personal-astro-ui` depends on [Ubuntu Sans and Ubuntu Sans Mono](https://design.ubuntu.com/font), Copyright 2011, 2022, 2023 Canonical Ltd., through Fontsource's `@fontsource-variable/ubuntu-sans` and `@fontsource-variable/ubuntu-sans-mono`. `theme.css` imports them, so sites bundle the font files from those packages unchanged.
+`jg-personal-ui` and, until its shared-foundation migration, `jg-personal-astro-ui` depend on [Ubuntu Sans and Ubuntu Sans Mono](https://design.ubuntu.com/font), Copyright 2011, 2022, 2023 Canonical Ltd., through Fontsource's `@fontsource-variable/ubuntu-sans` and `@fontsource-variable/ubuntu-sans-mono`. `theme.css` imports them, so sites bundle the font files from those packages unchanged.
 
 Both are under the [Ubuntu Font Licence 1.0](https://ubuntu.com/legal/font-licence), which each Fontsource package ships as its `LICENSE`. It allows bundling and embedding the fonts. It grants no trademark rights, and a modified font must be renamed, so don't edit the font files.
 

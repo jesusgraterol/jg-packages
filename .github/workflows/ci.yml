@@ -73,13 +73,13 @@ jobs:
       - name: Install Chromium
         run: .github/scripts/install-browsers.sh packages/jg-sw chromium
 
-      # four packages at a time on the runner's four CPUs, except the three whose coverage runs
+      # four packages at a time on the runner's four CPUs, except the four whose coverage runs
       # Chromium: beside the other suites, their browser projects didn't start within a minute
       - name: Run the tests with coverage
-        run: node internal/vitest-config/src/run-test-suite.ts full run test:coverage --concurrency=4 --filter='!jg-react' --filter='!jg-react-router' --filter='!jg-tanstack-query'
+        run: node internal/vitest-config/src/run-test-suite.ts full run test:coverage --concurrency=4 --filter='!jg-react' --filter='!jg-react-router' --filter='!jg-tanstack-query' --filter='!jg-react-ui'
 
       - name: Run the Chromium packages' tests with coverage, one at a time
-        run: node internal/vitest-config/src/run-test-suite.ts full run test:coverage --concurrency=1 --filter=jg-react --filter=jg-react-router --filter=jg-tanstack-query
+        run: node internal/vitest-config/src/run-test-suite.ts full run test:coverage --concurrency=1 --filter=jg-react --filter=jg-react-router --filter=jg-tanstack-query --filter=jg-react-ui
 
   browser:
     name: Browser tests

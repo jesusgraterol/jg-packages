@@ -38,6 +38,9 @@ describe('findCatalogProblems', () => {
         { name: 'jg-b', version: '1.0.0' },
         { name: 'jg-personal-astro-ui', version: '0.1.0' },
         { name: 'jg-private', version: '0.0.0', private: true },
+        { name: 'jg-personal-ui', version: '0.1.0' },
+        { name: 'jg-react-ui', version: '0.1.0' },
+        { name: 'jg-personal-react-ui', version: '0.1.0' },
       ]),
     ).toStrictEqual([]);
   });

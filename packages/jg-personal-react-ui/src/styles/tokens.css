@@ -1,0 +1,21 @@
+/* JG values bind to the retained generic component roles. */
+:root {
+  --jg-ui-font-sans: var(--jg-font-sans);
+  --jg-ui-font-mono: var(--jg-font-mono);
+  --background: var(--jg-background);
+  --foreground: var(--jg-foreground);
+  --primary: var(--jg-primary);
+  --primary-foreground: var(--jg-primary-foreground);
+  --secondary: var(--jg-secondary);
+  --secondary-foreground: var(--jg-foreground);
+  --destructive: var(--jg-danger);
+  --border: var(--jg-border);
+  --radius: var(--jg-radius);
+}
+
+/* JG reverses its primary surface in dark mode; text actions retain a readable foreground. */
+@layer utilities {
+  [data-slot='button'][data-variant='link'] {
+    color: var(--jg-primary);
+  }
+}

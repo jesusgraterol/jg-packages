@@ -1,0 +1,5 @@
+@import 'jg-personal-ui/styles/theme.css';
+@import 'jg-react-ui/styles.css';
+@import './tokens.css';
+
+@source '../components';

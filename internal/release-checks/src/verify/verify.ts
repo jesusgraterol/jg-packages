@@ -164,7 +164,7 @@ export const packAndCheck = async (
   } finally {
     await consumer.remove();
   }
-  log('Building an Astro site from each package with Astro components');
+  log('Building installed UI fixtures and running the personal galleries');
   for (const [name, packageProblems] of await checkAstroFixture(
     packages,
     runCommand,

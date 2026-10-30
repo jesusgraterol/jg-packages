@@ -1,0 +1,11 @@
+/* Import after styles.css to apply dark utilities before an explicit root theme is set. */
+@custom-variant dark {
+  &:where(.dark, .dark *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not(.light, .dark), :root:not(.light, .dark) *) {
+      @slot;
+    }
+  }
+}

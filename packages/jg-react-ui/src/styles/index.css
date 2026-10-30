@@ -1,0 +1,4 @@
+@import './tokens.css';
+
+/* paths are relative to this stylesheet in the installed dist directory */
+@source '../components';
