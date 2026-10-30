@@ -75,12 +75,28 @@ test('inverse colors stay local and stable while the surrounding theme changes',
   await page.goto('/foundations/');
   await expect(page.locator('html')).toHaveAttribute('data-resolved-theme', 'light');
   const inverse = page.getByRole('region', { name: 'Inverse section', exact: true });
+  /*
+   * Chromium starts a transition on the section's color whenever <html>'s color-scheme changes,
+   * though the color stays the same, sometimes in a style update a frame after the theme class
+   * changes. Reduced motion makes it 0.01ms, but while it runs the color reads as the same color in
+   * oklab, so the colors are read again each frame until neither element is transitioning.
+   */
   const readColors = () =>
-    inverse.evaluate((element) => ({
-      background: getComputedStyle(element).backgroundColor,
-      foreground: getComputedStyle(element).color,
-      body: getComputedStyle(document.body).backgroundColor,
-    }));
+    inverse.evaluate(async (element) => {
+      const targets = [element, document.body];
+      // the reads apply pending style changes, so getAnimations() then lists what they started
+      const read = () => ({
+        background: getComputedStyle(element).backgroundColor,
+        foreground: getComputedStyle(element).color,
+        body: getComputedStyle(document.body).backgroundColor,
+      });
+      let colors = read();
+      while (targets.some((target) => target.getAnimations().length > 0)) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        colors = read();
+      }
+      return colors;
+    });
   const light = await readColors();
   await page.emulateMedia({ colorScheme: 'dark' });
   await expect(page.locator('html')).toHaveAttribute('data-resolved-theme', 'dark');
