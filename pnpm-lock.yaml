@@ -241,6 +241,9 @@ importers:
 
   .:
     devDependencies:
+      jg-plans:
+        specifier: 0.3.0
+        version: 0.3.0
       prettier:
         specifier: 3.9.10
         version: 3.9.10
@@ -4291,6 +4294,31 @@ packages:
 
   jackspeak@3.4.3:
     resolution: {integrity: sha512-OGlZQpz2yfahA/Rd1Y8Cd9SIEsqvXkLVoSw/cgwhnhFMDbsQFeZYoJJ7bIZBS9BcamUW96asq/npPWugM+RQBw==}
+
+  jg-crypto@0.3.0:
+    resolution: {integrity: sha512-S7Bq9kmAK43xZeNQ41iubJ2LYxxyW3yMEoh2ciFkmm0/LAD3i2OgKOV4YPUL4j8NVGdjFuyJ5L8Ew6ti3wwVIQ==}
+    engines: {node: '>=22.17.0'}
+
+  jg-exception@1.7.0:
+    resolution: {integrity: sha512-EmhkDdWxunZdYt+xjqe1G9tPbaSkVqF6xu/TxxChz7yVI+vXiWk8K5D+0J+masNL4MJwJv1sTDPC2x3QYMbJxA==}
+    engines: {node: '>=22.17.0'}
+
+  jg-fs@1.7.0:
+    resolution: {integrity: sha512-LEttOq6o3dqpim3v20IPF3bx+gWH7BHGels1hLTugpIghbnjycw+IgMMmSigrmpUVkBxhiwpLLMXsQliVfKfdQ==}
+    engines: {node: '>=22.17.0'}
+
+  jg-plans@0.3.0:
+    resolution: {integrity: sha512-eoDzPSvuXrKwujDe9CEJj+imVe7qgAp1irlMgs3chd8gL+Qh8WZEkpqc/HxYQUQ6IVsWtsEipHuOOJ/qBGhoQA==}
+    engines: {node: '>=24.15.0'}
+    hasBin: true
+
+  jg-process@1.6.1:
+    resolution: {integrity: sha512-F75AiEaJLTRcPNvH/LEC1neSA6wa316W6O++lJYWsObdghBl3p18q5ueDxFZ8C8HnY/kLTdgHpdaC18SF3/gQg==}
+    engines: {node: '>=22.17.0'}
+
+  jg-utilities@1.7.0:
+    resolution: {integrity: sha512-Cdec4v/QW7TPaY68/McjGxLCvrwH7aKI9H0DsXoo3qi27R81DTbxVZpsg7/LVZ3Ah3Kai1OHiUgpju2rmF2VEA==}
+    engines: {node: '>=22.17.0'}
 
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
@@ -8584,6 +8612,37 @@ snapshots:
       '@isaacs/cliui': 8.0.2
     optionalDependencies:
       '@pkgjs/parseargs': 0.11.0
+
+  jg-crypto@0.3.0:
+    dependencies:
+      jg-exception: 1.7.0
+
+  jg-exception@1.7.0: {}
+
+  jg-fs@1.7.0:
+    dependencies:
+      jg-exception: 1.7.0
+      jg-utilities: 1.7.0
+
+  jg-plans@0.3.0:
+    dependencies:
+      jg-crypto: 0.3.0
+      jg-exception: 1.7.0
+      jg-fs: 1.7.0
+      jg-process: 1.6.1
+      jg-utilities: 1.7.0
+      yaml: 2.9.1
+      zod: 4.6.7
+
+  jg-process@1.6.1:
+    dependencies:
+      jg-exception: 1.7.0
+      jg-utilities: 1.7.0
+
+  jg-utilities@1.7.0:
+    dependencies:
+      jg-exception: 1.7.0
+      uuid: 14.0.3
 
   jiti@2.7.0: {}
 
