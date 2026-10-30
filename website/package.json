@@ -46,6 +46,7 @@
     "jg-clipboard": "workspace:*",
     "jg-crypto": "workspace:*",
     "jg-local-docker": "workspace:*",
+    "jg-locks": "workspace:*",
     "jg-playwright": "workspace:*",
     "jg-env": "workspace:*",
     "jg-postgres": "workspace:*",

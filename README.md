@@ -29,6 +29,7 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 | [`jg-github`](packages/jg-github)                 | GitHub App authentication for Node.js: app tokens, scoped installation tokens, webhook signatures, and rate-limit retry times.        |
 | [`jg-site`](packages/jg-site)                     | Structured data, llms.txt files, and theme preferences for websites, in browsers and Node.js.                                         |
 | [`jg-playwright`](packages/jg-playwright)         | Playwright helpers for overflow, loaded assets, motion, axe scans, secret fields, and a fake microphone.                              |
+| [`jg-locks`](packages/jg-locks)                   | Machine-wide named locks for scripts, agents, and apps: waits, a status of every holder, explicit recovery, and a CLI.                |
 
 [`jg-personal-astro-ui`](packages/jg-personal-astro-ui) is also published from `packages/`: the Astro components and theme Jesus Graterol's own sites share. It isn't meant for general use, so the website doesn't list it.
 

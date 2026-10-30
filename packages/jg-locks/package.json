@@ -1,0 +1,73 @@
+{
+  "name": "jg-locks",
+  "version": "1.0.0",
+  "description": "Machine-wide named locks for Node.js scripts, agents, and apps: waits, a status of every holder, explicit recovery, and a CLI.",
+  "author": "Jesus Graterol",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "jg-locks": "./dist/cli/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "API.md",
+    "RECIPES.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.17.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jesusgraterol/jg-packages.git",
+    "directory": "packages/jg-locks"
+  },
+  "homepage": "https://jg-packages.jesusgraterol.dev/packages/jg-locks/",
+  "bugs": {
+    "url": "https://github.com/jesusgraterol/jg-packages/issues"
+  },
+  "keywords": [
+    "lock",
+    "mutex",
+    "lockfile",
+    "process",
+    "cli",
+    "node"
+  ],
+  "scripts": {
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/api-reference/src/write-api-markdown.ts",
+    "lint": "eslint .",
+    "test": "pnpm test:unit && pnpm test:integration",
+    "test:coverage": "vitest run --coverage --project unit --project integration",
+    "test:integration": "vitest run --project integration",
+    "test:unit": "vitest run --project unit",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "jg-exception": "workspace:^",
+    "jg-fs": "workspace:^",
+    "jg-process": "workspace:^"
+  },
+  "devDependencies": {
+    "@jg-packages/eslint-config": "workspace:*",
+    "@jg-packages/tsconfig": "workspace:*",
+    "@jg-packages/vitest-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
