@@ -68,7 +68,10 @@ for (const theme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Show saved notification' }).click();
     await expect(page.getByText('Your changes are saved', { exact: true })).toBeVisible();
     expect(
-      await page.getByRole('listitem').evaluate((element) => getComputedStyle(element).fontFamily),
+      await page
+        .getByRole('listitem')
+        .filter({ hasText: 'Your changes are saved' })
+        .evaluate((element) => getComputedStyle(element).fontFamily),
     ).toContain('Ubuntu Sans');
     await expectNoHorizontalOverflow(page);
     expect((await new AxeBuilder({ page }).analyze()).violations).toStrictEqual([]);

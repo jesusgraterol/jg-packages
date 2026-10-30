@@ -2,6 +2,9 @@
 
 ## 0.3.0
 
+- Add Moldea-derived forms, select/choice controls, tabs, menus, tooltips, copy feedback, progress, empty states, plain typography, tables, links, and inline code with direct shared implementations.
+- Preserve native composition, cancellation, focus/ref and slot behavior, with JG token bindings, touch typography, and reduced-motion styles.
+
 ### Added
 
 - Scoped error-feedback policy for application-owned messages and access-loss decisions.

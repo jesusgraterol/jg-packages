@@ -1,6 +1,7 @@
 /* JG values bind to the retained generic component roles. */
 :root {
   --jg-ui-shadow-raised: var(--jg-shadow-raised);
+  --jg-ui-shadow-inset: none;
   --jg-ui-font-sans: var(--jg-font-sans);
   --jg-ui-font-mono: var(--jg-font-mono);
   --background: var(--jg-background);
@@ -13,19 +14,40 @@
   --chart-1: var(--jg-success);
   --chart-2: var(--jg-warning);
   --border: var(--jg-border);
+  --code: var(--jg-code);
+  --code-foreground: var(--jg-foreground);
   --radius: var(--jg-radius);
 }
 
 /* JG reverses its primary surface in dark mode; text actions retain a readable foreground. */
 @layer utilities {
-  [data-slot='button'][data-variant='link'] {
+  [class~='group/button'][data-variant='link'] {
     color: var(--jg-primary);
   }
 
+  [data-slot='text-link'],
+  [data-slot='progress-indicator'],
+  [data-slot='radio-group-item'],
+  [data-slot='switch'] {
+    --primary-foreground: var(--jg-primary);
+  }
+
+  [data-slot='switch-thumb'] {
+    --primary: var(--jg-primary-foreground);
+  }
+
+  [data-slot='checkbox'] {
+    @variant dark {
+      --primary: var(--jg-primary-foreground);
+      --primary-foreground: var(--jg-primary);
+    }
+  }
+
+  /* the source group marker survives compound trigger slot attributes. */
   /* translucent dark hover surfaces need JG's light foreground rather than inverse text. */
   @media (hover: hover) {
     .dark
-      [data-slot='button'][data-variant='default']:not(:disabled):not(
+      [class~='group/button'][data-variant='default']:not(:disabled):not(
         [aria-disabled='true']
       ):hover {
       color: var(--jg-foreground);

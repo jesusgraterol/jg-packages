@@ -2,6 +2,8 @@ import { useState } from 'react';
 
 import markUrl from 'jg-personal-ui/jg-mark.svg';
 import faviconUrl from 'jg-personal-ui/jg-favicon.svg';
+import { ControlsDemo } from './controls-demo/controls-demo.component.js';
+import { TypographyDemo } from './typography-demo/typography-demo.component.js';
 import { PreferencesDemo } from './preferences-demo/preferences-demo.component.js';
 import { RemotePreferences } from './remote-preferences/remote-preferences.component.js';
 import {
@@ -252,6 +254,8 @@ export const Gallery = () => {
           />
         </div>
       </section>
+      <ControlsDemo />
+      <TypographyDemo />
       <PreferencesDemo />
       <RemotePreferences />
       <footer>Ubuntu Sans · Shared JG tokens · React 19</footer>

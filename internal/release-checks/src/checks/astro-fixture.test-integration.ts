@@ -356,6 +356,7 @@ test('the installed React gallery uses the packed closure, exact tools, identity
         "from 'jg-personal-react-ui'",
       );
       await access(join(consumer, 'src/gallery.component.test-e2e.tsx'));
+      await access(join(consumer, 'src/controls-demo/controls-demo.component.tsx'));
       await access(join(consumer, 'component-tests/theme-provider/index.test-e2e.ts'));
       await access(join(consumer, 'vite.config.ts'));
       await writeInstalledClis(consumer);
@@ -381,6 +382,7 @@ test('the installed React gallery uses the packed closure, exact tools, identity
   expect(commands[1]?.at(-1)).toBe('build');
   expect(commands[2]).toEqual(expect.arrayContaining(['--input-type=module', '--eval']));
   expect(commands[2]?.at(-1)).toContain('assert.equal(base.Button, personal.Button)');
+  expect(commands[2]?.at(-1)).toContain('Object.keys(base)');
   expect(commands[2]?.at(-1)).toContain('base[name], personal[name]');
   expect(commands[2]?.at(-1)).toContain('personal.JgMark');
   expect(commands[3]?.slice(1)).toStrictEqual(['test', '--retries=0']);

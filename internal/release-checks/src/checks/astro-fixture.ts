@@ -477,7 +477,7 @@ const buildGalleryFixture = async (
         import * as base from 'jg-react-ui';
         import * as personal from 'jg-personal-react-ui';
         assert.equal(base.Button, personal.Button);
-        for (const name of ['Badge', 'IconTile', 'Alert', 'AlertTitle', 'AlertDescription', 'AlertAction', 'badgeVariants', 'iconTileVariants', 'alertVariants', 'ErrorFeedbackProvider', 'useErrorFeedbackResolver', 'UiPreferencesProvider', 'useUiPreferences', 'useUiPreferencesCapabilities', 'ThemeProvider', 'ThemeInitializationScript', 'ThemeToggleButton', 'useTheme', 'Toastr', 'toastr', 'getUiPreferencesStorageKey', 'ERRORS']) {
+        for (const name of Object.keys(base)) {
           assert.notEqual(base[name], undefined, name + ' must be public');
           assert.equal(base[name], personal[name], name + ' must share its implementation');
         }

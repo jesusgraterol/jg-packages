@@ -16,7 +16,7 @@ import { Button } from 'jg-react-ui/components/button';
 const saveAction = createElement(Button, { size: 'touch' }, 'Save changes');
 ```
 
-Import Tailwind once, then `jg-react-ui/styles.css`. Supply `--background`, `--foreground`, `--primary`, `--primary-foreground`, `--secondary`, `--secondary-foreground`, `--destructive`, `--chart-1` (success), `--chart-2` (warning), `--border`, `--radius`, `--jg-ui-font-sans`, `--jg-ui-font-mono`, and `--jg-ui-shadow-raised` in your own theme. Colors must be complete CSS color values. `.dark` selects dark utility variants; this package supplies no brand palette. For the JG palette and fonts, use `jg-personal-react-ui` instead.
+Import Tailwind once, then `jg-react-ui/styles.css`. Supply `--background`, `--foreground`, `--primary`, `--primary-foreground`, `--secondary`, `--secondary-foreground`, `--destructive`, `--chart-1` (success), `--chart-2` (warning), `--border`, `--radius`, `--jg-ui-font-sans`, `--jg-ui-font-mono`, `--jg-ui-shadow-inset`, `--code`, `--code-foreground`, and `--jg-ui-shadow-raised` in your own theme. Colors must be complete CSS color values. `.dark` selects dark utility variants; this package supplies no brand palette. For the JG palette and fonts, use `jg-personal-react-ui` instead.
 
 Button, Badge, IconTile, and Alert retain Moldea’s APIs from commit `2920a7b0a6e814e95872fcdd6dd8746ae422c038`, including variants, sizes, refs, badges, and `asChild` where supported. The exported `badgeVariants`, `iconTileVariants`, and `alertVariants` retain their source signatures. Badge defaults to a span; IconTile is decorative unless `aria-hidden={false}` is supplied; static Alert uses `role="alert"`, with phrasing-content title and description slots. Button’s touch sizes preserve at least 44px under a coarse pointer, including on tablets. Button’s `asChild` requires exactly one element and retains Base UI’s button semantics, including when that element is an anchor. Use the child’s explicit `role="link"` when it represents navigation.
 
@@ -39,6 +39,14 @@ The preference provider supports explicit `local`, `read-only`, and `remote` mod
 Optional `storageId` defaults to `jg-ui-preferences`. It must be non-empty and contain only ASCII letters, digits, underscores, and hyphens. `getUiPreferencesStorageKey` returns its raw `jg-storage:` key. IDs are captured for the provider lifetime; use a keyed remount to change namespaces. Invalid IDs fail before storage access or initialization-script creation.
 
 Render `ThemeInitializationScript` in the document head before application JavaScript, using the same `storageId` as the provider and your CSP `nonce` when required. Server snapshots use initial props or defaults, then storage synchronizes after hydration. See the recipes for composition and the shared [owned error contracts](https://unpkg.com/jg-react-ui@0.3.0/errors/README.md).
+
+## Controls, forms, and plain text
+
+Forms, select/choice controls, tabs, dropdown menus, tooltips, copy feedback, progress, dividers, empty states, links, inline code, and plain typography/table primitives retain the same pinned Moldea APIs. The application owns form validation and associations. Set your app root's `font-sans bg-background text-foreground` classes, supply both shadow roles and code color roles, and compose labelled touch rows around compact checkbox/radio/switch glyphs. Fields use at least 16px text under a coarse pointer; touch tabs and menu rows retain 44px targets. `tw-animate-css` supplies the retained enter/exit animation utilities through the explicit package stylesheet.
+
+`TabsList` requires `overflowBehavior: 'scroll' | 'truncate'`; composite labels in a truncated list need `title` or `aria-label`. Select and menu dismiss aliases honor intentional cancellation. Select keeps the source's accepted `forceMount`/`sticky` aliases without additional Base UI behavior. Slotted controls require one valid element and retain their component-specific native Error guards. Menus and tooltips retain their portal and positioning APIs. Rich code typography and editor components are added separately.
+
+`CopyButton` writes exact text during the initiating gesture, blocks overlapping writes, and starts feedback after fulfillment. Its feedback duration remains milliseconds. `copyLabel` supplies a scoped ready name, visible `label`/`copiedLabel` and native naming overrides are retained, failures use the nearest error policy, and cancellation stays silent. It clears timers and ignores late feedback after unmount. TextLink adds secure rel tokens and a new-tab announcement; TableContainer accepts native region/name/focus props for keyboard-scrollable tables.
 
 ## Documentation
 

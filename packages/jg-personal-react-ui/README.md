@@ -34,6 +34,10 @@ Optional `storageId` defaults to `jg-ui-preferences`. It must be non-empty and c
 
 Render `ThemeInitializationScript` in the document head before application JavaScript, using the same `storageId` as the provider and your CSP `nonce` when required. Server snapshots use initial props or defaults, then storage synchronizes after hydration. See the recipes for composition and the shared [owned error contracts](https://unpkg.com/jg-react-ui@0.3.0/errors/README.md).
 
+## Controls, forms, and plain text
+
+The forms, menus, tabs, tooltips, copy commands, progress, empty states, typography, tables, links, and inline code are direct exports of `jg-react-ui`. Their refs, native attributes, slots, event aliases, and cancellation behavior share the same implementation and contexts. JG styles bind field, code, menu, and inverse dark-theme roles; set `font-sans bg-background text-foreground` on the application root. Keep compact choice glyphs inside associated label rows of at least 44px, and give overflowing tables a labelled, focusable region with visible focus. See the recipes for compositions.
+
 ## Documentation
 
 The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.3.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.3.0/RECIPES.md). These personal-use packages are unlisted on the public package website.

@@ -69,6 +69,54 @@
     "./errors": {
       "types": "./dist/errors/index.d.ts",
       "default": "./dist/errors/index.js"
+    },
+    "./components/divider": {
+      "types": "./dist/components/divider/index.d.ts",
+      "default": "./dist/components/divider/index.js"
+    },
+    "./components/empty-state": {
+      "types": "./dist/components/empty-state/index.d.ts",
+      "default": "./dist/components/empty-state/index.js"
+    },
+    "./components/progress": {
+      "types": "./dist/components/progress/index.d.ts",
+      "default": "./dist/components/progress/index.js"
+    },
+    "./components/spinner": {
+      "types": "./dist/components/spinner/index.d.ts",
+      "default": "./dist/components/spinner/index.js"
+    },
+    "./components/text-link": {
+      "types": "./dist/components/text-link/index.d.ts",
+      "default": "./dist/components/text-link/index.js"
+    },
+    "./components/inline-code": {
+      "types": "./dist/components/inline-code/index.d.ts",
+      "default": "./dist/components/inline-code/index.js"
+    },
+    "./components/copy-button": {
+      "types": "./dist/components/copy-button/index.d.ts",
+      "default": "./dist/components/copy-button/index.js"
+    },
+    "./components/form": {
+      "types": "./dist/components/form/index.d.ts",
+      "default": "./dist/components/form/index.js"
+    },
+    "./components/tabs": {
+      "types": "./dist/components/tabs/index.d.ts",
+      "default": "./dist/components/tabs/index.js"
+    },
+    "./components/dropdown-menu": {
+      "types": "./dist/components/dropdown-menu/index.d.ts",
+      "default": "./dist/components/dropdown-menu/index.js"
+    },
+    "./components/tooltip": {
+      "types": "./dist/components/tooltip/index.d.ts",
+      "default": "./dist/components/tooltip/index.js"
+    },
+    "./components/typography": {
+      "types": "./dist/components/typography/index.d.ts",
+      "default": "./dist/components/typography/index.js"
     }
   },
   "main": "./dist/index.js",
