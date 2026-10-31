@@ -16,12 +16,6 @@ test.each([
     expect(rendered).toBe(
       await readFile(new URL(`../../src/assets/${name}`, import.meta.url), 'utf8'),
     );
-    expect(rendered).toBe(
-      await readFile(
-        new URL(`../../../jg-personal-astro-ui/src/components/jg-mark/${name}`, import.meta.url),
-        'utf8',
-      ),
-    );
     expect(rendered).not.toMatch(/<text|<script|<style|\son[a-z]+=|href=/u);
   },
 );

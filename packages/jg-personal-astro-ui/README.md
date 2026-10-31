@@ -35,6 +35,8 @@ import ThemeInitScript from 'jg-personal-astro-ui/theme-init-script';
 <Button href="/start">Get started</Button>
 ```
 
+The existing style entries compose the tokens and Ubuntu Sans fonts from `jg-personal-ui`, installed as a runtime dependency. Site geometry, prose, and Astro component styles stay here. The inline mark uses the shared geometry; generated SVG copies preserve the existing asset subpaths. No React runtime is required.
+
 The components style themselves with the contract's tokens only, so another theme can replace `theme.css` by defining every `--jg-*` property and the documented code-window and inverse surface scopes.
 
 Put the code blocks of the site's Markdown in the same code windows as `code-block`, with a copy button each, and open its links to other sites in a new tab, as the components do, through Astro's Markdown processor. Render the Markdown inside `prose`:
@@ -89,6 +91,8 @@ Section supports `tone="inverse"` for a dark surface with its own readable contr
 `steps`, `step`, `timeline`, `timeline-item`, and `result-summary` present supplied process and outcome information. Explicit statuses retain text meaning, dates and order remain caller-owned, and summary heading levels fit their surrounding document. Existing controls compose into action slots.
 
 ## Private gallery
+
+From a repository checkout, build the foundation with `pnpm turbo run build --filter=jg-personal-ui` before working on generated assets. `pnpm --filter jg-personal-astro-ui foundation:generate` refreshes the scoped dark styles and SVG copies; `foundation:check` and the package build reject stale output.
 
 From a repository checkout, run `pnpm --filter jg-personal-astro-ui gallery:dev` to inspect the components, or `pnpm --filter jg-personal-astro-ui test:e2e` to build the gallery and test it in Chromium, Firefox, and WebKit. The gallery uses public package imports, real Markdown transforms, and a Pagefind index. Its source, preview tooling, and tests are excluded from npm and public website output. See the [gallery workflow](https://github.com/jesusgraterol/jg-packages/blob/main/docs/personal-astro-ui.md#private-gallery).
 
