@@ -99,54 +99,77 @@ const withPublicPlaywrightConsumer = async (
 };
 
 // eight cold CLI invocations and public-tool copying need a wider setup budget on Windows.
-test('the copied React configuration keeps complete native collection under every consumer suite', async () => {
-  await withPublicPlaywrightConsumer(REACT_UI_DIRECTORY, async (root, cli) => {
-    await mkdir(join(root, 'src', 'input-demo'), { recursive: true });
-    await writeFile(
-      join(root, 'src', 'input-demo', 'input-demo.component.test-e2e.tsx'),
-      `import { test } from '@playwright/test';
+test.each([
+  [
+    'React',
+    REACT_UI_DIRECTORY,
+    'JG_REACT_UI_GALLERY_ROOT',
+    'src/input-demo/input-demo.component.test-e2e.tsx',
+    'src/gallery.component.test-e2e.tsx',
+  ],
+  [
+    'Astro',
+    PERSONAL_UI_DIRECTORY,
+    'JG_UI_GALLERY_ROOT',
+    'src/components/dialog/dialog.test-e2e.ts',
+    'src/components/jg-mark/jg-mark.test-e2e.ts',
+  ],
+])(
+  'the copied %s configuration keeps complete native collection under every consumer suite',
+  async (_name, directory, marker, mixedFile, fullFile) => {
+    await withPublicPlaywrightConsumer(directory, async (root, cli) => {
+      await mkdir(dirname(join(root, mixedFile)), { recursive: true });
+      await mkdir(dirname(join(root, fullFile)), { recursive: true });
+      await writeFile(
+        join(root, mixedFile),
+        `import { test } from '@playwright/test';
 test('required', () => {});
 test('secondary', { tag: '@full' }, () => {});
 `,
-    );
-    await writeFile(
-      join(root, 'src', 'gallery.component.test-e2e.tsx'),
-      `import { test } from '@playwright/test';
-if (process.env.JG_TEST_SUITE === 'essential' && process.env.JG_REACT_UI_GALLERY_ROOT === undefined) throw new Error('Secondary file imported');
+      );
+      await writeFile(
+        join(root, fullFile),
+        `import { test } from '@playwright/test';
+if (process.env.JG_TEST_SUITE === 'essential' && process.env['${marker}'] === undefined) throw new Error('Secondary file imported');
 test('secondary file', { tag: '@full' }, () => {});
 `,
-    );
-    const signal = AbortSignal.timeout(45_000);
-    for (const consumer of [false, true]) {
-      for (const suite of [undefined, 'full', 'essential', 'invalid']) {
-        const env: NodeJS.ProcessEnv = { ...process.env, NODE_PATH: '' };
-        delete env['JG_TEST_SUITE'];
-        delete env['JG_REACT_UI_GALLERY_ROOT'];
-        if (suite !== undefined) env['JG_TEST_SUITE'] = suite;
-        if (consumer) env['JG_REACT_UI_GALLERY_ROOT'] = root;
-        const result = await runAstroFixtureCommand(
-          process.execPath,
-          [cli, 'test', '--list', '--reporter=json'],
-          { cwd: root, env, signal, timeoutSeconds: 15 },
-        );
-        if (suite === 'invalid') {
-          expect(result.exitCode).not.toBe(0);
-          expect(result.stderr).toContain('JG_TEST_SUITE must be "essential" or "full" when set.');
-          continue;
+      );
+      const signal = AbortSignal.timeout(45_000);
+      for (const consumer of [false, true]) {
+        for (const suite of [undefined, 'full', 'essential', 'invalid']) {
+          const env: NodeJS.ProcessEnv = { ...process.env, NODE_PATH: '' };
+          delete env['JG_TEST_SUITE'];
+          delete env['JG_REACT_UI_GALLERY_ROOT'];
+          delete env['JG_UI_GALLERY_ROOT'];
+          if (suite !== undefined) env['JG_TEST_SUITE'] = suite;
+          if (consumer) env[marker] = root;
+          const result = await runAstroFixtureCommand(
+            process.execPath,
+            [cli, 'test', '--list', '--reporter=json'],
+            { cwd: root, env, signal, timeoutSeconds: 15 },
+          );
+          if (suite === 'invalid') {
+            expect(result.exitCode).not.toBe(0);
+            expect(result.stderr).toContain(
+              'JG_TEST_SUITE must be "essential" or "full" when set.',
+            );
+            continue;
+          }
+          expect(result.exitCode, result.stderr).toBe(0);
+          const report = JSON.parse(result.stdout) as IListReport;
+          const essential = !consumer && suite === 'essential';
+          const engines = essential ? ['chromium'] : ['chromium', 'firefox', 'webkit'];
+          const titles = essential ? ['required'] : ['required', 'secondary', 'secondary file'];
+          expect(report.config.projects.map(({ name }) => name)).toStrictEqual(engines);
+          expect(collectedCases(report.suites)).toStrictEqual(
+            engines.flatMap((engine) => titles.map((title) => `${engine}:${title}`)).sort(),
+          );
         }
-        expect(result.exitCode, result.stderr).toBe(0);
-        const report = JSON.parse(result.stdout) as IListReport;
-        const essential = !consumer && suite === 'essential';
-        const engines = essential ? ['chromium'] : ['chromium', 'firefox', 'webkit'];
-        const titles = essential ? ['required'] : ['required', 'secondary', 'secondary file'];
-        expect(report.config.projects.map(({ name }) => name)).toStrictEqual(engines);
-        expect(collectedCases(report.suites)).toStrictEqual(
-          engines.flatMap((engine) => titles.map((title) => `${engine}:${title}`)).sort(),
-        );
       }
-    }
-  });
-}, 60_000);
+    });
+  },
+  60_000,
+);
 
 // real gallery sources and configuration; only the installed-tool command boundary is replaced
 const personalGalleryPackages = async (): Promise<IPackedPackage[]> => {

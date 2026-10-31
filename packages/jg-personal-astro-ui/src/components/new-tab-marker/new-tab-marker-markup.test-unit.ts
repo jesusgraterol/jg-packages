@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { NEW_TAB_NOTICE, renderNewTabMarker } from './new-tab-marker-markup.ts';
 
 describe('renderNewTabMarker', () => {
-  test('renders the arrow, marked with its hook, and the notice', () => {
+  test('renders the arrow, marked with its hook, and the notice', { tags: ['full'] }, () => {
     const markup = renderNewTabMarker();
 
     expect(markup).toMatch(/^<svg [^>]*aria-hidden="true"[^>]*data-new-tab-marker>/u);
@@ -11,7 +11,7 @@ describe('renderNewTabMarker', () => {
     expect(markup.endsWith('<span class="sr-only"> (opens in a new tab)</span>')).toBe(true);
   });
 
-  test('keeps the notice without the arrow', () => {
+  test('keeps the notice without the arrow', { tags: ['full'] }, () => {
     expect(renderNewTabMarker({ icon: false })).toBe(
       `<span class="sr-only">${NEW_TAB_NOTICE}</span>`,
     );

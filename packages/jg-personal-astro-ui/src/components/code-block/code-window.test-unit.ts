@@ -11,7 +11,7 @@ describe('renderCodeWindowHeader', () => {
     expect(html).toContain('data-copy-text="const label = &quot;&lt;世界&gt;&quot;;&#13;\n"');
     expect(html).not.toContain('data-copy-source=');
   });
-  test('renders the dots, the caption, and a copy button for the code', () => {
+  test('renders the dots, the caption, and a copy button for the code', { tags: ['full'] }, () => {
     const html = renderCodeWindowHeader({ caption: 'vite.config.ts' });
 
     expect(html.startsWith('<figcaption class="jg-code-window-header" data-pagefind-ignore>')).toBe(
@@ -44,18 +44,22 @@ describe('renderCodeWindowHeader', () => {
     expect(html).toContain('data-copy-source="install"');
   });
 
-  test('names the copy button from the context, as an install command does', () => {
-    const html = renderCodeWindowHeader({
-      caption: 'Terminal',
-      copySource: { context: 'install command', sourceId: 'install' },
-    });
+  test(
+    'names the copy button from the context, as an install command does',
+    { tags: ['full'] },
+    () => {
+      const html = renderCodeWindowHeader({
+        caption: 'Terminal',
+        copySource: { context: 'install command', sourceId: 'install' },
+      });
 
-    expect(html).toContain(
-      'data-copy-label>Copy</span></span><span class="sr-only"> install command</span>',
-    );
-  });
+      expect(html).toContain(
+        'data-copy-label>Copy</span></span><span class="sr-only"> install command</span>',
+      );
+    },
+  );
 
-  test('lets a long caption wrap when asked', () => {
+  test('lets a long caption wrap when asked', { tags: ['full'] }, () => {
     const caption = "Install the skills from your repository's root";
 
     expect(renderCodeWindowHeader({ caption, wrapCaption: true })).toContain(
@@ -63,14 +67,18 @@ describe('renderCodeWindowHeader', () => {
     );
     expect(renderCodeWindowHeader({ caption })).toContain('<span class="jg-code-window-caption">');
   });
-  test('passes icon presentation to the shared copy markup without changing its caption or source', () => {
-    const html = renderCodeWindowHeader({
-      caption: 'ts',
-      copyDisplay: 'icon',
-      copySource: { context: 'source', sourceId: 'original' },
-    });
-    expect(html).toContain('data-copy-display="icon"');
-    expect(html).toContain('data-copy-source="original"');
-    expect(html).toContain('<span class="jg-code-window-caption">ts</span>');
-  });
+  test(
+    'passes icon presentation to the shared copy markup without changing its caption or source',
+    { tags: ['full'] },
+    () => {
+      const html = renderCodeWindowHeader({
+        caption: 'ts',
+        copyDisplay: 'icon',
+        copySource: { context: 'source', sourceId: 'original' },
+      });
+      expect(html).toContain('data-copy-display="icon"');
+      expect(html).toContain('data-copy-source="original"');
+      expect(html).toContain('<span class="jg-code-window-caption">ts</span>');
+    },
+  );
 });

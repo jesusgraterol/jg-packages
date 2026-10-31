@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { insertWordBreaks } from './word-breaks.ts';
 
 describe('insertWordBreaks', () => {
-  test('lets a path or a name wrap after each separator', () => {
+  test('lets a path or a name wrap after each separator', { tags: ['full'] }, () => {
     expect(insertWordBreaks('node_modules/jg-fetch/API.md')).toBe(
       'node_<wbr>modules/<wbr>jg-<wbr>fetch/<wbr>API.<wbr>md',
     );
@@ -13,7 +13,7 @@ describe('insertWordBreaks', () => {
     expect(insertWordBreaks('<b>&a/b')).toBe('&lt;b&gt;&amp;a/<wbr>b');
   });
 
-  test('leaves text without separators as it is', () => {
+  test('leaves text without separators as it is', { tags: ['full'] }, () => {
     expect(insertWordBreaks('request')).toBe('request');
   });
 });

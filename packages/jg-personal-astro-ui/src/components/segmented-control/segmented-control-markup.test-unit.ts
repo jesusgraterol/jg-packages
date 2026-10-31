@@ -16,28 +16,32 @@ const MODES = [
 const readRadios = (html: string): string[] => html.match(/<input[^>]*>/gu) ?? [];
 
 describe('renderSegmentedControl', () => {
-  test('renders a fieldset, its legend, and a native radio per option, the first checked', () => {
-    const html = renderSegmentedControl({
-      legend: 'How jg-execute runs',
-      name: 'execute-mode',
-      options: MODES,
-    });
+  test(
+    'renders a fieldset, its legend, and a native radio per option, the first checked',
+    { tags: ['full'] },
+    () => {
+      const html = renderSegmentedControl({
+        legend: 'How jg-execute runs',
+        name: 'execute-mode',
+        options: MODES,
+      });
 
-    expect(
-      html.startsWith(
-        '<fieldset class="min-w-0"><legend class="mb-2 text-sm font-semibold">How jg-execute runs</legend>',
-      ),
-    ).toBe(true);
-    expect(html).toContain('rounded-full border border-border bg-surface p-1');
-    expect(readRadios(html)).toStrictEqual([
-      '<input class="sr-only" type="radio" name="execute-mode" value="supervised" checked data-segment="supervised">',
-      '<input class="sr-only" type="radio" name="execute-mode" value="autonomous" data-segment="autonomous">',
-    ]);
-    expect(html).toContain('data-segment="supervised">Supervised</label>');
-    // the label shows the checked state and the hidden radio's focus ring
-    expect(html).toContain('has-checked:bg-primary has-checked:text-primary-foreground');
-    expect(html).toContain('has-focus-visible:outline-2');
-  });
+      expect(
+        html.startsWith(
+          '<fieldset class="min-w-0"><legend class="mb-2 text-sm font-semibold">How jg-execute runs</legend>',
+        ),
+      ).toBe(true);
+      expect(html).toContain('rounded-full border border-border bg-surface p-1');
+      expect(readRadios(html)).toStrictEqual([
+        '<input class="sr-only" type="radio" name="execute-mode" value="supervised" checked data-segment="supervised">',
+        '<input class="sr-only" type="radio" name="execute-mode" value="autonomous" data-segment="autonomous">',
+      ]);
+      expect(html).toContain('data-segment="supervised">Supervised</label>');
+      // the label shows the checked state and the hidden radio's focus ring
+      expect(html).toContain('has-checked:bg-primary has-checked:text-primary-foreground');
+      expect(html).toContain('has-focus-visible:outline-2');
+    },
+  );
 
   test('checks the default value, hides the legend, and escapes what it shows', () => {
     const html = renderSegmentedControl({

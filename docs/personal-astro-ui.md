@@ -293,13 +293,23 @@ pnpm --filter jg-personal-astro-ui test:integration
 pnpm --filter jg-personal-astro-ui test:e2e
 ```
 
-The E2E suite serves the build only at `http://127.0.0.1:4332/`, refuses to reuse an existing server, and runs all three browser engines. Its preview wrapper owns Astro's child process tree and stops it on stdin EOF, SIGINT, SIGTERM, or child failure. `JG_UI_GALLERY_ROOT` optionally selects an absolute consumer root with its own installed Astro and built gallery; it is a local verification override. Default preview resolution uses this package's development installation. Global `NODE_PATH` entries never supply Astro for a selected consumer.
+The E2E suite serves the build only at `http://127.0.0.1:4332/`, refuses to reuse an existing server, and runs all three browser engines by default. Essential mode selects Chromium and the consequential compiled journeys described below. Its preview wrapper owns Astro's child process tree and stops it on stdin EOF, SIGINT, SIGTERM, or child failure. `JG_UI_GALLERY_ROOT` optionally selects an absolute consumer root with its own installed Astro and built gallery; it is a local verification override. Default preview resolution uses this package's development installation. Global `NODE_PATH` entries never supply Astro for a selected consumer.
 
 The preview integration tests exercise real CLI/descendant teardown in a temporary consumer without a pre-existing build. `test:coverage` includes unit and integration tests; `test` additionally runs browser tests and gallery E2E. Package typechecking includes the private gallery. The package-local Turbo graph serializes typechecking after the package build and E2E after typechecking to avoid concurrent Astro syncs.
 
 The gallery stays out of the public website's routes and catalog, the npm allowlist, and deployed website output. Its examples cover the current supported behavior; the gallery is a verification tool rather than a public documentation site.
 
 The light theme's keyword color maintains readable contrast on both added and removed diff backgrounds. Gallery axe checks cover these rendered syntax tokens in both themes.
+
+### Essential and full tests
+
+The root essential aggregate supplies `JG_TEST_SUITE=essential` only to its children. Complete granular commands such as `test:unit`, `test:browser`, and `test:e2e` retain their full selection when run normally; `JG_TEST_SUITE=full` is explicit full mode. Invalid modes fail. Full runs locally only when explicitly requested; affected behavior still requires complete focused verification.
+
+Essential keeps HTML/attribute escaping and source fidelity, bounded diff and file-tree processing, selector validation, external-link referrer protection, asset safety, and the copy/search/dialog/tabs/accordion state, ownership, failure and teardown rules. Preview CLI/descendant cleanup and generator error/non-writing checks stay essential. Static classes, artwork/token correspondence, navigation-progress/section highlighting, ordinary head metadata and display-only permutations are full-only. Mixed files tag secondary cases; wholly secondary files are excluded before imports. Browser-mode checks retain real copy, dialog and search behavior in Chromium, with all three engines in full.
+
+The essential built gallery covers real Pagefind load failure/retry, latest-query recovery and page replacement; dialog scroll/focus restoration, mobile close actions, nested Back/Forward ownership and navigation cleanup; encoded accordion links across page replacement; synchronized/keyboard tabs under missing or invalid storage; exact CRLF clipboard source; and client output without implementation package names. These establish compiled behavior the focused tests cannot prove. Additional themes, viewports, engines, static examples and duplicate presentation/interaction qualifications remain in full, with their assertions intact. Dark-mode permutations are full-only where a representative light case already proves the same state transition.
+
+`JG_UI_GALLERY_ROOT` always selects the complete installed-consumer qualification in Chromium, Firefox and WebKit, even when essential mode is inherited. The copied Playwright configuration resolves only public dependencies. Its native discovery contract checks unset/full/essential modes, invalid modes and exclusion before importing a secondary file. Release qualification remains complete.
 
 ## Releasing it
 

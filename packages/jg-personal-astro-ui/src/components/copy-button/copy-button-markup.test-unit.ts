@@ -15,27 +15,31 @@ describe('renderCopyButton', () => {
       'data-copy-text="first&#13;\nsecond\n"',
     );
   });
-  test('renders a button that copies its code window, labelled Copy, on the page surface', () => {
-    const html = renderCopyButton();
+  test(
+    'renders a button that copies its code window, labelled Copy, on the page surface',
+    { tags: ['full'] },
+    () => {
+      const html = renderCopyButton();
 
-    expect(readButtonTag(html)).toBe(
-      '<button type="button" inert class="invisible inline-flex min-h-8 items-center gap-1.5 text-xs font-semibold transition-colors rounded-md px-2.5 text-muted hover:bg-secondary hover:text-foreground" data-copy-button data-copy-context="text">',
-    );
-    expect(html).toContain('<span class="col-start-1 row-start-1" data-copy-label>Copy</span>');
-    expect(html).toContain('<span class="sr-only"> text</span>');
-    expect(html).toContain(
-      '<span class="sr-only" data-copy-status role="status" aria-live="polite" aria-atomic="true"></span>',
-    );
-    expect(html).toContain('data-copy-hint hidden></span>');
-    // the label and the guidance stay out of the search index
-    expect(
-      html.startsWith(
-        '<span class="relative inline-flex shrink-0 items-center" data-pagefind-ignore>',
-      ),
-    ).toBe(true);
-    // the copy, check, and alert icons, each shown in one state
-    expect(html.match(/<svg /g)).toHaveLength(3);
-  });
+      expect(readButtonTag(html)).toBe(
+        '<button type="button" inert class="invisible inline-flex min-h-8 items-center gap-1.5 text-xs font-semibold transition-colors rounded-md px-2.5 text-muted hover:bg-secondary hover:text-foreground" data-copy-button data-copy-context="text">',
+      );
+      expect(html).toContain('<span class="col-start-1 row-start-1" data-copy-label>Copy</span>');
+      expect(html).toContain('<span class="sr-only"> text</span>');
+      expect(html).toContain(
+        '<span class="sr-only" data-copy-status role="status" aria-live="polite" aria-atomic="true"></span>',
+      );
+      expect(html).toContain('data-copy-hint hidden></span>');
+      // the label and the guidance stay out of the search index
+      expect(
+        html.startsWith(
+          '<span class="relative inline-flex shrink-0 items-center" data-pagefind-ignore>',
+        ),
+      ).toBe(true);
+      // the copy, check, and alert icons, each shown in one state
+      expect(html.match(/<svg /g)).toHaveLength(3);
+    },
+  );
 
   test('copies its own text or an element by id, escaping every value', () => {
     const html = renderCopyButton({
@@ -62,27 +66,31 @@ describe('renderCopyButton', () => {
     ).toBe(true);
   });
 
-  test('makes room for each outcome label in the label cell, so a longer one never widens it', () => {
-    const cell = /<span class="(grid [^"]*)"><span[^>]*data-copy-label>/u.exec(
-      renderCopyButton(),
-    )?.[1];
+  test(
+    'makes room for each outcome label in the label cell, so a longer one never widens it',
+    { tags: ['full'] },
+    () => {
+      const cell = /<span class="(grid [^"]*)"><span[^>]*data-copy-label>/u.exec(
+        renderCopyButton(),
+      )?.[1];
 
-    // invisible pseudo-elements in the label's grid cell, holding the labels copy-behavior shows
-    expect(cell).toContain(
-      `before:content-['${COPY_OUTCOME_LABELS.success.replaceAll(' ', '_')}']`,
-    );
-    expect(cell).toContain(`after:content-['${COPY_OUTCOME_LABELS.error.replaceAll(' ', '_')}']`);
-    for (const pseudo of ['before', 'after']) {
-      for (const utility of ['invisible', 'col-start-1', 'row-start-1']) {
-        expect(cell).toContain(`${pseudo}:${utility}`);
+      // invisible pseudo-elements in the label's grid cell, holding the labels copy-behavior shows
+      expect(cell).toContain(
+        `before:content-['${COPY_OUTCOME_LABELS.success.replaceAll(' ', '_')}']`,
+      );
+      expect(cell).toContain(`after:content-['${COPY_OUTCOME_LABELS.error.replaceAll(' ', '_')}']`);
+      for (const pseudo of ['before', 'after']) {
+        for (const utility of ['invisible', 'col-start-1', 'row-start-1']) {
+          expect(cell).toContain(`${pseudo}:${utility}`);
+        }
       }
-    }
-  });
+    },
+  );
 
   test.each([
     ['sm', 'min-h-8 items-center gap-1.5 text-xs'],
     ['md', 'min-h-11 items-center gap-2 text-sm'],
-  ] as const)('renders the %s size', (size, classes) => {
+  ] as const)('renders the %s size', { tags: ['full'] }, (size, classes) => {
     expect(readButtonTag(renderCopyButton({ size }))).toContain(
       `class="invisible inline-flex ${classes} `,
     );
@@ -106,6 +114,7 @@ describe('renderCopyButton', () => {
   });
   test.each(['sm', 'md'] as const)(
     'renders %s icon controls with an accessible label and stable width',
+    { tags: ['full'] },
     (size) => {
       const html = renderCopyButton({
         display: 'icon',

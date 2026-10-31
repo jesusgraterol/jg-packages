@@ -11,8 +11,12 @@ describe('link card', () => {
     expect(buildLinkCardLinkAttributes(false)).toStrictEqual({});
   });
 
-  test("puts an external card's arrow in its corner, and nudges an internal card's on hover", () => {
-    expect(buildLinkCardArrowClasses(true)).toContain('absolute top-5 right-5');
-    expect(buildLinkCardArrowClasses(false)).toContain('group-hover:translate-x-0.5');
-  });
+  test(
+    "puts an external card's arrow in its corner, and nudges an internal card's on hover",
+    { tags: ['full'] },
+    () => {
+      expect(buildLinkCardArrowClasses(true)).toContain('absolute top-5 right-5');
+      expect(buildLinkCardArrowClasses(false)).toContain('group-hover:translate-x-0.5');
+    },
+  );
 });

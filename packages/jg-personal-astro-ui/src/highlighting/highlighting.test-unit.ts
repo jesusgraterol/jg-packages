@@ -17,7 +17,7 @@ describe('toSupportedLanguage', () => {
     ['astro', 'astro'],
     ['cobol', 'text'],
     ['', 'text'],
-  ])('maps %o to %o', (language, expected) => {
+  ])('maps %o to %o', { tags: ['full'] }, (language, expected) => {
     expect(toSupportedLanguage(language)).toBe(expected);
   });
 });
@@ -38,13 +38,17 @@ describe('highlightToHtml', () => {
     expect(html).toContain('aria-label="Source &#x22;<tag>&#x22;"');
     expect(html).toContain('tabindex="0"');
   });
-  test('colours tokens with --jg-syntax-* variables, without a trailing empty line', async () => {
-    const html = await highlightToHtml('const a = 1;\n', 'ts');
+  test(
+    'colours tokens with --jg-syntax-* variables, without a trailing empty line',
+    { tags: ['full'] },
+    async () => {
+      const html = await highlightToHtml('const a = 1;\n', 'ts');
 
-    expect(html).toMatch(/^<pre class="shiki jg-syntax"/);
-    expect(html).toContain('var(--jg-syntax-');
-    expect(html.match(/class="line"/g)).toHaveLength(1);
-  });
+      expect(html).toMatch(/^<pre class="shiki jg-syntax"/);
+      expect(html).toContain('var(--jg-syntax-');
+      expect(html.match(/class="line"/g)).toHaveLength(1);
+    },
+  );
 
   test('renders an unknown language as plain text', async () => {
     const html = await highlightToHtml('a <b> c', 'cobol');

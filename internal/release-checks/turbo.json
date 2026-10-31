@@ -7,6 +7,8 @@
         "$TURBO_EXTENDS$",
         "$TURBO_ROOT$/packages/jg-personal-react-ui/playwright.config.ts",
         "$TURBO_ROOT$/packages/jg-personal-react-ui/package.json",
+        "$TURBO_ROOT$/packages/jg-personal-astro-ui/playwright.config.ts",
+        "$TURBO_ROOT$/packages/jg-personal-astro-ui/package.json",
         "$TURBO_ROOT$/pnpm-workspace.yaml"
       ]
     },
@@ -15,6 +17,8 @@
         "$TURBO_EXTENDS$",
         "$TURBO_ROOT$/packages/jg-personal-react-ui/playwright.config.ts",
         "$TURBO_ROOT$/packages/jg-personal-react-ui/package.json",
+        "$TURBO_ROOT$/packages/jg-personal-astro-ui/playwright.config.ts",
+        "$TURBO_ROOT$/packages/jg-personal-astro-ui/package.json",
         "$TURBO_ROOT$/pnpm-workspace.yaml"
       ]
     }

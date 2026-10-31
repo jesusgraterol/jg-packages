@@ -86,31 +86,33 @@ for (const colorScheme of ['light', 'dark'] as const) {
       colorScheme,
       reducedMotion: 'reduce',
     });
-    test('uses configured names and a touch-sized input with reachable results and close action', async ({
-      page,
-    }) => {
-      await page.goto('/interactions/');
-      const trigger = page.getByRole('button', { name: 'Find documentation', exact: true });
-      await trigger.click();
-      const dialog = page.getByRole('dialog', { name: 'Find documentation', exact: true });
-      const input = dialog.getByRole('searchbox', { name: 'Search documentation', exact: true });
-      await expect(input).toBeFocused();
-      await expect(input).toHaveAttribute('placeholder', 'e.g. Installation');
-      await expect(input).toHaveCSS('font-size', '16px');
-      await input.press('Control+k');
-      await expect(page.getByRole('dialog', { name: 'Search', exact: true })).not.toBeVisible();
-      await expect(input).toBeFocused();
-      await input.fill('Rich prose');
-      await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toBeVisible();
-      await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toHaveAttribute(
-        'href',
-        '/documentation/',
-      );
-      await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeInViewport();
-      await input.press('Escape');
-      await expect(dialog).not.toBeVisible();
-      await expect(trigger).toBeFocused();
-    });
+    test(
+      'uses configured names and a touch-sized input with reachable results and close action',
+      { tag: '@full' },
+      async ({ page }) => {
+        await page.goto('/interactions/');
+        const trigger = page.getByRole('button', { name: 'Find documentation', exact: true });
+        await trigger.click();
+        const dialog = page.getByRole('dialog', { name: 'Find documentation', exact: true });
+        const input = dialog.getByRole('searchbox', { name: 'Search documentation', exact: true });
+        await expect(input).toBeFocused();
+        await expect(input).toHaveAttribute('placeholder', 'e.g. Installation');
+        await expect(input).toHaveCSS('font-size', '16px');
+        await input.press('Control+k');
+        await expect(page.getByRole('dialog', { name: 'Search', exact: true })).not.toBeVisible();
+        await expect(input).toBeFocused();
+        await input.fill('Rich prose');
+        await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toBeVisible();
+        await expect(dialog.getByRole('link', { name: /^Documentation\b/ })).toHaveAttribute(
+          'href',
+          '/documentation/',
+        );
+        await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeInViewport();
+        await input.press('Escape');
+        await expect(dialog).not.toBeVisible();
+        await expect(trigger).toBeFocused();
+      },
+    );
   });
 }
 
