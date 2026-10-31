@@ -1,57 +1,14 @@
-/*
- * The token contract: maps the --jg-* custom properties a theme defines into Tailwind's theme, so
- * the components style themselves with utilities such as bg-surface and text-muted. Import it
- * after Tailwind, with a theme that defines every --jg-* property, such as theme.css.
- */
+/* Shared semantic mappings come from the foundation; site composition stays local. */
+@import 'jg-personal-ui/styles/contract.css';
 
-/* dark mode follows the .dark class the theme script sets on <html> */
-@custom-variant dark (&:where(.dark, .dark *));
-
-/* the components' class names, so Tailwind generates their utilities */
+/* scan the retained Astro source distribution from the shipped stylesheet */
 @source "../components";
 
 @theme inline {
-  --font-sans: var(--jg-font-sans);
-  --font-mono: var(--jg-font-mono);
-
-  --color-background: var(--jg-background);
-  --color-foreground: var(--jg-foreground);
-  --color-surface: var(--jg-surface);
-  --color-secondary: var(--jg-secondary);
-  --color-muted: var(--jg-muted);
-  --color-border: var(--jg-border);
-  --color-border-strong: var(--jg-border-strong);
-  --color-primary: var(--jg-primary);
-  --color-primary-foreground: var(--jg-primary-foreground);
-  --color-accent: var(--jg-accent);
-  --color-accent-foreground: var(--jg-accent-foreground);
-  --color-terminal: var(--jg-terminal);
-  --color-terminal-foreground: var(--jg-terminal-foreground);
-  --color-terminal-accent: var(--jg-terminal-accent);
-  --color-inverse: var(--jg-inverse);
-  --color-inverse-foreground: var(--jg-inverse-foreground);
-  --color-inverse-accent: var(--jg-inverse-accent);
-  --color-focus: var(--jg-focus);
-  --color-code: var(--jg-code);
-  --color-success: var(--jg-success);
-  --color-warning: var(--jg-warning);
-  --color-danger: var(--jg-danger);
-  --color-diff-added: var(--jg-diff-added);
-  --color-diff-removed: var(--jg-diff-removed);
-
-  --radius-sm: calc(var(--jg-radius) * 0.75);
-  --radius-md: var(--jg-radius);
-  --radius-lg: calc(var(--jg-radius) * 1.25);
-  --radius-xl: calc(var(--jg-radius) * 1.75);
-  --radius-2xl: calc(var(--jg-radius) * 2.25);
-
   --spacing-page: var(--jg-page-gutter);
   --spacing-section: var(--jg-section-space);
   --container-page: var(--jg-page-width);
   --container-prose: var(--jg-prose-width);
-
-  --shadow-surface: var(--jg-shadow-surface);
-  --shadow-raised: var(--jg-shadow-raised);
 }
 
 @layer base {

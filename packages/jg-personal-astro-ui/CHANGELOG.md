@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0
+
+### Changed
+
+- Consume the shared JG foundation for colors, typography, semantic tokens, and canonical mark geometry while preserving existing component, stylesheet, and SVG asset paths.
+- Derive fixed-dark code and inverse scopes and the standalone SVG copies from the foundation, with build checks that reject stale generated output.
+
 ## 0.5.1
 
 ### Fixed

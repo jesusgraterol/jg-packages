@@ -1,0 +1,41 @@
+/* Generated from jg-personal-ui/styles/theme.css by foundation:generate. */
+.jg-section-inverse {
+  color-scheme: dark;
+
+  --jg-background: oklch(27.837% 0.03355 257.693);
+  --jg-foreground: oklch(97.024% 0.00684 124.958);
+  --jg-surface: oklch(31% 0.034 257.693);
+  --jg-secondary: oklch(36% 0.034 260.191);
+  --jg-muted: oklch(83.038% 0.0135 209.117);
+  --jg-border: oklch(100% 0.00011 271.152 / 0.22);
+  --jg-border-strong: oklch(100% 0.00011 271.152 / 0.44);
+  --jg-primary: oklch(97.024% 0.00684 124.958);
+  --jg-primary-foreground: oklch(22% 0.025 257.693);
+  --jg-accent: oklch(76.08% 0.12019 173.72);
+  --jg-accent-foreground: oklch(18.142% 0.01839 215.333);
+  --jg-code: oklch(24% 0.03 257.693);
+  --jg-success: oklch(76.08% 0.12019 173.72);
+  --jg-warning: oklch(83.007% 0.1399 77.932);
+  --jg-danger: oklch(75% 0.17 23.736);
+  --jg-diff-added: oklch(76.08% 0.12019 173.72 / 0.14);
+  --jg-diff-removed: oklch(70.008% 0.19081 23.736 / 0.15);
+
+  --jg-terminal: oklch(18% 0.012 257.693);
+
+  --jg-shadow-surface: 0 0 transparent;
+  --jg-shadow-raised: 0 0 transparent;
+}
+
+.jg-code-window,
+.jg-section-inverse {
+  --jg-syntax-foreground: oklch(93% 0.012 250);
+  --jg-syntax-token-keyword: oklch(72% 0.17 25);
+  --jg-syntax-token-string: oklch(85% 0.08 245);
+  --jg-syntax-token-string-expression: oklch(84% 0.14 150);
+  --jg-syntax-token-comment: oklch(68% 0.02 250);
+  --jg-syntax-token-function: oklch(80% 0.11 305);
+  --jg-syntax-token-constant: oklch(78% 0.12 245);
+  --jg-syntax-token-parameter: oklch(80% 0.13 60);
+  --jg-syntax-token-punctuation: oklch(93% 0.012 250);
+  --jg-syntax-token-link: oklch(85% 0.08 245);
+}

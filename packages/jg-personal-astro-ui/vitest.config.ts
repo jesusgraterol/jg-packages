@@ -19,7 +19,10 @@ for (const project of config.test?.projects ?? []) {
     ];
   }
   if (typeof project === 'object' && 'test' in project && project.test?.name === 'integration') {
-    project.test.include = ['gallery/**/*.test-integration.ts'];
+    project.test.include = ['gallery/**/*.test-integration.ts', 'scripts/**/*.test-integration.ts'];
+  }
+  if (typeof project === 'object' && 'test' in project && project.test?.name === 'unit') {
+    project.test.include = [...(project.test.include ?? []), 'scripts/**/*.test-unit.ts'];
   }
 }
 

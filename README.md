@@ -33,7 +33,7 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 
 [`jg-personal-astro-ui`](packages/jg-personal-astro-ui) is also published from `packages/`: the Astro components and theme Jesus Graterol's own sites share. It isn't meant for general use, so the website doesn't list it.
 
-`jg-personal-ui`, `jg-react-ui`, and `jg-personal-react-ui` provide shared JG foundations and React components for personal apps. They are published for personal use and excluded from the website catalog. See [`docs/personal-ui.md`](docs/personal-ui.md) for package ownership and the private React gallery.
+`jg-personal-ui` owns the tokens, fonts, and mark artwork shared by `jg-personal-astro-ui` and `jg-personal-react-ui`. `jg-react-ui` supplies the shared React implementations. They are published for personal use and excluded from the website catalog. See [`docs/personal-ui.md`](docs/personal-ui.md) for package ownership and the private React gallery.
 
 General-purpose packages get a row here when added to `packages/`.
 
