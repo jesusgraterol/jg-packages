@@ -62,6 +62,18 @@ export const Gallery = () => {
       <div className="mb-6">
         <Button
           size="touch"
+          variant="outline"
+          asChild
+        >
+          <Link
+            role="link"
+            to="/inputs"
+          >
+            Open files and dictation
+          </Link>
+        </Button>
+        <Button
+          size="touch"
           asChild
         >
           <Link

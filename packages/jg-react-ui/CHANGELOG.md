@@ -2,6 +2,9 @@
 
 ## 0.3.0
 
+- Add retained file queues, upload dialogs, controlled image fields, and audio recording/transcription APIs with caller-owned adapters.
+- Release obsolete media requests and deferred controls, preserve Strict Mode status notifications, and recover failed image previews.
+
 - Add source-compatible routing, query loaders/boundaries, pagination and safe error recovery, reusing shared query state with scoped application policy.
 - Prevent duplicate refresh/retry requests and preserve 44px recovery targets under coarse pointers.
 

@@ -22,6 +22,7 @@ import {
 import { Gallery } from './gallery.component.js';
 import { QueryDemo } from './query-demo/index.js';
 import { QueryNext } from './query-next/index.js';
+import { InputDemo } from './input-demo/index.js';
 import { LayoutDemo } from './layout-demo/layout-demo.component.js';
 import './styles.css';
 
@@ -52,6 +53,7 @@ const router = createBrowserRouter([
         children: [
           { path: '/', element: <Gallery /> },
           { path: '/layout', element: <LayoutDemo /> },
+          { path: '/inputs', element: <InputDemo /> },
           {
             path: '/queries',
             element: (

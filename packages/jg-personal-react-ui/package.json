@@ -169,6 +169,14 @@
     "./components/query-loader": {
       "types": "./dist/components/query-loader/index.d.ts",
       "default": "./dist/components/query-loader/index.js"
+    },
+    "./components/file-upload": {
+      "types": "./dist/components/file-upload/index.d.ts",
+      "default": "./dist/components/file-upload/index.js"
+    },
+    "./components/audio-input": {
+      "types": "./dist/components/audio-input/index.d.ts",
+      "default": "./dist/components/audio-input/index.js"
     }
   },
   "main": "./dist/index.js",

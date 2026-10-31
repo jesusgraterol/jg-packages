@@ -30,6 +30,8 @@ export default mergeConfig(
         '@testing-library/dom',
         '@tanstack/react-query',
         '@tanstack/react-query-persist-client',
+        '@hookform/resolvers/zod',
+        'react-hook-form',
       ],
     },
   },

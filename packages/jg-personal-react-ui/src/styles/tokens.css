@@ -37,6 +37,10 @@
     --primary: var(--jg-primary-foreground);
   }
 
+  [data-slot='file-upload-success-icon'] {
+    --primary-foreground: var(--jg-primary);
+  }
+
   [data-slot='checkbox'] {
     @variant dark {
       --primary: var(--jg-primary-foreground);

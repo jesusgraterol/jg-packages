@@ -60,6 +60,14 @@ The default error slot is an inline blocking/retained alert. Custom renderers ca
 
 Default compact pagination and recovery actions preserve their fine-pointer geometry and have at least 44px targets under a coarse pointer. JG's global recovery surface uses the foundation's inverse palette in both themes. Generic consumers set `--jg-ui-inverse-color-scheme` to match their recovery surface (`dark` or `light`); selection and focus use its primary roles. Query clients, network adapters, pagination limits, application code maps, and routing history remain host-owned.
 
+## File uploads and audio input
+
+These components are direct exports of `jg-react-ui`. `FileUpload`, `FileUploadDialog`, `ImageUploadField`, and `AudioInput` retain the pinned source props and callbacks. File uploads reuse `jg-react`'s admission, concurrency, progress, cancellation, and retry queue. The caller supplies validation and transport callbacks; no endpoint, authorization policy, storage service, or transcription provider is included. Upload adapters must honor their abort signal. The image field displays the caller's current image and falls back safely when its preview fails; the caller owns object URL creation and revocation.
+
+The upload dialog finalizes successful results through `onSubmit`, retries finalization without reuploading, and reports abandoned successful items through `onDiscard`. The caller owns remote cleanup and callback failures. Audio input owns microphone tracks, recorder handlers, waveform contexts, intervals, and deferred commands. Obsolete permission/transcription results cannot update a replacement session or call completion after unmount. Recording reset is immediate; closing retains the source's short visual reset delay.
+
+`transcribe` receives the captured recording and returns text. Users can send directly or edit the transcription first; a failed send retries the authored text without transcribing again. Provider operations remain caller-owned and should have their own deadline/cancellation policy. Recording/transcription error callbacks receive diagnostic exceptions, while visible feedback uses the nearest scoped resolver. The seven owned audio codes and stable messages are listed in `errors/README.md`; coded provider exceptions preserve their diagnostic identity. Canceled permission/transcription work stays silent and can be restarted; diagnostic callbacks still run. Optional result callbacks remain optional.
+
 ## Documentation
 
 The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.3.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.3.0/RECIPES.md). These personal-use packages are unlisted on the public package website.

@@ -340,3 +340,37 @@ const router = createBrowserRouter([
   },
 ]);
 ```
+
+## Supply upload and dictation adapters
+
+The application owns remote requests, authentication, deadlines, and cleanup. Upload progress is in bytes, and cancellation must reach the transport through its signal. The dialog finalizes already-uploaded results and reports abandoned successful items for application cleanup.
+
+```ts
+import { createElement } from 'react';
+import {
+  AudioInput,
+  FileUpload,
+  FileUploadDialog,
+  type IAudioInputTranscribeHandler,
+  type IAudioInputTranscriptionResultHandler,
+  type IFileUploadProps,
+  type IFileUploadDialogDiscardHandler,
+  type IFileUploadDialogSubmitHandler,
+} from 'jg-personal-react-ui';
+
+declare const uploadFile: IFileUploadProps<{ id: string }>['uploadFile'];
+declare const finalize: IFileUploadDialogSubmitHandler<{ id: string }>;
+declare const discard: IFileUploadDialogDiscardHandler<{ id: string }>;
+declare const transcribe: IAudioInputTranscribeHandler;
+declare const send: IAudioInputTranscriptionResultHandler;
+const policy = { acceptedFileTypes: ['text/plain'], maxFileBytes: 4096, maxFiles: 4, uploadFile };
+const upload = createElement(FileUpload<{ id: string }>, policy);
+const dialog = createElement(FileUploadDialog<{ id: string }>, {
+  fileUploadProps: policy,
+  onSubmit: finalize,
+  onDiscard: discard,
+});
+const voiceNote = createElement(AudioInput, { transcribe, onTranscriptionResult: send });
+```
+
+Scope an ErrorFeedbackProvider around these components for reviewed provider messages. Diagnostic error callbacks retain the original cause; visible UI uses that scoped policy. A failed send retries the current text without calling the transcription provider again. Keep provider requests bounded and cancel them when their application owner leaves. The recorder releases its own microphone, waveform, timer, and callback resources. For ImageUploadField, the caller owns currentImage and any object URL lifetime.

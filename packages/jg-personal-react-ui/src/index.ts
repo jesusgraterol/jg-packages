@@ -563,3 +563,51 @@ export type {
 
 // components
 export { QueryLoader } from './components/query-loader/index.js';
+
+// file-upload
+export type {
+  IFileUploadPreviewRenderer,
+  IFileUploadProps,
+  IFileUploadDialogDiscardHandler,
+  IFileUploadDialogProps,
+  IFileUploadDialogSubmitHandler,
+  IImageUploadFieldCurrentImage,
+  IImageUploadFieldProps,
+} from './components/file-upload/index.js';
+export { FileUpload, FileUploadDialog, ImageUploadField } from './components/file-upload/index.js';
+
+// audio-input
+export type {
+  IAudioInputCancelHandler,
+  IAudioInputControls,
+  IAudioInputDialogOpenChangeHandler,
+  IAudioInputElapsedMsChangeHandler,
+  IAudioInputLimitProgress,
+  IAudioInputLimitProgressChangeHandler,
+  IAudioInputProps,
+  IAudioInputRecordedBytesChangeHandler,
+  IAudioInputRecording,
+  IAudioInputRecordingActiveChangeHandler,
+  IAudioInputRecordingCancelHandler,
+  IAudioInputRecordingCompleteHandler,
+  IAudioInputRecordingDataAvailableHandler,
+  IAudioInputRecordingErrorHandler,
+  IAudioInputRecordingStartHandler,
+  IAudioInputRecordingStopHandler,
+  IAudioInputStatusChangeHandler,
+  IAudioInputStatus,
+  IAudioInputTranscribeHandler,
+  IAudioInputTranscriptionCompleteHandler,
+  IAudioInputTranscriptionEditorVisibleChangeHandler,
+  IAudioInputTranscriptionErrorHandler,
+  IAudioInputTranscriptionResultHandler,
+  IAudioInputTranscriptionStatus,
+  IAudioInputTranscriptionStatusChangeHandler,
+  IAudioInputTranscriptionTextChangeHandler,
+} from './components/audio-input/index.js';
+export {
+  AUDIO_INPUT_BYTES_PER_MEGABYTE,
+  AUDIO_INPUT_DEFAULT_MAX_BYTES,
+  AUDIO_INPUT_RECORDING_CHUNK_TIMESLICE_MS,
+  AudioInput,
+} from './components/audio-input/index.js';
