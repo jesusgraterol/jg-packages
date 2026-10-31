@@ -67,6 +67,18 @@ export const Gallery = () => {
         >
           <Link
             role="link"
+            to="/diff"
+          >
+            Review source diffs
+          </Link>
+        </Button>
+        <Button
+          size="touch"
+          variant="outline"
+          asChild
+        >
+          <Link
+            role="link"
             to="/editors"
           >
             Open document and chat editors

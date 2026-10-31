@@ -2,6 +2,8 @@
 
 ## 0.3.0
 
+- Add CodeDiff with the bundled checked viewer, lazy worker chunk, native folding controls, and retained public props.
+
 - Add the retained compact, wide, automatic, and chat Markdown editors with direct shared APIs, selection tools, and caller-owned upload/dictation compositions.
 - Preserve draft bounds, initialization safety, keyboard formatting, focus return, and 44px coarse-pointer editor controls.
 

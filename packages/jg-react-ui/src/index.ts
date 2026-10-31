@@ -688,3 +688,11 @@ export {
   type IChatMarkdownEditorControls,
   type IChatMarkdownEditorProps,
 } from './components/markdown-editor/index.js';
+
+// code diff
+export {
+  CodeDiff,
+  CODE_DIFF_LANGUAGES,
+  type ICodeDiffLanguage,
+  type ICodeDiffProps,
+} from './components/code-diff/index.js';

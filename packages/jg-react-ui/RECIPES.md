@@ -425,3 +425,177 @@ const MessageDraft = () => {
 ```
 
 Read `controlsRef.current?.getMarkdown()` when submitting so a debounced change cannot omit the latest keystroke. Pass reviewed dictation to `appendLiteralText` and handle false by retaining it for another attempt. The private gallery demonstrates the actual upload and audio components with abortable local fixture adapters.
+
+## Compile retained HQ public imports and source shapes
+
+This fixture retains all thirty component boundaries plus `cn` imported by HQ at the recorded source commit. The import list and representative file-change, message, and attachment props compile against the installed tarball. Application transport, query ownership, and full HQ integration remain application work.
+
+```tsx
+import { useRef } from 'react';
+import { cn } from 'jg-react-ui/cn';
+import { Alert, AlertDescription, AlertTitle } from 'jg-react-ui/components/alert';
+import {
+  AudioInput,
+  type IAudioInputProps,
+  type IAudioInputRecording,
+} from 'jg-react-ui/components/audio-input';
+import { Badge, type IBadgeProps } from 'jg-react-ui/components/badge';
+import { Button, buttonVariants } from 'jg-react-ui/components/button';
+import { CodeDiff, type ICodeDiffLanguage } from 'jg-react-ui/components/code-diff';
+import {
+  ConfirmationDialog,
+  type IOpenConfirmationDialogOptions,
+  useConfirmationDialogStore,
+} from 'jg-react-ui/components/confirmation-dialog';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from 'jg-react-ui/components/dialog';
+import { DialogNavigationProvider } from 'jg-react-ui/components/dialog-navigation';
+import { Divider } from 'jg-react-ui/components/divider';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from 'jg-react-ui/components/dropdown-menu';
+import {
+  EmptyState,
+  EmptyStateDescription,
+  EmptyStateTitle,
+} from 'jg-react-ui/components/empty-state';
+import { FileUploadDialog } from 'jg-react-ui/components/file-upload';
+import {
+  Checkbox,
+  DEFAULT_FORM_PROPS,
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLegend,
+  FieldSet,
+  Input,
+  Label,
+  RadioGroup,
+  RadioGroupItem,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from 'jg-react-ui/components/form';
+import { GlobalErrorBoundary } from 'jg-react-ui/components/global-error-boundary';
+import { type IIconTileTone, IconTile } from 'jg-react-ui/components/icon-tile';
+import {
+  PageDescription,
+  PageHeader,
+  PageHeaderMetadata,
+  PageHeaderRow,
+  PageHeaderTitleGroup,
+  PageShell,
+  PageTitle,
+} from 'jg-react-ui/components/layout';
+import { LazyRouteProgress } from 'jg-react-ui/components/lazy-route-progress';
+import { type ILoadMoreButtonQuery, LoadMoreButton } from 'jg-react-ui/components/load-more-button';
+import { Markdown } from 'jg-react-ui/components/markdown';
+import {
+  ChatMarkdownEditor,
+  type IChatMarkdownEditorControls,
+} from 'jg-react-ui/components/markdown-editor';
+import { Progress } from 'jg-react-ui/components/progress';
+import {
+  type IQueryBoundaryLoaderProps,
+  QueryBoundary,
+} from 'jg-react-ui/components/query-boundary';
+import {
+  type IQueryErrorAlertProps,
+  QueryErrorAlert,
+} from 'jg-react-ui/components/query-error-alert';
+import { RouterRoot } from 'jg-react-ui/components/router-root';
+import { Spinner } from 'jg-react-ui/components/spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from 'jg-react-ui/components/tabs';
+import { ThemeProvider, ThemeToggleButton, useTheme } from 'jg-react-ui/components/theme-provider';
+import { Toastr, toastr } from 'jg-react-ui/components/toastr';
+import { CodeBlock } from 'jg-react-ui/components/typography';
+import { UiPreferencesProvider } from 'jg-react-ui/components/ui-preferences-provider';
+import type { IFileUploadDialogProps } from 'jg-react-ui/components/file-upload';
+
+declare const audio: Pick<
+  IAudioInputProps,
+  'transcribe' | 'onTranscriptionResult' | 'onRecordingError'
+>;
+declare const attachments: IFileUploadDialogProps<{ id: string }>;
+
+const SessionComposer = ({
+  markdown,
+  onChange,
+  onSubmit,
+}: {
+  markdown: string;
+  onChange: (markdown: string) => void;
+  onSubmit: (markdown: string) => void;
+}) => {
+  const controlsRef = useRef<IChatMarkdownEditorControls>(null);
+  return (
+    <div className="grid min-w-0 gap-1">
+      <ChatMarkdownEditor
+        aria-label="Message"
+        className="min-w-0"
+        controlsRef={controlsRef}
+        maxEditorHeight={256}
+        maxLength={8192}
+        value={markdown}
+        onChange={onChange}
+        onSubmitRequest={onSubmit}
+      />
+      <AudioInput
+        {...audio}
+        disabled={false}
+        triggerAriaLabel="Dictate message"
+      />
+      <FileUploadDialog {...attachments} />
+      <Button
+        size="touch"
+        onClick={() => onSubmit(controlsRef.current?.getMarkdown() ?? markdown)}
+      >
+        Send
+      </Button>
+    </div>
+  );
+};
+
+const ChangedFile = ({
+  oldValue,
+  newValue,
+  language,
+}: {
+  oldValue: string;
+  newValue: string;
+  language: ICodeDiffLanguage;
+}) => (
+  <CodeDiff
+    filePath="src/agent.ts"
+    headerMeta={<span>+1 −1</span>}
+    language={language}
+    newValue={newValue}
+    oldValue={oldValue}
+  />
+);
+const UnchangedFile = () => (
+  <CodeBlock
+    filePath="src/agent.ts"
+    hasSyntaxHighlighting={false}
+    prefersWrappedCode
+  >
+    No lines changed.
+  </CodeBlock>
+);
+const AgentMessage = ({ children }: { children: string }) => (
+  <article className="min-w-0">
+    <Markdown>{children}</Markdown>
+  </article>
+);
+```

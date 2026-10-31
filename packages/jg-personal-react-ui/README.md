@@ -102,3 +102,7 @@ The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.3.0
 ## License
 
 MIT.
+
+## Source comparisons
+
+`CodeDiff`, `CODE_DIFF_LANGUAGES`, and their public types are direct re-exports of `jg-react-ui/components/code-diff`. JG tokens supply colors, typography, and surface styling. The base ships its checked patched viewer and lazy worker chunk, so consumers need no patch configuration. The private gallery's `/diff` route exercises folding, preferences, revision updates, long paths, and a separate consumer-owned base theme in both color schemes.

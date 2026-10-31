@@ -1,0 +1,11 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "test:unit": {
+      "dependsOn": ["$TURBO_EXTENDS$", "build"]
+    },
+    "test:browser": {
+      "dependsOn": ["$TURBO_EXTENDS$", "build"]
+    }
+  }
+}

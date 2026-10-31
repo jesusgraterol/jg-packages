@@ -87,3 +87,42 @@
     }
   }
 }
+
+/* this fixture owns an independent theme for the generic component contract. */
+.generic-ui-theme {
+  --jg-ui-font-sans: system-ui, sans-serif;
+  --jg-ui-font-mono: ui-monospace, monospace;
+  --jg-ui-shadow-surface: none;
+  --radius: 0.5rem;
+  --syntax-foreground: var(--foreground);
+  --syntax-token-keyword: var(--foreground);
+  --syntax-token-string: var(--foreground);
+  --syntax-token-string-expression: var(--foreground);
+  --syntax-token-comment: var(--foreground);
+  --syntax-token-function: var(--foreground);
+  --syntax-token-constant: var(--foreground);
+  --syntax-token-parameter: var(--foreground);
+  --syntax-token-punctuation: var(--foreground);
+  --syntax-token-link: var(--foreground);
+  --background: #f5f7ff;
+  --foreground: #172554;
+  --secondary: #e0e7ff;
+  --secondary-foreground: #1e3a8a;
+  --chart-1: #166534;
+  --destructive: #9f1239;
+  --border: #64748b;
+  --font-sans: system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+.dark .generic-ui-theme {
+  --background: #172554;
+  --foreground: #f5f7ff;
+  --secondary: #1e3a8a;
+  --secondary-foreground: #e0e7ff;
+  --chart-1: #86efac;
+  --destructive: #fda4af;
+  --border: #94a3b8;
+}

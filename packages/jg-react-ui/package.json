@@ -185,6 +185,10 @@
     "./components/markdown-editor": {
       "types": "./dist/components/markdown-editor/index.d.ts",
       "default": "./dist/components/markdown-editor/index.js"
+    },
+    "./components/code-diff": {
+      "types": "./dist/components/code-diff/index.d.ts",
+      "default": "./dist/components/code-diff/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -194,7 +198,8 @@
     "CHANGELOG.md",
     "API.md",
     "RECIPES.md",
-    "errors"
+    "errors",
+    "THIRD-PARTY-NOTICES.md"
   ],
   "sideEffects": [
     "**/*.css"
@@ -215,13 +220,15 @@
     "url": "https://github.com/jesusgraterol/jg-packages/issues"
   },
   "scripts": {
-    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/build-tools/src/copy-assets.ts 'styles/*.css' && node ../../internal/api-reference/src/write-api-markdown.ts",
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node build/build.ts && node ../../internal/build-tools/src/copy-assets.ts 'styles/*.css' && node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
-    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json",
-    "test": "pnpm test:unit && pnpm test:browser",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json && tsc -p build/tsconfig.json",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:browser",
     "test:unit": "vitest run --project unit",
     "test:browser": "vitest run --project browser",
-    "test:coverage": "vitest run --coverage --project unit --project \"browser (chromium)\""
+    "test:coverage": "vitest run --coverage --project unit --project integration --project \"browser (chromium)\"",
+    "build:viewer": "node build/build.ts",
+    "test:integration": "vitest run --project integration"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -249,7 +256,8 @@
     "@milkdown/react": "^7.22.3",
     "@codemirror/language": "^6.13.1",
     "@codemirror/view": "^6.43.15",
-    "@lezer/highlight": "^1.2.5"
+    "@lezer/highlight": "^1.2.5",
+    "react-diff-viewer-continued": "^4.2.2"
   },
   "peerDependencies": {
     "react": "^19.2.4",
@@ -295,6 +303,9 @@
     "@milkdown/react": "7.22.3",
     "@codemirror/language": "6.13.1",
     "@codemirror/view": "6.43.15",
-    "@lezer/highlight": "1.2.5"
+    "@lezer/highlight": "1.2.5",
+    "react-diff-viewer-continued": "4.2.2",
+    "esbuild": "0.28.0",
+    "diff": "9.0.0"
   }
 }

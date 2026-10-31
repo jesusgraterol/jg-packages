@@ -193,6 +193,10 @@
     "./components/markdown-editor": {
       "types": "./dist/components/markdown-editor/index.d.ts",
       "default": "./dist/components/markdown-editor/index.js"
+    },
+    "./components/code-diff": {
+      "types": "./dist/components/code-diff/index.d.ts",
+      "default": "./dist/components/code-diff/index.js"
     }
   },
   "main": "./dist/index.js",

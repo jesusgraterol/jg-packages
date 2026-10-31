@@ -23,6 +23,7 @@ import { Gallery } from './gallery.component.js';
 import { QueryDemo } from './query-demo/index.js';
 import { QueryNext } from './query-next/index.js';
 import { MarkdownDemo } from './markdown-demo/index.js';
+import { DiffDemo } from './diff-demo/diff-demo.component.js';
 import { InputDemo } from './input-demo/index.js';
 import { LayoutDemo } from './layout-demo/layout-demo.component.js';
 import './styles.css';
@@ -56,6 +57,7 @@ const router = createBrowserRouter([
           { path: '/layout', element: <LayoutDemo /> },
           { path: '/inputs', element: <InputDemo /> },
           { path: '/markdown', element: <MarkdownDemo /> },
+          { path: '/diff', element: <DiffDemo /> },
           {
             path: '/editors',
             lazy: async () => {
