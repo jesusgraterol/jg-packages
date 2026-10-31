@@ -48,3 +48,14 @@ export {
   TableHeaderCell,
   TableCell,
 } from 'jg-react-ui/components/typography';
+
+// code typography
+export {
+  CodeBlock,
+  CodeFileHeader,
+  isCodeBlockProse,
+  codeFileStatusVariants,
+  type ICodeBlockProps,
+  type ICodeFileStatus,
+  type ICodeFileHeaderProps,
+} from 'jg-react-ui/components/typography';

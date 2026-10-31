@@ -177,6 +177,18 @@
     "./components/audio-input": {
       "types": "./dist/components/audio-input/index.d.ts",
       "default": "./dist/components/audio-input/index.js"
+    },
+    "./components/markdown": {
+      "types": "./dist/components/markdown/index.d.ts",
+      "default": "./dist/components/markdown/index.js"
+    },
+    "./components/code-preferences-controls": {
+      "types": "./dist/components/code-preferences-controls/index.d.ts",
+      "default": "./dist/components/code-preferences-controls/index.js"
+    },
+    "./components/youtube-video": {
+      "types": "./dist/components/youtube-video/index.d.ts",
+      "default": "./dist/components/youtube-video/index.js"
     }
   },
   "main": "./dist/index.js",

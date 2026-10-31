@@ -17,6 +17,19 @@
   --border: var(--jg-border);
   --code: var(--jg-code);
   --code-foreground: var(--jg-foreground);
+  --file-added: var(--jg-success);
+  --file-modified: var(--jg-warning);
+  --syntax-foreground: var(--jg-syntax-foreground);
+  --syntax-background: var(--jg-syntax-background);
+  --syntax-token-keyword: var(--jg-syntax-token-keyword);
+  --syntax-token-string: var(--jg-syntax-token-string);
+  --syntax-token-string-expression: var(--jg-syntax-token-string-expression);
+  --syntax-token-comment: var(--jg-syntax-token-comment);
+  --syntax-token-function: var(--jg-syntax-token-function);
+  --syntax-token-constant: var(--jg-syntax-token-constant);
+  --syntax-token-parameter: var(--jg-syntax-token-parameter);
+  --syntax-token-punctuation: var(--jg-syntax-token-punctuation);
+  --syntax-token-link: var(--jg-syntax-token-link);
   --radius: var(--jg-radius);
 }
 

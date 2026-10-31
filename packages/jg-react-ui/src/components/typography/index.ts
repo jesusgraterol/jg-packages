@@ -48,3 +48,10 @@ export {
   TableHeaderCell,
   TableCell,
 } from './typography.component.js';
+
+// code presentation
+export type { ICodeBlockProps, ICodeFileStatus } from './types.js';
+export { CodeBlock } from './code-block.component.js';
+export { isCodeBlockProse } from './utilities.js';
+export { codeFileStatusVariants } from './constants.js';
+export { CodeFileHeader, type ICodeFileHeaderProps } from './code-file-header/index.js';

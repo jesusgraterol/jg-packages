@@ -18,3 +18,5 @@ Audio recording failures are delivered to `onRecordingError`; transcription and 
 | `AUDIO_INPUT_TRANSCRIPTION_FAILED`         | Audio transcription failed.                           |
 
 `FileUpload`, `FileUploadDialog`, and `ImageUploadField` propagate `INVALID_FILE_UPLOAD_POLICY` from `jg-react`. Its canonical messages are documented in [jg-react's error reference](https://unpkg.com/jg-react@0.6.0/errors/README.md) and repeated in these components' API `@throws` contracts.
+
+`YouTubeVideo` propagates `INVALID_YOUTUBE_VIDEO_ID`: The YouTube video id must be 11 letters, digits, '-', or '_'. The canonical dependency contract is in [jg-utilities' error reference](https://unpkg.com/jg-utilities@1.7.2/errors/README.md). Use `parseYouTubeVideoUrl` at authored URL boundaries before supplying its branded identifier.

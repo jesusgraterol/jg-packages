@@ -374,3 +374,30 @@ const voiceNote = createElement(AudioInput, { transcribe, onTranscriptionResult:
 ```
 
 Scope an ErrorFeedbackProvider around these components for reviewed provider messages. Diagnostic error callbacks retain the original cause; visible UI uses that scoped policy. A failed send retries the current text without calling the transcription provider again. Keep provider requests bounded and cancel them when their application owner leaves. The recorder releases its own microphone, waveform, timer, and callback resources. For ImageUploadField, the caller owns currentImage and any object URL lifetime.
+
+## Render agent messages and source
+
+Give every message column `min-w-0` and use `minmax(0,1fr)` for flexible grid tracks. Keep preview/collapse state in the application; the renderer has no truncation policy. Code and tables scroll within their own containers.
+
+```ts
+import { createElement } from 'react';
+import { CodeBlock, Markdown } from 'jg-personal-react-ui';
+const message = createElement(
+  'article',
+  { className: 'min-w-0 flex-1' },
+  createElement(Markdown, {
+    children: '## Result\n\nReview `src/agent/session.ts`.',
+    prefersWrappedCode: true,
+  }),
+);
+const source = createElement(CodeBlock, {
+  filePath: 'src/agent/session.ts',
+  fileStatus: 'modified',
+  language: 'typescript',
+  copyValue: 'const isReady = true;\n',
+  copyLabel: 'Copy full source',
+  children: 'const isReady = true;\n',
+});
+```
+
+Mount an editable UiPreferencesProvider to enable saved wrapping controls. Set an explicit wrapping prop to lock one source surface, or use `hasSyntaxHighlighting={false}` for escaped literal source. Renderer overrides take precedence; custom routing links own navigation. Raw HTML remains disabled unless the application explicitly changes that policy.

@@ -2,6 +2,9 @@
 
 ## 0.3.0
 
+- Add Markdown, full code typography, syntax highlighting, code preference controls, and validated YouTube embeds through shared implementations.
+- Wrap long inline tokens inside shrinkable message columns, contain code/table scrolling, and preserve unlabelled code fences.
+
 - Add retained file queues, upload dialogs, controlled image fields, and audio recording/transcription APIs with caller-owned adapters.
 - Release obsolete media requests and deferred controls, preserve Strict Mode status notifications, and recover failed image previews.
 

@@ -22,7 +22,7 @@ export const InlineCode = ({
 }: IInlineCodeProps): React.ReactElement => (
   <code
     className={cn(
-      'bg-code text-code-foreground relative w-fit max-w-full rounded-md px-1.5 py-1 font-mono text-[0.86em] font-semibold wrap-break-word in-data-[slot=tooltip-content]:bg-current/10 in-data-[slot=tooltip-content]:text-inherit',
+      'bg-code text-code-foreground relative w-fit max-w-full rounded-md px-1.5 py-1 font-mono text-[0.86em] font-semibold wrap-anywhere in-data-[slot=tooltip-content]:bg-current/10 in-data-[slot=tooltip-content]:text-inherit',
       className,
     )}
     {...props}

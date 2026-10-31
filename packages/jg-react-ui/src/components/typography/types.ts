@@ -107,5 +107,34 @@ export type IHeadingRole = NonNullable<VariantProps<typeof headingVariants>['rol
  */
 export type IHeadingProps = Omit<React.HTMLAttributes<HTMLHeadingElement>, 'role'> & {
   level: IHeadingLevel;
-  role?: IHeadingRole | React.AriaRole;
+  role?: IHeadingRole | React.AriaRole | undefined;
 };
+
+/** Source metadata, retained controls, and wrapping policies.
+ * @see CodeBlock
+ */
+export type ICodeBlockProps = Omit<React.ComponentPropsWithoutRef<'pre'>, 'children'> & {
+  children: React.ReactNode;
+  // copying may include source outside the rendered window without parsing or displaying it.
+  copyValue?: string | undefined;
+  copyLabel?: string | undefined;
+  filePath?: string | undefined;
+  headerLabel?: React.ReactNode | undefined;
+  headerRole?: React.ReactNode | undefined;
+  headerMeta?: React.ReactNode | undefined;
+  fileIcon?: React.ReactNode | undefined;
+  fileStatus?: ICodeFileStatus | undefined;
+  hasHeader?: boolean | undefined;
+  hasCopyButton?: boolean | undefined;
+  hasPreferencesControls?: boolean | undefined;
+  // defaults to syntax highlighting; false preserves escaped source without parsing it.
+  hasSyntaxHighlighting?: boolean | undefined;
+  language?: string | undefined;
+  prefersWrappedCode?: boolean | undefined;
+  shouldWrapContent?: boolean | undefined;
+};
+
+/** Git file state displayed with a matching letter and color.
+ * @see CodeBlock
+ */
+export type ICodeFileStatus = 'added' | 'modified' | 'removed';

@@ -334,7 +334,7 @@ export const TableContainer = ({
   ...props
 }: ITableContainerProps): React.ReactElement => (
   <div
-    className={cn('my-6 w-full max-w-full overflow-x-auto', className)}
+    className={cn('my-6 w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain', className)}
     {...props}
   />
 );

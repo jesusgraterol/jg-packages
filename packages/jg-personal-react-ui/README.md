@@ -68,6 +68,18 @@ The upload dialog finalizes successful results through `onSubmit`, retries final
 
 `transcribe` receives the captured recording and returns text. Users can send directly or edit the transcription first; a failed send retries the authored text without transcribing again. Provider operations remain caller-owned and should have their own deadline/cancellation policy. Recording/transcription error callbacks receive diagnostic exceptions, while visible feedback uses the nearest scoped resolver. The seven owned audio codes and stable messages are listed in `errors/README.md`; coded provider exceptions preserve their diagnostic identity. Canceled permission/transcription work stays silent and can be restarted; diagnostic callbacks still run. Optional result callbacks remain optional.
 
+## Markdown and code
+
+`Markdown` retains GFM tables/task lists, heading and prose rendering, uppercase template-variable highlights, image width hints (`title="width=560"`), renderer/plugin overrides, and standalone YouTube links. Raw HTML is skipped by default. HTTP(S) and relative document links open in secure new tabs by default, with an accessible announcement; fragments and non-web links remain in the current tab. Set `shouldOpenLinksInNewTab={false}` or supply an anchor renderer for application routing. Applications own the trust policy of custom plugins, URL transforms, and renderers.
+
+Message columns need `min-width: 0`; grid tracks use `minmax(0, 1fr)`. Markdown and InlineCode wrap long paths and unbroken tokens. InlineCode retains preferred separator breaks without changing copied text. Code blocks and tables contain their own horizontal scrolling; Markdown tables have labelled, keyboard-focusable scroll groups. Unlabelled fences remain preformatted code blocks with exact whitespace.
+
+`CodeBlock` and `CodeFileHeader` preserve metadata/status/action slots, aliases, syntax highlighting, literal plain mode, custom copy text, and wrapping controls. Declared prose languages or prose file extensions wrap automatically. `prefersWrappedCode` takes precedence over `shouldWrapContent`, then automatic prose wrapping and the scoped saved preference. Explicit overrides and read-only providers hide mutation controls. `diff` and `diff-<language>` fences preserve source endings, patch markers and multiline syntax. `CodePreferencesControls` also exposes split/unified preference menus for source surfaces. Compact actions keep the source fine-pointer geometry and use 44px coarse-pointer targets.
+
+The personal adapter maps syntax and file-status roles to `jg-personal-ui`'s existing theme tokens. Generic syntax uses unbranded One-theme fallbacks; supply `--syntax-foreground` and `--syntax-token-{keyword,string,string-expression,comment,function,constant,parameter,punctuation,link}` to override them. Token maps are reused across renders, and unchanged Markdown parser inputs are memoized. Every grammar/style import names its exact JavaScript file, so Node imports need no consumer resolver changes.
+
+`parseYouTubeVideoUrl` validates supported HTTPS single-video links and returns a branded identifier. `YouTubeVideo` uses the fixed privacy-enhanced origin, strips authored playback parameters, and enables autoplay only through its explicit prop. URL validation/building reuses `jg-utilities`, with the retained UI's narrower route policy. A forged invalid identifier throws the dependency's documented `INVALID_YOUTUBE_VIDEO_ID` contract.
+
 ## Documentation
 
 The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.3.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.3.0/RECIPES.md). These personal-use packages are unlisted on the public package website.

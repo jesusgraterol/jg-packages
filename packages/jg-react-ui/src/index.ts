@@ -614,3 +614,42 @@ export {
   AUDIO_INPUT_RECORDING_CHUNK_TIMESLICE_MS,
   AudioInput,
 } from './components/audio-input/index.js';
+
+// markdown
+// types
+export type { IMarkdownProps } from './components/markdown/index.js';
+
+// components
+export { Markdown } from './components/markdown/index.js';
+
+// image presentation
+export { getMarkdownImageDisplayWidth } from './components/markdown/index.js';
+
+// code-preferences-controls
+// types
+export type { ICodePreferencesControlsProps } from './components/code-preferences-controls/index.js';
+
+// components
+export { CodePreferencesControls } from './components/code-preferences-controls/index.js';
+
+// youtube-video
+// types
+export type { IYouTubeVideoProps } from './components/youtube-video/index.js';
+export type { IYouTubeVideoDescriptor, IYouTubeVideoId } from './components/youtube-video/index.js';
+
+// utilities
+export { parseYouTubeVideoUrl } from './components/youtube-video/index.js';
+
+// components
+export { YouTubeVideo } from './components/youtube-video/index.js';
+
+// code typography
+export {
+  CodeBlock,
+  CodeFileHeader,
+  isCodeBlockProse,
+  codeFileStatusVariants,
+  type ICodeBlockProps,
+  type ICodeFileStatus,
+  type ICodeFileHeaderProps,
+} from './components/typography/index.js';
