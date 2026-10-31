@@ -120,7 +120,7 @@ describe('transaction timeouts', () => {
  * The client deadlines: the pool's query_timeout is 1 second, and the profile's statement timeout
  * is 3. Each sleep ends half a second away from every client deadline, so no outcome is a race.
  */
-describe('client deadlines in a profiled transaction', { tags: ['full'] }, () => {
+describe('client deadlines in a profiled transaction', () => {
   test('a query outlives the pool client timeout only through withQueryTimeout', async () => {
     const withTimeout = await postgres.transaction(
       async (client) =>

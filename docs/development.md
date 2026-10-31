@@ -101,6 +101,19 @@ Complete focused verification is still required for changed behavior and affecte
 
 The host selections retain their complete unit/integration categories except six lock-duration display cases. These stay co-located with essential CLI parsing, owner/status and nonce-bound recovery checks. A slow filesystem, child-process, container or credential test is not secondary by cost. Platform-specific permission, signal, Windows-process and shim cases retain their existing platform conditions; essential selection does not remove them. No host global setup or category is omitted. Use a local Docker endpoint for the owned integration fixtures; their temporary resources and run-specific containers must be removed by teardown.
 
+### Persistence, HTTP and server boundaries
+
+| Boundary    | Essential guarantee                                                                                                                                                                  | Full-only coverage                                              |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| jg-postgres | Real transactions/rollback, pool and advisory-lock ownership, stable cursor pages, exact counters/limits, verification-code and inbox idempotency, and SQL/client deadline recovery. | None.                                                           |
+| jg-redis    | Cache/schema/key isolation and fallback, atomic single-use claims/values, expiry and fail-closed coordination when Redis fails.                                                      | None.                                                           |
+| jg-fetch    | Bounded bodies/deadlines, safe retries and aborts, one-shot stream handling, credential-refresh limits, schema/envelope/error mapping and redacted diagnostics.                      | The existing 300-run option-combination property qualification. |
+| jg-nestjs   | Real HTTP/module/lifecycle wiring for validation and errors, CORS, bounded uploads, fail-closed maintenance/IP/Turnstile guards and listen-failure cleanup.                          | None.                                                           |
+
+PostgreSQL's three profiled-client deadline/reuse/destruction cases and the optional reader's real SQL cancellation case are essential. Their real waits uniquely establish connection safety and cancellation; `pg_sleep` is not a reason to mark a case full-only. Database and cache setup remain required in essential. Use the existing disposable Testcontainers fixtures, not shared application databases or mocked replacements.
+
+HTTP property permutations supplement the focused essential request cases and stay in full. The entire property file is excluded before imports only in essential; complete granular/focused integration commands still run it. Required failure, timeout, schema, credential and recovery coverage stays essential in the same package. No timeout, retry, threshold or production behavior changes accompany this selection.
+
 ### Runner mechanics
 
 - **No file module cache.** `createVitestConfig` turns off Vitest's file module cache, `fsModuleCache`, in the root and every project. The cache is one directory, `node_modules/.vitest-cache`, that every run in the workspace shares, and a lockfile change makes each run clear it, so runs started together failed with `ENOTEMPTY`. It saved no measurable time.

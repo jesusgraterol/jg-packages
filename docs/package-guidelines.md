@@ -114,6 +114,8 @@ Essential/full select scenarios across the existing categories. Keep consequenti
 
 Host and credential tests retain real files, child processes, Git repositories, Docker/Compose resources and local HTTP servers where those establish the boundary. Keep stale-write/no-follow defenses, exclusive ownership and recovery nonces, secret-value redaction, process-tree cleanup, local/loopback Docker checks and token/webhook scope essential. Human-readable duration formatting can be full-only; owner identity, recovery commands and machine-readable status remain essential. The [host classification](development.md#host-and-credential-boundaries) records each assessed family.
 
+Keep real database/cache and HTTP/server guarantees essential: transaction rollback and client destruction, exact limits and idempotency, private cache/claim isolation, bounded network bodies/deadlines, safe retries, credential limits, schema/error mapping and fail-closed guards. A real timeout is essential when it uniquely proves recovery or cancellation. Broad property permutations may be full-only when focused essential cases retain the consequential contracts; record that distinction in the [persistence/HTTP classification](development.md#persistence-http-and-server-boundaries).
+
 Don't test what can't break on its own: re-exports, constants, types without generics, or behavior a contract test already proves.
 
 ## Naming
