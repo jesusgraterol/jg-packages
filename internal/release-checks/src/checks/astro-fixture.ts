@@ -237,6 +237,8 @@ const readGalleryTools = async (uiDirectory: string, react: boolean): Promise<st
         'react',
         'react-dom',
         'react-router',
+        '@tanstack/react-query',
+        '@tanstack/react-query-persist-client',
         'tailwindcss',
         '@tailwindcss/vite',
         '@playwright/test',

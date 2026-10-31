@@ -65,3 +65,14 @@ html[data-dialog-return]::view-transition-new(root) {
     @apply cursor-not-allowed opacity-70;
   }
 }
+
+/* inverted recovery surfaces keep native controls and selection aligned with their own palette. */
+@layer utilities {
+  .inverse-surface-selection {
+    color-scheme: var(--jg-ui-inverse-color-scheme);
+  }
+  .inverse-surface-selection ::selection {
+    background: var(--primary-foreground);
+    color: var(--primary);
+  }
+}

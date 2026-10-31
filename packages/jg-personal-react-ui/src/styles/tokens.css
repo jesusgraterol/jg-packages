@@ -58,3 +58,11 @@
     }
   }
 }
+
+@layer utilities {
+  [data-slot='global-error-boundary'] {
+    --primary: var(--jg-inverse);
+    --primary-foreground: var(--jg-inverse-foreground);
+    --jg-ui-inverse-color-scheme: dark;
+  }
+}

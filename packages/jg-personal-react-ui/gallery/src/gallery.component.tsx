@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 
 import markUrl from 'jg-personal-ui/jg-mark.svg';
 import faviconUrl from 'jg-personal-ui/jg-favicon.svg';
@@ -58,6 +59,19 @@ export const Gallery = () => {
           Moldea’s component APIs, with the typography and palette shared by JG interfaces.
         </p>
       </header>
+      <div className="mb-6">
+        <Button
+          size="touch"
+          asChild
+        >
+          <Link
+            role="link"
+            to="/queries"
+          >
+            Open query recovery
+          </Link>
+        </Button>
+      </div>
       <OverlayDemo />
       <section aria-labelledby="actions-title">
         <h2 id="actions-title">Actions</h2>

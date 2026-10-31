@@ -331,6 +331,9 @@ test('the installed React gallery uses the packed closure, exact tools, identity
     'jg-playwright',
     'jg-react',
     'jg-react-router',
+    'jg-tanstack-query',
+    'jg-sw',
+    'jg-fs',
     'jg-storage',
     'jg-site',
   ];
@@ -378,6 +381,8 @@ test('the installed React gallery uses the packed closure, exact tools, identity
       'react@19.2.4',
       'react-dom@19.2.4',
       'react-router@7.14.2',
+      '@tanstack/react-query@5.100.14',
+      '@tanstack/react-query-persist-client@5.100.14',
       'tailwindcss@4.3.3',
       '/release/jg-personal-ui-0.2.0.tgz',
       '/release/jg-react-ui-0.3.0.tgz',

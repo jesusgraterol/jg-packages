@@ -141,6 +141,34 @@
     "./components/layout": {
       "types": "./dist/components/layout/index.d.ts",
       "default": "./dist/components/layout/index.js"
+    },
+    "./components/global-error-boundary": {
+      "types": "./dist/components/global-error-boundary/index.d.ts",
+      "default": "./dist/components/global-error-boundary/index.js"
+    },
+    "./components/router-root": {
+      "types": "./dist/components/router-root/index.d.ts",
+      "default": "./dist/components/router-root/index.js"
+    },
+    "./components/lazy-route-progress": {
+      "types": "./dist/components/lazy-route-progress/index.d.ts",
+      "default": "./dist/components/lazy-route-progress/index.js"
+    },
+    "./components/load-more-button": {
+      "types": "./dist/components/load-more-button/index.d.ts",
+      "default": "./dist/components/load-more-button/index.js"
+    },
+    "./components/query-boundary": {
+      "types": "./dist/components/query-boundary/index.d.ts",
+      "default": "./dist/components/query-boundary/index.js"
+    },
+    "./components/query-error-alert": {
+      "types": "./dist/components/query-error-alert/index.d.ts",
+      "default": "./dist/components/query-error-alert/index.js"
+    },
+    "./components/query-loader": {
+      "types": "./dist/components/query-loader/index.d.ts",
+      "default": "./dist/components/query-loader/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -205,6 +233,9 @@
     "jg-playwright": "workspace:*",
     "jg-process": "workspace:*",
     "vite": "8.3.4",
-    "react-router": "7.14.2"
+    "react-router": "7.14.2",
+    "@tanstack/react-query": "5.100.14",
+    "@tanstack/react-query-persist-client": "5.100.14",
+    "jg-react-router": "workspace:*"
   }
 }

@@ -294,3 +294,49 @@ const requestConfirmation = (onDecision: (isConfirmed: true | undefined) => void
 ```
 
 Mount one ConfirmationDialog per document. Its store is imperative and document-wide, so do not mutate it while rendering on the server. Completion resets before invoking the application callback, which owns its async work and errors.
+
+## Keep query state and error policy in the application
+
+Use one application query client and scope authored copy outside the routes that may fail. Install the query peers at compatible tested versions. A generic unknown error stays private; only the application decides which codes mean lost access.
+
+```ts
+import { createElement } from 'react';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { createErrorFeedback } from 'jg-exception';
+import { ErrorFeedbackProvider, QueryBoundary } from 'jg-personal-react-ui';
+
+declare const readRecords: () => Promise<string>;
+const client = new QueryClient();
+const policy = createErrorFeedback({
+  fallbackMessage: 'Records could not be loaded. Try again.',
+  messagesByCode: { ACCESS_REVOKED: 'Access to these records was revoked.' },
+  accessDeniedCodes: ['ACCESS_REVOKED'],
+});
+const Records = () => {
+  const query = useQuery({ queryKey: ['records'], queryFn: readRecords });
+  return createElement(QueryBoundary, { queries: [query], resolutionKey: 'records' }, query.data);
+};
+const example = createElement(ErrorFeedbackProvider, {
+  resolveErrorFeedback: policy,
+  children: createElement(QueryClientProvider, { client }, createElement(Records)),
+});
+```
+
+For retained failures, a custom `renderErrorAlert` can return `QueryErrorToastr` with a stable unique `toastId`. Keep inline feedback for blocking failures and one document notification host. `isInitialResolutionApproved` is trusted prior resolution, and cannot override a confirmed access loss. Update `resolutionKey` whenever the logical record identity changes.
+
+## Compose data-router recovery
+
+`RouterRoot` keeps the source outlet behavior. Place providers outside `RouterProvider` so error routes retain their context. Add `PageOutlet` from `jg-react-router` and its explicit stylesheet when the host owns focus and Back/Forward scroll restoration.
+
+```ts
+import { createElement } from 'react';
+import { createBrowserRouter } from 'react-router';
+import { GlobalErrorBoundary, RouterRoot } from 'jg-personal-react-ui';
+const router = createBrowserRouter([
+  {
+    element: createElement(RouterRoot),
+    errorElement: createElement(GlobalErrorBoundary),
+    children: [{ path: '/', element: 'Home' }],
+  },
+]);
+```

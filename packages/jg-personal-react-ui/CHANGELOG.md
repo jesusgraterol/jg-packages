@@ -2,6 +2,9 @@
 
 ## 0.3.0
 
+- Add source-compatible routing, query loaders/boundaries, pagination and safe error recovery, reusing shared query state with scoped application policy.
+- Prevent duplicate refresh/retry requests and preserve 44px recovery targets under coarse pointers.
+
 - Add retained dialogs, alert decisions, drawers, confirmation sessions, and semantic layout primitives, with shared router dismissal and JG theme bindings.
 
 - Add Moldea-derived forms, select/choice controls, tabs, menus, tooltips, copy feedback, progress, empty states, plain typography, tables, links, and inline code with direct shared implementations.
