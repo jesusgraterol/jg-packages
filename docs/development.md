@@ -142,6 +142,8 @@ Wholly secondary files are excluded before imports with explicit file patterns. 
 
 End-to-end tests run with Playwright instead of Vitest, from the workspace's `playwright.config.ts`, against its build: jg-sw's and the private Astro UI gallery's in Chromium, Firefox, and WebKit, and the website's, in `website/e2e/`, in Chromium against `astro preview` (see [its suite](website.md#end-to-end-tests)). The gallery's shared scenarios are co-located with `gallery/src/layouts/gallery-layout.astro`, outside Astro's pages directory; component scenarios live beside their owning `.astro` files under `src/components/`. The release fixture copies both sets into its installed consumer. The preview integration test lives beside `gallery/preview.ts` and uses a real temporary CLI without needing a gallery build. Helpers they share, such as a fixture server, go in `.test-utils.ts` files, which never ship either.
 
+Each CI end-to-end shard runs one workspace suite at a time. Playwright retains its workers within each suite; Turbo serializes the independent browser pools so they do not compete across packages on the four-CPU runner. Every shard keeps its complete selection, assertions, and timeouts.
+
 When you add or change integration tests, run them three times with retries off, so a flaky test shows up. Do the same for end-to-end tests:
 
 ```bash
