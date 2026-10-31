@@ -145,6 +145,8 @@ The sitemap lists the HTML pages only. A recipes page's description is the sente
 
 Run it three times with retries off after changing it, as [`development.md`](development.md#tests) says.
 
+Root correctness aggregates also include the libraries' browser category. Its [browser testing policy](development.md#browser-and-client-state-boundaries) distinguishes consequential privacy/lifecycle cases from full-only presentation and engine matrices; the website's own categories remain unchanged until its separate suite assessment.
+
 ## Package icons
 
 Every package has one icon, set as `icon` in its catalog entry. It leads the package's card and opens its page, drawn in one theme color on the dark tile, as on [jg-skills](https://jg-skills.jesusgraterol.dev/).

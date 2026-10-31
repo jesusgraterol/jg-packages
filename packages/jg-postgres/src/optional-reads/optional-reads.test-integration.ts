@@ -127,28 +127,24 @@ describe('createOptionalReader', () => {
     expect(read.getSnapshot()).toBeNull();
   });
 
-  test(
-    'destroys a client whose SQL runs past the deadline, which also stops the SQL',
-    { tags: ['full'] },
-    async () => {
-      const postgres = connect(4);
-      const reader = createOptionalReader({
-        postgres,
-        admissionSeconds: 0.2,
-        timeouts: SLOW_READ_TIMEOUTS,
-      });
-      const client = await postgres.pool.connect();
-      const release = vi.spyOn(client, 'release');
-      vi.spyOn(postgres.pool, 'connect').mockResolvedValueOnce(client as never);
+  test('destroys a client whose SQL runs past the deadline, which also stops the SQL', async () => {
+    const postgres = connect(4);
+    const reader = createOptionalReader({
+      postgres,
+      admissionSeconds: 0.2,
+      timeouts: SLOW_READ_TIMEOUTS,
+    });
+    const client = await postgres.pool.connect();
+    const release = vi.spyOn(client, 'release');
+    vi.spyOn(postgres.pool, 'connect').mockResolvedValueOnce(client as never);
 
-      const read = reader.read('slow', { text: 'SELECT 1 AS value FROM pg_sleep(2);' }, parseValue);
+    const read = reader.read('slow', { text: 'SELECT 1 AS value FROM pg_sleep(2);' }, parseValue);
 
-      expect(await read.completion).toBeNull();
-      await vi.waitFor(() => {
-        expect(release).toHaveBeenCalledExactlyOnceWith(true);
-      });
-    },
-  );
+    expect(await read.completion).toBeNull();
+    await vi.waitFor(() => {
+      expect(release).toHaveBeenCalledExactlyOnceWith(true);
+    });
+  });
 
   test('gives null, and never throws, when the query fails or its row cannot be parsed', async () => {
     const postgres = connect(4);

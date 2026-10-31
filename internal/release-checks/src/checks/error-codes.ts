@@ -1,4 +1,4 @@
-import { readdir, readFile } from 'node:fs/promises';
+import { glob, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import ts from 'typescript';
@@ -107,13 +107,15 @@ const collectPropertyCodes = (
  * Comments, constants, and test tables never count.
  * @param source The test file's text.
  * @param codes Each ERRORS key with its code.
+ * @param fileName The test path, used to parse JSX only for TSX files.
  * @returns The codes the file asserts.
  */
 export const findAssertedCodes = (
   source: string,
   codes: ReadonlyMap<string, string>,
+  fileName = 'test.ts',
 ): Set<string> => {
-  const file = ts.createSourceFile('test.ts', source, ts.ScriptTarget.Latest, true);
+  const file = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true);
   const found = new Set<string>();
   const visit = (node: ts.Node): void => {
     if (ts.isCallExpression(node)) {
@@ -154,21 +156,32 @@ export const findAssertedCodes = (
 };
 
 /**
- * Lists a package's test files: every `.test-*.ts` under `src`, end-to-end tests included, besides
+ * Lists a package's test files: every `.test-*.ts` or `.test-*.tsx` under `src`, end-to-end tests included, besides
  * shared test utilities and benchmarks.
  * @param directory The package directory.
  * @returns A promise that resolves to the files' paths.
  */
 const listTestFiles = async (directory: string): Promise<string[]> => {
-  const entries = await readdir(join(directory, 'src'), { recursive: true, withFileTypes: true });
-  return entries
-    .filter(
-      (entry) =>
-        entry.isFile() &&
-        /\.test-[a-z0-9]+\.ts$/.test(entry.name) &&
-        !/\.test-(?:utils|bench)\.ts$/.test(entry.name),
+  const files: string[] = [];
+  for await (const entry of glob('**/*.test-*.{ts,tsx}', {
+    cwd: join(directory, 'src'),
+    withFileTypes: true,
+    exclude: [
+      '**/node_modules/**',
+      '**/_archive/**',
+      '**/_archives/**',
+      '**/_backup/**',
+      '**/_backups/**',
+    ],
+  })) {
+    if (
+      entry.isFile() &&
+      /\.test-[a-z0-9]+\.tsx?$/.test(entry.name) &&
+      !/\.test-(?:utils|bench)\.tsx?$/.test(entry.name)
     )
-    .map((entry) => join(entry.parentPath, entry.name));
+      files.push(join(entry.parentPath, entry.name));
+  }
+  return files;
 };
 
 /**
@@ -229,7 +242,7 @@ export const checkErrorCodes = async (
     }
     const asserted = new Set<string>();
     for (const file of await listTestFiles(packed.workspacePackage.directory)) {
-      for (const code of findAssertedCodes(await readFile(file, 'utf8'), codes)) {
+      for (const code of findAssertedCodes(await readFile(file, 'utf8'), codes, file)) {
         asserted.add(code);
       }
     }

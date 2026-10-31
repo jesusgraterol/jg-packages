@@ -16,3 +16,9 @@ export {
   UI_PREFERENCES_STORE_ID,
   UI_PREFERENCES_STORAGE_KEY,
 } from './constants.js';
+
+// error policy
+export type { IErrorFeedbackResolver } from './types.js';
+
+// preference namespaces
+export { getUiPreferencesStorageKey } from './utilities.js';

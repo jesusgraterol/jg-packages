@@ -1,7 +1,13 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 
 import markUrl from 'jg-personal-ui/jg-mark.svg';
 import faviconUrl from 'jg-personal-ui/jg-favicon.svg';
+import { ControlsDemo } from './controls-demo/controls-demo.component.js';
+import { TypographyDemo } from './typography-demo/typography-demo.component.js';
+import { OverlayDemo } from './overlay-demo/index.js';
+import { PreferencesDemo } from './preferences-demo/preferences-demo.component.js';
+import { RemotePreferences } from './remote-preferences/remote-preferences.component.js';
 import {
   Alert,
   AlertAction,
@@ -40,7 +46,7 @@ const MARK_SIZES = [16, 32, 64] as const;
 export const Gallery = () => {
   const [savedCount, setSavedCount] = useState(0);
   return (
-    <main>
+    <main className="gallery-home">
       <header>
         <JgMark className="size-12" />
         <p className="eyebrow">JG / PERSONAL UI</p>
@@ -53,6 +59,68 @@ export const Gallery = () => {
           Moldea’s component APIs, with the typography and palette shared by JG interfaces.
         </p>
       </header>
+      <div className="mb-6">
+        <Button
+          size="touch"
+          variant="outline"
+          asChild
+        >
+          <Link
+            role="link"
+            to="/diff"
+          >
+            Review source diffs
+          </Link>
+        </Button>
+        <Button
+          size="touch"
+          variant="outline"
+          asChild
+        >
+          <Link
+            role="link"
+            to="/editors"
+          >
+            Open document and chat editors
+          </Link>
+        </Button>
+        <Button
+          size="touch"
+          variant="outline"
+          asChild
+        >
+          <Link
+            role="link"
+            to="/markdown"
+          >
+            Open messages and source
+          </Link>
+        </Button>
+        <Button
+          size="touch"
+          variant="outline"
+          asChild
+        >
+          <Link
+            role="link"
+            to="/inputs"
+          >
+            Open files and dictation
+          </Link>
+        </Button>
+        <Button
+          size="touch"
+          asChild
+        >
+          <Link
+            role="link"
+            to="/queries"
+          >
+            Open query recovery
+          </Link>
+        </Button>
+      </div>
+      <OverlayDemo />
       <section aria-labelledby="actions-title">
         <h2 id="actions-title">Actions</h2>
         <p>One implementation, ready for native buttons and linked actions.</p>
@@ -68,7 +136,12 @@ export const Gallery = () => {
             </Button>
           ))}
         </div>
-        <p role="status">Actions completed: {savedCount}</p>
+        <p
+          role="status"
+          aria-label="Completed actions"
+        >
+          Actions completed: {savedCount}
+        </p>
       </section>
       <section aria-labelledby="states-title">
         <h2 id="states-title">States and badges</h2>
@@ -245,6 +318,10 @@ export const Gallery = () => {
           />
         </div>
       </section>
+      <ControlsDemo />
+      <TypographyDemo />
+      <PreferencesDemo />
+      <RemotePreferences />
       <footer>Ubuntu Sans · Shared JG tokens · React 19</footer>
     </main>
   );

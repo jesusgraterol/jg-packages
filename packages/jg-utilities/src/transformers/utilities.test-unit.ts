@@ -25,7 +25,7 @@ const mockNumberFormatConfig = (
  *                                             TESTS                                              *
  ************************************************************************************************ */
 
-describe('buildNumberFormatConfig', () => {
+describe('buildNumberFormatConfig', { tags: ['full'] }, () => {
   test.each(<Array<[Partial<INumberFormatConfig> | undefined, INumberFormatConfig]>>[
     [undefined, mockNumberFormatConfig(0, 2, '', '')],
     [{}, mockNumberFormatConfig(0, 2, '', '')],

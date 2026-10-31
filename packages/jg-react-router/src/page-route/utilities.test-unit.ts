@@ -15,7 +15,7 @@ const SettingsPage = ({ title }: IPageRouteComponentProps): ReactElement =>
 
 const METADATA = { title: 'Settings', description: 'Your account and notifications.' };
 
-describe('createPageRouteMetadata', () => {
+describe('createPageRouteMetadata', { tags: ['full'] }, () => {
   test("keeps only a definition's title and description", () => {
     expect(
       createPageRouteMetadata({

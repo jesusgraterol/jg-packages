@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 
 import { estimateReadingTime } from './reading.js';
 
-describe('estimateReadingTime', () => {
+describe('estimateReadingTime', { tags: ['full'] }, () => {
   test.each(<Array<[unknown, number]>>[
     [undefined, 0],
     [null, 0],

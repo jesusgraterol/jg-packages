@@ -2,7 +2,9 @@
   "extends": "@jg-packages/tsconfig/browser.json",
   "compilerOptions": {
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "bundler"
   },
   "include": ["src"],
   "exclude": ["src/**/*.test-*.*", "src/**/test-utils/**"]

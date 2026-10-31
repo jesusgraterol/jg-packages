@@ -3,7 +3,9 @@
   "compilerOptions": {
     "sourceMap": false,
     "inlineSources": false,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "bundler"
   },
   "include": ["src"],
   "exclude": ["src/**/*.test-*.*", "src/**/test-utils/**"]

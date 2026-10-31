@@ -32,7 +32,9 @@ for (const theme of ['light', 'dark'] as const) {
       expect((await new AxeBuilder({ page }).analyze()).violations).toStrictEqual([]);
       await page.getByRole('button', { name: 'default', exact: true }).focus();
       await page.keyboard.press('Enter');
-      await expect(page.getByRole('status')).toHaveText('Actions completed: 1');
+      await expect(page.getByRole('status', { name: 'Completed actions' })).toHaveText(
+        'Actions completed: 1',
+      );
       expect(
         await page
           .getByRole('button', { name: 'default', exact: true })
@@ -41,7 +43,9 @@ for (const theme of ['light', 'dark'] as const) {
       await expect(page.getByRole('button', { name: 'Unavailable' })).toBeDisabled();
       await page.getByRole('button', { name: 'Try syncing again', exact: false }).focus();
       await page.keyboard.press('Space');
-      await expect(page.getByRole('status')).toHaveText('Actions completed: 2');
+      await expect(page.getByRole('status', { name: 'Completed actions' })).toHaveText(
+        'Actions completed: 2',
+      );
       await expect(
         page.getByRole('button', { name: 'Try syncing again', exact: false }),
       ).toBeFocused();
@@ -127,13 +131,20 @@ test('coarse pointer targets stay at least 44px on phones and tablets', async ({
         'Add item',
         'Try syncing again Run this action from the keyboard or by touch.',
       ]) {
-        const box = await page.getByRole('button', { name, exact: true }).boundingBox();
-        expect(box?.width).toBeGreaterThanOrEqual(44);
-        expect(box?.height).toBeGreaterThanOrEqual(44);
+        // native rectangles avoid Firefox protocol edge subtraction losing a fraction of a pixel.
+        const box = await page.getByRole('button', { name, exact: true }).evaluate((element) => {
+          const { width, height } = element.getBoundingClientRect();
+          return { width, height };
+        });
+        expect(box.width).toBeGreaterThanOrEqual(44);
+        expect(box.height).toBeGreaterThanOrEqual(44);
       }
-      const badge = await page.getByRole('link', { name: 'Review notices' }).boundingBox();
-      expect(badge?.width).toBeGreaterThanOrEqual(44);
-      expect(badge?.height).toBeGreaterThanOrEqual(44);
+      const badge = await page.getByRole('link', { name: 'Review notices' }).evaluate((element) => {
+        const { width, height } = element.getBoundingClientRect();
+        return { width, height };
+      });
+      expect(badge.width).toBeGreaterThanOrEqual(44);
+      expect(badge.height).toBeGreaterThanOrEqual(44);
     }
   } finally {
     await context.close();

@@ -30,7 +30,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('the system color scheme', () => {
+describe('the system color scheme', { tags: ['full'] }, () => {
   test('reads the dark color scheme query, and listens for its changes', () => {
     const query = { matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() };
     const matchMedia = vi.fn(() => query);
@@ -57,7 +57,7 @@ describe('the system color scheme', () => {
   });
 });
 
-describe('the theme class', () => {
+describe('the theme class', { tags: ['full'] }, () => {
   test("is applied only when the element has the theme's class and not the other one", () => {
     expect(isThemeClassApplied(createRoot('dark'), 'dark')).toBe(true);
     expect(isThemeClassApplied(createRoot('dark', 'light'), 'dark')).toBe(false);
@@ -74,7 +74,7 @@ describe('the theme class', () => {
   });
 });
 
-describe('suppressTransitions', () => {
+describe('suppressTransitions', { tags: ['full'] }, () => {
   /**
    * Builds a document that records its style element and runs animation frames on demand.
    * @param hasWindow Whether the document has a window.

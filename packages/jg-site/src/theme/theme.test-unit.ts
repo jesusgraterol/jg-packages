@@ -33,7 +33,7 @@ const BLOCKED_STORAGE: IThemeStorage = {
   },
 };
 
-describe('parseThemePreference', () => {
+describe('parseThemePreference', { tags: ['full'] }, () => {
   test.each(['system', 'light', 'dark'])('accepts %s', (value) => {
     expect(parseThemePreference(value)).toBe(value);
   });
@@ -46,7 +46,7 @@ describe('parseThemePreference', () => {
   );
 });
 
-describe('resolveThemePreference', () => {
+describe('resolveThemePreference', { tags: ['full'] }, () => {
   test.each([
     ['system', true, 'dark'],
     ['system', false, 'light'],
@@ -60,7 +60,7 @@ describe('resolveThemePreference', () => {
   );
 });
 
-describe('readThemePreference and writeThemePreference', () => {
+describe('readThemePreference and writeThemePreference', { tags: ['full'] }, () => {
   test('store and read the preference under the given key', () => {
     const storage = createStorage();
 
@@ -84,7 +84,7 @@ describe('readThemePreference and writeThemePreference', () => {
   });
 });
 
-describe('the default storage', () => {
+describe('the default storage', { tags: ['full'] }, () => {
   test('reads and writes localStorage when no storage is given', () => {
     const items = new Map<string, string>();
     vi.stubGlobal('localStorage', {

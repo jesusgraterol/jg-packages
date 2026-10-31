@@ -1,7 +1,7 @@
-// the suites a run can select: the essential one skips the slow tests tagged `full`
+// the suites a run can select: essential skips useful secondary coverage tagged `full`
 export type ITestSuite = 'essential' | 'full';
 
-// the tag that marks a slow test the essential suite skips, such as one that packs tarballs
+// useful secondary coverage, classified by consequence rather than test duration
 export const FULL_TEST_TAG = 'full';
 
 /**

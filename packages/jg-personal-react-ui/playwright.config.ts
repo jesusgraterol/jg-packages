@@ -2,8 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 const consumerRoot = process.env['JG_REACT_UI_GALLERY_ROOT'];
 export default defineConfig({
-  testDir: consumerRoot ?? './gallery',
-  testMatch: '**/*.test-e2e.tsx',
+  testDir: consumerRoot ?? '.',
+  testMatch: '**/*.test-e2e.{ts,tsx}',
   testIgnore: [
     '**/node_modules/**',
     '**/dist/**',
@@ -24,7 +24,18 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    {
+      name: 'firefox',
+      use: {
+        ...devices['Desktop Firefox'],
+        launchOptions: {
+          firefoxUserPrefs: {
+            'media.navigator.streams.fake': true,
+            'media.navigator.permission.disabled': true,
+          },
+        },
+      },
+    },
     { name: 'webkit', use: { ...devices['Desktop Safari'] } },
   ],
   webServer: {

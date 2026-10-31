@@ -53,7 +53,7 @@ const renderWidthHook = () => {
   return { ...hook, counter };
 };
 
-describe('useElementWidth', () => {
+describe('useElementWidth', { tags: ['full'] }, () => {
   test('measures an attached element at once, and re-renders only when the value changes', async () => {
     const block = addBlock(300);
     const { result, counter } = renderWidthHook();

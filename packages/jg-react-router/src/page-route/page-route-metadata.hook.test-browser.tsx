@@ -58,7 +58,7 @@ const ROUTES: RouteObject[] = [
   },
 ];
 
-describe('usePageRouteMetadata', () => {
+describe('usePageRouteMetadata', { tags: ['full'] }, () => {
   test('gives the deepest matched page route', async () => {
     renderAt(ROUTES, '/settings');
 

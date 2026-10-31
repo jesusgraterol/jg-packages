@@ -2,10 +2,20 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { createVitestConfig } from './index.ts';
 
+// dependency and archive patterns retained by every project
+const TEST_EXCLUDE = [
+  '**/node_modules/**',
+  '**/.git/**',
+  '**/_archive/**',
+  '**/_archives/**',
+  '**/_backup/**',
+  '**/_backups/**',
+];
+
 // the tag every project defines, as the full suite configures it
 const FULL_TAG = {
   name: 'full',
-  description: 'Slow tests the essential suite skips.',
+  description: 'Secondary coverage outside the essential guarantees.',
   skip: false,
 };
 
@@ -23,6 +33,7 @@ describe('createVitestConfig', () => {
           {
             test: {
               name: 'unit',
+              exclude: TEST_EXCLUDE,
               fsModuleCache: false,
               environment: 'node',
               unstubEnvs: true,
@@ -36,6 +47,7 @@ describe('createVitestConfig', () => {
           {
             test: {
               name: 'integration',
+              exclude: TEST_EXCLUDE,
               fsModuleCache: false,
               environment: 'node',
               unstubEnvs: true,
@@ -67,6 +79,7 @@ describe('createVitestConfig', () => {
       {
         test: {
           name: 'bench',
+          exclude: TEST_EXCLUDE,
           fsModuleCache: false,
           environment: 'node',
           unstubEnvs: true,
@@ -114,6 +127,40 @@ describe('createVitestConfig', () => {
       },
     });
     expect(project).not.toHaveProperty('test.environment');
+  });
+
+  test.each([undefined, 'full', 'essential'] as const)(
+    'an assessed browser uses one engine only in essential (%s)',
+    (suite) => {
+      vi.stubEnv('JG_TEST_SUITE', suite);
+      const [project] =
+        createVitestConfig({
+          categories: ['browser'],
+          essentialBrowser: 'chromium',
+        }).test?.projects ?? [];
+      expect(project).toMatchObject({
+        test: {
+          browser: {
+            instances:
+              suite === 'essential'
+                ? [{ browser: 'chromium' }]
+                : [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+          },
+        },
+      });
+    },
+  );
+
+  test('keeps all engines for unassessed essential consumers', () => {
+    vi.stubEnv('JG_TEST_SUITE', 'essential');
+    const [project] = createVitestConfig({ categories: ['browser'] }).test?.projects ?? [];
+    expect(project).toMatchObject({
+      test: {
+        browser: {
+          instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+        },
+      },
+    });
   });
 
   test('passes coverage thresholds through, and sets none by default', () => {

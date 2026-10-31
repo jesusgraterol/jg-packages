@@ -39,7 +39,7 @@ describe('prettifyPercentage', () => {
   });
 });
 
-describe('prettifyFileSize', () => {
+describe('prettifyFileSize', { tags: ['full'] }, () => {
   test.each([
     [1000, 2, '1000 B'],
     [2785, 2, '2.72 kB'],
@@ -88,7 +88,7 @@ describe('prettifyFileSize', () => {
   });
 });
 
-describe('prettifyBadgeCount', () => {
+describe('prettifyBadgeCount', { tags: ['full'] }, () => {
   test.each([
     [0, undefined, undefined],
     [1, undefined, '1'],

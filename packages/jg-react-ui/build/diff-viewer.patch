@@ -1,0 +1,436 @@
+diff --git a/lib/cjs/src/index.js b/lib/cjs/src/index.js
+index 915d6b901e2bea540a3e32b4ea8b9093abbf662d..c41145da6e0116f6d33bf6534a909bbce78452c8 100644
+--- a/lib/cjs/src/index.js
++++ b/lib/cjs/src/index.js
+@@ -1,9 +1,11 @@
+ import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+ import cn from "classnames";
++import { CacheProvider, ClassNames } from "@emotion/react";
++import createEmotion from "@emotion/css/create-instance";
+ import * as React from "react";
+ import memoize from "memoize-one";
+ import { computeHiddenBlocks } from "./compute-hidden-blocks.js";
+-import { DiffMethod, DiffType, computeLineInformationWorker, computeDiff, } from "./compute-lines.js";
++import { DiffMethod, DiffType, computeLineInformation, computeLineInformationWorker, computeDiff, } from "./compute-lines.js";
+ import { Expand } from "./expand.js";
+ import computeStyles from "./styles.js";
+ import { Fold } from "./fold.js";
+@@ -149,7 +151,51 @@ export var LineNumberPrefix;
+     LineNumberPrefix["LEFT"] = "L";
+     LineNumberPrefix["RIGHT"] = "R";
+ })(LineNumberPrefix || (LineNumberPrefix = {}));
++// use the same configuration identity for synchronous and worker results.
++const getDiffCacheKey = (props) => {
++    const { oldValue, newValue, disableWordDiff, compareMethod, linesOffset, alwaysShowLines, extraLinesSurroundingDiff } = props;
++    return JSON.stringify({ oldValue, newValue, disableWordDiff, compareMethod, linesOffset, alwaysShowLines, extraLinesSurroundingDiff });
++};
++// preserve deferred word comparisons for virtualized diffs.
++const shouldDeferWordDiff = (props) => {
++    const containerHeight = props.infiniteLoading?.containerHeight;
++    const containerHeightPx = containerHeight
++        ? typeof containerHeight === 'number'
++            ? containerHeight
++            : parseInt(containerHeight, 10) || 0
++        : 0;
++    return !props.disableWordDiff && !!props.infiniteLoading &&
++        containerHeightPx > 0 && containerHeightPx < 2000;
++};
+ class DiffViewer extends React.Component {
++    // share the Emotion cache with server-rendered and hydrated table styles.
++    render() {
++        return _jsx(CacheProvider, {
++            value: this.getStyleCache(this.props.nonce ?? ""),
++            children: _jsx(ClassNames, { children: this.renderWithStyles }),
++        });
++    }
++
++    // prepare synchronous rows before SSR, mount, and revision updates.
++    static getDerivedStateFromProps(props, state) {
++        if (!props.disableWorker) return null;
++        const cacheKey = getDiffCacheKey(props);
++        if (state.computedDiffResult[cacheKey]) return null;
++        const { lineInformation, diffLines } = computeLineInformation(
++            props.oldValue, props.newValue, props.disableWordDiff, props.compareMethod,
++            props.linesOffset, props.alwaysShowLines, shouldDeferWordDiff(props),
++        );
++        const rawExtraLines = props.extraLinesSurroundingDiff ?? 3;
++        const extraLines = rawExtraLines < 0 ? 0 : Math.round(rawExtraLines);
++        const { lineBlocks, blocks } = computeHiddenBlocks(lineInformation, diffLines, extraLines);
++        return {
++            computedDiffResult: { [cacheKey]: { lineInformation, lineBlocks, blocks } },
++            isLoading: false,
++            visibleStartRow: 0,
++            cumulativeOffsets: null,
++        };
++    }
++
+     constructor(props) {
+         super(props);
+         // Cache for on-demand word diff computation
+@@ -236,6 +282,12 @@ class DiffViewer extends React.Component {
+          * @param styles User supplied style overrides.
+          */
+         this.computeStyles = memoize(computeStyles);
++        this.getStyleCache = memoize((nonce) => {
++            const cache = createEmotion({ key: "react-diff", nonce }).cache;
++            // ClassNames emits server styles instead of retaining CSS compatibility output.
++            delete cache.compat;
++            return cache;
++        });
+         /**
+          * Returns a function with clicked line number in the closure. Returns an no-op function when no
+          * onLineNumberClick handler is supplied.
+@@ -478,7 +530,7 @@ class DiffViewer extends React.Component {
+             const content = (_jsx("td", { className: this.styles.codeFoldContentContainer, children: _jsx("button", { type: "button", className: this.styles.codeFoldExpandButton, onClick: this.onBlockClickProxy(blockNumber), tabIndex: 0, children: message }) }));
+             const isUnifiedViewWithoutLineNumbers = !splitView && !hideLineNumbers;
+             const expandGutter = (_jsx("td", { className: this.styles.codeFoldGutter, children: _jsx(Expand, {}) }));
+-            return (_jsxs("tr", { className: this.styles.codeFold, onClick: this.onBlockClickProxy(blockNumber), role: "button", tabIndex: 0, children: [!hideLineNumbers && expandGutter, this.props.renderGutter ? (_jsx("td", { className: this.styles.codeFoldGutter })) : null, _jsx("td", { className: cn({
++            return (_jsxs("tr", { className: this.styles.codeFold, children: [!hideLineNumbers && expandGutter, this.props.renderGutter ? (_jsx("td", { className: this.styles.codeFoldGutter })) : null, _jsx("td", { className: cn({
+                             [this.styles.codeFoldGutter]: isUnifiedViewWithoutLineNumbers,
+                         }) }), isUnifiedViewWithoutLineNumbers ? (_jsxs(React.Fragment, { children: [_jsx("td", {}), content] })) : (_jsxs(React.Fragment, { children: [content, this.props.renderGutter ? _jsx("td", {}) : null, _jsx("td", {}), _jsx("td", {}), !hideLineNumbers ? _jsx("td", {}) : null] }))] }, `${leftBlockLineNumber}-${rightBlockLineNumber}`));
+         };
+@@ -490,18 +542,7 @@ class DiffViewer extends React.Component {
+          * @returns A stringified JSON key representing the current diff settings and input values.
+          *
+          */
+-        this.getMemoisedKey = () => {
+-            const { oldValue, newValue, disableWordDiff, compareMethod, linesOffset, alwaysShowLines, extraLinesSurroundingDiff, } = this.props;
+-            return JSON.stringify({
+-                oldValue,
+-                newValue,
+-                disableWordDiff,
+-                compareMethod,
+-                linesOffset,
+-                alwaysShowLines,
+-                extraLinesSurroundingDiff,
+-            });
+-        };
++        this.getMemoisedKey = () => getDiffCacheKey(this.props);
+         /**
+          * Computes and memoizes the diff result between `oldValue` and `newValue`.
+          *
+@@ -518,19 +559,7 @@ class DiffViewer extends React.Component {
+                 this.setState((prev) => (Object.assign(Object.assign({}, prev), { isLoading: false })));
+                 return;
+             }
+-            // Defer word diff computation when using infinite loading with reasonable container height
+-            // This significantly improves initial render time for large diffs
+-            const containerHeight = (_a = this.props.infiniteLoading) === null || _a === void 0 ? void 0 : _a.containerHeight;
+-            const containerHeightPx = containerHeight
+-                ? typeof containerHeight === 'number'
+-                    ? containerHeight
+-                    : parseInt(containerHeight, 10) || 0
+-                : 0;
+-            const shouldDeferWordDiff = !disableWordDiff &&
+-                !!this.props.infiniteLoading &&
+-                containerHeightPx > 0 &&
+-                containerHeightPx < 2000;
+-            const { lineInformation, diffLines } = await computeLineInformationWorker(oldValue, newValue, disableWordDiff, compareMethod, linesOffset, this.props.alwaysShowLines, shouldDeferWordDiff, this.props.disableWorker);
++            const { lineInformation, diffLines } = await computeLineInformationWorker(oldValue, newValue, disableWordDiff, compareMethod, linesOffset, this.props.alwaysShowLines, shouldDeferWordDiff(this.props), this.props.disableWorker);
+             const rawExtraLines = (_b = this.props.extraLinesSurroundingDiff) !== null && _b !== void 0 ? _b : 3;
+             const extraLines = rawExtraLines < 0 ? 0 : Math.round(rawExtraLines);
+             const { lineBlocks, blocks } = computeHiddenBlocks(lineInformation, diffLines, extraLines);
+@@ -736,7 +765,7 @@ class DiffViewer extends React.Component {
+                 }
+             };
+         };
+-        this.render = () => {
++        this.renderWithStyles = (emotion) => {
+             var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+             const { oldValue, newValue, useDarkTheme, leftTitle, rightTitle, splitView, compareMethod, hideLineNumbers, nonce, } = this.props;
+             if (typeof compareMethod === "string" &&
+@@ -745,7 +774,7 @@ class DiffViewer extends React.Component {
+                     throw Error('"oldValue" and "newValue" should be strings');
+                 }
+             }
+-            this.styles = this.computeStyles((_a = this.props.styles) !== null && _a !== void 0 ? _a : {}, useDarkTheme !== null && useDarkTheme !== void 0 ? useDarkTheme : false, nonce !== null && nonce !== void 0 ? nonce : "");
++            this.styles = this.computeStyles((_a = this.props.styles) !== null && _a !== void 0 ? _a : {}, useDarkTheme !== null && useDarkTheme !== void 0 ? useDarkTheme : false, nonce !== null && nonce !== void 0 ? nonce : "", emotion);
+             const nodes = this.renderDiff();
+             let colSpanOnSplitView = 3;
+             let colSpanOnInlineView = 4;
+@@ -967,7 +996,8 @@ class DiffViewer extends React.Component {
+             prevProps.newValue !== this.props.newValue ||
+             prevProps.compareMethod !== this.props.compareMethod ||
+             prevProps.disableWordDiff !== this.props.disableWordDiff ||
+-            prevProps.linesOffset !== this.props.linesOffset) {
++            prevProps.linesOffset !== this.props.linesOffset ||
++            prevProps.disableWorker !== this.props.disableWorker) {
+             // Clear word diff cache when diff changes
+             this.wordDiffCache.clear();
+             // Reset scroll position to top
+@@ -975,13 +1005,21 @@ class DiffViewer extends React.Component {
+             if (container) {
+                 container.scrollTop = 0;
+             }
++            if (this.props.disableWorker) {
++                if (this.props.infiniteLoading) requestAnimationFrame(() => this.recalculateOffsets());
++                return;
++            }
+             this.setState((prev) => (Object.assign(Object.assign({}, prev), { isLoading: true, visibleStartRow: 0, cumulativeOffsets: null })));
+             this.memoisedCompute();
+         }
+     }
+     componentDidMount() {
+-        this.setState((prev) => (Object.assign(Object.assign({}, prev), { isLoading: true })));
+-        this.memoisedCompute();
++        if (!this.props.disableWorker) {
++            this.setState((prev) => (Object.assign(Object.assign({}, prev), { isLoading: true })));
++            this.memoisedCompute();
++        } else if (this.props.infiniteLoading) {
++            requestAnimationFrame(() => this.recalculateOffsets());
++        }
+         // Set up ResizeObserver for recalculating offsets on container resize
+         if (typeof ResizeObserver !== 'undefined' && this.props.infiniteLoading) {
+             this.resizeObserver = new ResizeObserver(() => {
+diff --git a/lib/cjs/src/styles.js b/lib/cjs/src/styles.js
+index c16b83c79b3bd63703f424dd61b7cb00fd6ea818..c65af6dff1df28483ff186cb24c48df524210c95 100644
+--- a/lib/cjs/src/styles.js
++++ b/lib/cjs/src/styles.js
+@@ -10,7 +10,7 @@ var __rest = (this && this.__rest) || function (s, e) {
+     return t;
+ };
+ import createEmotion from "@emotion/css/create-instance";
+-export default (styleOverride, useDarkTheme = false, nonce = "") => {
++export default (styleOverride, useDarkTheme = false, nonce = "", emotion) => {
+     const { variables: overrideVariables = {} } = styleOverride, styles = __rest(styleOverride, ["variables"]);
+     const themeVariables = {
+         light: Object.assign({
+@@ -69,7 +69,7 @@ export default (styleOverride, useDarkTheme = false, nonce = "") => {
+         }, (overrideVariables.dark || {})),
+     };
+     const variables = useDarkTheme ? themeVariables.dark : themeVariables.light;
+-    const { css, cx } = createEmotion({ key: "react-diff", nonce });
++    const { css, cx } = emotion ?? createEmotion({ key: "react-diff", nonce });
+     const content = css({
+         width: "auto",
+         overflow: "hidden",
+@@ -273,7 +273,7 @@ export default (styleOverride, useDarkTheme = false, nonce = "") => {
+         alignItems: "center",
+         userSelect: "none",
+         fontWeight: 700,
+-        cursor: "pointer",
++        cursor: "default",
+         label: "code-fold",
+         "&:hover": {
+             color: variables.diffViewerColor,
+diff --git a/lib/esm/src/index.js b/lib/esm/src/index.js
+index 1b406a013f342977f2b00d3f1b00e4dfeec07337..67068dcc6c40b489c6a21bad819c3b7fbc976c67 100644
+--- a/lib/esm/src/index.js
++++ b/lib/esm/src/index.js
+@@ -1,9 +1,11 @@
+ import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+ import cn from "classnames";
++import { CacheProvider, ClassNames } from "@emotion/react";
++import createEmotion from "@emotion/css/create-instance";
+ import * as React from "react";
+ import memoize from "memoize-one";
+ import { computeHiddenBlocks } from "./compute-hidden-blocks.js";
+-import { DiffMethod, DiffType, computeLineInformationWorker, computeDiff, } from "./compute-lines.js";
++import { DiffMethod, DiffType, computeLineInformation, computeLineInformationWorker, computeDiff, } from "./compute-lines.js";
+ import { Expand } from "./expand.js";
+ import computeStyles from "./styles.js";
+ import { Fold } from "./fold.js";
+@@ -148,7 +150,51 @@ export var LineNumberPrefix;
+     LineNumberPrefix["LEFT"] = "L";
+     LineNumberPrefix["RIGHT"] = "R";
+ })(LineNumberPrefix || (LineNumberPrefix = {}));
++// use the same configuration identity for synchronous and worker results.
++const getDiffCacheKey = (props) => {
++    const { oldValue, newValue, disableWordDiff, compareMethod, linesOffset, alwaysShowLines, extraLinesSurroundingDiff } = props;
++    return JSON.stringify({ oldValue, newValue, disableWordDiff, compareMethod, linesOffset, alwaysShowLines, extraLinesSurroundingDiff });
++};
++// preserve deferred word comparisons for virtualized diffs.
++const shouldDeferWordDiff = (props) => {
++    const containerHeight = props.infiniteLoading?.containerHeight;
++    const containerHeightPx = containerHeight
++        ? typeof containerHeight === 'number'
++            ? containerHeight
++            : parseInt(containerHeight, 10) || 0
++        : 0;
++    return !props.disableWordDiff && !!props.infiniteLoading &&
++        containerHeightPx > 0 && containerHeightPx < 2000;
++};
+ class DiffViewer extends React.Component {
++    // share the Emotion cache with server-rendered and hydrated table styles.
++    render() {
++        return _jsx(CacheProvider, {
++            value: this.getStyleCache(this.props.nonce ?? ""),
++            children: _jsx(ClassNames, { children: this.renderWithStyles }),
++        });
++    }
++
++    // prepare synchronous rows before SSR, mount, and revision updates.
++    static getDerivedStateFromProps(props, state) {
++        if (!props.disableWorker) return null;
++        const cacheKey = getDiffCacheKey(props);
++        if (state.computedDiffResult[cacheKey]) return null;
++        const { lineInformation, diffLines } = computeLineInformation(
++            props.oldValue, props.newValue, props.disableWordDiff, props.compareMethod,
++            props.linesOffset, props.alwaysShowLines, shouldDeferWordDiff(props),
++        );
++        const rawExtraLines = props.extraLinesSurroundingDiff ?? 3;
++        const extraLines = rawExtraLines < 0 ? 0 : Math.round(rawExtraLines);
++        const { lineBlocks, blocks } = computeHiddenBlocks(lineInformation, diffLines, extraLines);
++        return {
++            computedDiffResult: { [cacheKey]: { lineInformation, lineBlocks, blocks } },
++            isLoading: false,
++            visibleStartRow: 0,
++            cumulativeOffsets: null,
++        };
++    }
++
+     styles;
+     // Cache for on-demand word diff computation
+     wordDiffCache = new Map();
+@@ -365,6 +411,12 @@ class DiffViewer extends React.Component {
+      * @param styles User supplied style overrides.
+      */
+     computeStyles = memoize(computeStyles);
++    getStyleCache = memoize((nonce) => {
++        const cache = createEmotion({ key: "react-diff", nonce }).cache;
++        // ClassNames emits server styles instead of retaining CSS compatibility output.
++        delete cache.compat;
++        return cache;
++    });
+     /**
+      * Returns a function with clicked line number in the closure. Returns an no-op function when no
+      * onLineNumberClick handler is supplied.
+@@ -604,7 +656,7 @@ class DiffViewer extends React.Component {
+         const content = (_jsx("td", { className: this.styles.codeFoldContentContainer, children: _jsx("button", { type: "button", className: this.styles.codeFoldExpandButton, onClick: this.onBlockClickProxy(blockNumber), tabIndex: 0, children: message }) }));
+         const isUnifiedViewWithoutLineNumbers = !splitView && !hideLineNumbers;
+         const expandGutter = (_jsx("td", { className: this.styles.codeFoldGutter, children: _jsx(Expand, {}) }));
+-        return (_jsxs("tr", { className: this.styles.codeFold, onClick: this.onBlockClickProxy(blockNumber), role: "button", tabIndex: 0, children: [!hideLineNumbers && expandGutter, this.props.renderGutter ? (_jsx("td", { className: this.styles.codeFoldGutter })) : null, _jsx("td", { className: cn({
++        return (_jsxs("tr", { className: this.styles.codeFold, children: [!hideLineNumbers && expandGutter, this.props.renderGutter ? (_jsx("td", { className: this.styles.codeFoldGutter })) : null, _jsx("td", { className: cn({
+                         [this.styles.codeFoldGutter]: isUnifiedViewWithoutLineNumbers,
+                     }) }), isUnifiedViewWithoutLineNumbers ? (_jsxs(React.Fragment, { children: [_jsx("td", {}), content] })) : (_jsxs(React.Fragment, { children: [content, this.props.renderGutter ? _jsx("td", {}) : null, _jsx("td", {}), _jsx("td", {}), !hideLineNumbers ? _jsx("td", {}) : null] }))] }, `${leftBlockLineNumber}-${rightBlockLineNumber}`));
+     };
+@@ -616,18 +668,7 @@ class DiffViewer extends React.Component {
+      * @returns A stringified JSON key representing the current diff settings and input values.
+      *
+      */
+-    getMemoisedKey = () => {
+-        const { oldValue, newValue, disableWordDiff, compareMethod, linesOffset, alwaysShowLines, extraLinesSurroundingDiff, } = this.props;
+-        return JSON.stringify({
+-            oldValue,
+-            newValue,
+-            disableWordDiff,
+-            compareMethod,
+-            linesOffset,
+-            alwaysShowLines,
+-            extraLinesSurroundingDiff,
+-        });
+-    };
++    getMemoisedKey = () => getDiffCacheKey(this.props);
+     /**
+      * Computes and memoizes the diff result between `oldValue` and `newValue`.
+      *
+@@ -646,19 +687,7 @@ class DiffViewer extends React.Component {
+             }));
+             return;
+         }
+-        // Defer word diff computation when using infinite loading with reasonable container height
+-        // This significantly improves initial render time for large diffs
+-        const containerHeight = this.props.infiniteLoading?.containerHeight;
+-        const containerHeightPx = containerHeight
+-            ? typeof containerHeight === 'number'
+-                ? containerHeight
+-                : parseInt(containerHeight, 10) || 0
+-            : 0;
+-        const shouldDeferWordDiff = !disableWordDiff &&
+-            !!this.props.infiniteLoading &&
+-            containerHeightPx > 0 &&
+-            containerHeightPx < 2000;
+-        const { lineInformation, diffLines } = await computeLineInformationWorker(oldValue, newValue, disableWordDiff, compareMethod, linesOffset, this.props.alwaysShowLines, shouldDeferWordDiff, this.props.disableWorker);
++        const { lineInformation, diffLines } = await computeLineInformationWorker(oldValue, newValue, disableWordDiff, compareMethod, linesOffset, this.props.alwaysShowLines, shouldDeferWordDiff(this.props), this.props.disableWorker);
+         const rawExtraLines = this.props.extraLinesSurroundingDiff ?? 3;
+         const extraLines = rawExtraLines < 0 ? 0 : Math.round(rawExtraLines);
+         const { lineBlocks, blocks } = computeHiddenBlocks(lineInformation, diffLines, extraLines);
+@@ -874,7 +903,8 @@ class DiffViewer extends React.Component {
+             prevProps.newValue !== this.props.newValue ||
+             prevProps.compareMethod !== this.props.compareMethod ||
+             prevProps.disableWordDiff !== this.props.disableWordDiff ||
+-            prevProps.linesOffset !== this.props.linesOffset) {
++            prevProps.linesOffset !== this.props.linesOffset ||
++            prevProps.disableWorker !== this.props.disableWorker) {
+             // Clear word diff cache when diff changes
+             this.wordDiffCache.clear();
+             // Reset scroll position to top
+@@ -882,6 +912,10 @@ class DiffViewer extends React.Component {
+             if (container) {
+                 container.scrollTop = 0;
+             }
++            if (this.props.disableWorker) {
++                if (this.props.infiniteLoading) requestAnimationFrame(() => this.recalculateOffsets());
++                return;
++            }
+             this.setState((prev) => ({
+                 ...prev,
+                 isLoading: true,
+@@ -892,11 +926,15 @@ class DiffViewer extends React.Component {
+         }
+     }
+     componentDidMount() {
+-        this.setState((prev) => ({
+-            ...prev,
+-            isLoading: true
+-        }));
+-        this.memoisedCompute();
++        if (!this.props.disableWorker) {
++            this.setState((prev) => ({
++                ...prev,
++                isLoading: true
++            }));
++            this.memoisedCompute();
++        } else if (this.props.infiniteLoading) {
++            requestAnimationFrame(() => this.recalculateOffsets());
++        }
+         // Set up ResizeObserver for recalculating offsets on container resize
+         if (typeof ResizeObserver !== 'undefined' && this.props.infiniteLoading) {
+             this.resizeObserver = new ResizeObserver(() => {
+@@ -914,7 +952,7 @@ class DiffViewer extends React.Component {
+             clearTimeout(this.scrollDebounceTimer);
+         }
+     }
+-    render = () => {
++    renderWithStyles = (emotion) => {
+         const { oldValue, newValue, useDarkTheme, leftTitle, rightTitle, splitView, compareMethod, hideLineNumbers, nonce, } = this.props;
+         if (typeof compareMethod === "string" &&
+             compareMethod !== DiffMethod.JSON) {
+@@ -922,7 +960,7 @@ class DiffViewer extends React.Component {
+                 throw Error('"oldValue" and "newValue" should be strings');
+             }
+         }
+-        this.styles = this.computeStyles(this.props.styles ?? {}, useDarkTheme ?? false, nonce ?? "");
++        this.styles = this.computeStyles(this.props.styles ?? {}, useDarkTheme ?? false, nonce ?? "", emotion);
+         const nodes = this.renderDiff();
+         let colSpanOnSplitView = 3;
+         let colSpanOnInlineView = 4;
+diff --git a/lib/esm/src/styles.js b/lib/esm/src/styles.js
+index 0a443406bbe541409783f4a5051b8d6d56cce292..2b812f90f0ecc2e5924a083d343c87d73da74c95 100644
+--- a/lib/esm/src/styles.js
++++ b/lib/esm/src/styles.js
+@@ -1,5 +1,5 @@
+ import createEmotion from "@emotion/css/create-instance";
+-export default (styleOverride, useDarkTheme = false, nonce = "") => {
++export default (styleOverride, useDarkTheme = false, nonce = "", emotion) => {
+     const { variables: overrideVariables = {}, ...styles } = styleOverride;
+     const themeVariables = {
+         light: {
+@@ -64,7 +64,7 @@ export default (styleOverride, useDarkTheme = false, nonce = "") => {
+         },
+     };
+     const variables = useDarkTheme ? themeVariables.dark : themeVariables.light;
+-    const { css, cx } = createEmotion({ key: "react-diff", nonce });
++    const { css, cx } = emotion ?? createEmotion({ key: "react-diff", nonce });
+     const content = css({
+         width: "auto",
+         overflow: "hidden",
+@@ -268,7 +268,7 @@ export default (styleOverride, useDarkTheme = false, nonce = "") => {
+         alignItems: "center",
+         userSelect: "none",
+         fontWeight: 700,
+-        cursor: "pointer",
++        cursor: "default",
+         label: "code-fold",
+         "&:hover": {
+             color: variables.diffViewerColor,

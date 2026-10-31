@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'jg-personal-react-ui/styles.css';
+@import 'jg-react-router/styles.css';
 @import 'jg-personal-react-ui/system-theme-fallback.css';
 
 @layer base {
@@ -9,16 +10,16 @@
     color: var(--jg-foreground);
     font-family: var(--jg-font-sans);
   }
-  main {
+  .gallery-home {
     max-width: 64rem;
     margin-inline: auto;
     padding: 3rem max(1rem, env(safe-area-inset-left)) max(2rem, env(safe-area-inset-bottom));
   }
-  header {
+  .gallery-home > header {
     max-width: 44rem;
     margin-bottom: 3rem;
   }
-  h1 {
+  .gallery-home > header h1 {
     font-size: clamp(2rem, 6vw, 3.5rem);
     font-weight: 650;
     line-height: 1.1;
@@ -30,11 +31,11 @@
     font-weight: 650;
     margin-block: 0 0.5rem;
   }
-  section {
+  .gallery-home > section {
     padding-block: 1.5rem;
   }
-  section > p,
-  footer,
+  .gallery-home > section > p,
+  .gallery-home > footer,
   .intro {
     color: var(--jg-muted);
   }
@@ -66,9 +67,62 @@
     gap: 0.5rem;
     font-size: 0.875rem;
   }
-  footer {
+  .gallery-home > footer {
     font-family: var(--jg-font-mono);
     font-size: 0.75rem;
     margin-top: 2rem;
   }
+}
+
+/* standalone gallery routes have no surrounding app chrome to own their safe-area padding. */
+@layer utilities {
+  [data-slot='page-shell'] {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    padding-left: max(var(--spacing-page-gutter), env(safe-area-inset-left));
+    padding-right: max(var(--spacing-page-gutter), env(safe-area-inset-right));
+    @variant sm {
+      padding-top: max(2rem, env(safe-area-inset-top));
+      padding-bottom: max(2rem, env(safe-area-inset-bottom));
+    }
+  }
+}
+
+/* this fixture owns an independent theme for the generic component contract. */
+.generic-ui-theme {
+  --jg-ui-font-sans: system-ui, sans-serif;
+  --jg-ui-font-mono: ui-monospace, monospace;
+  --jg-ui-shadow-surface: none;
+  --radius: 0.5rem;
+  --syntax-foreground: var(--foreground);
+  --syntax-token-keyword: var(--foreground);
+  --syntax-token-string: var(--foreground);
+  --syntax-token-string-expression: var(--foreground);
+  --syntax-token-comment: var(--foreground);
+  --syntax-token-function: var(--foreground);
+  --syntax-token-constant: var(--foreground);
+  --syntax-token-parameter: var(--foreground);
+  --syntax-token-punctuation: var(--foreground);
+  --syntax-token-link: var(--foreground);
+  --background: #f5f7ff;
+  --foreground: #172554;
+  --secondary: #e0e7ff;
+  --secondary-foreground: #1e3a8a;
+  --chart-1: #166534;
+  --destructive: #9f1239;
+  --border: #64748b;
+  --font-sans: system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+.dark .generic-ui-theme {
+  --background: #172554;
+  --foreground: #f5f7ff;
+  --secondary: #1e3a8a;
+  --secondary-foreground: #e0e7ff;
+  --chart-1: #86efac;
+  --destructive: #fda4af;
+  --border: #94a3b8;
 }

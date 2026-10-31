@@ -82,7 +82,7 @@ describe('toSignalExitCode', () => {
   });
 });
 
-describe('formatDuration', () => {
+describe('formatDuration', { tags: ['full'] }, () => {
   test.each([
     [0, '0s'],
     [12_400, '12s'],

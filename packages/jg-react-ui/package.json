@@ -1,6 +1,6 @@
 {
   "name": "jg-react-ui",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Consumer-themed React components with Moldea-derived APIs, explicit styling contracts, and reusable application behavior.",
   "author": "Jesus Graterol",
   "license": "MIT",
@@ -41,6 +41,154 @@
     "./components/alert": {
       "types": "./dist/components/alert/index.d.ts",
       "default": "./dist/components/alert/index.js"
+    },
+    "./components/error-feedback-provider": {
+      "types": "./dist/components/error-feedback-provider/index.d.ts",
+      "default": "./dist/components/error-feedback-provider/index.js"
+    },
+    "./components/ui-preferences-provider": {
+      "types": "./dist/components/ui-preferences-provider/index.d.ts",
+      "default": "./dist/components/ui-preferences-provider/index.js"
+    },
+    "./components/theme-provider": {
+      "types": "./dist/components/theme-provider/index.d.ts",
+      "default": "./dist/components/theme-provider/index.js"
+    },
+    "./components/toastr": {
+      "types": "./dist/components/toastr/index.d.ts",
+      "default": "./dist/components/toastr/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "default": "./dist/errors/index.js"
+    },
+    "./components/divider": {
+      "types": "./dist/components/divider/index.d.ts",
+      "default": "./dist/components/divider/index.js"
+    },
+    "./components/empty-state": {
+      "types": "./dist/components/empty-state/index.d.ts",
+      "default": "./dist/components/empty-state/index.js"
+    },
+    "./components/progress": {
+      "types": "./dist/components/progress/index.d.ts",
+      "default": "./dist/components/progress/index.js"
+    },
+    "./components/spinner": {
+      "types": "./dist/components/spinner/index.d.ts",
+      "default": "./dist/components/spinner/index.js"
+    },
+    "./components/text-link": {
+      "types": "./dist/components/text-link/index.d.ts",
+      "default": "./dist/components/text-link/index.js"
+    },
+    "./components/inline-code": {
+      "types": "./dist/components/inline-code/index.d.ts",
+      "default": "./dist/components/inline-code/index.js"
+    },
+    "./components/copy-button": {
+      "types": "./dist/components/copy-button/index.d.ts",
+      "default": "./dist/components/copy-button/index.js"
+    },
+    "./components/form": {
+      "types": "./dist/components/form/index.d.ts",
+      "default": "./dist/components/form/index.js"
+    },
+    "./components/tabs": {
+      "types": "./dist/components/tabs/index.d.ts",
+      "default": "./dist/components/tabs/index.js"
+    },
+    "./components/dropdown-menu": {
+      "types": "./dist/components/dropdown-menu/index.d.ts",
+      "default": "./dist/components/dropdown-menu/index.js"
+    },
+    "./components/tooltip": {
+      "types": "./dist/components/tooltip/index.d.ts",
+      "default": "./dist/components/tooltip/index.js"
+    },
+    "./components/typography": {
+      "types": "./dist/components/typography/index.d.ts",
+      "default": "./dist/components/typography/index.js"
+    },
+    "./components/dialog": {
+      "types": "./dist/components/dialog/index.d.ts",
+      "default": "./dist/components/dialog/index.js"
+    },
+    "./components/drawer": {
+      "types": "./dist/components/drawer/index.d.ts",
+      "default": "./dist/components/drawer/index.js"
+    },
+    "./components/alert-dialog": {
+      "types": "./dist/components/alert-dialog/index.d.ts",
+      "default": "./dist/components/alert-dialog/index.js"
+    },
+    "./components/confirmation-dialog": {
+      "types": "./dist/components/confirmation-dialog/index.d.ts",
+      "default": "./dist/components/confirmation-dialog/index.js"
+    },
+    "./components/dialog-navigation": {
+      "types": "./dist/components/dialog-navigation/index.d.ts",
+      "default": "./dist/components/dialog-navigation/index.js"
+    },
+    "./components/layout": {
+      "types": "./dist/components/layout/index.d.ts",
+      "default": "./dist/components/layout/index.js"
+    },
+    "./components/global-error-boundary": {
+      "types": "./dist/components/global-error-boundary/index.d.ts",
+      "default": "./dist/components/global-error-boundary/index.js"
+    },
+    "./components/router-root": {
+      "types": "./dist/components/router-root/index.d.ts",
+      "default": "./dist/components/router-root/index.js"
+    },
+    "./components/lazy-route-progress": {
+      "types": "./dist/components/lazy-route-progress/index.d.ts",
+      "default": "./dist/components/lazy-route-progress/index.js"
+    },
+    "./components/load-more-button": {
+      "types": "./dist/components/load-more-button/index.d.ts",
+      "default": "./dist/components/load-more-button/index.js"
+    },
+    "./components/query-boundary": {
+      "types": "./dist/components/query-boundary/index.d.ts",
+      "default": "./dist/components/query-boundary/index.js"
+    },
+    "./components/query-error-alert": {
+      "types": "./dist/components/query-error-alert/index.d.ts",
+      "default": "./dist/components/query-error-alert/index.js"
+    },
+    "./components/query-loader": {
+      "types": "./dist/components/query-loader/index.d.ts",
+      "default": "./dist/components/query-loader/index.js"
+    },
+    "./components/file-upload": {
+      "types": "./dist/components/file-upload/index.d.ts",
+      "default": "./dist/components/file-upload/index.js"
+    },
+    "./components/audio-input": {
+      "types": "./dist/components/audio-input/index.d.ts",
+      "default": "./dist/components/audio-input/index.js"
+    },
+    "./components/markdown": {
+      "types": "./dist/components/markdown/index.d.ts",
+      "default": "./dist/components/markdown/index.js"
+    },
+    "./components/code-preferences-controls": {
+      "types": "./dist/components/code-preferences-controls/index.d.ts",
+      "default": "./dist/components/code-preferences-controls/index.js"
+    },
+    "./components/youtube-video": {
+      "types": "./dist/components/youtube-video/index.d.ts",
+      "default": "./dist/components/youtube-video/index.js"
+    },
+    "./components/markdown-editor": {
+      "types": "./dist/components/markdown-editor/index.d.ts",
+      "default": "./dist/components/markdown-editor/index.js"
+    },
+    "./components/code-diff": {
+      "types": "./dist/components/code-diff/index.d.ts",
+      "default": "./dist/components/code-diff/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -49,7 +197,9 @@
     "dist",
     "CHANGELOG.md",
     "API.md",
-    "RECIPES.md"
+    "RECIPES.md",
+    "errors",
+    "THIRD-PARTY-NOTICES.md"
   ],
   "sideEffects": [
     "**/*.css"
@@ -70,45 +220,92 @@
     "url": "https://github.com/jesusgraterol/jg-packages/issues"
   },
   "scripts": {
-    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node ../../internal/build-tools/src/copy-assets.ts 'styles/*.css' && node ../../internal/api-reference/src/write-api-markdown.ts",
+    "build": "node ../../internal/build-tools/src/clean-dist.ts && tsc -p tsconfig.build.json && node build/build.ts && node ../../internal/build-tools/src/copy-assets.ts 'styles/*.css' && node ../../internal/api-reference/src/write-api-markdown.ts",
     "lint": "eslint .",
-    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json",
-    "test": "pnpm test:unit && pnpm test:browser",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json && tsc -p build/tsconfig.json",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:browser",
     "test:unit": "vitest run --project unit",
     "test:browser": "vitest run --project browser",
-    "test:coverage": "vitest run --coverage --project unit --project \"browser (chromium)\""
+    "test:coverage": "vitest run --coverage --project unit --project integration --project \"browser (chromium)\"",
+    "build:viewer": "node build/build.ts",
+    "test:integration": "vitest run --project integration"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
     "class-variance-authority": "^0.7.1",
     "cnfast": "^0.0.8",
+    "jg-exception": "workspace:^",
+    "jg-react": "workspace:^",
+    "jg-storage": "workspace:^",
     "jg-utilities": "workspace:^",
-    "zod": "^4.3.6"
+    "lucide-react": "^1.8.0",
+    "sonner": "^2.0.7",
+    "tw-animate-css": "^1.4.0",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.14",
+    "jg-react-router": "workspace:^",
+    "jg-sw": "workspace:^",
+    "jg-tanstack-query": "workspace:^",
+    "@hookform/resolvers": "^5.2.2",
+    "react-hook-form": "^7.75.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "react-syntax-highlighter": "^16.1.1",
+    "@milkdown/crepe": "^7.22.3",
+    "@milkdown/kit": "^7.22.3",
+    "@milkdown/react": "^7.22.3",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/view": "^6.43.15",
+    "@lezer/highlight": "^1.2.5",
+    "react-diff-viewer-continued": "^4.2.2"
   },
   "peerDependencies": {
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "react-router": "^7.14.2"
   },
   "devDependencies": {
+    "@base-ui/react": "1.6.0",
     "@jg-packages/eslint-config": "workspace:*",
     "@jg-packages/tsconfig": "workspace:*",
     "@jg-packages/vitest-config": "workspace:*",
-    "@types/node": "catalog:",
-    "@vitest/coverage-v8": "catalog:",
-    "eslint": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:",
     "@testing-library/dom": "catalog:",
     "@testing-library/react": "catalog:",
+    "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "tailwindcss": "catalog:",
-    "@base-ui/react": "1.6.0",
+    "@vitest/coverage-v8": "catalog:",
     "class-variance-authority": "0.7.1",
     "cnfast": "0.0.8",
-    "zod": "4.3.6"
+    "eslint": "catalog:",
+    "lucide-react": "1.8.0",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "sonner": "2.0.7",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "zod": "4.3.6",
+    "zustand": "5.0.14",
+    "tw-animate-css": "1.4.0",
+    "react-router": "7.14.2",
+    "@tanstack/react-query": "5.100.14",
+    "@tanstack/react-query-persist-client": "5.100.14",
+    "@hookform/resolvers": "5.2.2",
+    "react-hook-form": "7.75.0",
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1",
+    "react-syntax-highlighter": "16.1.1",
+    "@types/react-syntax-highlighter": "15.5.13",
+    "@milkdown/crepe": "7.22.3",
+    "@milkdown/kit": "7.22.3",
+    "@milkdown/react": "7.22.3",
+    "@codemirror/language": "6.13.1",
+    "@codemirror/view": "6.43.15",
+    "@lezer/highlight": "1.2.5",
+    "react-diff-viewer-continued": "4.2.2",
+    "esbuild": "0.28.0",
+    "diff": "9.0.0"
   }
 }
