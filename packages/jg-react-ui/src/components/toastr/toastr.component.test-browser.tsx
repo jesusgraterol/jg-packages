@@ -19,85 +19,95 @@ afterEach(() => {
   localStorage.removeItem(getUiPreferencesStorageKey(storageId));
 });
 
-test('custom toast props merge with the theme, icon, class, and portal defaults', async () => {
-  const view = render(
-    <UiPreferencesProvider
-      mode="read-only"
-      initialPreferences={{ ...DEFAULT_UI_PREFERENCES, theme: 'dark' }}
-    >
-      <ThemeProvider disableTransitionOnChange={false}>
-        <Toastr
-          closeButton
-          className="consumer-host"
-          style={{ color: 'rgb(1, 2, 3)', zIndex: 1 }}
-          icons={{ success: <span>Custom success icon</span> }}
-          toastOptions={{
-            duration: Infinity,
-            classNames: { title: 'consumer-title' },
-            style: { borderInlineStartColor: 'rgb(4, 5, 6)' },
-          }}
-        />
-      </ThemeProvider>
-    </UiPreferencesProvider>,
-  );
-  act(() => {
-    toastr.success('Saved notification', { description: 'The latest snapshot is saved.' });
-  });
-  await expect.element(page.getByText('Saved notification', { exact: true })).toBeVisible();
-  expect(screen.getByText('Custom success icon')).toBeVisible();
-  expect(screen.getByText('Saved notification')).toHaveClass('consumer-title');
-  const host = screen.getByRole('region', { name: /Notifications/u }).querySelector('ol');
-  expect(host).toHaveAttribute('data-sonner-theme', 'dark');
-  expect(host).toHaveClass('consumer-host');
-  expect(host?.style.zIndex).toBe('2147483647');
-  const portal = document.querySelector('[data-slot="toastr-portal"]');
-  expect(portal?.parentElement).toBe(document.body);
-  expect(view.container.querySelector('[data-slot="toastr-portal"]')).toBeNull();
-  expect(portal).toHaveStyle({ pointerEvents: 'none', position: 'fixed' });
-  expect(screen.getByText('Saved notification').closest('li')).toHaveStyle({
-    borderInlineStartColor: 'rgb(4, 5, 6)',
-  });
-  view.unmount();
-  expect(document.querySelector('[data-slot="toastr-portal"]')).toBeNull();
-});
-
-test('every built-in status icon renders and follows the current theme', async () => {
-  const view = render(
-    <UiPreferencesProvider
-      mode="read-only"
-      initialPreferences={{ ...DEFAULT_UI_PREFERENCES, theme: 'light' }}
-    >
-      <ThemeProvider disableTransitionOnChange={false}>
-        <Toastr toastOptions={{ duration: Infinity }} />
-      </ThemeProvider>
-    </UiPreferencesProvider>,
-  );
-  for (const type of ['success', 'info', 'warning', 'error', 'loading'] as const) {
+test(
+  'custom toast props merge with the theme, icon, class, and portal defaults',
+  { tags: ['full'] },
+  async () => {
+    const view = render(
+      <UiPreferencesProvider
+        mode="read-only"
+        initialPreferences={{ ...DEFAULT_UI_PREFERENCES, theme: 'dark' }}
+      >
+        <ThemeProvider disableTransitionOnChange={false}>
+          <Toastr
+            closeButton
+            className="consumer-host"
+            style={{ color: 'rgb(1, 2, 3)', zIndex: 1 }}
+            icons={{ success: <span>Custom success icon</span> }}
+            toastOptions={{
+              duration: Infinity,
+              classNames: { title: 'consumer-title' },
+              style: { borderInlineStartColor: 'rgb(4, 5, 6)' },
+            }}
+          />
+        </ThemeProvider>
+      </UiPreferencesProvider>,
+    );
     act(() => {
-      toastr[type]('Status ' + type, { id: type });
+      toastr.success('Saved notification', { description: 'The latest snapshot is saved.' });
     });
-    await expect.element(page.getByText('Status ' + type, { exact: true })).toBeInTheDocument();
-    expect(
-      screen
-        .getByText('Status ' + type)
-        .closest('li')
-        ?.querySelector('[data-slot="icon-tile"] svg'),
-    ).not.toBeNull();
-  }
-  view.rerender(
-    <UiPreferencesProvider
-      mode="read-only"
-      initialPreferences={{ ...DEFAULT_UI_PREFERENCES, theme: 'dark' }}
-    >
-      <ThemeProvider disableTransitionOnChange={false}>
-        <Toastr toastOptions={{ duration: Infinity }} />
-      </ThemeProvider>
-    </UiPreferencesProvider>,
-  );
-  await expect
-    .poll(() => document.querySelector('[data-sonner-toaster]')?.getAttribute('data-sonner-theme'))
-    .toBe('dark');
-});
+    await expect.element(page.getByText('Saved notification', { exact: true })).toBeVisible();
+    expect(screen.getByText('Custom success icon')).toBeVisible();
+    expect(screen.getByText('Saved notification')).toHaveClass('consumer-title');
+    const host = screen.getByRole('region', { name: /Notifications/u }).querySelector('ol');
+    expect(host).toHaveAttribute('data-sonner-theme', 'dark');
+    expect(host).toHaveClass('consumer-host');
+    expect(host?.style.zIndex).toBe('2147483647');
+    const portal = document.querySelector('[data-slot="toastr-portal"]');
+    expect(portal?.parentElement).toBe(document.body);
+    expect(view.container.querySelector('[data-slot="toastr-portal"]')).toBeNull();
+    expect(portal).toHaveStyle({ pointerEvents: 'none', position: 'fixed' });
+    expect(screen.getByText('Saved notification').closest('li')).toHaveStyle({
+      borderInlineStartColor: 'rgb(4, 5, 6)',
+    });
+    view.unmount();
+    expect(document.querySelector('[data-slot="toastr-portal"]')).toBeNull();
+  },
+);
+
+test(
+  'every built-in status icon renders and follows the current theme',
+  { tags: ['full'] },
+  async () => {
+    const view = render(
+      <UiPreferencesProvider
+        mode="read-only"
+        initialPreferences={{ ...DEFAULT_UI_PREFERENCES, theme: 'light' }}
+      >
+        <ThemeProvider disableTransitionOnChange={false}>
+          <Toastr toastOptions={{ duration: Infinity }} />
+        </ThemeProvider>
+      </UiPreferencesProvider>,
+    );
+    for (const type of ['success', 'info', 'warning', 'error', 'loading'] as const) {
+      act(() => {
+        toastr[type]('Status ' + type, { id: type });
+      });
+      await expect.element(page.getByText('Status ' + type, { exact: true })).toBeInTheDocument();
+      expect(
+        screen
+          .getByText('Status ' + type)
+          .closest('li')
+          ?.querySelector('[data-slot="icon-tile"] svg'),
+      ).not.toBeNull();
+    }
+    view.rerender(
+      <UiPreferencesProvider
+        mode="read-only"
+        initialPreferences={{ ...DEFAULT_UI_PREFERENCES, theme: 'dark' }}
+      >
+        <ThemeProvider disableTransitionOnChange={false}>
+          <Toastr toastOptions={{ duration: Infinity }} />
+        </ThemeProvider>
+      </UiPreferencesProvider>,
+    );
+    await expect
+      .poll(() =>
+        document.querySelector('[data-sonner-toaster]')?.getAttribute('data-sonner-theme'),
+      )
+      .toBe('dark');
+  },
+);
 
 test('hydration starts from the server snapshot before applying stored preferences and the toast portal', async () => {
   const ThemeState = () => {

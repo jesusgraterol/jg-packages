@@ -55,7 +55,7 @@ describe('createFileUploadPolicyDescription', () => {
       }),
       'Add up to 4 files in image, PDF, or CSV format. Each file can be up to 1.00 kB.',
     ],
-  ])('formats normalized policy %o', (policy, expectedDescription) => {
+  ])('formats normalized policy %o', { tags: ['full'] }, (policy, expectedDescription) => {
     expect(createFileUploadPolicyDescription(policy)).toBe(expectedDescription);
   });
 });

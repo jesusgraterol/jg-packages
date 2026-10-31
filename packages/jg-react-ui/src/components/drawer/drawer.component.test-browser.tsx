@@ -208,110 +208,126 @@ describe('Drawer', () => {
     expect(change).not.toHaveBeenCalled();
   });
 
-  test('renders centralized left-side geometry with fixed and scrolling regions', () => {
-    const handleOpenChange = vi.fn<(open: boolean) => void>();
+  test(
+    'renders centralized left-side geometry with fixed and scrolling regions',
+    { tags: ['full'] },
+    () => {
+      const handleOpenChange = vi.fn<(open: boolean) => void>();
 
-    act(() => {
-      root.render(
-        <Drawer
-          open
-          side="left"
-          onOpenChange={handleOpenChange}
-        >
-          <DrawerContent
-            closeButtonIcon={<PanelRightClose />}
-            size="small"
+      act(() => {
+        root.render(
+          <Drawer
+            open
+            side="left"
+            onOpenChange={handleOpenChange}
           >
-            <DrawerHeader>
-              <DrawerTitle>Navigation</DrawerTitle>
-            </DrawerHeader>
-            <DrawerBody>Drawer links</DrawerBody>
-            <DrawerFooter>Account actions</DrawerFooter>
-          </DrawerContent>
-        </Drawer>,
+            <DrawerContent
+              closeButtonIcon={<PanelRightClose />}
+              size="small"
+            >
+              <DrawerHeader>
+                <DrawerTitle>Navigation</DrawerTitle>
+              </DrawerHeader>
+              <DrawerBody>Drawer links</DrawerBody>
+              <DrawerFooter>Account actions</DrawerFooter>
+            </DrawerContent>
+          </Drawer>,
+        );
+      });
+
+      const drawerContent = document.body.querySelector<HTMLElement>(
+        '[data-slot="drawer-content"]',
       );
-    });
+      const drawerHeader = document.body.querySelector<HTMLElement>('[data-slot="drawer-header"]');
+      const drawerBody = document.body.querySelector<HTMLElement>('[data-slot="drawer-body"]');
+      const drawerFooter = document.body.querySelector<HTMLElement>('[data-slot="drawer-footer"]');
+      const drawerOverlay = document.body.querySelector<HTMLElement>(
+        '[data-slot="drawer-overlay"]',
+      );
+      const closeButton = document.body.querySelector<HTMLButtonElement>(
+        '[aria-label="Close drawer"]',
+      );
 
-    const drawerContent = document.body.querySelector<HTMLElement>('[data-slot="drawer-content"]');
-    const drawerHeader = document.body.querySelector<HTMLElement>('[data-slot="drawer-header"]');
-    const drawerBody = document.body.querySelector<HTMLElement>('[data-slot="drawer-body"]');
-    const drawerFooter = document.body.querySelector<HTMLElement>('[data-slot="drawer-footer"]');
-    const drawerOverlay = document.body.querySelector<HTMLElement>('[data-slot="drawer-overlay"]');
-    const closeButton = document.body.querySelector<HTMLButtonElement>(
-      '[aria-label="Close drawer"]',
-    );
+      expect(drawerContent?.dataset['side']).toBe('left');
+      expect(drawerContent?.dataset['density']).toBe('comfortable');
+      expect(drawerContent?.className).toContain('max-w-64');
+      expect(drawerContent?.className).toContain(
+        'data-starting-style:[transform:translateX(-100%)]',
+      );
+      expect(drawerContent?.className).toContain('motion-reduce:transition-none');
+      expect(drawerBody?.className).toContain('overflow-y-auto');
+      expect(drawerBody?.className).toContain('pt-4');
+      expect(drawerHeader?.className).toContain('border-b');
+      expect(drawerFooter?.className).toContain('border-t');
+      expect(drawerFooter?.parentElement).toBe(drawerBody?.parentElement);
+      expect(closeButton?.className).toContain('size-11');
+      expect(closeButton?.className).toContain('sm:pointer-fine:size-8');
+      expect(closeButton?.className).not.toContain('-translate-y-1/2');
+      expect(closeButton?.className).toContain(
+        'not-disabled:not-aria-disabled:active:not-aria-[haspopup]:translate-y-0',
+      );
+      expect(closeButton?.className).toContain('top-[max(1rem,env(safe-area-inset-top))]');
+      expect(closeButton?.querySelector('.lucide-panel-right-close')).not.toBeNull();
+      const closeVisual = closeButton?.querySelector<HTMLElement>(
+        '[data-slot="drawer-close-visual"]',
+      );
 
-    expect(drawerContent?.dataset['side']).toBe('left');
-    expect(drawerContent?.dataset['density']).toBe('comfortable');
-    expect(drawerContent?.className).toContain('max-w-64');
-    expect(drawerContent?.className).toContain('data-starting-style:[transform:translateX(-100%)]');
-    expect(drawerContent?.className).toContain('motion-reduce:transition-none');
-    expect(drawerBody?.className).toContain('overflow-y-auto');
-    expect(drawerBody?.className).toContain('pt-4');
-    expect(drawerHeader?.className).toContain('border-b');
-    expect(drawerFooter?.className).toContain('border-t');
-    expect(drawerFooter?.parentElement).toBe(drawerBody?.parentElement);
-    expect(closeButton?.className).toContain('size-11');
-    expect(closeButton?.className).toContain('sm:pointer-fine:size-8');
-    expect(closeButton?.className).not.toContain('-translate-y-1/2');
-    expect(closeButton?.className).toContain(
-      'not-disabled:not-aria-disabled:active:not-aria-[haspopup]:translate-y-0',
-    );
-    expect(closeButton?.className).toContain('top-[max(1rem,env(safe-area-inset-top))]');
-    expect(closeButton?.querySelector('.lucide-panel-right-close')).not.toBeNull();
-    const closeVisual = closeButton?.querySelector<HTMLElement>(
-      '[data-slot="drawer-close-visual"]',
-    );
+      expect(closeVisual?.className).toContain('size-full');
+      expect(closeVisual?.className).toContain('group-active/button:translate-y-px');
+      expect(closeVisual?.className).toContain('motion-reduce:group-active/button:translate-y-0');
+      expect(closeVisual?.className).toContain('[&_svg]:size-4!');
+      expect(drawerOverlay?.className).toContain('transition-opacity');
+      expect(drawerOverlay?.className).toContain('data-ending-style:opacity-0');
+      expect(drawerOverlay?.className).toContain('motion-reduce:transition-none');
+      expect(drawerOverlay?.className).not.toContain('data-closed:animate-out');
 
-    expect(closeVisual?.className).toContain('size-full');
-    expect(closeVisual?.className).toContain('group-active/button:translate-y-px');
-    expect(closeVisual?.className).toContain('motion-reduce:group-active/button:translate-y-0');
-    expect(closeVisual?.className).toContain('[&_svg]:size-4!');
-    expect(drawerOverlay?.className).toContain('transition-opacity');
-    expect(drawerOverlay?.className).toContain('data-ending-style:opacity-0');
-    expect(drawerOverlay?.className).toContain('motion-reduce:transition-none');
-    expect(drawerOverlay?.className).not.toContain('data-closed:animate-out');
+      act(() => closeButton?.click());
 
-    act(() => closeButton?.click());
+      expect(handleOpenChange).toHaveBeenCalledWith(false);
+    },
+  );
 
-    expect(handleOpenChange).toHaveBeenCalledWith(false);
-  });
-
-  test('coordinates compact spacing across the fixed header and scrolling body', () => {
-    act(() => {
-      root.render(
-        <Drawer
-          open
-          side="right"
-        >
-          <DrawerContent
-            density="compact"
-            size="small"
+  test(
+    'coordinates compact spacing across the fixed header and scrolling body',
+    { tags: ['full'] },
+    () => {
+      act(() => {
+        root.render(
+          <Drawer
+            open
+            side="right"
           >
-            <DrawerHeader>
-              <DrawerTitle>Documentation</DrawerTitle>
-            </DrawerHeader>
-            <DrawerBody>Drawer links</DrawerBody>
-          </DrawerContent>
-        </Drawer>,
+            <DrawerContent
+              density="compact"
+              size="small"
+            >
+              <DrawerHeader>
+                <DrawerTitle>Documentation</DrawerTitle>
+              </DrawerHeader>
+              <DrawerBody>Drawer links</DrawerBody>
+            </DrawerContent>
+          </Drawer>,
+        );
+      });
+
+      const drawerContent = document.body.querySelector<HTMLElement>(
+        '[data-slot="drawer-content"]',
       );
-    });
+      const drawerHeader = document.body.querySelector<HTMLElement>('[data-slot="drawer-header"]');
+      const drawerBody = document.body.querySelector<HTMLElement>('[data-slot="drawer-body"]');
 
-    const drawerContent = document.body.querySelector<HTMLElement>('[data-slot="drawer-content"]');
-    const drawerHeader = document.body.querySelector<HTMLElement>('[data-slot="drawer-header"]');
-    const drawerBody = document.body.querySelector<HTMLElement>('[data-slot="drawer-body"]');
-
-    expect(drawerContent?.dataset['density']).toBe('compact');
-    expect(drawerContent?.dataset['side']).toBe('right');
-    expect(drawerHeader?.className).toContain('pb-2');
-    expect(drawerHeader?.className).not.toContain('border-b');
-    expect(drawerHeader?.className).not.toContain('min-h-16');
-    expect(drawerBody?.className).toContain('pt-2');
-    expect(drawerBody?.className).not.toContain('pt-4');
-    expect(drawerContent?.querySelector('[data-slot="drawer-close-visual"]')?.className).toContain(
-      'size-full',
-    );
-  });
+      expect(drawerContent?.dataset['density']).toBe('compact');
+      expect(drawerContent?.dataset['side']).toBe('right');
+      expect(drawerHeader?.className).toContain('pb-2');
+      expect(drawerHeader?.className).not.toContain('border-b');
+      expect(drawerHeader?.className).not.toContain('min-h-16');
+      expect(drawerBody?.className).toContain('pt-2');
+      expect(drawerBody?.className).not.toContain('pt-4');
+      expect(
+        drawerContent?.querySelector('[data-slot="drawer-close-visual"]')?.className,
+      ).toContain('size-full');
+    },
+  );
 
   test('releases the desktop gutter adjustment when force-mounted content finishes closing', async () => {
     let completeAnimation: (() => void) | undefined;

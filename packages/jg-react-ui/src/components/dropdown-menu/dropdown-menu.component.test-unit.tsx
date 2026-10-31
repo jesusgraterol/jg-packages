@@ -38,7 +38,7 @@ test.each([
       <DropdownMenuSubTrigger asChild>Invalid</DropdownMenuSubTrigger>
     </DropdownMenuSub>,
   ],
-])('%s rejects malformed slotted content', (name, child) => {
+])('%s rejects malformed slotted content', { tags: ['full'] }, (name, child) => {
   expect(() => renderToStaticMarkup(<DropdownMenu>{child}</DropdownMenu>)).toThrow(
     `${name} asChild requires exactly one valid React element child.`,
   );

@@ -298,23 +298,27 @@ test('phone layout forces unified and explicit or read-only policies hide mutati
   expect(container.querySelector('[aria-label^="Code diff view:"]')).toBeNull();
 });
 
-test('a read-only dark diff preserves singular folds and stationary header metadata', () => {
-  const { container } = render(
-    <DiffSurface
-      oldValue={'one unchanged line\nold\nlast'}
-      newValue={'one unchanged line\nnew\nlast'}
-      extraLinesSurroundingDiff={0}
-      disableWordDiff
-      headerLabel="Agent changes"
-      mode="read-only"
-      theme="dark"
-    />,
-  );
-  expect(container.textContent).toContain('Show 1 unchanged line');
-  expect(container.textContent).toContain('Agent changes');
-  expect(container.querySelector('[aria-label^="Code diff view:"]')).toBeNull();
-  expect(document.documentElement.classList.contains('dark')).toBe(true);
-});
+test(
+  'a read-only dark diff preserves singular folds and stationary header metadata',
+  { tags: ['full'] },
+  () => {
+    const { container } = render(
+      <DiffSurface
+        oldValue={'one unchanged line\nold\nlast'}
+        newValue={'one unchanged line\nnew\nlast'}
+        extraLinesSurroundingDiff={0}
+        disableWordDiff
+        headerLabel="Agent changes"
+        mode="read-only"
+        theme="dark"
+      />,
+    );
+    expect(container.textContent).toContain('Show 1 unchanged line');
+    expect(container.textContent).toContain('Agent changes');
+    expect(container.querySelector('[aria-label^="Code diff view:"]')).toBeNull();
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+  },
+);
 
 test('visible blank lines keep a rendered line box when word comparison is disabled', () => {
   const { container } = render(

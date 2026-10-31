@@ -56,7 +56,7 @@ test.each([
     </RadioGroup>,
   ],
   ['Switch', <Switch asChild>Invalid</Switch>],
-])('%s rejects malformed slotted content', (name, element) => {
+])('%s rejects malformed slotted content', { tags: ['full'] }, (name, element) => {
   expect(() => renderToStaticMarkup(element)).toThrow(
     `${name} asChild requires exactly one valid React element child.`,
   );

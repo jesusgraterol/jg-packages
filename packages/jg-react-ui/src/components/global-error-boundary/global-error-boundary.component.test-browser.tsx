@@ -183,40 +183,44 @@ describe('GlobalErrorBoundary', () => {
     expect(serviceWorkerMock.updateApp).not.toHaveBeenCalled();
   });
 
-  test('keeps long diagnostic text shrinkable for narrow mobile viewports', () => {
-    const longCode = `ROUTE_${'A'.repeat(96)}_FAILED`;
+  test(
+    'keeps long diagnostic text shrinkable for narrow mobile viewports',
+    { tags: ['full'] },
+    () => {
+      const longCode = `ROUTE_${'A'.repeat(96)}_FAILED`;
 
-    act(() => {
-      root.render(
-        <GlobalErrorBoundaryView
-          error={{
-            code: longCode,
-            message: `A route failed with an unbroken diagnostic token ${longCode}.`,
-          }}
-          statusLabel={`Status ${longCode}`}
-        />,
+      act(() => {
+        root.render(
+          <GlobalErrorBoundaryView
+            error={{
+              code: longCode,
+              message: `A route failed with an unbroken diagnostic token ${longCode}.`,
+            }}
+            statusLabel={`Status ${longCode}`}
+          />,
+        );
+      });
+
+      const content = container.querySelector('[data-slot="global-error-boundary-content"]');
+      const status = container.querySelector('[data-slot="global-error-boundary-status"]');
+      const errorMessage = container.querySelector(
+        '[data-slot="global-error-boundary-error-message"]',
       );
-    });
+      const errorCode = container.querySelector('[data-slot="global-error-boundary-error-code"]');
+      const errorCodeValue = container.querySelector(
+        '[data-slot="global-error-boundary-error-code-value"]',
+      );
 
-    const content = container.querySelector('[data-slot="global-error-boundary-content"]');
-    const status = container.querySelector('[data-slot="global-error-boundary-status"]');
-    const errorMessage = container.querySelector(
-      '[data-slot="global-error-boundary-error-message"]',
-    );
-    const errorCode = container.querySelector('[data-slot="global-error-boundary-error-code"]');
-    const errorCodeValue = container.querySelector(
-      '[data-slot="global-error-boundary-error-code-value"]',
-    );
-
-    expect(content?.className).toContain('min-w-0');
-    expect(status?.className).toContain('min-w-0');
-    expect(errorMessage?.className).toContain('min-w-0');
-    expect(errorMessage?.className).toContain('break-words');
-    expect(errorCode?.className).toContain('min-w-0');
-    expect(errorCodeValue?.className).toContain('break-all');
-    expect(errorCodeValue?.textContent).toBe('Unknown');
-    expect(errorMessage?.textContent).not.toContain(longCode);
-  });
+      expect(content?.className).toContain('min-w-0');
+      expect(status?.className).toContain('min-w-0');
+      expect(errorMessage?.className).toContain('min-w-0');
+      expect(errorMessage?.className).toContain('break-words');
+      expect(errorCode?.className).toContain('min-w-0');
+      expect(errorCodeValue?.className).toContain('break-all');
+      expect(errorCodeValue?.textContent).toBe('Unknown');
+      expect(errorMessage?.textContent).not.toContain(longCode);
+    },
+  );
 
   test('shows refresh failures without diagnostic output', async () => {
     const handleRefreshClick = vi

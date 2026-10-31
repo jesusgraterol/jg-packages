@@ -20,7 +20,7 @@ const reactActEnvironment = globalThis as typeof globalThis & {
   IS_REACT_ACT_ENVIRONMENT?: boolean;
 };
 
-describe('page header layout', () => {
+describe('page header layout', { tags: ['full'] }, () => {
   let container: HTMLDivElement;
   let root: Root;
 

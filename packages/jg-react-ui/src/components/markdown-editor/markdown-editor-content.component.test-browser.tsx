@@ -981,33 +981,37 @@ describe('MarkdownEditorContent with real Milkdown initialization and block cont
     ['no insertion tools', { supportedTools: [] }, 'wide'],
     ['populated document', { value: 'Existing note' }, 'wide'],
     ['multiple empty paragraphs', {}, 'wide'],
-  ])('keeps the existing control visibility for %s', async (scenario, props, layout) => {
-    await renderEditor(props, layout);
-    const surface = await waitForEditor();
+  ])(
+    'keeps the existing control visibility for %s',
+    { tags: ['full'] },
+    async (scenario, props, layout) => {
+      await renderEditor(props, layout);
+      const surface = await waitForEditor();
 
-    if (scenario === 'multiple empty paragraphs') {
+      if (scenario === 'multiple empty paragraphs') {
+        await act(async () => {
+          editors[0]!.action(replaceAll('\n\n', true));
+          const view = editors[0]!.action((ctx) => ctx.get(editorViewCtx));
+          view.dispatch(view.state.tr.insert(0, view.state.schema.nodes['paragraph']!.create()));
+
+          await Promise.resolve();
+        });
+      }
+
       await act(async () => {
-        editors[0]!.action(replaceAll('\n\n', true));
-        const view = editors[0]!.action((ctx) => ctx.get(editorViewCtx));
-        view.dispatch(view.state.tr.insert(0, view.state.schema.nodes['paragraph']!.create()));
-
-        await Promise.resolve();
+        await vi.waitFor(() => {
+          expect(surface.dataset['emptyBlockHandle']).toBe('false');
+        });
       });
-    }
-
-    await act(async () => {
-      await vi.waitFor(() => {
-        expect(surface.dataset['emptyBlockHandle']).toBe('false');
-      });
-    });
-    expect(container.querySelector('[role="button"][aria-label="Insert block"]')).toBeNull();
-    const addControl = container.querySelector<HTMLElement>(
-      '.milkdown-block-handle > .operation-item:first-child',
-    );
-    if (addControl) {
-      expect(addControl.hasAttribute('aria-label')).toBe(false);
-      expect(addControl.hasAttribute('role')).toBe(false);
-      expect(addControl.hasAttribute('tabindex')).toBe(false);
-    }
-  });
+      expect(container.querySelector('[role="button"][aria-label="Insert block"]')).toBeNull();
+      const addControl = container.querySelector<HTMLElement>(
+        '.milkdown-block-handle > .operation-item:first-child',
+      );
+      if (addControl) {
+        expect(addControl.hasAttribute('aria-label')).toBe(false);
+        expect(addControl.hasAttribute('role')).toBe(false);
+        expect(addControl.hasAttribute('tabindex')).toBe(false);
+      }
+    },
+  );
 });

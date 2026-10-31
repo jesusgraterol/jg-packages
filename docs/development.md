@@ -128,7 +128,9 @@ HTTP property permutations supplement the focused essential request cases and st
 | jg-playwright        | Protected field failures never disclose their value; fake microphone ownership/permission and teardown controls.                                                                                                                                              | Asset, overflow, axe and motion helper qualifications, plus additional engines.                       |
 | jg-utilities browser | Its owned download rules remain covered by essential unit cases.                                                                                                                                                                                              | The additional DOM/Blob-URL download qualification, in every engine.                                  |
 
-Assessed browser consumers set `essentialBrowser: 'chromium'`; default/full/focused runs retain Chromium, Firefox and WebKit. Unassessed consumers retain their existing engines, including the UI packages until their own assessment. Keep any distinct consequential engine-specific scenario essential on the engine it needs; a matrix is secondary only when it adds no distinct guarantee. Cross-engine regressions beyond the representative cases are exercised by explicitly requested full or complete affected-consumer checks.
+Assessed browser consumers set `essentialBrowser: 'chromium'`; default/full/focused runs retain Chromium, Firefox and WebKit. Unassessed consumers retain their existing engines. Keep any distinct consequential engine-specific scenario essential on the engine it needs; a matrix is secondary only when it adds no distinct guarantee. Cross-engine regressions beyond the representative cases are exercised by explicitly requested full or complete affected-consumer checks.
+
+The [React UI classification](personal-ui.md#essential-and-full-tests) retains native form/modal behavior, private state/error boundaries, bounded uploads and recording, safe draft/source handling and recovery in essential. Foundation asset safety and the installed-gallery selection boundary stay essential too. Static component/artwork permutations are full-only; the workspace gallery keeps four distinct compiled journeys while its installed release consumer always runs the complete three-engine qualification.
 
 Root `test` includes every applicable correctness category. Its browser task omits jg-utilities before browser startup because that category is entirely secondary; its complete granular browser command remains available. Root `test:full` includes the complete browser category too. `check:essential` composes the existing static/build gates, essential test selection and formatting. Current `check`/CI remain complete until final routing adoption. No coverage run is added to essential.
 
@@ -160,6 +162,8 @@ pnpm --filter <package> exec playwright test --repeat-each=3 --retries=0
 - `pnpm turbo run <task> --dry=json` prints the task graph without running anything.
 
 The test tasks declare `JG_TEST_SUITE` in their `env`, so the variable reaches them, and each suite has its own cache entries.
+
+Release-check integration and coverage tasks also hash the React gallery's Playwright configuration, owning manifest, and version catalog through `internal/release-checks/turbo.json`. They retain the inherited inputs and task dependencies. This keeps the copied-consumer guard current without invalidating unrelated packages' test caches.
 
 A task's inputs are its package's tracked files plus the shared configuration it reads, such as `internal/tsconfig` for `build` and `typecheck`. When you change a shared configuration package, add it to the inputs of every task that reads it.
 

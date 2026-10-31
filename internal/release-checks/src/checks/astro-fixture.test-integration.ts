@@ -1,11 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 import { checkAstroFixture } from './astro-fixture.ts';
-import type { IRunAstroFixtureCommand } from './astro-fixture-command/index.ts';
+import {
+  runAstroFixtureCommand,
+  type IRunAstroFixtureCommand,
+} from './astro-fixture-command/index.ts';
 import type { ICommandResult, IPackageManifest, IRunCommand } from '../shared/types.ts';
 import type { IPackedPackage } from './types.ts';
 
@@ -34,7 +38,115 @@ const PERSONAL_UI_DIRECTORY = resolve(
   import.meta.dirname,
   '../../../../packages/jg-personal-astro-ui',
 );
+const REACT_UI_DIRECTORY = resolve(
+  import.meta.dirname,
+  '../../../../packages/jg-personal-react-ui',
+);
 const COMMAND_SUCCESS = { exitCode: 0, signalCode: null, stdout: '', stderr: '', durationMs: 0 };
+
+type IListSuite = {
+  specs?: { title: string; tests: { projectName: string }[] }[];
+  suites?: IListSuite[];
+};
+type IListReport = {
+  config: { projects: { name: string }[] };
+  suites: IListSuite[];
+};
+
+/** Lists native collection identities without depending on runner output order. */
+const collectedCases = (suites: IListSuite[]): string[] =>
+  suites
+    .flatMap((suite) => [
+      ...(suite.specs ?? []).flatMap((spec) =>
+        spec.tests.map((test) => `${test.projectName}:${spec.title}`),
+      ),
+      ...collectedCases(suite.suites ?? []),
+    ])
+    .sort();
+
+/**
+ * Resolves the maintained configuration with only real public Playwright packages available.
+ * No workspace symlink or private helper can satisfy an accidental copied-config import.
+ * @returns Completion after the isolated files are removed, including on setup failure.
+ */
+const withPublicPlaywrightConsumer = async (
+  directory: string,
+  check: (root: string, cli: string) => Promise<void>,
+): Promise<void> => {
+  const root = await mkdtemp(join(tmpdir(), 'jg-ui-modes-'));
+  try {
+    const require = createRequire(join(directory, 'package.json'));
+    const testPackage = require.resolve('@playwright/test/package.json');
+    const playwrightPackage = createRequire(testPackage).resolve('playwright/package.json');
+    const corePackage = createRequire(playwrightPackage).resolve('playwright-core/package.json');
+    const excluded = new Set(['_archive', '_archives', '_backup', '_backups']);
+    for (const [name, manifest] of [
+      ['@playwright/test', testPackage],
+      ['playwright', playwrightPackage],
+      ['playwright-core', corePackage],
+    ] as const) {
+      await cp(dirname(manifest), join(root, 'node_modules', name), {
+        recursive: true,
+        filter: (source) => !excluded.has(basename(source)),
+      });
+    }
+    await writeFile(join(root, 'package.json'), '{"private":true,"type":"module"}');
+    await cp(join(directory, 'playwright.config.ts'), join(root, 'playwright.config.ts'));
+    await check(root, join(root, 'node_modules', '@playwright/test', 'cli.js'));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+};
+
+// eight cold CLI invocations and public-tool copying need a wider setup budget on Windows.
+test('the copied React configuration keeps complete native collection under every consumer suite', async () => {
+  await withPublicPlaywrightConsumer(REACT_UI_DIRECTORY, async (root, cli) => {
+    await mkdir(join(root, 'src', 'input-demo'), { recursive: true });
+    await writeFile(
+      join(root, 'src', 'input-demo', 'input-demo.component.test-e2e.tsx'),
+      `import { test } from '@playwright/test';
+test('required', () => {});
+test('secondary', { tag: '@full' }, () => {});
+`,
+    );
+    await writeFile(
+      join(root, 'src', 'gallery.component.test-e2e.tsx'),
+      `import { test } from '@playwright/test';
+if (process.env.JG_TEST_SUITE === 'essential' && process.env.JG_REACT_UI_GALLERY_ROOT === undefined) throw new Error('Secondary file imported');
+test('secondary file', { tag: '@full' }, () => {});
+`,
+    );
+    const signal = AbortSignal.timeout(45_000);
+    for (const consumer of [false, true]) {
+      for (const suite of [undefined, 'full', 'essential', 'invalid']) {
+        const env: NodeJS.ProcessEnv = { ...process.env, NODE_PATH: '' };
+        delete env['JG_TEST_SUITE'];
+        delete env['JG_REACT_UI_GALLERY_ROOT'];
+        if (suite !== undefined) env['JG_TEST_SUITE'] = suite;
+        if (consumer) env['JG_REACT_UI_GALLERY_ROOT'] = root;
+        const result = await runAstroFixtureCommand(
+          process.execPath,
+          [cli, 'test', '--list', '--reporter=json'],
+          { cwd: root, env, signal, timeoutSeconds: 15 },
+        );
+        if (suite === 'invalid') {
+          expect(result.exitCode).not.toBe(0);
+          expect(result.stderr).toContain('JG_TEST_SUITE must be "essential" or "full" when set.');
+          continue;
+        }
+        expect(result.exitCode, result.stderr).toBe(0);
+        const report = JSON.parse(result.stdout) as IListReport;
+        const essential = !consumer && suite === 'essential';
+        const engines = essential ? ['chromium'] : ['chromium', 'firefox', 'webkit'];
+        const titles = essential ? ['required'] : ['required', 'secondary', 'secondary file'];
+        expect(report.config.projects.map(({ name }) => name)).toStrictEqual(engines);
+        expect(collectedCases(report.suites)).toStrictEqual(
+          engines.flatMap((engine) => titles.map((title) => `${engine}:${title}`)).sort(),
+        );
+      }
+    }
+  });
+}, 60_000);
 
 // real gallery sources and configuration; only the installed-tool command boundary is replaced
 const personalGalleryPackages = async (): Promise<IPackedPackage[]> => {

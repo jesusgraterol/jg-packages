@@ -78,16 +78,20 @@ test('code menus preserve unchanged values and persist both source preferences',
   expect(persistPreferences.mock.calls.at(-1)?.[0]).toStrictEqual(DEFAULT_UI_PREFERENCES);
 });
 
-test('inline diff-only controls retain their compact presentation and omit wrapping', () => {
-  render(
-    <UiPreferencesProvider mode="local">
-      <CodePreferencesControls
-        canChangeCodeDiffView
-        isInline
-        prefersWrappedCode={false}
-      />
-    </UiPreferencesProvider>,
-  );
-  expect(screen.getByRole('button', { name: 'Code diff view: Split' })).not.toBeNull();
-  expect(screen.queryByRole('button', { name: /Line wrapping/ })).toBeNull();
-});
+test(
+  'inline diff-only controls retain their compact presentation and omit wrapping',
+  { tags: ['full'] },
+  () => {
+    render(
+      <UiPreferencesProvider mode="local">
+        <CodePreferencesControls
+          canChangeCodeDiffView
+          isInline
+          prefersWrappedCode={false}
+        />
+      </UiPreferencesProvider>,
+    );
+    expect(screen.getByRole('button', { name: 'Code diff view: Split' })).not.toBeNull();
+    expect(screen.queryByRole('button', { name: /Line wrapping/ })).toBeNull();
+  },
+);

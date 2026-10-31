@@ -5,6 +5,32 @@ import { createVitestConfig } from '@jg-packages/vitest-config';
 
 const shared = createVitestConfig({
   categories: ['unit', 'integration', 'browser'],
+  essentialBrowser: 'chromium',
+  fullOnlyFiles: [
+    'src/components/alert-dialog/alert-dialog.component.test-unit.tsx',
+    'src/components/alert/alert.component.test-unit.tsx',
+    'src/components/badge/badge.component.test-unit.tsx',
+    'src/components/badge/badge.component.test-browser.tsx',
+    'src/components/button/button.component.test-unit.tsx',
+    'src/components/divider/divider.component.test-unit.tsx',
+    'src/components/drawer/drawer.component.test-unit.tsx',
+    'src/components/dropdown-menu/dropdown-menu.component.test-unit.tsx',
+    'src/components/empty-state/empty-state.component.test-unit.tsx',
+    'src/components/form/form.component.test-unit.tsx',
+    'src/components/icon-tile/icon-tile.component.test-browser.tsx',
+    'src/components/inline-code/inline-code.component.test-unit.tsx',
+    'src/components/inline-code/utilities.test-unit.ts',
+    'src/components/layout/layout.component.test-browser.tsx',
+    'src/components/spinner/spinner.component.test-unit.tsx',
+    'src/components/tooltip/tooltip.component.test-unit.tsx',
+    'src/components/tooltip/tooltip.component.test-browser.tsx',
+    'src/components/typography/code-highlighting.test-unit.ts',
+    'src/components/typography/typography.component.test-unit.tsx',
+    'src/components/toastr/utilities.test-unit.ts',
+    'src/components/theme-provider/utilities.test-unit.ts',
+    'src/shared/syntax-highlighting/utilities.test-unit.ts',
+    'src/shared/syntax-highlighting/utilities.test-browser.ts',
+  ],
   coverage: { thresholds: { statements: 100, branches: 98, functions: 100, lines: 100 } },
 });
 

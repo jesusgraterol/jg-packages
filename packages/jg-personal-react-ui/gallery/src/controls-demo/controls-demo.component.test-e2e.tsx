@@ -30,125 +30,133 @@ const test = base.extend({
 
 for (const theme of ['light', 'dark'] as const) {
   for (const width of [320, 1280]) {
-    test(`controls retain validation, keyboard menus and text at ${width}px in ${theme}`, async ({
-      page,
-    }) => {
-      await page.setViewportSize({ width, height: 800 });
-      await page.addInitScript(() => {
-        Object.defineProperty(navigator, 'clipboard', {
-          configurable: true,
-          value: {
-            writeText: (text: string) => {
-              (window as typeof window & { jgCopiedText?: string }).jgCopiedText = text;
-              return Promise.resolve();
+    test(
+      `controls retain validation, keyboard menus and text at ${width}px in ${theme}`,
+      { tag: '@full' },
+      async ({ page }) => {
+        await page.setViewportSize({ width, height: 800 });
+        await page.addInitScript(() => {
+          Object.defineProperty(navigator, 'clipboard', {
+            configurable: true,
+            value: {
+              writeText: (text: string) => {
+                (window as typeof window & { jgCopiedText?: string }).jgCopiedText = text;
+                return Promise.resolve();
+              },
             },
-          },
+          });
         });
-      });
-      await page.goto(`/?theme=${theme}`);
-      await page.bringToFront();
-      const controls = page.getByRole('region', { name: 'Controls and composition', exact: true });
-      await controls.getByRole('button', { name: 'Save workspace', exact: true }).click();
-      await expect(controls.getByText('Enter a workspace name.', { exact: true })).toBeVisible();
-      const name = controls.getByRole('textbox', { name: 'Workspace name', exact: true });
-      await expect(name).toHaveAttribute('aria-invalid', 'true');
-      await name.fill('Personal workspace with a long recognizable name');
-      await controls.getByRole('button', { name: 'Save workspace', exact: true }).click();
-      await expect(controls.getByRole('status', { name: 'Workspace save result' })).toHaveText(
-        'Saved Personal workspace with a long recognizable name',
-      );
-      await name.focus();
-      await expect(name).toBeFocused();
-      expect(await name.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe(
-        'none',
-      );
-      await controls.getByRole('combobox', { name: 'Storage location' }).click();
-      await page.getByRole('option', { name: 'Shared workspace', exact: true }).click();
-      await expect(controls.getByRole('combobox', { name: 'Storage location' })).toBeFocused();
-      await expect(controls.getByText('Shared workspace', { exact: true })).toBeVisible();
-      await expect(
-        controls.getByRole('progressbar', { name: 'Sync progress', exact: true }),
-      ).toHaveAttribute('aria-valuenow', '42');
-      const overview = controls.getByRole('tab', { name: 'Workspace overview', exact: true });
-      await overview.focus();
-      await page.keyboard.press('ArrowRight');
-      await expect(
-        controls.getByRole('tab', { name: 'Recent session history', exact: true }),
-      ).toBeFocused();
-      await expect(controls.getByText('No sessions yet', { exact: true })).toBeVisible();
-      if (theme === 'dark') {
-        const commands = controls.getByRole('button', { name: 'Workspace commands', exact: true });
-        await commands.hover();
-        expect(await commands.evaluate((element) => getComputedStyle(element).color)).toBe(
-          await page.locator('body').evaluate((element) => getComputedStyle(element).color),
+        await page.goto(`/?theme=${theme}`);
+        await page.bringToFront();
+        const controls = page.getByRole('region', {
+          name: 'Controls and composition',
+          exact: true,
+        });
+        await controls.getByRole('button', { name: 'Save workspace', exact: true }).click();
+        await expect(controls.getByText('Enter a workspace name.', { exact: true })).toBeVisible();
+        const name = controls.getByRole('textbox', { name: 'Workspace name', exact: true });
+        await expect(name).toHaveAttribute('aria-invalid', 'true');
+        await name.fill('Personal workspace with a long recognizable name');
+        await controls.getByRole('button', { name: 'Save workspace', exact: true }).click();
+        await expect(controls.getByRole('status', { name: 'Workspace save result' })).toHaveText(
+          'Saved Personal workspace with a long recognizable name',
         );
-      }
-      await controls.getByRole('button', { name: 'Workspace commands', exact: true }).focus();
-      await page.keyboard.press('ArrowDown');
-      const openCommand = page.getByRole('menuitem', { name: /^Open workspace/u });
-      await expect(openCommand).toBeFocused();
-      await page.keyboard.press('Enter');
-      await expect(controls.getByRole('status', { name: 'Workspace command result' })).toHaveText(
-        'Workspace opened',
-      );
-      const menuTrigger = controls.getByRole('button', {
-        name: 'Workspace commands',
-        exact: true,
-      });
-      // verify restoration before activating the window; foregrounding must not repair DOM focus.
-      await expect
-        .poll(() =>
-          menuTrigger.evaluate((trigger) => trigger.ownerDocument.activeElement === trigger),
-        )
-        .toBe(true);
-      await page.bringToFront();
-      await expect(
-        controls.getByRole('button', { name: 'Workspace commands', exact: true }),
-      ).toBeFocused();
-      await controls.getByRole('button', { name: 'Workspace commands', exact: true }).click();
-      await page.getByRole('menuitem', { name: 'Keep menu open', exact: true }).click();
-      await expect(page.getByRole('menu')).toBeVisible();
-      await expectNoHorizontalOverflow(page);
-      await expect(controls.getByRole('status', { name: 'Workspace command result' })).toHaveText(
-        'Command cancelled',
-      );
-      await page.keyboard.press('Escape');
-      await expect(
-        controls.getByRole('button', { name: 'Workspace commands', exact: true }),
-      ).toBeFocused();
-      await page.keyboard.press('Tab');
-      await expect(
-        controls.getByRole('button', { name: 'Refresh preview', exact: true }),
-      ).toBeFocused();
-      await expect(page.getByText('Refresh workspace preview', { exact: true })).toBeVisible();
-      await page.keyboard.press('Escape');
-      await page.keyboard.press('Enter');
-      await expect(controls.getByRole('status', { name: 'Workspace command result' })).toHaveText(
-        'Preview refreshed',
-      );
-      const copy = controls.getByRole('button', { name: 'Copy command', exact: true });
-      await copy.focus();
-      await page.keyboard.press('Enter');
-      await expect(
-        controls.getByRole('button', { name: 'Command copied', exact: true }),
-      ).toBeVisible();
-      expect(
-        await page.evaluate(
-          () => (window as typeof window & { jgCopiedText?: string }).jgCopiedText,
-        ),
-      ).toBe('pnpm build');
-      const table = page.getByRole('region', { name: 'Package responsibilities', exact: true });
-      await table.focus();
-      await expect(table).toBeFocused();
-      expect(await table.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe(
-        'none',
-      );
-      if (width === 320)
-        expect(await table.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(
-          true,
+        await name.focus();
+        await expect(name).toBeFocused();
+        expect(await name.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe(
+          'none',
         );
-      await expectNoHorizontalOverflow(page);
-    });
+        await controls.getByRole('combobox', { name: 'Storage location' }).click();
+        await page.getByRole('option', { name: 'Shared workspace', exact: true }).click();
+        await expect(controls.getByRole('combobox', { name: 'Storage location' })).toBeFocused();
+        await expect(controls.getByText('Shared workspace', { exact: true })).toBeVisible();
+        await expect(
+          controls.getByRole('progressbar', { name: 'Sync progress', exact: true }),
+        ).toHaveAttribute('aria-valuenow', '42');
+        const overview = controls.getByRole('tab', { name: 'Workspace overview', exact: true });
+        await overview.focus();
+        await page.keyboard.press('ArrowRight');
+        await expect(
+          controls.getByRole('tab', { name: 'Recent session history', exact: true }),
+        ).toBeFocused();
+        await expect(controls.getByText('No sessions yet', { exact: true })).toBeVisible();
+        if (theme === 'dark') {
+          const commands = controls.getByRole('button', {
+            name: 'Workspace commands',
+            exact: true,
+          });
+          await commands.hover();
+          expect(await commands.evaluate((element) => getComputedStyle(element).color)).toBe(
+            await page.locator('body').evaluate((element) => getComputedStyle(element).color),
+          );
+        }
+        await controls.getByRole('button', { name: 'Workspace commands', exact: true }).focus();
+        await page.keyboard.press('ArrowDown');
+        const openCommand = page.getByRole('menuitem', { name: /^Open workspace/u });
+        await expect(openCommand).toBeFocused();
+        await page.keyboard.press('Enter');
+        await expect(controls.getByRole('status', { name: 'Workspace command result' })).toHaveText(
+          'Workspace opened',
+        );
+        const menuTrigger = controls.getByRole('button', {
+          name: 'Workspace commands',
+          exact: true,
+        });
+        // verify restoration before activating the window; foregrounding must not repair DOM focus.
+        await expect
+          .poll(() =>
+            menuTrigger.evaluate((trigger) => trigger.ownerDocument.activeElement === trigger),
+          )
+          .toBe(true);
+        await page.bringToFront();
+        await expect(
+          controls.getByRole('button', { name: 'Workspace commands', exact: true }),
+        ).toBeFocused();
+        await controls.getByRole('button', { name: 'Workspace commands', exact: true }).click();
+        await page.getByRole('menuitem', { name: 'Keep menu open', exact: true }).click();
+        await expect(page.getByRole('menu')).toBeVisible();
+        await expectNoHorizontalOverflow(page);
+        await expect(controls.getByRole('status', { name: 'Workspace command result' })).toHaveText(
+          'Command cancelled',
+        );
+        await page.keyboard.press('Escape');
+        await expect(
+          controls.getByRole('button', { name: 'Workspace commands', exact: true }),
+        ).toBeFocused();
+        await page.keyboard.press('Tab');
+        await expect(
+          controls.getByRole('button', { name: 'Refresh preview', exact: true }),
+        ).toBeFocused();
+        await expect(page.getByText('Refresh workspace preview', { exact: true })).toBeVisible();
+        await page.keyboard.press('Escape');
+        await page.keyboard.press('Enter');
+        await expect(controls.getByRole('status', { name: 'Workspace command result' })).toHaveText(
+          'Preview refreshed',
+        );
+        const copy = controls.getByRole('button', { name: 'Copy command', exact: true });
+        await copy.focus();
+        await page.keyboard.press('Enter');
+        await expect(
+          controls.getByRole('button', { name: 'Command copied', exact: true }),
+        ).toBeVisible();
+        expect(
+          await page.evaluate(
+            () => (window as typeof window & { jgCopiedText?: string }).jgCopiedText,
+          ),
+        ).toBe('pnpm build');
+        const table = page.getByRole('region', { name: 'Package responsibilities', exact: true });
+        await table.focus();
+        await expect(table).toBeFocused();
+        expect(await table.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe(
+          'none',
+        );
+        if (width === 320)
+          expect(await table.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(
+            true,
+          );
+        await expectNoHorizontalOverflow(page);
+      },
+    );
   }
 
   base(

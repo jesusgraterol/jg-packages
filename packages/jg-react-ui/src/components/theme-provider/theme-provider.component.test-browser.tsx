@@ -109,28 +109,32 @@ test('remote theme toggles stay disabled until their requested save settles', as
   expect(screen.getByRole('button')).toBeEnabled();
 });
 
-test('theme transition suppression restores its owned style after two animation frames', () => {
-  const frames: FrameRequestCallback[] = [];
-  vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
-    frames.push(callback);
-    return frames.length;
-  });
-  const restore = disableTransitionsTemporarily();
-  const style = document.head.lastElementChild;
-  try {
-    expect(style?.textContent).toContain('transition:none!important');
-    restore();
-    expect(style?.isConnected).toBe(true);
-    frames.shift()?.(0);
-    expect(style?.isConnected).toBe(true);
-    frames.shift()?.(0);
-    expect(style?.isConnected).toBe(false);
-  } finally {
-    style?.remove();
-  }
-});
+test(
+  'theme transition suppression restores its owned style after two animation frames',
+  { tags: ['full'] },
+  () => {
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    const restore = disableTransitionsTemporarily();
+    const style = document.head.lastElementChild;
+    try {
+      expect(style?.textContent).toContain('transition:none!important');
+      restore();
+      expect(style?.isConnected).toBe(true);
+      frames.shift()?.(0);
+      expect(style?.isConnected).toBe(true);
+      frames.shift()?.(0);
+      expect(style?.isConnected).toBe(false);
+    } finally {
+      style?.remove();
+    }
+  },
+);
 
-test('system resolution falls back when matchMedia is unavailable', () => {
+test('system resolution falls back when matchMedia is unavailable', { tags: ['full'] }, () => {
   vi.stubGlobal('matchMedia', undefined);
   try {
     expect(resolveTheme('system')).toBe('light');
@@ -139,39 +143,47 @@ test('system resolution falls back when matchMedia is unavailable', () => {
   }
 });
 
-test('default transitions apply the selected class and remove contradictory pre-paint classes', () => {
-  const frames: FrameRequestCallback[] = [];
-  const existingStyles = new Set(document.head.querySelectorAll('style'));
-  vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
-    frames.push(callback);
-    return frames.length;
-  });
-  document.documentElement.classList.add('light', 'dark');
-  try {
-    render(
-      <UiPreferencesProvider
-        mode="local"
-        storageId={storageId}
-        initialPreferences={{ ...DEFAULT_UI_PREFERENCES, theme: 'dark' }}
-      >
-        <ThemeProvider>
-          <ThemeToggleButton />
-        </ThemeProvider>
-      </UiPreferencesProvider>,
-    );
-    expect(document.documentElement.classList.contains('dark')).toBe(true);
-    expect(document.documentElement.classList.contains('light')).toBe(false);
-    expect(document.head.querySelectorAll('style').length).toBe(existingStyles.size + 1);
-    frames.shift()?.(0);
-    frames.shift()?.(0);
-    expect(document.head.querySelectorAll('style').length).toBe(existingStyles.size);
-  } finally {
-    for (const style of document.head.querySelectorAll('style'))
-      if (!existingStyles.has(style)) style.remove();
-  }
-});
+test(
+  'default transitions apply the selected class and remove contradictory pre-paint classes',
+  { tags: ['full'] },
+  () => {
+    const frames: FrameRequestCallback[] = [];
+    const existingStyles = new Set(document.head.querySelectorAll('style'));
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    document.documentElement.classList.add('light', 'dark');
+    try {
+      render(
+        <UiPreferencesProvider
+          mode="local"
+          storageId={storageId}
+          initialPreferences={{ ...DEFAULT_UI_PREFERENCES, theme: 'dark' }}
+        >
+          <ThemeProvider>
+            <ThemeToggleButton />
+          </ThemeProvider>
+        </UiPreferencesProvider>,
+      );
+      expect(document.documentElement.classList.contains('dark')).toBe(true);
+      expect(document.documentElement.classList.contains('light')).toBe(false);
+      expect(document.head.querySelectorAll('style').length).toBe(existingStyles.size + 1);
+      frames.shift()?.(0);
+      frames.shift()?.(0);
+      expect(document.head.querySelectorAll('style').length).toBe(existingStyles.size);
+    } finally {
+      for (const style of document.head.querySelectorAll('style'))
+        if (!existingStyles.has(style)) style.remove();
+    }
+  },
+);
 
-test.each([true, false])('system resolution follows matchMedia(matches=%s)', (matches) => {
-  vi.spyOn(window, 'matchMedia').mockReturnValue({ matches } as MediaQueryList);
-  expect(resolveTheme('system')).toBe(matches ? 'dark' : 'light');
-});
+test.each([true, false])(
+  'system resolution follows matchMedia(matches=%s)',
+  { tags: ['full'] },
+  (matches) => {
+    vi.spyOn(window, 'matchMedia').mockReturnValue({ matches } as MediaQueryList);
+    expect(resolveTheme('system')).toBe(matches ? 'dark' : 'light');
+  },
+);

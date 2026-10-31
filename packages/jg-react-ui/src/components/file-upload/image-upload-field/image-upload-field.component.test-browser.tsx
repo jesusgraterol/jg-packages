@@ -117,29 +117,33 @@ describe('ImageUploadField', () => {
     act(() => Array.from(container.querySelectorAll('button'))[1]?.click());
     expect(onCurrentImageRemove).toHaveBeenCalledTimes(1);
   });
-  test('keeps a same-size fallback for a failed preview and retries a changed source', () => {
-    const renderImage = (imageUrl: string) =>
-      root.render(
-        <ImageUploadField
-          acceptedFileTypes={['image/png']}
-          currentImage={{ fileName: 'preview.png', imageUrl }}
-          maxFileBytes={1024}
-          onSubmit={() => undefined}
-          uploadFile={() => Promise.resolve('uploaded')}
-        />,
-      );
-    act(() => renderImage(TEST_IMAGE_URL));
-    const image = container.querySelector('img');
-    if (image === null) throw new Error('The initial preview was not rendered.');
-    act(() => {
-      image.dispatchEvent(new Event('error'));
-    });
-    expect(container.querySelector('img')).toBeNull();
-    expect(container.textContent).toContain('preview.png');
-    expect(container.querySelector('button')?.disabled).toBe(false);
-    act(() => renderImage(TEST_IMAGE_URL + '#replacement'));
-    expect(container.querySelector('img')?.src).toBe(TEST_IMAGE_URL + '#replacement');
-  });
+  test(
+    'keeps a same-size fallback for a failed preview and retries a changed source',
+    { tags: ['full'] },
+    () => {
+      const renderImage = (imageUrl: string) =>
+        root.render(
+          <ImageUploadField
+            acceptedFileTypes={['image/png']}
+            currentImage={{ fileName: 'preview.png', imageUrl }}
+            maxFileBytes={1024}
+            onSubmit={() => undefined}
+            uploadFile={() => Promise.resolve('uploaded')}
+          />,
+        );
+      act(() => renderImage(TEST_IMAGE_URL));
+      const image = container.querySelector('img');
+      if (image === null) throw new Error('The initial preview was not rendered.');
+      act(() => {
+        image.dispatchEvent(new Event('error'));
+      });
+      expect(container.querySelector('img')).toBeNull();
+      expect(container.textContent).toContain('preview.png');
+      expect(container.querySelector('button')?.disabled).toBe(false);
+      act(() => renderImage(TEST_IMAGE_URL + '#replacement'));
+      expect(container.querySelector('img')?.src).toBe(TEST_IMAGE_URL + '#replacement');
+    },
+  );
 
   test('preserves empty-image guidance and each caller-owned queue callback', () => {
     const onFileRejected = vi.fn();

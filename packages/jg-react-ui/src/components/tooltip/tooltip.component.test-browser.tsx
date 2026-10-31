@@ -9,7 +9,7 @@ const reactActEnvironment = globalThis as typeof globalThis & {
   IS_REACT_ACT_ENVIRONMENT?: boolean;
 };
 
-describe('Tooltip', () => {
+describe('Tooltip', { tags: ['full'] }, () => {
   let container: HTMLDivElement;
   let root: Root;
 
@@ -79,43 +79,47 @@ describe('Tooltip', () => {
   });
 });
 
-test('native tooltip triggers and slotted portal content retain explicit timing and positioning options', () => {
-  const container = document.createElement('div');
-  document.body.append(container);
-  const root = createRoot(container);
-  try {
-    act(() =>
-      root.render(
-        <TooltipProvider
-          delay={16}
-          timeout={32}
-          disableHoverableContent
-        >
-          <Tooltip
-            defaultOpen
-            delayDuration={8}
-            disableHoverablePopup={false}
+test(
+  'native tooltip triggers and slotted portal content retain explicit timing and positioning options',
+  { tags: ['full'] },
+  () => {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    try {
+      act(() =>
+        root.render(
+          <TooltipProvider
+            delay={16}
+            timeout={32}
+            disableHoverableContent
           >
-            <TooltipTrigger delay={0}>Inspect options</TooltipTrigger>
-            <TooltipContent
-              asChild
-              forceMount
-              hideWhenDetached
-              avoidCollisions={false}
-              collisionAvoidance={{ side: 'flip', align: 'shift' }}
+            <Tooltip
+              defaultOpen
+              delayDuration={8}
+              disableHoverablePopup={false}
             >
-              <div>Native trigger help</div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>,
-      ),
-    );
-    expect(container.querySelector('button')?.textContent).toBe('Inspect options');
-    expect(document.body.querySelector('[data-slot="tooltip-content"]')?.textContent).toBe(
-      'Native trigger help',
-    );
-  } finally {
-    act(() => root.unmount());
-    container.remove();
-  }
-});
+              <TooltipTrigger delay={0}>Inspect options</TooltipTrigger>
+              <TooltipContent
+                asChild
+                forceMount
+                hideWhenDetached
+                avoidCollisions={false}
+                collisionAvoidance={{ side: 'flip', align: 'shift' }}
+              >
+                <div>Native trigger help</div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>,
+        ),
+      );
+      expect(container.querySelector('button')?.textContent).toBe('Inspect options');
+      expect(document.body.querySelector('[data-slot="tooltip-content"]')?.textContent).toBe(
+        'Native trigger help',
+      );
+    } finally {
+      act(() => root.unmount());
+      container.remove();
+    }
+  },
+);

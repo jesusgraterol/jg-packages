@@ -11,6 +11,7 @@ test.each([
   ['jg-favicon.svg', JG_FAVICON_PATHS],
 ] as const)(
   'canonical %s preserves the existing artwork and committed output',
+  { tags: ['full'] },
   async (name, paths) => {
     const rendered = renderBrandSvg(paths);
     expect(rendered).toBe(

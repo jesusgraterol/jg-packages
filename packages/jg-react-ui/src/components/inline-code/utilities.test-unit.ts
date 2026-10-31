@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 
 import { formatRepositoryPath, splitCodeSegments } from './utilities.js';
 
-describe('inline code utilities', () => {
+describe('inline code utilities', { tags: ['full'] }, () => {
   test.each([
     ['/moldea/x', 'moldea/x'],
     ['moldea/x', 'moldea/x'],
