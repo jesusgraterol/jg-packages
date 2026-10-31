@@ -393,6 +393,10 @@ test.each([
 ])(
   'a later-mounted real host retains one actionable failure with StrictMode %s and hydration %s',
   async (isStrict, shouldHydrate) => {
+    // Sonner dismisses through animation frames and a removal timer; background tabs throttle both.
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame'],
+    });
     const container = document.createElement('div');
     document.body.append(container);
     let root: Root | undefined;
@@ -470,6 +474,7 @@ test.each([
       });
       toastr.dismiss('real-host-replacement');
       container.remove();
+      vi.useRealTimers();
     }
   },
 );

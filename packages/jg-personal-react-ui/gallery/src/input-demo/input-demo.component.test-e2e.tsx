@@ -6,6 +6,8 @@ import {
   waitForRecordedAudio,
 } from 'jg-playwright';
 
+import { useFirefoxCaptureDevice } from '../recording/recording.test-utils.js';
+
 declare global {
   interface Window {
     // tracks captured by this private browser scenario, never application state.
@@ -151,6 +153,7 @@ for (const theme of ['light', 'dark'] as const) {
 
   test(`${theme} real microphone encoding supports permission recovery, reviewed text, and send retry`, async ({
     browser,
+    browserName,
   }, testInfo) => {
     const context = await browser.newContext({
       viewport: { width: 320, height: 480 },
@@ -172,6 +175,7 @@ for (const theme of ['light', 'dark'] as const) {
         });
       });
       await page.goto(`http://127.0.0.1:4178/inputs?theme=${theme}`);
+      await useFirefoxCaptureDevice(page, browserName, true);
       await page.evaluate(() => {
         const tracks: MediaStreamTrack[] = [];
         const getUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);

@@ -6,6 +6,8 @@ import {
   waitForRecordedAudio,
 } from 'jg-playwright';
 
+import { useFirefoxCaptureDevice } from '../recording/recording.test-utils.js';
+
 /** Records unexpected browser failures while allowing the deliberately failed local adapter request. */
 const trackEditorErrors = (page: Page, errors: Array<Error | string>): void => {
   page.on('pageerror', (error) => errors.push(error));
@@ -264,6 +266,7 @@ for (const theme of ['light', 'dark'] as const) {
 
   test(`${theme} reviewed dictation reaches the real chat controls after retry`, async ({
     browser,
+    browserName,
   }) => {
     const errors: Array<Error | string> = [];
     const context = await browser.newContext({
@@ -287,6 +290,7 @@ for (const theme of ['light', 'dark'] as const) {
         }),
       );
       await page.goto(`http://127.0.0.1:4178/editors?theme=${theme}`);
+      await useFirefoxCaptureDevice(page, browserName);
       await expect(
         page.getByRole('textbox', { name: 'Project notes', exact: true }),
       ).toBeEditable();
