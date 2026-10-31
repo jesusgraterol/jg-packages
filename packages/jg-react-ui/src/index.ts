@@ -653,3 +653,38 @@ export {
   type ICodeFileStatus,
   type ICodeFileHeaderProps,
 } from './components/typography/index.js';
+
+// markdown-editor
+// types
+export type {
+  IMarkdownEditorLayout,
+  IMarkdownEditorProps,
+  IMarkdownEditorTool,
+  IMarkdownEditorVariantProps,
+} from './components/markdown-editor/index.js';
+
+// constants
+export {
+  MARKDOWN_EDITOR_ALL_TOOLS,
+  MARKDOWN_EDITOR_LAYOUTS,
+  MARKDOWN_EDITOR_AUTHORING_TOOLS,
+  MARKDOWN_EDITOR_PROSE_TOOLS,
+  MARKDOWN_EDITOR_TOOLS,
+} from './components/markdown-editor/index.js';
+
+// compact markdown editor
+export { CompactMarkdownEditor } from './components/markdown-editor/index.js';
+
+// wide markdown editor
+export { WideMarkdownEditor } from './components/markdown-editor/index.js';
+
+// components
+export { MarkdownEditor } from './components/markdown-editor/index.js';
+
+// chat editor
+export {
+  ChatMarkdownEditor,
+  type IChatMarkdownBlockFormat,
+  type IChatMarkdownEditorControls,
+  type IChatMarkdownEditorProps,
+} from './components/markdown-editor/index.js';

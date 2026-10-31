@@ -32,6 +32,8 @@ export default mergeConfig(
         '@tanstack/react-query-persist-client',
         '@hookform/resolvers/zod',
         'react-hook-form',
+        '@milkdown/kit/plugin/listener',
+        '@milkdown/kit/plugin/history',
       ],
     },
   },

@@ -44,7 +44,7 @@ Render `ThemeInitializationScript` in the document head before application JavaS
 
 Forms, select/choice controls, tabs, dropdown menus, tooltips, copy feedback, progress, dividers, empty states, links, inline code, and plain typography/table primitives retain the same pinned Moldea APIs. The application owns form validation and associations. Set your app root's `font-sans bg-background text-foreground` classes, supply both shadow roles and code color roles, and compose labelled touch rows around compact checkbox/radio/switch glyphs. Fields use at least 16px text under a coarse pointer; touch tabs and menu rows retain 44px targets. `tw-animate-css` supplies the retained enter/exit animation utilities through the explicit package stylesheet.
 
-`TabsList` requires `overflowBehavior: 'scroll' | 'truncate'`; composite labels in a truncated list need `title` or `aria-label`. Select and menu dismiss aliases honor intentional cancellation. Select keeps the source's accepted `forceMount`/`sticky` aliases without additional Base UI behavior. Slotted controls require one valid element and retain their component-specific native Error guards. Menus and tooltips retain their portal and positioning APIs. The Markdown editor is added separately.
+`TabsList` requires `overflowBehavior: 'scroll' | 'truncate'`; composite labels in a truncated list need `title` or `aria-label`. Select and menu dismiss aliases honor intentional cancellation. Select keeps the source's accepted `forceMount`/`sticky` aliases without additional Base UI behavior. Slotted controls require one valid element and retain their component-specific native Error guards. Menus and tooltips retain their portal and positioning APIs.
 
 `CopyButton` writes exact text during the initiating gesture, blocks overlapping writes, and starts feedback after fulfillment. Its feedback duration remains milliseconds. `copyLabel` supplies a scoped ready name, visible `label`/`copiedLabel` and native naming overrides are retained, failures use the nearest error policy, and cancellation stays silent. It clears timers and ignores late feedback after unmount. TextLink adds secure rel tokens and a new-tab announcement; TableContainer accepts native region/name/focus props for keyboard-scrollable tables.
 
@@ -89,6 +89,21 @@ Message columns need `min-width: 0`; grid tracks use `minmax(0, 1fr)`. Markdown 
 The personal adapter maps syntax and file-status roles to `jg-personal-ui`'s existing theme tokens. Generic syntax uses unbranded One-theme fallbacks; supply `--syntax-foreground` and `--syntax-token-{keyword,string,string-expression,comment,function,constant,parameter,punctuation,link}` to override them. Token maps are reused across renders, and unchanged Markdown parser inputs are memoized. Every grammar/style import names its exact JavaScript file, so Node imports need no consumer resolver changes.
 
 `parseYouTubeVideoUrl` validates supported HTTPS single-video links and returns a branded identifier. `YouTubeVideo` uses the fixed privacy-enhanced origin, strips authored playback parameters, and enables autoplay only through its explicit prop. URL validation/building reuses `jg-utilities`, with the retained UI's narrower route policy. A forged invalid identifier throws the dependency's documented `INVALID_YOUTUBE_VIDEO_ID` contract.
+
+## Markdown editors
+
+`MarkdownEditor` retains the controlled `value`/`onChange`, `supportedTools`, accessibility props, and `auto`/`compact`/`wide` layouts. Auto measures the owning container and selects wide at 640px. `CompactMarkdownEditor` and `WideMarkdownEditor` expose the same props without `layout`. The exported all-tools, authoring, and prose policies retain the source command sets; existing documents remain readable when authoring tools are constrained.
+
+`ChatMarkdownEditor` retains paragraph, H1–H3, bullet/numbered-list, bold/italic, and safe-link formatting. HTML is removed, unsupported blocks become readable prose, and image alternatives remain text. Paste checks bound raw input before parsing and the serialized result before replacing the draft. Rejected paste leaves the draft intact; formatting feedback remains until the next edit.
+
+Supply a positive safe-integer `maxLength`. `maxEditorHeight` defaults to 256px, must be positive and finite, and is constrained to 50dvh by the stylesheet. `controlsRef` exposes `getMarkdown()`, `focus()`, and `appendLiteralText(text)`. Literal insertion escapes Markdown and returns false when the editor is not ready or the resulting draft is too long. Initial snapshots retain the controlled draft, and focus waits for the initialized editor. Use these controls to compose caller-owned upload and dictation flows.
+
+`formattingContainer` uses inline placement when omitted, reserves external placement with null, and portals the formatting menu into a supplied HTMLElement. The existing `styles.css` entry includes Milkdown's common/frame styles before editor overrides. The personal package re-exports the generic implementations directly and supplies the shared JG tokens.
+
+Invalid configuration retains these native Error messages:
+
+- `ChatMarkdownEditor maxLength must be a positive safe integer.`
+- `ChatMarkdownEditor maxEditorHeight must be a positive finite number.`
 
 ## Documentation
 

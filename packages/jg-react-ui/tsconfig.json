@@ -3,7 +3,9 @@
   "compilerOptions": {
     "noEmit": true,
     "types": ["node"],
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "bundler"
   },
   "include": ["src", "*.config.ts", "gallery/**/*.ts", "gallery/**/*.tsx"]
 }

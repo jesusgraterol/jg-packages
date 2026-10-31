@@ -80,6 +80,21 @@ The personal adapter maps syntax and file-status roles to `jg-personal-ui`'s exi
 
 `parseYouTubeVideoUrl` validates supported HTTPS single-video links and returns a branded identifier. `YouTubeVideo` uses the fixed privacy-enhanced origin, strips authored playback parameters, and enables autoplay only through its explicit prop. URL validation/building reuses `jg-utilities`, with the retained UI's narrower route policy. A forged invalid identifier throws the dependency's documented `INVALID_YOUTUBE_VIDEO_ID` contract.
 
+## Markdown editors
+
+`MarkdownEditor` retains the controlled `value`/`onChange`, `supportedTools`, accessibility props, and `auto`/`compact`/`wide` layouts. Auto measures the owning container and selects wide at 640px. `CompactMarkdownEditor` and `WideMarkdownEditor` expose the same props without `layout`. The exported all-tools, authoring, and prose policies retain the source command sets; existing documents remain readable when authoring tools are constrained.
+
+`ChatMarkdownEditor` retains paragraph, H1–H3, bullet/numbered-list, bold/italic, and safe-link formatting. HTML is removed, unsupported blocks become readable prose, and image alternatives remain text. Paste checks bound raw input before parsing and the serialized result before replacing the draft. Rejected paste leaves the draft intact; formatting feedback remains until the next edit.
+
+Supply a positive safe-integer `maxLength`. `maxEditorHeight` defaults to 256px, must be positive and finite, and is constrained to 50dvh by the stylesheet. `controlsRef` exposes `getMarkdown()`, `focus()`, and `appendLiteralText(text)`. Literal insertion escapes Markdown and returns false when the editor is not ready or the resulting draft is too long. Initial snapshots retain the controlled draft, and focus waits for the initialized editor. Use these controls to compose caller-owned upload and dictation flows.
+
+`formattingContainer` uses inline placement when omitted, reserves external placement with null, and portals the formatting menu into a supplied HTMLElement. The existing `styles.css` entry includes Milkdown's common/frame styles before editor overrides. The personal package re-exports the generic implementations directly and supplies the shared JG tokens.
+
+Invalid configuration retains these native Error messages:
+
+- `ChatMarkdownEditor maxLength must be a positive safe integer.`
+- `ChatMarkdownEditor maxEditorHeight must be a positive finite number.`
+
 ## Documentation
 
 The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.3.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.3.0/RECIPES.md). These personal-use packages are unlisted on the public package website.

@@ -189,6 +189,10 @@
     "./components/youtube-video": {
       "types": "./dist/components/youtube-video/index.d.ts",
       "default": "./dist/components/youtube-video/index.js"
+    },
+    "./components/markdown-editor": {
+      "types": "./dist/components/markdown-editor/index.d.ts",
+      "default": "./dist/components/markdown-editor/index.js"
     }
   },
   "main": "./dist/index.js",

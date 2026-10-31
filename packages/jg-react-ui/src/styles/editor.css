@@ -1,0 +1,885 @@
+@layer components {
+  /* MarkdownEditor: expose inline-size context for responsive editor implementations. */
+  [data-slot='markdown-editor-container'] {
+    container-type: inline-size;
+  }
+
+  /* MarkdownEditor: keep the third-party editor constrained to the owning layout column. */
+  [data-slot='markdown-editor'],
+  [data-slot='markdown-editor'] .milkdown,
+  [data-slot='markdown-editor-slash-menu-portal'] {
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* MarkdownEditor: bridge Milkdown/Crepe theme variables to app-ui design tokens. */
+  [data-slot='markdown-editor'] .milkdown,
+  [data-slot='markdown-editor-slash-menu-portal'] {
+    --crepe-color-background: var(--background) !important;
+    --crepe-color-on-background: var(--foreground) !important;
+    --crepe-color-surface: color-mix(
+      in oklch,
+      var(--background) 84%,
+      var(--secondary) 16%
+    ) !important;
+    --crepe-color-surface-low: color-mix(
+      in oklch,
+      var(--background) 70%,
+      var(--secondary) 30%
+    ) !important;
+    --crepe-color-on-surface: var(--foreground) !important;
+    --crepe-color-on-surface-variant: var(--secondary-foreground) !important;
+    --crepe-color-outline: var(--secondary-foreground) !important;
+    --crepe-color-primary: var(--foreground) !important;
+    --crepe-color-secondary: var(--secondary) !important;
+    --crepe-color-on-secondary: var(--foreground) !important;
+    --crepe-color-inverse: var(--foreground) !important;
+    --crepe-color-on-inverse: var(--background) !important;
+    --crepe-color-error: var(--destructive) !important;
+    --crepe-color-hover: var(--secondary) !important;
+    --crepe-color-selected: color-mix(
+      in oklch,
+      var(--secondary) 88%,
+      var(--foreground) 12%
+    ) !important;
+    --crepe-font-default: var(--font-sans) !important;
+    --crepe-font-title: var(--font-sans) !important;
+    --crepe-font-code: var(--font-mono) !important;
+    --crepe-shadow-1: var(--shadow-surface) !important;
+    --crepe-shadow-2: var(--shadow-raised) !important;
+    --markdown-editor-block-handle-gap: 0.5rem;
+    --markdown-editor-block-handle-rail: 0.5rem;
+    --markdown-editor-block-handle-width: 4.125rem;
+  }
+
+  /* MarkdownEditor: keep Crepe typography aligned when the editor remounts for dark mode. */
+  .dark [data-slot='markdown-editor'] .milkdown,
+  .dark [data-slot='markdown-editor-slash-menu-portal'] {
+    --crepe-font-default: var(--font-sans) !important;
+    --crepe-font-title: var(--font-sans) !important;
+  }
+
+  /* MarkdownEditor: tune the main ProseMirror document surface and inline code tokens. */
+  [data-slot='markdown-editor'] .milkdown .ProseMirror {
+    --crepe-color-selected: var(--primary) !important;
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    padding: clamp(0.75rem, 2.4vw, 2rem) !important;
+    padding-inline-start: calc(
+      var(--markdown-editor-block-handle-rail) + var(--markdown-editor-block-handle-width) +
+        var(--markdown-editor-block-handle-gap)
+    ) !important;
+    width: 100%;
+  }
+
+  /* Reserve the document through lazy loading and asynchronous Milkdown mounting. */
+  [data-slot='markdown-editor']:not([data-editor-mode='chat']) {
+    --markdown-editor-document-min-height: 10rem;
+    min-height: var(--markdown-editor-document-min-height);
+  }
+
+  [data-slot='markdown-editor']:not([data-editor-mode='chat']) .milkdown .ProseMirror {
+    min-height: var(--markdown-editor-document-min-height);
+  }
+
+  /* Keep placeholder text in the caret line without changing block height when typing begins. */
+  [data-slot='markdown-editor'] .milkdown .ProseMirror .crepe-placeholder {
+    position: relative;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .ProseMirror .crepe-placeholder::before {
+    box-sizing: border-box;
+    display: block;
+    height: 1lh !important;
+    max-width: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute !important;
+    /* Auto block-axis positioning follows paragraph and heading content padding. */
+    inset: auto auto auto 0;
+    text-overflow: ellipsis;
+    white-space: nowrap !important;
+    width: 100%;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .ProseMirror :is(p, li, blockquote, th, td) {
+    overflow-wrap: anywhere;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .ProseMirror h1 {
+    font-size: clamp(1.5rem, 7vw, 2.625rem) !important;
+    line-height: 1.15 !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .ProseMirror h2 {
+    font-size: clamp(1.375rem, 6vw, 2.25rem) !important;
+    line-height: 1.2 !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .ProseMirror h3 {
+    font-size: clamp(1.25rem, 5vw, 2rem) !important;
+    line-height: 1.2 !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .ProseMirror h4 {
+    font-size: clamp(1.125rem, 4.5vw, 1.75rem) !important;
+    line-height: 1.25 !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .ProseMirror h5 {
+    font-size: clamp(1rem, 4vw, 1.5rem) !important;
+    line-height: 1.3 !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .ProseMirror code {
+    background: var(--secondary) !important;
+    border-radius: 0.25rem;
+    color: inherit !important;
+    font-family: var(--font-mono, monospace) !important;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1;
+    overflow-wrap: anywhere;
+    padding-block: 0.2rem !important;
+    padding-inline: 0.3rem !important;
+  }
+
+  /* MarkdownEditor: normalize CodeMirror-backed code block selection and active-node states. */
+  [data-slot='markdown-editor'] .milkdown .milkdown-code-block {
+    --crepe-color-selected: color-mix(
+      in oklch,
+      var(--secondary) 88%,
+      var(--foreground) 12%
+    ) !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .milkdown-code-block.ProseMirror-selectednode {
+    background: var(--crepe-color-surface) !important;
+    outline: 1px solid var(--crepe-color-primary) !important;
+  }
+
+  /* MarkdownEditor: keep code fence language and copy controls discoverable without hover. */
+  [data-slot='markdown-editor'] .milkdown .milkdown-code-block .tools .language-button,
+  [data-slot='markdown-editor'] .milkdown .milkdown-code-block .tools .copy-button {
+    opacity: 1 !important;
+  }
+
+  /* MarkdownEditor: dark-mode selections use a softer foreground tint inside the editor. */
+  .dark [data-slot='markdown-editor'] .milkdown .ProseMirror {
+    --crepe-color-selected: color-mix(in oklch, var(--foreground) 40%, transparent) !important;
+  }
+
+  /* Stable CodeMirror token classes share the consumer-owned syntax roles. */
+  [data-slot='markdown-editor'] .milkdown .cm-editor {
+    background: var(--syntax-background, var(--code)) !important;
+    color: var(--syntax-foreground, var(--code-foreground)) !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .cm-activeLine {
+    background: transparent !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .cm-gutters {
+    background: var(--syntax-background, var(--code)) !important;
+    border-color: var(--border) !important;
+    color: var(--secondary-foreground) !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .cm-activeLineGutter {
+    background: var(--secondary) !important;
+    color: var(--foreground) !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .cm-editor .tok-keyword {
+    color: var(--syntax-token-keyword, var(--foreground)) !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .cm-editor :is(.tok-string, .tok-string2) {
+    color: var(--syntax-token-string, var(--foreground)) !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .cm-editor .tok-comment {
+    color: var(--syntax-token-comment, var(--secondary-foreground)) !important;
+  }
+
+  [data-slot='markdown-editor']
+    .milkdown
+    .cm-editor
+    :is(.tok-atom, .tok-bool, .tok-number, .tok-literal) {
+    color: var(--syntax-token-constant, var(--foreground)) !important;
+  }
+
+  [data-slot='markdown-editor']
+    .milkdown
+    .cm-editor
+    :is(.tok-definition, .tok-typeName, .tok-className) {
+    color: var(--syntax-token-function, var(--foreground)) !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .cm-editor .tok-propertyName {
+    color: var(--syntax-token-parameter, var(--foreground)) !important;
+  }
+
+  [data-slot='markdown-editor']
+    .milkdown
+    .cm-editor
+    :is(.tok-operator, .tok-punctuation, .tok-meta) {
+    color: var(--syntax-token-punctuation, var(--foreground)) !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .cm-editor :is(.tok-link, .tok-url) {
+    color: var(--syntax-token-link, var(--foreground)) !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .cm-editor .tok-invalid {
+    color: var(--destructive) !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .cm-editor .cm-selectionBackground {
+    background: var(--primary) !important;
+  }
+
+  /* MarkdownEditor: table selections need explicit foreground contrast in ProseMirror cells. */
+  [data-slot='markdown-editor'] .milkdown .ProseMirror td::selection,
+  [data-slot='markdown-editor'] .milkdown .ProseMirror td *::selection,
+  [data-slot='markdown-editor'] .milkdown .ProseMirror th::selection,
+  [data-slot='markdown-editor'] .milkdown .ProseMirror th *::selection {
+    background: var(--primary) !important;
+    color: var(--primary-foreground) !important;
+  }
+
+  /* MarkdownEditor: selected table cells do not inherit native selection colors reliably. */
+  [data-slot='markdown-editor'] .milkdown .ProseMirror td.selectedCell,
+  [data-slot='markdown-editor'] .milkdown .ProseMirror td.selectedCell *,
+  [data-slot='markdown-editor'] .milkdown .ProseMirror th.selectedCell,
+  [data-slot='markdown-editor'] .milkdown .ProseMirror th.selectedCell * {
+    caret-color: var(--primary-foreground) !important;
+    color: var(--primary-foreground) !important;
+  }
+
+  /* MarkdownEditor: CodeMirror code-block selections reuse the app-ui selection color. */
+  [data-slot='markdown-editor'] .milkdown .milkdown-code-block .cm-line::selection,
+  [data-slot='markdown-editor'] .milkdown .milkdown-code-block .cm-line *::selection,
+  [data-slot='markdown-editor'] .milkdown .milkdown-code-block .cm-gutterElement::selection,
+  [data-slot='markdown-editor'] .milkdown .milkdown-code-block .cm-gutterElement *::selection {
+    background: var(--primary) !important;
+  }
+
+  /* MarkdownEditor: Crepe clears drag selection backgrounds, so restore readable text color. */
+  [data-slot='markdown-editor'] .milkdown .ProseMirror[data-dragging='true'],
+  [data-slot='markdown-editor']
+    .milkdown
+    .ProseMirror[data-dragging='true']
+    .ProseMirror-selectednode,
+  [data-slot='markdown-editor']
+    .milkdown
+    .ProseMirror[data-dragging='true']
+    .ProseMirror-selectednode
+    *,
+  [data-slot='markdown-editor'] .milkdown .ProseMirror[data-dragging='true']::selection,
+  [data-slot='markdown-editor'] .milkdown .ProseMirror[data-dragging='true'] *::selection {
+    color: var(--foreground) !important;
+  }
+
+  /* Image dimensions have a native numeric alternative to the retained drag handle. */
+  [data-slot='markdown-editor']
+    .milkdown
+    .image-wrapper:has(.markdown-editor-image-controls:not([hidden])) {
+    display: grid !important;
+    gap: 0.5rem !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  [data-slot='markdown-editor']
+    .milkdown
+    .image-wrapper:has(.markdown-editor-image-controls:not([hidden]))
+    > .image-resize-handle {
+    bottom: auto !important;
+    top: calc(var(--markdown-editor-image-height) - 2px) !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .markdown-editor-image-controls {
+    color: var(--secondary-foreground) !important;
+    display: grid !important;
+    font-family: var(--font-sans) !important;
+    font-size: 0.75rem !important;
+    gap: 0.25rem !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .markdown-editor-image-controls[hidden] {
+    display: none !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .markdown-editor-image-controls input {
+    background: var(--background) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 0.5rem !important;
+    box-sizing: border-box !important;
+    color: var(--foreground) !important;
+    font-size: 1rem !important;
+    height: 2.75rem !important;
+    min-width: 0 !important;
+    padding-inline: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .markdown-editor-image-height-error {
+    color: var(--destructive) !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .milkdown-image-block:focus-within .operation,
+  [data-slot='markdown-editor'] .milkdown .milkdown-image-block:focus-within .image-resize-handle {
+    opacity: 1 !important;
+  }
+
+  /* MarkdownEditor: restore visible focus rings for focusable Crepe controls. */
+  [data-slot='markdown-editor']
+    .milkdown
+    :is(button, [role='button'], input, .cm-scroller, img):focus-visible {
+    outline: 2px solid var(--foreground) !important;
+    outline-offset: 2px !important;
+  }
+
+  /* MarkdownEditor: language picker search box owns focus chrome to avoid nested outlines. */
+  [data-slot='markdown-editor'] .milkdown .milkdown-code-block .search-box .search-input:focus,
+  [data-slot='markdown-editor']
+    .milkdown
+    .milkdown-code-block
+    .search-box
+    .search-input:focus-visible {
+    outline: none !important;
+  }
+
+  /* MarkdownEditor: active toolbar and heading-menu items use the Crepe selected token. */
+  [data-slot='markdown-editor'] .milkdown .milkdown-toolbar .toolbar-item.active,
+  [data-slot='markdown-editor'] .milkdown .milkdown-top-bar .top-bar-item.active,
+  [data-slot='markdown-editor'] .milkdown .milkdown-top-bar .top-bar-heading-option.active {
+    background: var(--crepe-color-selected) !important;
+  }
+
+  /* MarkdownEditor: keep the sticky top bar usable when controls wrap on narrow screens. */
+  [data-slot='markdown-editor'] .milkdown .milkdown-top-bar,
+  [data-slot='markdown-editor'] .milkdown .milkdown-top-bar .top-bar-inner {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* MarkdownEditor: image insertion is link-only, so hide Crepe's file upload picker. */
+  [data-slot='markdown-editor']
+    .milkdown
+    .image-edit
+    .link-importer
+    .placeholder
+    input[type='file'],
+  [data-slot='markdown-editor'] .milkdown .image-edit .link-importer .placeholder .uploader {
+    display: none !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .milkdown-top-bar .top-bar-heading-button {
+    max-width: 100%;
+  }
+
+  [data-slot='markdown-editor']
+    .milkdown
+    .milkdown-top-bar
+    .top-bar-heading-button
+    .top-bar-heading-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* MarkdownEditor: prevent floating toolbars from widening the mobile viewport. */
+  [data-slot='markdown-editor'] .milkdown .milkdown-toolbar {
+    max-width: min(100%, calc(100vw - 2rem));
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  /* MarkdownEditor: reserve a stable Notion-style left rail for block add and drag controls. */
+  [data-slot='markdown-editor'] .milkdown .milkdown-block-handle {
+    left: var(--markdown-editor-block-handle-rail) !important;
+    right: auto !important;
+    z-index: 15;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .milkdown-block-handle .operation-item {
+    flex: 0 0 auto;
+  }
+
+  /* The empty wide editor explains its reserved rail before a pointer selects a block. */
+  [data-slot='markdown-editor'][data-empty-block-handle='true']
+    .milkdown
+    .milkdown-block-handle[data-show='false'] {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    top: var(--markdown-editor-empty-handle-top) !important;
+    transition: none !important;
+  }
+
+  [data-slot='markdown-editor'][data-empty-block-handle='true']
+    .milkdown
+    .milkdown-block-handle
+    .operation-item
+    svg {
+    fill: var(--secondary-foreground) !important;
+  }
+
+  [data-slot='markdown-editor'][data-empty-block-handle='true']
+    .milkdown
+    .milkdown-block-handle
+    .operation-item:is(:hover, :focus-visible)
+    svg {
+    fill: var(--foreground) !important;
+  }
+
+  /* MarkdownEditor: compact Crepe slash menu layout for command search results. */
+  :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+    .milkdown-slash-menu[data-markdown-editor-position-pending='true'] {
+    visibility: hidden;
+  }
+
+  :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+    .milkdown-slash-menu {
+    background: var(--background) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 0.5rem !important;
+    font-size: 0.875rem;
+    max-width: min(18rem, calc(100vw - 2rem));
+  }
+
+  /* MarkdownEditor: hide slash-menu jump tabs because grouped actions render below. */
+  :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+    .milkdown-slash-menu
+    .tab-group {
+    display: none;
+  }
+
+  :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+    .milkdown-slash-menu
+    .menu-groups {
+    max-height: min(16rem, 55vh) !important;
+    padding: 0.375rem !important;
+    scroll-behavior: smooth !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+      .milkdown-slash-menu
+      .menu-groups {
+      scroll-behavior: auto !important;
+    }
+  }
+
+  :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+    .milkdown-slash-menu
+    .menu-group
+    + .menu-group {
+    margin-top: 0.25rem;
+  }
+
+  :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+    .milkdown-slash-menu
+    .menu-group
+    ul {
+    display: grid;
+    gap: 0.125rem;
+  }
+
+  :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+    .milkdown-slash-menu
+    .menu-group
+    li {
+    border-radius: 0.375rem !important;
+    gap: 0.625rem !important;
+    padding: 0.5rem 0.625rem !important;
+  }
+
+  :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+    .milkdown-slash-menu
+    .menu-group
+    li
+    .milkdown-icon {
+    align-items: center;
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 1rem;
+    justify-content: center;
+    width: 1rem;
+  }
+
+  :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+    .milkdown-slash-menu
+    .menu-group
+    li
+    .milkdown-icon
+    svg {
+    height: 1rem;
+    width: 1rem;
+  }
+
+  /*
+   * MarkdownEditor: Crepe fills every slash-menu SVG, so app-ui outline icons need
+   * explicit child fill resets to keep table and quote glyphs from rendering as solids.
+   */
+  :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+    :is(.milkdown-slash-menu .milkdown-icon, .milkdown-toolbar .toolbar-item)
+    svg[data-editor-icon='outline'],
+  :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+    :is(.milkdown-slash-menu .milkdown-icon, .milkdown-toolbar .toolbar-item)
+    svg[data-editor-icon='outline']
+    :is(path, rect, circle) {
+    fill: none !important;
+    stroke: currentColor !important;
+  }
+
+  :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+    .milkdown-slash-menu
+    .menu-group
+    li
+    span:last-child {
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+  }
+
+  /* MarkdownEditor: hide group titles to reduce slash-menu chrome without removing actions. */
+  :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+    .milkdown-slash-menu
+    .menu-groups
+    .menu-group
+    h6 {
+    display: none;
+  }
+
+  /* MarkdownEditor: dark-mode selections should preserve third-party token contrast. */
+  .dark [data-slot='markdown-editor'] .milkdown .cm-editor .cm-selectionBackground {
+    background: color-mix(in oklch, var(--foreground) 40%, transparent) !important;
+  }
+
+  .dark [data-slot='markdown-editor'] .milkdown .ProseMirror td::selection,
+  .dark [data-slot='markdown-editor'] .milkdown .ProseMirror td *::selection,
+  .dark [data-slot='markdown-editor'] .milkdown .ProseMirror th::selection,
+  .dark [data-slot='markdown-editor'] .milkdown .ProseMirror th *::selection {
+    background: color-mix(in oklch, var(--foreground) 40%, transparent) !important;
+    color: inherit !important;
+  }
+
+  .dark [data-slot='markdown-editor'] .milkdown .ProseMirror td.selectedCell,
+  .dark [data-slot='markdown-editor'] .milkdown .ProseMirror td.selectedCell *,
+  .dark [data-slot='markdown-editor'] .milkdown .ProseMirror th.selectedCell,
+  .dark [data-slot='markdown-editor'] .milkdown .ProseMirror th.selectedCell * {
+    caret-color: inherit !important;
+    color: inherit !important;
+  }
+
+  .dark [data-slot='markdown-editor'] .milkdown .milkdown-code-block .cm-line::selection,
+  .dark [data-slot='markdown-editor'] .milkdown .milkdown-code-block .cm-line *::selection,
+  .dark [data-slot='markdown-editor'] .milkdown .milkdown-code-block .cm-gutterElement::selection,
+  .dark
+    [data-slot='markdown-editor']
+    .milkdown
+    .milkdown-code-block
+    .cm-gutterElement
+    *::selection {
+    background: color-mix(in oklch, var(--foreground) 40%, transparent) !important;
+  }
+
+  /* MarkdownEditor: readonly state dims the third-party editor while keeping text readable. */
+  [data-slot='markdown-editor'][data-disabled='true'] .milkdown {
+    @apply opacity-90;
+  }
+
+  /* MarkdownEditor: keep wide tables, code editors, and pre blocks within their container. */
+  [data-slot='markdown-editor'] .milkdown .milkdown-code-block,
+  [data-slot='markdown-editor'] .milkdown-table-block,
+  [data-slot='markdown-editor'] .milkdown-table-block .table-wrapper,
+  [data-slot='markdown-editor'] .milkdown .cm-editor,
+  [data-slot='markdown-editor'] .milkdown pre {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  [data-slot='markdown-editor'] .milkdown .milkdown-code-block {
+    box-sizing: border-box;
+    padding: 0.75rem !important;
+  }
+
+  [data-slot='markdown-editor'] .milkdown-table-block,
+  [data-slot='markdown-editor'] .milkdown-table-block .table-wrapper,
+  [data-slot='markdown-editor'] .milkdown pre {
+    overflow-x: auto;
+  }
+
+  [data-slot='markdown-editor'] .milkdown-table-block th,
+  [data-slot='markdown-editor'] .milkdown-table-block td {
+    padding-inline: clamp(0.5rem, 2vw, 1rem) !important;
+  }
+
+  /* CompactMarkdownEditor: reclaim the wide block-action rail without changing wide mode. */
+  [data-markdown-editor-layout='compact'] {
+    container-type: inline-size;
+  }
+
+  [data-markdown-editor-layout='compact'] [data-slot='markdown-editor'] .milkdown {
+    --markdown-editor-block-handle-width: 5.875rem;
+  }
+
+  [data-markdown-editor-layout='compact'] [data-slot='markdown-editor'] .milkdown .ProseMirror {
+    padding-inline: clamp(0.75rem, 4cqi, 1rem) !important;
+  }
+
+  /* CompactMarkdownEditor: float touch-sized block actions over the trailing document edge. */
+  [data-markdown-editor-layout='compact']
+    [data-slot='markdown-editor']
+    .milkdown
+    .milkdown-block-handle {
+    left: calc(
+      100% - var(--markdown-editor-block-handle-width) - var(--markdown-editor-block-handle-rail)
+    ) !important;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    box-sizing: border-box;
+    box-shadow: var(--shadow-raised);
+    padding: 0.0625rem;
+    touch-action: manipulation;
+    width: var(--markdown-editor-block-handle-width);
+  }
+
+  [data-markdown-editor-layout='compact']
+    [data-slot='markdown-editor']
+    .milkdown
+    .milkdown-block-handle
+    .operation-item {
+    align-items: center;
+    display: flex;
+    height: 2.75rem !important;
+    justify-content: center;
+    width: 2.75rem !important;
+  }
+
+  :is(
+      [data-markdown-editor-layout='compact'] [data-slot='markdown-editor'] .milkdown,
+      [data-markdown-editor-layout='compact'][data-slot='markdown-editor-slash-menu-portal']
+    )
+    .milkdown-slash-menu {
+    max-width: min(18rem, calc(100cqi - 1rem));
+  }
+
+  /* CompactMarkdownEditor: preserve room above and below the add-element menu on mobile. */
+  :is(
+      [data-markdown-editor-layout='compact'] [data-slot='markdown-editor'] .milkdown,
+      [data-markdown-editor-layout='compact'][data-slot='markdown-editor-slash-menu-portal']
+    )
+    .milkdown-slash-menu
+    .menu-groups {
+    max-height: min(12rem, 40dvh) !important;
+  }
+
+  /* CompactMarkdownEditor: keep Crepe controls dense in narrow layout containers. */
+  [data-markdown-editor-layout='compact']
+    [data-slot='markdown-editor']
+    .milkdown
+    .milkdown-top-bar {
+    padding-inline: 0.25rem !important;
+  }
+
+  [data-markdown-editor-layout='compact']
+    [data-slot='markdown-editor']
+    .milkdown
+    .milkdown-top-bar
+    .top-bar-heading-selector {
+    padding: 0.125rem !important;
+  }
+
+  [data-markdown-editor-layout='compact']
+    [data-slot='markdown-editor']
+    .milkdown
+    .milkdown-top-bar
+    .top-bar-heading-button {
+    padding-inline: 0.5rem 0.25rem !important;
+  }
+
+  [data-markdown-editor-layout='compact']
+    [data-slot='markdown-editor']
+    .milkdown
+    .milkdown-top-bar
+    .top-bar-heading-button
+    .top-bar-heading-label {
+    min-width: 0 !important;
+    max-width: 6rem;
+  }
+
+  [data-markdown-editor-layout='compact']
+    [data-slot='markdown-editor']
+    .milkdown
+    .milkdown-top-bar
+    .top-bar-divider {
+    height: 1.5rem !important;
+    margin: 0.25rem 0.125rem !important;
+  }
+
+  [data-markdown-editor-layout='compact']
+    [data-slot='markdown-editor']
+    .milkdown
+    :is(.milkdown-top-bar .top-bar-item, .milkdown-toolbar .toolbar-item) {
+    margin: 0.125rem !important;
+  }
+
+  [data-markdown-editor-layout='compact']
+    [data-slot='markdown-editor']
+    .milkdown
+    .milkdown-code-block {
+    padding: 0.625rem !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-markdown-editor-layout='compact']
+      [data-slot='markdown-editor']
+      .milkdown
+      .milkdown-block-handle {
+      transition: none !important;
+    }
+  }
+
+  @media (max-width: 639px) {
+    /* MarkdownEditor: reduce Crepe control chrome so the editor keeps a useful writing area. */
+    [data-slot='markdown-editor'] .milkdown .milkdown-top-bar {
+      padding-inline: 0.25rem !important;
+    }
+
+    [data-slot='markdown-editor'] .milkdown .milkdown-top-bar .top-bar-heading-selector {
+      padding: 0.125rem !important;
+    }
+
+    [data-slot='markdown-editor'] .milkdown .milkdown-top-bar .top-bar-heading-button {
+      padding-inline: 0.5rem 0.25rem !important;
+    }
+
+    [data-slot='markdown-editor']
+      .milkdown
+      .milkdown-top-bar
+      .top-bar-heading-button
+      .top-bar-heading-label {
+      min-width: 0 !important;
+      max-width: 6rem;
+    }
+
+    [data-slot='markdown-editor'] .milkdown .milkdown-top-bar .top-bar-divider {
+      height: 1.5rem !important;
+      margin: 0.25rem 0.125rem !important;
+    }
+
+    [data-slot='markdown-editor'] .milkdown .milkdown-top-bar .top-bar-item,
+    [data-slot='markdown-editor'] .milkdown .milkdown-toolbar .toolbar-item {
+      margin: 0.125rem !important;
+    }
+
+    [data-slot='markdown-editor'] .milkdown .milkdown-code-block {
+      padding: 0.625rem !important;
+    }
+  }
+
+  /* ChatMarkdownEditor: retain Crepe selection editing while replacing document chrome. */
+  [data-slot='markdown-editor'][data-editor-mode='chat'] .milkdown {
+    background: transparent !important;
+    min-height: 2.5rem;
+    max-height: min(var(--chat-markdown-editor-max-height, 256px), 50dvh);
+    overflow-y: auto;
+  }
+
+  [data-slot='markdown-editor'][data-editor-mode='chat']
+    .milkdown
+    :is(.milkdown-top-bar, .milkdown-block-handle) {
+    display: none !important;
+  }
+
+  [data-slot='markdown-editor'][data-editor-mode='chat'] .milkdown .ProseMirror {
+    height: auto !important;
+    min-height: 2.5rem;
+    max-height: none;
+    overflow-y: visible;
+    padding: 0.4375rem 0.5rem !important;
+  }
+
+  [data-slot='markdown-editor'][data-editor-mode='chat'] .milkdown .ProseMirror p {
+    margin-block: 0 !important;
+  }
+
+  [data-slot='markdown-editor'][data-editor-mode='chat'] .milkdown .ProseMirror :is(ul, ol) {
+    margin-block: 0.125rem !important;
+  }
+
+  [data-slot='markdown-editor'][data-editor-mode='chat'] .milkdown .ProseMirror .crepe-placeholder {
+    margin-block: 0 !important;
+  }
+
+  [data-slot='markdown-editor'][data-editor-mode='chat'] .milkdown .ProseMirror h1 {
+    font-size: 1.25rem !important;
+  }
+
+  [data-slot='markdown-editor'][data-editor-mode='chat'] .milkdown .ProseMirror h2 {
+    font-size: 1.125rem !important;
+  }
+
+  [data-slot='markdown-editor'][data-editor-mode='chat'] .milkdown .ProseMirror h3 {
+    font-size: 1rem !important;
+  }
+
+  @media (hover: none) {
+    [data-slot='markdown-editor'] .milkdown .milkdown-image-block .operation,
+    [data-slot='markdown-editor'] .milkdown .milkdown-image-block .image-resize-handle {
+      opacity: 1;
+    }
+  }
+
+  @media (pointer: coarse) {
+    [data-slot='markdown-editor'] .milkdown {
+      --markdown-editor-block-handle-width: 5.875rem;
+    }
+
+    [data-slot='markdown-editor'] .milkdown .milkdown-image-block .operation {
+      right: 0.25rem;
+      top: 0.25rem;
+    }
+
+    [data-slot='markdown-editor'] .milkdown :is(button, [role='button']),
+    [data-slot='markdown-editor'] .milkdown .milkdown-block-handle .operation-item {
+      min-height: 2.75rem !important;
+      min-width: 2.75rem !important;
+    }
+
+    [data-slot='markdown-editor'] .milkdown :is(input, .cm-editor, .cm-content) {
+      font-size: 1rem !important;
+    }
+
+    :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+      :is(.milkdown-slash-menu .menu-group li, .top-bar-heading-option) {
+      min-height: 2.75rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :is([data-slot='markdown-editor'] .milkdown, [data-slot='markdown-editor-slash-menu-portal'])
+      :is(
+        button,
+        [role='button'],
+        .milkdown-block-handle,
+        .image-wrapper .operation,
+        .image-resize-handle,
+        .milkdown-slash-menu,
+        .milkdown-toolbar
+      ) {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}

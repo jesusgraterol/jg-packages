@@ -2,6 +2,9 @@
 
 ## 0.3.0
 
+- Add the retained compact, wide, automatic, and chat Markdown editors with direct shared APIs, selection tools, and caller-owned upload/dictation compositions.
+- Preserve draft bounds, initialization safety, keyboard formatting, focus return, and 44px coarse-pointer editor controls.
+
 - Add Markdown, full code typography, syntax highlighting, code preference controls, and validated YouTube embeds through shared implementations.
 - Wrap long inline tokens inside shrinkable message columns, contain code/table scrolling, and preserve unlabelled code fences.
 

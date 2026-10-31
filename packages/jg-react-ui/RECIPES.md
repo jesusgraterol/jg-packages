@@ -380,3 +380,48 @@ const source = createElement(CodeBlock, {
 ```
 
 Mount an editable UiPreferencesProvider to enable saved wrapping controls. Set an explicit wrapping prop to lock one source surface, or use `hasSyntaxHighlighting={false}` for escaped literal source. Renderer overrides take precedence; custom routing links own navigation. Raw HTML remains disabled unless the application explicitly changes that policy.
+
+## Edit a controlled Markdown document
+
+```tsx
+import { useState } from 'react';
+import {
+  MarkdownEditor,
+  MARKDOWN_EDITOR_AUTHORING_TOOLS,
+} from 'jg-react-ui/components/markdown-editor';
+const ProjectNotes = () => {
+  const [notes, setNotes] = useState('## Weekly notes');
+  return (
+    <MarkdownEditor
+      aria-label="Project notes"
+      onChange={setNotes}
+      supportedTools={MARKDOWN_EDITOR_AUTHORING_TOOLS}
+      value={notes}
+    />
+  );
+};
+```
+
+## Compose a bounded chat draft
+
+```tsx
+import { useRef, useState } from 'react';
+import {
+  ChatMarkdownEditor,
+  type IChatMarkdownEditorControls,
+} from 'jg-react-ui/components/markdown-editor';
+const MessageDraft = () => {
+  const [message, setMessage] = useState('');
+  const controlsRef = useRef<IChatMarkdownEditorControls>(null);
+  return (
+    <ChatMarkdownEditor
+      controlsRef={controlsRef}
+      maxLength={2048}
+      onChange={setMessage}
+      value={message}
+    />
+  );
+};
+```
+
+Read `controlsRef.current?.getMarkdown()` when submitting so a debounced change cannot omit the latest keystroke. Pass reviewed dictation to `appendLiteralText` and handle false by retaining it for another attempt. The private gallery demonstrates the actual upload and audio components with abortable local fixture adapters.

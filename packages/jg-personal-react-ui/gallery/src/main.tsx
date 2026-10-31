@@ -57,6 +57,13 @@ const router = createBrowserRouter([
           { path: '/inputs', element: <InputDemo /> },
           { path: '/markdown', element: <MarkdownDemo /> },
           {
+            path: '/editors',
+            lazy: async () => {
+              const { EditorDemo } = await import('./editor-demo/editor-demo.component.js');
+              return { Component: EditorDemo };
+            },
+          },
+          {
             path: '/queries',
             element: (
               <ErrorFeedbackProvider resolveErrorFeedback={errorPolicy}>
