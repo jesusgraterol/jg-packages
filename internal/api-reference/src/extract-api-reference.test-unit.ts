@@ -29,73 +29,81 @@ describe('extractApiReference', () => {
     expect(reference.entryPoints[1]?.symbols.map(({ name }) => name)).toStrictEqual(['double']);
   });
 
-  test('describes a function signature with its parameters, returns, throws, and example', () => {
-    expect(getSymbol('movePoint')).toStrictEqual({
-      name: 'movePoint',
-      kind: 'function',
-      summary: 'Moves a point by an offset.',
-      examples: ['```ts\nmovePoint({ x: 1, y: 2 }, 3); // { x: 4, y: 5 }\n```'],
-      deprecated: undefined,
-      type: undefined,
-      members: [],
-      signatures: [
+  test(
+    'describes a function signature with its parameters, returns, throws, and example',
+    { tags: ['full'] },
+    () => {
+      expect(getSymbol('movePoint')).toStrictEqual({
+        name: 'movePoint',
+        kind: 'function',
+        summary: 'Moves a point by an offset.',
+        examples: ['```ts\nmovePoint({ x: 1, y: 2 }, 3); // { x: 4, y: 5 }\n```'],
+        deprecated: undefined,
+        type: undefined,
+        members: [],
+        signatures: [
+          {
+            text: 'movePoint(point: IPoint, offset?: number): IPoint',
+            summary: 'Moves a point by an offset.',
+            typeParameters: [],
+            parameters: [
+              {
+                name: 'point',
+                type: 'IPoint',
+                isOptional: false,
+                isRest: false,
+                defaultValue: undefined,
+                description: 'The point to move.',
+              },
+              {
+                name: 'offset',
+                type: 'number',
+                isOptional: true,
+                isRest: false,
+                defaultValue: '1',
+                description: 'The distance to add to both coordinates.',
+              },
+            ],
+            returnType: 'IPoint',
+            returns: 'The moved point.',
+            throws: ['INVALID_POINT: The point is not valid.'],
+            examples: ['```ts\nmovePoint({ x: 1, y: 2 }, 3); // { x: 4, y: 5 }\n```'],
+            deprecated: undefined,
+          },
+        ],
+      });
+    },
+  );
+
+  test(
+    'keeps every overload, each with its own documentation and deprecation',
+    { tags: ['full'] },
+    () => {
+      const formatPoint = getSymbol('formatPoint');
+
+      expect(
+        formatPoint.signatures.map(({ text, summary, deprecated }) => ({
+          text,
+          summary,
+          deprecated,
+        })),
+      ).toStrictEqual([
         {
-          text: 'movePoint(point: IPoint, offset?: number): IPoint',
-          summary: 'Moves a point by an offset.',
-          typeParameters: [],
-          parameters: [
-            {
-              name: 'point',
-              type: 'IPoint',
-              isOptional: false,
-              isRest: false,
-              defaultValue: undefined,
-              description: 'The point to move.',
-            },
-            {
-              name: 'offset',
-              type: 'number',
-              isOptional: true,
-              isRest: false,
-              defaultValue: '1',
-              description: 'The distance to add to both coordinates.',
-            },
-          ],
-          returnType: 'IPoint',
-          returns: 'The moved point.',
-          throws: ['INVALID_POINT: The point is not valid.'],
-          examples: ['```ts\nmovePoint({ x: 1, y: 2 }, 3); // { x: 4, y: 5 }\n```'],
+          text: 'formatPoint(point: IPoint): string',
+          summary: 'Formats a point.',
+          deprecated: 'Use `describePoint` instead.',
+        },
+        {
+          text: 'formatPoint(point: IPoint, prefix: string): string',
+          summary: 'Formats a point with a prefix.',
           deprecated: undefined,
         },
-      ],
-    });
-  });
+      ]);
+      expect(formatPoint.deprecated).toBe('Use `describePoint` instead.');
+    },
+  );
 
-  test('keeps every overload, each with its own documentation and deprecation', () => {
-    const formatPoint = getSymbol('formatPoint');
-
-    expect(
-      formatPoint.signatures.map(({ text, summary, deprecated }) => ({
-        text,
-        summary,
-        deprecated,
-      })),
-    ).toStrictEqual([
-      {
-        text: 'formatPoint(point: IPoint): string',
-        summary: 'Formats a point.',
-        deprecated: 'Use `describePoint` instead.',
-      },
-      {
-        text: 'formatPoint(point: IPoint, prefix: string): string',
-        summary: 'Formats a point with a prefix.',
-        deprecated: undefined,
-      },
-    ]);
-    expect(formatPoint.deprecated).toBe('Use `describePoint` instead.');
-  });
-
-  test('reads line comments on types, constants, and properties', () => {
+  test('reads line comments on types, constants, and properties', { tags: ['full'] }, () => {
     const point = getSymbol('IPoint');
 
     expect(point.summary).toBe('a two-dimensional point');
@@ -113,25 +121,29 @@ describe('extractApiReference', () => {
     });
   });
 
-  test('describes a class with its example, constructor, and public members', () => {
-    const shape = getSymbol('Shape');
+  test(
+    'describes a class with its example, constructor, and public members',
+    { tags: ['full'] },
+    () => {
+      const shape = getSymbol('Shape');
 
-    expect(shape.summary).toBe('A polygon with a fixed number of sides.');
-    expect(shape.examples).toStrictEqual(['```ts\nnew Shape(3).sides; // 3\n```']);
-    expect(
-      shape.members.map(({ name, kind, signatures }) => [
-        name,
-        kind,
-        signatures.map(({ text }) => text),
-      ]),
-    ).toStrictEqual([
-      ['sides', 'property', []],
-      ['constructor', 'constructor', ['new Shape(sides: number)']],
-      ['isTriangle', 'method', ['isTriangle(): boolean']],
-    ]);
-  });
+      expect(shape.summary).toBe('A polygon with a fixed number of sides.');
+      expect(shape.examples).toStrictEqual(['```ts\nnew Shape(3).sides; // 3\n```']);
+      expect(
+        shape.members.map(({ name, kind, signatures }) => [
+          name,
+          kind,
+          signatures.map(({ text }) => text),
+        ]),
+      ).toStrictEqual([
+        ['sides', 'property', []],
+        ['constructor', 'constructor', ['new Shape(sides: number)']],
+        ['isTriangle', 'method', ['isTriangle(): boolean']],
+      ]);
+    },
+  );
 
-  test("never credits a symbol with the index file's section comment", () => {
+  test("never credits a symbol with the index file's section comment", { tags: ['full'] }, () => {
     expect(getSymbol('IUndocumentedShape').summary).toBe('');
     expect(getSymbol('UNDOCUMENTED_LIMIT').summary).toBe('');
     expect(getSymbol('UndocumentedShape').summary).toBe('');

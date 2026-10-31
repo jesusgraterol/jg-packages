@@ -79,7 +79,7 @@ describe('PACKAGE_CATALOG', () => {
   });
 });
 
-describe('groupPackagesByRuntime', () => {
+describe('groupPackagesByRuntime', { tags: ['full'] }, () => {
   const listed = (name: string, runtimes: IListedPackage['runtimes']): IListedPackage => ({
     description: 'x'.repeat(80),
     icon: 'wrench',

@@ -164,7 +164,7 @@ afterEach(async () => {
   await rm(workDirectory, { recursive: true, force: true });
 });
 
-describe('packAndCheck', { tags: ['full'] }, () => {
+describe('packAndCheck', () => {
   test('passes a well-formed package and lists its tarball with its checksum', async () => {
     const { entries, problems } = await packAndCheck(rootDirectory, outputDirectory, dependencies);
 
@@ -179,31 +179,39 @@ describe('packAndCheck', { tags: ['full'] }, () => {
     ]);
   }, 120_000);
 
-  test('fails an export without its @example, a changelog without the version, and a README without a section', async () => {
-    await editFile(
-      'src/index.ts',
-      " * @example\n * import { greet } from 'jg-release-checks-sample';\n *\n * greet('Ada'); // => 'Hello, Ada!'\n",
-      '',
-    );
-    await editFile('CHANGELOG.md', '## 1.0.0', '## 0.9.0');
-    await editFile('README.md', '## Usage', '## Examples');
-    await buildFixture();
+  test(
+    'fails an export without its @example, a changelog without the version, and a README without a section',
+    { tags: ['full'], timeout: 120_000 },
+    async () => {
+      await editFile(
+        'src/index.ts',
+        " * @example\n * import { greet } from 'jg-release-checks-sample';\n *\n * greet('Ada'); // => 'Hello, Ada!'\n",
+        '',
+      );
+      await editFile('CHANGELOG.md', '## 1.0.0', '## 0.9.0');
+      await editFile('README.md', '## Usage', '## Examples');
+      await buildFixture();
 
-    expect(await checkProblems()).toStrictEqual([
-      'CHANGELOG.md has no `## 1.0.0` section',
-      'README.md needs the sections `## Install`, `## Usage`, `## Documentation`, `## License` once each, in that order',
-      '. exports the function greet without an @example',
-    ]);
-  }, 120_000);
+      expect(await checkProblems()).toStrictEqual([
+        'CHANGELOG.md has no `## 1.0.0` section',
+        'README.md needs the sections `## Install`, `## Usage`, `## Documentation`, `## License` once each, in that order',
+        '. exports the function greet without an @example',
+      ]);
+    },
+  );
 
-  test('fails an API.md that the TSDoc has moved past', async () => {
-    await editFile('src/index.ts', ' * Builds a greeting.', ' * Builds a friendly greeting.');
-    await buildFixture({ writesApiMarkdown: false });
+  test(
+    'fails an API.md that the TSDoc has moved past',
+    { tags: ['full'], timeout: 120_000 },
+    async () => {
+      await editFile('src/index.ts', ' * Builds a greeting.', ' * Builds a friendly greeting.');
+      await buildFixture({ writesApiMarkdown: false });
 
-    expect(await checkProblems()).toStrictEqual([
-      'API.md differs from a fresh render of the TSDoc; build the package again',
-    ]);
-  }, 120_000);
+      expect(await checkProblems()).toStrictEqual([
+        'API.md differs from a fresh render of the TSDoc; build the package again',
+      ]);
+    },
+  );
 
   test('fails a test file in the build output and a missing exports target', async () => {
     await writeFile(join(packageDirectory, 'dist', 'index.test-unit.js'), 'export {};\n');
@@ -215,21 +223,25 @@ describe('packAndCheck', { tags: ['full'] }, () => {
     expect(problems).toContain('is missing an `exports` or `bin` target: ./dist/index.d.ts');
   }, 120_000);
 
-  test('fails a command that exits with an error on --help', async () => {
-    await editFile(
-      'package.json',
-      '"main": "./dist/index.js",',
-      '"bin": {\n    "sample": "./dist/cli.js"\n  },\n  "main": "./dist/index.js",',
-    );
-    await writeFile(
-      join(packageDirectory, 'dist', 'cli.js'),
-      "#!/usr/bin/env node\nconsole.error('no help here');\nprocess.exitCode = 3;\n",
-    );
+  test(
+    'fails a command that exits with an error on --help',
+    { tags: ['full'], timeout: 120_000 },
+    async () => {
+      await editFile(
+        'package.json',
+        '"main": "./dist/index.js",',
+        '"bin": {\n    "sample": "./dist/cli.js"\n  },\n  "main": "./dist/index.js",',
+      );
+      await writeFile(
+        join(packageDirectory, 'dist', 'cli.js'),
+        "#!/usr/bin/env node\nconsole.error('no help here');\nprocess.exitCode = 3;\n",
+      );
 
-    expect(await checkProblems()).toStrictEqual(['`sample --help` exits with 3: no help here']);
-  }, 120_000);
+      expect(await checkProblems()).toStrictEqual(['`sample --help` exits with 3: no help here']);
+    },
+  );
 
-  test('fails a workspace whose tests pnpm check would skip, even a private one', async () => {
+  test('fails a workspace whose tests pnpm check:full would skip, even a private one', async () => {
     await mkdir(join(rootDirectory, 'internal', 'tool'), { recursive: true });
     await writeFile(
       join(rootDirectory, 'internal', 'tool', 'package.json'),
@@ -243,7 +255,7 @@ describe('packAndCheck', { tags: ['full'] }, () => {
     const { workspaceProblems } = await packAndCheck(rootDirectory, outputDirectory, dependencies);
 
     expect(workspaceProblems).toStrictEqual([
-      '@sample/tool has test:unit but no test:coverage, so pnpm check never runs its tests',
+      '@sample/tool has test:unit but no test:coverage, so pnpm check:full never runs its tests',
     ]);
     expect(await runPack(rootDirectory, join(workDirectory, 'blocked'), dependencies)).toBe(1);
   }, 120_000);
@@ -257,7 +269,7 @@ describe('packAndCheck', { tags: ['full'] }, () => {
   });
 });
 
-describe('runPack', { tags: ['full'] }, () => {
+describe('runPack', () => {
   test('writes the release manifest next to the tarballs when every check passes', async () => {
     const releaseDirectory = join(workDirectory, 'packed');
 

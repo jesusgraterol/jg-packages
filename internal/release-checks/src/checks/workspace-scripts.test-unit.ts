@@ -21,9 +21,9 @@ describe('checkWorkspaceScripts', () => {
         workspace('jg-integration', { 'test:integration': 'vitest run --project integration' }),
       ]),
     ).toStrictEqual([
-      'jg-unit has test:unit but no test:coverage, so pnpm check never runs its tests',
-      'jg-both has test:unit and test:integration but no test:coverage, so pnpm check never runs its tests',
-      'jg-integration has test:integration but no test:coverage, so pnpm check never runs its tests',
+      'jg-unit has test:unit but no test:coverage, so pnpm check:full never runs its tests',
+      'jg-both has test:unit and test:integration but no test:coverage, so pnpm check:full never runs its tests',
+      'jg-integration has test:integration but no test:coverage, so pnpm check:full never runs its tests',
     ]);
   });
 
