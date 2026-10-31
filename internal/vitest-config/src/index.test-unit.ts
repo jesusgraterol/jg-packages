@@ -129,6 +129,40 @@ describe('createVitestConfig', () => {
     expect(project).not.toHaveProperty('test.environment');
   });
 
+  test.each([undefined, 'full', 'essential'] as const)(
+    'an assessed browser uses one engine only in essential (%s)',
+    (suite) => {
+      vi.stubEnv('JG_TEST_SUITE', suite);
+      const [project] =
+        createVitestConfig({
+          categories: ['browser'],
+          essentialBrowser: 'chromium',
+        }).test?.projects ?? [];
+      expect(project).toMatchObject({
+        test: {
+          browser: {
+            instances:
+              suite === 'essential'
+                ? [{ browser: 'chromium' }]
+                : [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+          },
+        },
+      });
+    },
+  );
+
+  test('keeps all engines for unassessed essential consumers', () => {
+    vi.stubEnv('JG_TEST_SUITE', 'essential');
+    const [project] = createVitestConfig({ categories: ['browser'] }).test?.projects ?? [];
+    expect(project).toMatchObject({
+      test: {
+        browser: {
+          instances: [{ browser: 'chromium' }, { browser: 'firefox' }, { browser: 'webkit' }],
+        },
+      },
+    });
+  });
+
   test('passes coverage thresholds through, and sets none by default', () => {
     const thresholds = { lines: 95, branches: 90, functions: 100, statements: 95 };
 

@@ -73,7 +73,7 @@ const scrollHeadingTo = async (id: string, top: number): Promise<void> => {
   });
 };
 
-describe('useActiveHeading', () => {
+describe('useActiveHeading', { tags: ['full'] }, () => {
   test('follows the scroll: the last heading past the offset, or the first before any', async () => {
     const { result } = renderActiveHeading({ headingIds: HEADING_IDS, topOffsetPx: 80 });
     await vi.waitFor(() => {

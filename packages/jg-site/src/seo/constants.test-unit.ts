@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { SEARCH_TEXT_LIMITS } from './constants.js';
 
-describe('SEARCH_TEXT_LIMITS', () => {
+describe('SEARCH_TEXT_LIMITS', { tags: ['full'] }, () => {
   test('keeps titles to 60 characters and descriptions to 70 through 160', () => {
     expect(SEARCH_TEXT_LIMITS).toStrictEqual({
       descriptionMaxLength: 160,

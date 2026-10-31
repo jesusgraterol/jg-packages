@@ -36,7 +36,7 @@ const settle = (): Promise<void> =>
     setTimeout(resolve, 20);
   });
 
-describe('useDocumentTheme', () => {
+describe('useDocumentTheme', { tags: ['full'] }, () => {
   test("re-renders once when <html>'s theme class changes, and not for another class", async () => {
     stubSystemScheme(false);
     document.documentElement.classList.add('light');

@@ -190,7 +190,7 @@ describe('document visibility', () => {
   });
 });
 
-describe('breakpoints', () => {
+describe('breakpoints', { tags: ['full'] }, () => {
   test.each([
     [320, 'xs'],
     [639, 'xs'],
@@ -261,7 +261,7 @@ describe('breakpoints', () => {
   });
 });
 
-describe('window scroll', () => {
+describe('window scroll', { tags: ['full'] }, () => {
   test('reads scrollY, and listens passively for scrolls', () => {
     const fakeWindow = createTarget({ scrollY: 240 });
     vi.stubGlobal('window', fakeWindow);

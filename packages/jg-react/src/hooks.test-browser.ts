@@ -99,7 +99,7 @@ describe('useDocumentVisibility', () => {
   });
 });
 
-describe('useBreakpoint', () => {
+describe('useBreakpoint', { tags: ['full'] }, () => {
   test('reads xs on a phone, follows resizes across breakpoints, and only re-renders on a crossing', async () => {
     await page.viewport(375, 800);
     let renders = 0;
@@ -125,7 +125,7 @@ describe('useBreakpoint', () => {
   });
 });
 
-describe('useIsWindowScrolledPast', () => {
+describe('useIsWindowScrolledPast', { tags: ['full'] }, () => {
   test('turns true past the threshold, and re-renders only when the answer changes', async () => {
     await page.viewport(800, 600);
     const spacer = document.createElement('div');
@@ -465,7 +465,7 @@ describe('useResendCooldown', () => {
   });
 });
 
-describe('useAppliedTheme', () => {
+describe('useAppliedTheme', { tags: ['full'] }, () => {
   /**
    * Stubs the system's dark color scheme query with one the test controls.
    * @param matches Whether the system starts dark.

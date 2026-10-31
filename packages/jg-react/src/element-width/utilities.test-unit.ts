@@ -10,6 +10,6 @@ test.each([
   ['an entry with a border box', { borderBoxSize: [{ inlineSize: 480 }] }, 480],
   ['an entry without a border box', { borderBoxSize: [] }, 320],
   ['no entry', undefined, 320],
-])('readBorderBoxWidth(%s) -> %d', (_, entry, expected) => {
+])('readBorderBoxWidth(%s) -> %d', { tags: ['full'] }, (_, entry, expected) => {
   expect(readBorderBoxWidth(entry as ResizeObserverEntry | undefined, element)).toBe(expected);
 });

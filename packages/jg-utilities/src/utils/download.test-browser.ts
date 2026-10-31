@@ -38,7 +38,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('downloads in a browser', () => {
+describe('downloads in a browser', { tags: ['full'] }, () => {
   test('save JSON as a file ending in a newline', async () => {
     const clicked = recordClicks();
 

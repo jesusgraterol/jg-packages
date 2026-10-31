@@ -14,7 +14,7 @@ const SITE: IStructuredDataSite = {
   url: 'https://example.dev',
 };
 
-describe('buildStructuredData', () => {
+describe('buildStructuredData', { tags: ['full'] }, () => {
   test('describes the home page as the website, with the pages it lists in order', () => {
     expect(
       buildStructuredData({
@@ -133,7 +133,7 @@ describe('buildStructuredData', () => {
   });
 });
 
-describe('buildBreadcrumbStructuredData', () => {
+describe('buildBreadcrumbStructuredData', { tags: ['full'] }, () => {
   test('lists every step in order, each with its URL', () => {
     expect(
       buildBreadcrumbStructuredData([

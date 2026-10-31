@@ -116,6 +116,8 @@ Host and credential tests retain real files, child processes, Git repositories, 
 
 Keep real database/cache and HTTP/server guarantees essential: transaction rollback and client destruction, exact limits and idempotency, private cache/claim isolation, bounded network bodies/deadlines, safe retries, credential limits, schema/error mapping and fail-closed guards. A real timeout is essential when it uniquely proves recovery or cancellation. Broad property permutations may be full-only when focused essential cases retain the consequential contracts; record that distinction in the [persistence/HTTP classification](development.md#persistence-http-and-server-boundaries).
 
+Browser membership follows the distinct consequence, not the frontend location. Keep real private storage/cache isolation, script-injection defenses, primary navigation/focus, owned dialog/upload/search lifecycles and worker recovery essential. Additional engines and presentation permutations can be full-only after assessment. Use `essentialBrowser: 'chromium'` only for assessed consumers; an unset option preserves all engines. Explicit full-only file patterns must not silently absorb a new essential scenario. See the [browser classification](development.md#browser-and-client-state-boundaries); granular/focused commands stay complete by default.
+
 Don't test what can't break on its own: re-exports, constants, types without generics, or behavior a contract test already proves.
 
 ## Naming

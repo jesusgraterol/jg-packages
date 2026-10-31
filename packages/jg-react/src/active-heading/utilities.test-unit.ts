@@ -11,7 +11,7 @@ import { pickActiveHeadingId, readHeadingIdFromHash } from './utilities.js';
 const heading = (id: string, top: number) =>
   ({ id, getBoundingClientRect: () => ({ top }) }) as unknown as HTMLElement;
 
-describe('readHeadingIdFromHash', () => {
+describe('readHeadingIdFromHash', { tags: ['full'] }, () => {
   test.each([
     ['#getting-started', 'getting-started'],
     ['#caf%C3%A9', 'café'],
@@ -23,7 +23,7 @@ describe('readHeadingIdFromHash', () => {
   });
 });
 
-describe('pickActiveHeadingId', () => {
+describe('pickActiveHeadingId', { tags: ['full'] }, () => {
   test('picks the last heading whose top reached the offset, with a tolerance of 16 pixels', () => {
     expect(pickActiveHeadingId([heading('a', -400), heading('b', 96), heading('c', 97)], 80)).toBe(
       'b',

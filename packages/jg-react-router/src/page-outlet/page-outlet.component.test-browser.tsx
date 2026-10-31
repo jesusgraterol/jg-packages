@@ -247,7 +247,7 @@ describe('PageOutlet', () => {
     expect(window.scrollY).toBe(expectedTop);
   });
 
-  test('joins its className to the frame class', () => {
+  test('joins its className to the frame class', { tags: ['full'] }, () => {
     renderRouter([{ path: '/', element: <PageOutlet className="app-main" />, children: [] }], '/');
 
     expect(getFrame().className).toBe('jg-page-outlet app-main');
@@ -278,7 +278,7 @@ describe('styles.css', () => {
     };
   };
 
-  test('fades each page in, for 180 ms', async () => {
+  test('fades each page in, for 180 ms', { tags: ['full'] }, async () => {
     const removeStylesheet = await addStylesheet();
     try {
       renderRouter(createPageRoutes(), '/a');

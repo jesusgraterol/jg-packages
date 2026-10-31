@@ -42,6 +42,9 @@ export type IVitestConfigOptions = {
 
   // secondary files omitted before imports/setup only when the essential suite is selected
   fullOnlyFiles?: string[];
+
+  // assessed browser coverage can use one engine in essential; defaults remain complete
+  essentialBrowser?: (typeof BROWSER_INSTANCES)[number];
 };
 
 // file suffix that identifies each category's test files; a test of a `.tsx` file is `.tsx` too
@@ -85,6 +88,7 @@ const COVERAGE_EXCLUDE = [
  * @param globalSetup The file the integration project runs once around its tests, if any.
  * @param suite The suite the run selected, which decides whether tests tagged `full` are skipped.
  * @param fullOnlyFiles Secondary file patterns excluded before imports in essential.
+ * @param essentialBrowser The assessed representative engine, leaving other consumers complete.
  * @returns The inline project configuration.
  */
 const buildProject = (
@@ -93,6 +97,7 @@ const buildProject = (
   globalSetup: string | undefined,
   suite: ITestSuite,
   fullOnlyFiles: string[],
+  essentialBrowser: IVitestConfigOptions['essentialBrowser'],
 ): TestProjectInlineConfiguration => {
   const pattern = CATEGORY_FILE_PATTERNS[category];
   const shared = {
@@ -112,6 +117,10 @@ const buildProject = (
     ],
   };
   if (category === 'browser') {
+    const browsers =
+      suite === 'essential' && essentialBrowser !== undefined
+        ? [essentialBrowser]
+        : BROWSER_INSTANCES;
     return {
       test: {
         ...shared,
@@ -120,7 +129,7 @@ const buildProject = (
           enabled: true,
           headless: true,
           provider: playwright(),
-          instances: BROWSER_INSTANCES.map((browser) => ({ browser })),
+          instances: browsers.map((browser) => ({ browser })),
         },
       },
     };
@@ -141,7 +150,8 @@ const buildProject = (
  * Creates a package's Vitest configuration with one project per test category it has, named after
  * the category, so `vitest run --project unit` runs exactly that category. Benchmarks live in a
  * `bench` project that runs no regular tests, and `vitest bench --run` runs them. The `browser`
- * project runs its tests in headless Chromium, Firefox, and WebKit. Tests and hooks fail after 30
+ * project is complete in Chromium, Firefox, and WebKit by default. An assessed essentialBrowser
+ * selects one engine only in essential; unassessed consumers keep all three. Tests and hooks fail after 30
  * seconds unless they set their own timeout, and no run uses Vitest's file module cache. `vitest run --coverage`
  * measures the source with V8 and prints a summary, failing below the thresholds when there are
  * any. A `globalSetup` file runs once around the integration project, such as to start a database
@@ -151,7 +161,7 @@ const buildProject = (
  * unless JG_TEST_SUITE selects essential. Wholly secondary files are excluded before imports;
  * empty projects do not run global setup, and unexpectedly empty required selections fail.
  * @param options The categories the package has, the environment its tests run in, its coverage
- * thresholds, the integration project's global setup, and wholly secondary file patterns.
+ * thresholds, integration setup, secondary files, and an assessed essential browser.
  * @returns The Vitest configuration.
  * @example
  * export default createVitestConfig({ categories: ['unit', 'integration'] });
@@ -176,6 +186,7 @@ export const createVitestConfig = ({
   coverage = {},
   globalSetup,
   fullOnlyFiles = [],
+  essentialBrowser,
 }: IVitestConfigOptions): ViteUserConfig => {
   if (categories.length === 0) {
     throw new Error('createVitestConfig needs at least one test category.');
@@ -195,7 +206,7 @@ export const createVitestConfig = ({
        */
       fsModuleCache: false,
       projects: categories.map((category) =>
-        buildProject(category, environment, globalSetup, suite, fullOnlyFiles),
+        buildProject(category, environment, globalSetup, suite, fullOnlyFiles, essentialBrowser),
       ),
       coverage: {
         provider: 'v8',

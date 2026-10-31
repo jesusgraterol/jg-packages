@@ -7,7 +7,7 @@ import {
   normalizeDescription,
 } from './llms-text.js';
 
-describe('buildLlmsText', () => {
+describe('buildLlmsText', { tags: ['full'] }, () => {
   test('writes a section with a Markdown body as it is, after its heading', () => {
     expect(
       buildLlmsText({
@@ -101,7 +101,7 @@ describe('buildLlmsText', () => {
   });
 });
 
-describe('buildLlmsFullText', () => {
+describe('buildLlmsFullText', { tags: ['full'] }, () => {
   test('writes the title and summary, then each document between rules', () => {
     expect(
       buildLlmsFullText({
@@ -115,7 +115,7 @@ describe('buildLlmsFullText', () => {
   });
 });
 
-describe('escapeMarkdownLabel', () => {
+describe('escapeMarkdownLabel', { tags: ['full'] }, () => {
   test('escapes brackets and backslashes, so the label stays one label', () => {
     expect(escapeMarkdownLabel('[draft] a\\b')).toBe('\\[draft\\] a\\\\b');
     expect(
@@ -130,7 +130,7 @@ describe('escapeMarkdownLabel', () => {
   });
 });
 
-describe('normalizeDescription', () => {
+describe('normalizeDescription', { tags: ['full'] }, () => {
   test('collapses whitespace into single spaces, and trims it', () => {
     expect(normalizeDescription('  Typed stores,\n  for pages\tand workers. ')).toBe(
       'Typed stores, for pages and workers.',

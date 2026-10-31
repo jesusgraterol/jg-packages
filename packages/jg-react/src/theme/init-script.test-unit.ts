@@ -65,6 +65,7 @@ describe('createThemeInitScript', () => {
     ['system', true, ['dark']],
   ] as const)(
     'applies a stored %s preference, with a dark system: %s',
+    { tags: ['full'] },
     (stored, isDark, expected) => {
       expect(
         runScript(
@@ -75,11 +76,11 @@ describe('createThemeInitScript', () => {
     },
   );
 
-  test('reads a raw string as well as the JSON jg-storage writes', () => {
+  test('reads a raw string as well as the JSON jg-storage writes', { tags: ['full'] }, () => {
     expect(runScript({ storageKey: KEY }, { stored: { [KEY]: 'dark' } })).toStrictEqual(['dark']);
   });
 
-  test('reads the field of a stored object', () => {
+  test('reads the field of a stored object', { tags: ['full'] }, () => {
     const stored = { [KEY]: JSON.stringify({ theme: 'dark', locale: 'en' }) };
 
     expect(runScript({ storageKey: KEY, field: 'theme' }, { stored })).toStrictEqual(['dark']);
@@ -91,7 +92,7 @@ describe('createThemeInitScript', () => {
     ['a number', '42'],
     ['null', 'null'],
     ['an array', JSON.stringify(['dark'])],
-  ])('falls back to the default preference for %s', (_, value) => {
+  ])('falls back to the default preference for %s', { tags: ['full'] }, (_, value) => {
     const stored = value === undefined ? {} : { [KEY]: value };
 
     expect(runScript({ storageKey: KEY, defaultPreference: 'dark' }, { stored })).toStrictEqual([
@@ -105,30 +106,34 @@ describe('createThemeInitScript', () => {
     ['a value that is not an object', JSON.stringify('dark')],
     ['an array', JSON.stringify([{ theme: 'dark' }])],
     ['text that is not JSON', 'dark'],
-  ])('falls back to the default preference for a field read from %s', (_, value) => {
-    const field = value === JSON.stringify({}) ? 'constructor' : 'theme';
+  ])(
+    'falls back to the default preference for a field read from %s',
+    { tags: ['full'] },
+    (_, value) => {
+      const field = value === JSON.stringify({}) ? 'constructor' : 'theme';
 
-    expect(
-      runScript(
-        { storageKey: KEY, field, defaultPreference: 'light' },
-        { stored: { [KEY]: value } },
-      ),
-    ).toStrictEqual(['light']);
-  });
+      expect(
+        runScript(
+          { storageKey: KEY, field, defaultPreference: 'light' },
+          { stored: { [KEY]: value } },
+        ),
+      ).toStrictEqual(['light']);
+    },
+  );
 
-  test('falls back to the default preference when storage is denied', () => {
+  test('falls back to the default preference when storage is denied', { tags: ['full'] }, () => {
     expect(
       runScript({ storageKey: KEY, defaultPreference: 'dark' }, { isStorageDenied: true }),
     ).toStrictEqual(['dark']);
   });
 
-  test('resolves the system preference to light without matchMedia', () => {
+  test('resolves the system preference to light without matchMedia', { tags: ['full'] }, () => {
     expect(runScript({ storageKey: KEY }, { systemPrefersDark: undefined })).toStrictEqual([
       'light',
     ]);
   });
 
-  test('replaces the other theme class', () => {
+  test('replaces the other theme class', { tags: ['full'] }, () => {
     expect(
       runScript(
         { storageKey: KEY },

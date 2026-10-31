@@ -41,32 +41,36 @@ const createDeferred = (): {
 };
 
 describe('useCopyFeedback', () => {
-  test('shows the copy as copied for the default duration, then resets', async () => {
-    vi.useFakeTimers();
-    const write = vi.fn(() => Promise.resolve());
-    const { result } = renderCopyFeedback();
-    const { copy } = result.current;
+  test(
+    'shows the copy as copied for the default duration, then resets',
+    { tags: ['full'] },
+    async () => {
+      vi.useFakeTimers();
+      const write = vi.fn(() => Promise.resolve());
+      const { result } = renderCopyFeedback();
+      const { copy } = result.current;
 
-    let isSuccess: boolean | undefined;
-    await act(async () => {
-      isSuccess = await result.current.copy(write);
-    });
+      let isSuccess: boolean | undefined;
+      await act(async () => {
+        isSuccess = await result.current.copy(write);
+      });
 
-    expect(isSuccess).toBe(true);
-    expect(result.current.isCopied).toBe(true);
-    expect(result.current.copy).toBe(copy);
+      expect(isSuccess).toBe(true);
+      expect(result.current.isCopied).toBe(true);
+      expect(result.current.copy).toBe(copy);
 
-    act(() => {
-      vi.advanceTimersByTime(DEFAULT_COPY_FEEDBACK_SECONDS * 1000 - 1);
-    });
-    expect(result.current.isCopied).toBe(true);
-    act(() => {
-      vi.advanceTimersByTime(1);
-    });
-    expect(result.current.isCopied).toBe(false);
-  });
+      act(() => {
+        vi.advanceTimersByTime(DEFAULT_COPY_FEEDBACK_SECONDS * 1000 - 1);
+      });
+      expect(result.current.isCopied).toBe(true);
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(result.current.isCopied).toBe(false);
+    },
+  );
 
-  test('restarts the copied state for a later copy', async () => {
+  test('restarts the copied state for a later copy', { tags: ['full'] }, async () => {
     vi.useFakeTimers();
     const { result } = renderCopyFeedback({ durationSeconds: 1 });
 
