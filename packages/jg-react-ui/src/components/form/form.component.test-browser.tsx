@@ -1,10 +1,12 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { page } from 'vitest/browser';
 import { act, createRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import {
+  DEFAULT_FORM_PROPS,
   Checkbox,
   Field,
   FieldDescription,
@@ -455,4 +457,49 @@ test('native and custom slots retain refs, labels and disabled semantics', async
   expect(
     screen.getByRole('combobox', { name: 'Disabled language' }).getAttribute('aria-disabled'),
   ).toBe('true');
+});
+
+/**
+ * Renders one required field of a form with the shared validation defaults, and a control the
+ * field's focus can move to.
+ * @returns A React element that renders the form.
+ */
+const TouchedForm = (): React.ReactElement => {
+  const {
+    register,
+    formState: { errors },
+  } = useForm<{ name: string }>({ ...DEFAULT_FORM_PROPS, defaultValues: { name: '' } });
+  return (
+    <form>
+      <Field>
+        <Label htmlFor="touched-name">Name</Label>
+        <Input
+          id="touched-name"
+          aria-invalid={Boolean(errors.name)}
+          {...register('name', { required: 'Enter a name.' })}
+        />
+        {errors.name ? <FieldError>{errors.name.message}</FieldError> : null}
+      </Field>
+      <button type="button">Next</button>
+    </form>
+  );
+};
+
+test('with the shared defaults, a field shows its error once left, and drops it as soon as it is fixed', async () => {
+  render(<TouchedForm />);
+  const name = page.getByRole('textbox', { name: 'Name' });
+  await name.click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect.element(page.getByText('Enter a name.')).toBeVisible();
+
+  // the field keeps the focus while it's fixed, and its error goes at once
+  await name.fill('Personal');
+  await expect.element(page.getByText('Enter a name.')).not.toBeInTheDocument();
+});
+
+test('a switch keeps a 44px target on touch screens around its small track', () => {
+  render(<Switch aria-label="Fast mode" />);
+  const toggle = screen.getByRole('switch', { name: 'Fast mode' });
+  expect(toggle.className).toContain('relative');
+  expect(toggle.className).toContain('pointer-coarse:after:size-11');
 });

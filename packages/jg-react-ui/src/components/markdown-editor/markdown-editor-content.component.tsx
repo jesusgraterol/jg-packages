@@ -40,6 +40,10 @@ import type {
   IChatMarkdownBlockFormat,
   IChatMarkdownEditorInternalControls,
 } from './chat-editor/types.js';
+import {
+  isMarkdownEditorSelectionInListItem,
+  moveFocusFromMarkdownEditor,
+} from './keyboard.utilities.js';
 import { MarkdownEditorBlockActionMenu } from './markdown-editor-block-action-menu.component.js';
 import { useMarkdownEditorBlockHandleInteractions } from './markdown-editor-block-handle-interactions.hook.js';
 import { mountMarkdownEditorSlashMenuPortal } from './slash-menu.utilities.js';
@@ -470,6 +474,21 @@ const MarkdownEditorInstance = ({
           role: 'textbox',
         },
         handleKeyDown: (view, event) => {
+          /*
+           * a chat message isn't a document to indent, so Tab and Shift+Tab leave it, as they
+           * leave a text field, except in a list item, which they nest and lift
+           */
+          if (
+            chatOptionsRef.current &&
+            event.key === 'Tab' &&
+            !event.altKey &&
+            !event.ctrlKey &&
+            !event.metaKey &&
+            !isMarkdownEditorSelectionInListItem(view.state) &&
+            moveFocusFromMarkdownEditor(root, event.shiftKey ? -1 : 1)
+          )
+            return true;
+
           if (
             chatOptionsRef.current?.onSubmitRequest &&
             event.key === 'Enter' &&
