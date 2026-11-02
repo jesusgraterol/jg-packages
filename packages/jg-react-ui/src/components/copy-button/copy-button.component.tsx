@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback } from 'react';
 import type * as React from 'react';
 import { Check, Clipboard } from 'lucide-react';
 import { cn } from 'cnfast';
+import { copyText } from 'jg-clipboard';
+import { useCopyFeedback } from 'jg-react';
 
 import { useErrorFeedbackResolver } from '../error-feedback-provider/index.js';
 
@@ -11,23 +13,10 @@ import { COPY_BUTTON_FEEDBACK_DURATION_MS } from './constants.js';
 import type { ICopyButtonProps } from './types.js';
 
 /**
- * Writes text that loads after the click: within the click, through a ClipboardItem that waits
- * for it, as Safari needs, or once it has loaded where the browser has no ClipboardItem.
- * @param read What reads the text.
- * @returns A promise that resolves once the text is on the clipboard.
- */
-const writeLoadedText = async (read: () => Promise<string>): Promise<void> => {
-  if (typeof ClipboardItem === 'function' && typeof navigator.clipboard.write === 'function') {
-    const text = read().then((loaded) => new Blob([loaded], { type: 'text/plain' }));
-    await navigator.clipboard.write([new ClipboardItem({ 'text/plain': text })]);
-    return;
-  }
-  await navigator.clipboard.writeText(await read());
-};
-
-/**
- * Renders a copy command with optional visible text and copied feedback. The value can be a
- * function that reads the text after the click, such as a document the page loads on demand.
+ * Renders a copy command with optional visible text and copied feedback, copying through
+ * jg-clipboard's `copyText` and showing the copied state of jg-react's `useCopyFeedback`. The
+ * value can be a function that reads the text after the click, such as a document the page loads
+ * on demand.
  * @param props The text value to copy, or what reads it, and the shared button props to render.
  * @returns A React element that renders the copy command button.
  * @example
@@ -36,6 +25,7 @@ const writeLoadedText = async (read: () => Promise<string>): Promise<void> => {
  * const example = createElement(CopyButton, { value: 'pnpm build', copyLabel: 'Copy build command', size: 'icon-touch' });
  * @throws
  * - Button asChild requires exactly one valid React element child.
+ * - INVALID_COPY_FEEDBACK_DURATION: The copy feedback duration must be a positive, finite number of seconds.
  */
 export const CopyButton = ({
   'aria-label': ariaLabel,
@@ -52,14 +42,17 @@ export const CopyButton = ({
   ...props
 }: ICopyButtonProps): React.ReactElement => {
   const resolveErrorFeedback = useErrorFeedbackResolver();
-  const resolveErrorFeedbackRef = useRef(resolveErrorFeedback);
-  useLayoutEffect(() => {
-    resolveErrorFeedbackRef.current = resolveErrorFeedback;
+  const { isCopied, copy } = useCopyFeedback({
+    durationSeconds: copiedFeedbackDuration / 1000,
+    // a failed copy says so in a toast, unless it was cancelled; the hook calls the latest one
+    onError: (error) => {
+      const feedback = resolveErrorFeedback(error, {
+        fallbackMessage: 'We could not copy this text. Select it and copy it manually.',
+      });
+      if (!feedback.isCancelled)
+        toastr.error('Failed to write to Clipboard', { description: feedback.message });
+    },
   });
-  const [isCopied, setIsCopied] = useState(false);
-  const isWritingRef = useRef(false);
-  const isMountedRef = useRef(true);
-  const feedbackTimeoutRef = useRef<number | null>(null);
   const visibleLabel = label === undefined ? undefined : isCopied ? copiedLabel : label;
   const buttonLabel =
     ariaLabel ??
@@ -67,72 +60,10 @@ export const CopyButton = ({
     (isCopied ? 'Copied to Clipboard' : (copyLabel ?? 'Copy to Clipboard'));
   const buttonSize = size ?? (label === undefined ? 'icon' : 'default');
 
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-      if (feedbackTimeoutRef.current !== null) {
-        window.clearTimeout(feedbackTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  /**
-   * Writes the configured value to the Clipboard and updates feedback state.
-   * @returns A promise that resolves after the copy attempt finishes.
-   */
-  const handleCopyClick = useCallback(async (): Promise<void> => {
-    if (isWritingRef.current) {
-      return;
-    }
-
-    isWritingRef.current = true;
-    setIsCopied(false);
-
-    if (feedbackTimeoutRef.current !== null) {
-      window.clearTimeout(feedbackTimeoutRef.current);
-      feedbackTimeoutRef.current = null;
-    }
-
-    try {
-      if (
-        typeof navigator === 'undefined' ||
-        typeof navigator.clipboard?.writeText !== 'function'
-      ) {
-        toastr.error('Failed to write to Clipboard', {
-          description: 'We could not copy this text. Select it and copy it manually.',
-        });
-        return;
-      }
-      // invoke within the initiating gesture; do not await capability checks or lazy imports.
-      await (typeof value === 'string'
-        ? navigator.clipboard.writeText(value)
-        : writeLoadedText(value));
-      if (!isMountedRef.current) return;
-      setIsCopied(true);
-      feedbackTimeoutRef.current = window.setTimeout(() => {
-        setIsCopied(false);
-        feedbackTimeoutRef.current = null;
-      }, copiedFeedbackDuration);
-    } catch (error) {
-      if (!isMountedRef.current) return;
-      setIsCopied(false);
-      const feedback = resolveErrorFeedbackRef.current(error, {
-        fallbackMessage: 'We could not copy this text. Select it and copy it manually.',
-      });
-      if (!feedback.isCancelled)
-        toastr.error('Failed to write to Clipboard', { description: feedback.message });
-    } finally {
-      isWritingRef.current = false;
-    }
-  }, [copiedFeedbackDuration, value]);
-
-  /**
-   * Starts the asynchronous copy flow without leaking a promise to the click handler contract.
-   */
+  // copies within the click, reading a value that loads after it through jg-clipboard
   const handleButtonClick = useCallback((): void => {
-    void handleCopyClick();
-  }, [handleCopyClick]);
+    void copy(() => copyText(typeof value === 'string' ? value : value()));
+  }, [copy, value]);
 
   return (
     <>

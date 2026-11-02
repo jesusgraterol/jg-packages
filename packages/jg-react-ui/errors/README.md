@@ -17,6 +17,8 @@ Audio recording failures are delivered to `onRecordingError`; transcription and 
 | `AUDIO_INPUT_TRANSCRIPTION_INVALID_RESULT` | Audio transcription returned an invalid result.       |
 | `AUDIO_INPUT_TRANSCRIPTION_FAILED`         | Audio transcription failed.                           |
 
-`FileUpload`, `FileUploadDialog`, and `ImageUploadField` propagate `INVALID_FILE_UPLOAD_POLICY` from `jg-react`. Its canonical messages are documented in [jg-react's error reference](https://unpkg.com/jg-react@0.6.0/errors/README.md) and repeated in these components' API `@throws` contracts.
+`FileUpload`, `FileUploadDialog`, and `ImageUploadField` propagate `INVALID_FILE_UPLOAD_POLICY` from `jg-react`. Its canonical messages are documented in [jg-react's API reference](https://unpkg.com/jg-react@0.6.1/API.md) and repeated in these components' API `@throws` contracts.
+
+`CopyButton` propagates `INVALID_COPY_FEEDBACK_DURATION` from `jg-react`: The copy feedback duration must be a positive, finite number of seconds. It's thrown for a `copiedFeedbackDuration` that isn't positive and finite; the canonical contract is in [jg-react's API reference](https://unpkg.com/jg-react@0.6.1/API.md).
 
 `YouTubeVideo` propagates `INVALID_YOUTUBE_VIDEO_ID`: The YouTube video id must be 11 letters, digits, '-', or '_'. The canonical dependency contract is in [jg-utilities' error reference](https://unpkg.com/jg-utilities@1.7.2/errors/README.md). Use `parseYouTubeVideoUrl` at authored URL boundaries before supplying its branded identifier.
