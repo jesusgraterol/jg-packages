@@ -76,6 +76,20 @@ describe('copyText', () => {
     expect(clipboard.writeText).not.toHaveBeenCalled();
   });
 
+  test('refuses text that loads later outside a click or key press at once, keeping its later failure handled', async () => {
+    const { clipboard } = installFakeBrowser({ userActivation: false });
+    const text = deferred<string>();
+
+    await expect(copyText(text.promise)).rejects.toMatchObject({
+      code: ERRORS.CLIPBOARD_NO_USER_GESTURE,
+      message: 'The browser only allows this right after a click or a key press.',
+    });
+    expect(clipboard.write).not.toHaveBeenCalled();
+    // a rejection after the refusal, which nothing awaits, isn't reported as unhandled
+    text.reject(new Error('the request failed'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
   test('writes a string through a ClipboardItem when the browser has no writeText', async () => {
     const { clipboard } = installFakeBrowser({ methods: ['write'] });
 
@@ -261,6 +275,29 @@ describe('copyImage', () => {
     await copying;
     expect(writtenItem(clipboard.write).items['image/png']).toBe(png);
     expect(createImageBitmap).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['a JPEG, which is redrawn as PNG later', () => new Blob(['jpeg'], { type: 'image/jpeg' })],
+    ['an image that loads later', () => Promise.resolve(new Blob(['png'], { type: 'image/png' }))],
+  ])('refuses %s outside a click or key press at once', async (_, image) => {
+    const { clipboard } = installFakeBrowser({ userActivation: false });
+    installImageDecoding();
+
+    await expect(copyImage(image())).rejects.toMatchObject({
+      code: ERRORS.CLIPBOARD_NO_USER_GESTURE,
+    });
+    expect(clipboard.write).not.toHaveBeenCalled();
+  });
+
+  test('writes a PNG outside a click or key press, which waits for nothing, and names a refusal', async () => {
+    const { clipboard } = installFakeBrowser({ userActivation: false });
+    clipboard.write.mockRejectedValue(domError('NotAllowedError'));
+
+    await expect(copyImage(new Blob(['png'], { type: 'image/png' }))).rejects.toMatchObject({
+      code: ERRORS.CLIPBOARD_NO_USER_GESTURE,
+    });
+    expect(clipboard.write).toHaveBeenCalledOnce();
   });
 
   test('redraws another type as PNG on an OffscreenCanvas', async () => {

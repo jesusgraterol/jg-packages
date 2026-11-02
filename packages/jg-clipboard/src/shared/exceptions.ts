@@ -16,6 +16,17 @@ export const unsupported = (action: string): Exception =>
   );
 
 /**
+ * Builds the error for a clipboard operation outside the click or key press the browser requires.
+ * @param cause The browser's error, when it refused the operation itself.
+ * @returns The CLIPBOARD_NO_USER_GESTURE error.
+ */
+export const noUserGesture = (cause?: unknown): Exception =>
+  new Exception('The browser only allows this right after a click or a key press.', {
+    code: ERRORS.CLIPBOARD_NO_USER_GESTURE,
+    ...(cause === undefined ? {} : { cause }),
+  });
+
+/**
  * Builds the error for a clipboard operation that failed for a reason the browser didn't name.
  * @param operation The operation.
  * @param cause The browser's error.
@@ -98,10 +109,7 @@ export const toClipboardException = async (
     });
   }
   if (navigator?.userActivation?.isActive === false) {
-    return new Exception('The browser only allows this right after a click or a key press.', {
-      code: ERRORS.CLIPBOARD_NO_USER_GESTURE,
-      cause: error,
-    });
+    return noUserGesture(error);
   }
   const permission = await queryPermission(operation);
   if (permission === 'granted') {

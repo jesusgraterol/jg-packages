@@ -5,6 +5,7 @@ import {
   ERRORS,
   getSecureClipboard,
   isCancellation,
+  noUserGesture,
   supportsItemType,
   toClipboardException,
   unsupported,
@@ -77,22 +78,36 @@ const settleWrite = async (
   }
 };
 
+// whether a part of an item's content still loads, such as text a request returns later
+const isLoading = (part: Blob | Promise<Blob>): boolean =>
+  typeof (part as { then?: unknown }).then === 'function';
+
 /**
  * Writes one ClipboardItem. Call it before the caller's first await, so the browser still sees the
  * click or key press that started the copy, and only after supportsItemType confirmed the types,
- * which also confirms ClipboardItem exists.
+ * which also confirms ClipboardItem exists. Content that still loads needs that gesture: where the
+ * browser says none is active, the write is refused at once, because Chromium would wait for it
+ * forever and other browsers refuse it.
  * @param clipboard The clipboard.
  * @param item Each type with its content.
  * @returns A promise that resolves once the content is on the clipboard.
+ * @throws
+ * - CLIPBOARD_NO_USER_GESTURE: The browser only allows this right after a click or a key press.
  */
 const writeItem = (
   clipboard: Pick<Clipboard, 'write'>,
   item: Record<string, Blob | Promise<Blob>>,
 ): Promise<void> => {
+  const content = Object.values(item);
+  if (browserGlobals.navigator?.userActivation?.isActive === false && content.some(isLoading)) {
+    // content that fails later, with nothing waiting for it, stays handled
+    for (const part of content) Promise.resolve(part).catch(() => undefined);
+    throw noUserGesture();
+  }
   const ClipboardItemClass = browserGlobals.ClipboardItem as NonNullable<
     typeof browserGlobals.ClipboardItem
   >;
-  return settleWrite(clipboard.write([new ClipboardItemClass(item)]), Object.values(item));
+  return settleWrite(clipboard.write([new ClipboardItemClass(item)]), content);
 };
 
 /**
@@ -101,7 +116,9 @@ const writeItem = (
  * such as from a request, can be a promise: it goes through a ClipboardItem that waits for it, which
  * Safari needs. Browsers without ClipboardItem wait for the promise first, and may then refuse the
  * copy. Text whose loading is cancelled, such as an aborted fetch, rejects with its AbortError
- * unchanged, so the caller can tell a cancellation from a failure.
+ * unchanged, so the caller can tell a cancellation from a failure. Text that loads outside a click
+ * or key press is refused at once with CLIPBOARD_NO_USER_GESTURE, where the browser says none is
+ * active, since the write would never finish.
  * @param text The text, or a promise of it.
  * @returns A promise that resolves once the text is on the clipboard.
  * @example

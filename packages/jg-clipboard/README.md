@@ -73,7 +73,7 @@ Every failure is an `Exception` with one of these codes, and the browser's error
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `CLIPBOARD_UNSUPPORTED`       | The page isn't a secure context, such as HTTPS or localhost, or the browser lacks the API                                                          |
 | `CLIPBOARD_NOT_FOCUSED`       | The browser refused because the page doesn't have focus                                                                                            |
-| `CLIPBOARD_NO_USER_GESTURE`   | The browser refused because the call didn't follow a click or a key press                                                                          |
+| `CLIPBOARD_NO_USER_GESTURE`   | The browser refused because the call didn't follow a click or a key press, or content that still loads was copied outside one                      |
 | `CLIPBOARD_PERMISSION_DENIED` | The browser refused for any other reason, such as a denied or dismissed permission; `data.permission` holds the Permissions API's state, or `null` |
 | `CLIPBOARD_INVALID_IMAGE`     | The image can't be decoded as PNG: an image to copy, or one `readClipboard` read without text or HTML beside it                                    |
 | `CLIPBOARD_WRITE_FAILED`      | A copy failed otherwise, such as content whose promise rejected                                                                                    |
@@ -86,6 +86,7 @@ Every failure is an `Exception` with one of these codes, and the browser's error
 - Reading asks first. Safari and Firefox show a paste prompt each time, and Chromium asks once for the clipboard-read permission.
 - Images go on the clipboard as PNG only. Converting another type needs `createImageBitmap`, so it works in every current browser, but not in very old ones.
 - Without `ClipboardItem`, a promised text loads before the copy starts, and Safari may then refuse it.
+- Content that still loads, such as a promise or an image to redraw as PNG, needs the click or key press. Outside one, the copy is refused at once with `CLIPBOARD_NO_USER_GESTURE`, where the browser reports `navigator.userActivation`, because Chromium would wait for such a write forever and other browsers refuse it.
 
 ## Documentation
 

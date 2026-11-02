@@ -111,6 +111,17 @@ describe('getClipboardSupport', () => {
   });
 });
 
+describe('copying outside a click', () => {
+  test('refuses text that loads later at once, as needing the gesture, before calling the clipboard', async () => {
+    // an earlier test's click leaves the gesture active for a few seconds
+    await expect.poll(() => navigator.userActivation.isActive, { timeout: 10_000 }).toBe(false);
+
+    await expect(copyText(Promise.resolve('loaded later'))).rejects.toMatchObject({
+      code: ERRORS.CLIPBOARD_NO_USER_GESTURE,
+    });
+  });
+});
+
 describe.skipIf(IS_CHROMIUM)('copying from a click in Firefox and WebKit', () => {
   test.each([
     ['text', () => copyText('npm install jg-clipboard')],
