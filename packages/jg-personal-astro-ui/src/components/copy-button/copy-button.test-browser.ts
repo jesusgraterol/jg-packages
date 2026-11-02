@@ -129,6 +129,8 @@ describe('copy buttons', () => {
   });
 
   test('copy the text at their URL, and show their own label again', async () => {
+    // the text loads after the click, which needs the gesture a real click leaves active
+    stubActivePage();
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const markdown = '# jg-clipboard\n\nCopy and read the clipboard.\n';
     const fetch = vi.spyOn(window, 'fetch').mockResolvedValue(new Response(markdown));
@@ -156,6 +158,7 @@ describe('copy buttons', () => {
   });
 
   test('link to the text at their URL when it fails to load', async () => {
+    stubActivePage();
     vi.spyOn(window, 'fetch').mockResolvedValue(new Response('Server error', { status: 500 }));
     vi.spyOn(navigator.clipboard, 'write').mockImplementation(async ([item]) => {
       await item?.getType('text/plain');

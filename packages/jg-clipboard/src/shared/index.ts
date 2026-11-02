@@ -2,6 +2,7 @@
 export { ERRORS } from './errors.js';
 export {
   isCancellation,
+  noUserGesture,
   operationFailed,
   toClipboardException,
   unsupported,

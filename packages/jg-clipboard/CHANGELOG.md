@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+
+### Fixed
+
+- A copy whose content still loads, such as a promise or an image to redraw as PNG, made outside a click or key press is refused at once with `CLIPBOARD_NO_USER_GESTURE` where the browser reports `navigator.userActivation`. Chromium waited for such a write forever, which left a copy button busy for good; other browsers refuse it.
+
 ## 0.3.1
 
 ### Fixed

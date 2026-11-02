@@ -100,6 +100,11 @@ describe('CopyButton', () => {
   });
 
   test('copies text that loads after the click through a ClipboardItem that waits for it', async () => {
+    // a real click leaves its gesture active, which button.click() doesn't
+    vi.spyOn(navigator, 'userActivation', 'get').mockReturnValue({
+      isActive: true,
+      hasBeenActive: true,
+    });
     const written: ClipboardItem[] = [];
     const write = vi.fn((items: ClipboardItem[]) => {
       written.push(...items);
