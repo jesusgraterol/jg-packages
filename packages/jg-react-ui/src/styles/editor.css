@@ -62,7 +62,8 @@
 
   /* MarkdownEditor: tune the main ProseMirror document surface and inline code tokens. */
   [data-slot='markdown-editor'] .milkdown .ProseMirror {
-    --crepe-color-selected: var(--primary) !important;
+    /* a tint of the text's color, since Crepe colors only a selection's background */
+    --crepe-color-selected: color-mix(in oklch, var(--foreground) 20%, transparent) !important;
     box-sizing: border-box;
     min-width: 0;
     max-width: 100%;
@@ -169,7 +170,7 @@
 
   /* MarkdownEditor: dark-mode selections use a softer foreground tint inside the editor. */
   .dark [data-slot='markdown-editor'] .milkdown .ProseMirror {
-    --crepe-color-selected: color-mix(in oklch, var(--foreground) 40%, transparent) !important;
+    --crepe-color-selected: color-mix(in oklch, var(--foreground) 24%, transparent) !important;
   }
 
   /* Stable CodeMirror token classes share the consumer-owned syntax roles. */

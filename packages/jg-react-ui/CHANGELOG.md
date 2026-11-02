@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+
+### Fixed
+
+- Text selected in a Markdown editor stays readable: light mode used the near-black primary color behind the text, which hid it, and dark mode's tint fell short of a 4.5:1 contrast. Both themes now tint the selection with the text's own color.
+
 ## 0.3.1
 
 ### Fixed
