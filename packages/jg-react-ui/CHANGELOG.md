@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.4
+
+### Changed
+
+- `CopyButton` copies through jg-clipboard's `copyText` and shows the copied state of jg-react's `useCopyFeedback`, in place of its own clipboard and feedback code, and depends on `jg-clipboard`. A failed copy still shows its toast, a cancelled one stays silent, and a `copiedFeedbackDuration` that isn't positive and finite throws `INVALID_COPY_FEEDBACK_DURATION`.
+
 ## 0.3.3
 
 ### Added

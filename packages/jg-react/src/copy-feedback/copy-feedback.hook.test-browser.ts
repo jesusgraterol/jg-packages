@@ -119,6 +119,28 @@ describe('useCopyFeedback', () => {
     expect(write).toHaveBeenCalledTimes(2);
   });
 
+  test("clears an earlier copy's state while a later copy runs, and keeps it clear when that one fails", async () => {
+    const pending = createDeferred();
+    const onError = vi.fn();
+    const { result } = renderCopyFeedback({ onError });
+    await act(async () => {
+      await result.current.copy(() => undefined);
+    });
+    expect(result.current.isCopied).toBe(true);
+
+    let later: Promise<boolean> | undefined;
+    act(() => {
+      later = result.current.copy(() => pending.promise);
+    });
+    expect(result.current.isCopied).toBe(false);
+    await act(async () => {
+      pending.reject(new Error('Permission denied'));
+      await later;
+    });
+    expect(result.current.isCopied).toBe(false);
+    expect(onError).toHaveBeenCalledOnce();
+  });
+
   test('resolves to false and calls the latest onError when the write fails, without rejecting', async () => {
     const failure = new Error('The clipboard refused the write.');
     const firstOnError = vi.fn();

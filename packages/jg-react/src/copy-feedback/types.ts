@@ -13,7 +13,8 @@ export type IUseCopyFeedbackResult = {
   // whether a copy just succeeded, for a moment
   isCopied: boolean;
 
-  // calls write at once, inside the click that called copy, and resolves to whether it succeeded.
-  // It never rejects, and resolves to false at once while another copy runs
+  // calls write at once, inside the click that called copy, clearing an earlier copy's state, and
+  // resolves to whether it succeeded. It never rejects, and resolves to false at once while another
+  // copy runs
   copy: (write: () => unknown) => Promise<boolean>;
 };

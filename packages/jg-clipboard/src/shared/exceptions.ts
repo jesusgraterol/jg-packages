@@ -33,6 +33,17 @@ export const operationFailed = (operation: IClipboardOperation, cause: unknown):
       });
 
 /**
+ * Checks whether an error cancelled the operation, such as an aborted fetch of the content to
+ * copy. A cancellation passes through unchanged, as fetch's does, so the caller can stay silent.
+ * @param error The error.
+ * @returns Whether it's an AbortError.
+ */
+export const isCancellation = (error: unknown): boolean =>
+  typeof error === 'object' &&
+  error !== null &&
+  (error as { name?: unknown }).name === 'AbortError';
+
+/**
  * Checks whether an error is the browser refusing the operation.
  * @param error The error.
  * @returns Whether it's a NotAllowedError.

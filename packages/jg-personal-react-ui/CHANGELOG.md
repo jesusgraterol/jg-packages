@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.3
+
+### Changed
+
+- Requires `jg-react-ui` 0.3.4, whose `CopyButton` copies through jg-clipboard's `copyText` and shows jg-react's `useCopyFeedback` state.
+
 ## 0.3.2
 
 ### Added

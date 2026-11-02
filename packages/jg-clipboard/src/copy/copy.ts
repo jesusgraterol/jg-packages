@@ -4,6 +4,7 @@ import {
   browserGlobals,
   ERRORS,
   getSecureClipboard,
+  isCancellation,
   supportsItemType,
   toClipboardException,
   unsupported,
@@ -38,7 +39,7 @@ const htmlToText = (html: string): string => {
  * Waits for a clipboard write that already started, and names its failure. Content that already
  * failed, such as a rejected promise or an image that can't be converted, explains a failure better
  * than the browser's error. Content still loading is never waited for, so a refused write fails at
- * once.
+ * once. A cancellation, such as an aborted fetch of the content, rejects with its AbortError.
  * @param write The write, started before the caller's first await.
  * @param content The content the write waits for, such as the caller's promises.
  * @returns A promise that resolves once the content is on the clipboard.
@@ -64,13 +65,14 @@ const settleWrite = async (
   } catch (error) {
     const [failure] = failures;
     if (failure !== undefined) {
-      throw isException(failure.reason)
+      throw isException(failure.reason) || isCancellation(failure.reason)
         ? failure.reason
         : new Exception("The content to copy couldn't be loaded.", {
             code: ERRORS.CLIPBOARD_WRITE_FAILED,
             cause: failure.reason,
           });
     }
+    if (isCancellation(error)) throw error;
     throw await toClipboardException(error, 'write');
   }
 };
@@ -98,7 +100,8 @@ const writeItem = (
  * before its first await, so the browser still sees that gesture. Text that loads after the click,
  * such as from a request, can be a promise: it goes through a ClipboardItem that waits for it, which
  * Safari needs. Browsers without ClipboardItem wait for the promise first, and may then refuse the
- * copy.
+ * copy. Text whose loading is cancelled, such as an aborted fetch, rejects with its AbortError
+ * unchanged, so the caller can tell a cancellation from a failure.
  * @param text The text, or a promise of it.
  * @returns A promise that resolves once the text is on the clipboard.
  * @example
@@ -143,6 +146,7 @@ export const copyText = async (text: string | Promise<string>): Promise<void> =>
   try {
     loaded = await text;
   } catch (error) {
+    if (isCancellation(error)) throw error;
     throw new Exception("The content to copy couldn't be loaded.", {
       code: ERRORS.CLIPBOARD_WRITE_FAILED,
       cause: error,
@@ -154,7 +158,8 @@ export const copyText = async (text: string | Promise<string>): Promise<void> =>
 /**
  * Copies HTML to the clipboard, with plain text for places that can't paste HTML: `options.text`,
  * or else the HTML's text content. Call it from a click or key press handler; like copyText, it
- * calls the clipboard before its first await, and either value can be a promise.
+ * calls the clipboard before its first await, and either value can be a promise. A cancelled
+ * promise rejects with its AbortError unchanged.
  * @param html The HTML, or a promise of it.
  * @param options The plain text that goes with it.
  * @returns A promise that resolves once the HTML is on the clipboard.
@@ -195,7 +200,8 @@ export const copyHtml = async (
  * Copies an image to the clipboard as PNG, the only image type browsers accept there. A PNG is
  * written as it is, and other types the browser can decode, such as JPEG or WebP, are redrawn as
  * PNG. Call it from a click or key press handler; it calls the clipboard before its first await, and
- * the image can be a promise, such as a fetched Blob.
+ * the image can be a promise, such as a fetched Blob. A cancelled promise rejects with its
+ * AbortError unchanged.
  * @param image The image, or a promise of it.
  * @returns A promise that resolves once the image is on the clipboard.
  * @example

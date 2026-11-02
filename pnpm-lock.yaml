@@ -1383,6 +1383,9 @@ importers:
       cnfast:
         specifier: ^0.0.8
         version: 0.0.8
+      jg-clipboard:
+        specifier: workspace:^
+        version: link:../jg-clipboard
       jg-exception:
         specifier: workspace:^
         version: link:../jg-exception

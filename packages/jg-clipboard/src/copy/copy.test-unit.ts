@@ -126,6 +126,30 @@ describe('copyText', () => {
   });
 
   test.each([
+    ['through a ClipboardItem', {}],
+    ['without ClipboardItem', { clipboardItem: false }],
+  ] as const)(
+    'rejects with the AbortError of text whose loading was cancelled %s, unchanged',
+    async (_, options) => {
+      const { clipboard } = installFakeBrowser(options);
+      const cancelled = domError('AbortError');
+      clipboard.write.mockImplementation(async ([item]) => {
+        await item?.getType('text/plain');
+      });
+
+      await expect(copyText(Promise.reject(cancelled))).rejects.toBe(cancelled);
+    },
+  );
+
+  test('rejects with the AbortError of a write the browser cancelled, unchanged', async () => {
+    const { clipboard } = installFakeBrowser();
+    const cancelled = domError('AbortError');
+    clipboard.writeText.mockRejectedValue(cancelled);
+
+    await expect(copyText('hello')).rejects.toBe(cancelled);
+  });
+
+  test.each([
     ['an insecure page', { isSecureContext: false }],
     ['a browser without a way to write', { methods: ['read', 'readText'] }],
   ] as const)('throws CLIPBOARD_UNSUPPORTED in %s', async (_, options) => {
