@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+### Fixed
+
+- A copy whose content is cancelled, such as text or an image from an aborted fetch, or a write the browser cancels, rejects with its `AbortError` unchanged, as `fetch` does, instead of `CLIPBOARD_WRITE_FAILED`, so the caller can stay silent about a cancellation.
+
 ## 0.3.0
 
 ### Changed

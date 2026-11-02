@@ -1,6 +1,11 @@
 // errors
 export { ERRORS } from './errors.js';
-export { operationFailed, toClipboardException, unsupported } from './exceptions.js';
+export {
+  isCancellation,
+  operationFailed,
+  toClipboardException,
+  unsupported,
+} from './exceptions.js';
 
 // types
 export type {
