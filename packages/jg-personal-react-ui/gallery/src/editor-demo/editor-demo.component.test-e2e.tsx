@@ -19,6 +19,19 @@ const trackEditorErrors = (page: Page, errors: Array<Error | string>): void => {
   });
 };
 
+/** The contrast ratio of two opaque sRGB colors, as WCAG defines it. */
+const contrastRatio = (first: number[], second: number[]): number => {
+  const luminance = ([red, green, blue]: number[]): number => {
+    const [r, g, b] = [red!, green!, blue!].map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+  };
+  const [lighter, darker] = [luminance(first), luminance(second)].sort((a, b) => b - a);
+  return (lighter! + 0.05) / (darker! + 0.05);
+};
+
 for (const theme of ['light', 'dark'] as const) {
   test(
     `${theme} rich document keeps long tokens, tables, code and video authoring inside a phone`,
@@ -242,6 +255,48 @@ for (const theme of ['light', 'dark'] as const) {
       }
     },
   );
+
+  test(`${theme} selected text in the chat editor stays readable`, async ({ page }) => {
+    await page.goto(`/editors?theme=${theme}`);
+    const message = page.getByRole('textbox', { name: 'Message', exact: true });
+    await expect(message).toBeEditable();
+    await message.click();
+    await page.keyboard.type('Selected words stay readable');
+    await message.press('ControlOrMeta+a');
+    // the selection's color, laid over the surface behind the editor, against the text's color
+    const colors = await message.evaluate((editor) => {
+      const toRgba = (css: string): number[] => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+        const context = canvas.getContext('2d')!;
+        context.fillStyle = css;
+        context.fillRect(0, 0, 1, 1);
+        return [...context.getImageData(0, 0, 1, 1).data];
+      };
+      const paragraph = editor.querySelector('p')!;
+      let surface = 'rgb(255, 255, 255)';
+      for (let element: Element | null = editor; element; element = element.parentElement) {
+        const color = toRgba(getComputedStyle(element).backgroundColor);
+        if (color[3] === 255) {
+          surface = getComputedStyle(element).backgroundColor;
+          break;
+        }
+      }
+      return {
+        selection: toRgba(getComputedStyle(paragraph, '::selection').backgroundColor),
+        text: toRgba(getComputedStyle(paragraph).color),
+        surface: toRgba(surface),
+      };
+    });
+    const alpha = colors.selection[3]! / 255;
+    const selected = colors.selection
+      .slice(0, 3)
+      .map((channel, index) => channel * alpha + colors.surface[index]! * (1 - alpha));
+    expect(contrastRatio(selected, colors.text)).toBeGreaterThanOrEqual(4.5);
+    // and the selection still shows against the surface
+    expect(contrastRatio(selected, colors.surface)).toBeGreaterThan(1.15);
+  });
 
   test(
     `${theme} attachments recover from provider failure and insert literal chat text`,
