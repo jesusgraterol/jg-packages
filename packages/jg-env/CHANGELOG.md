@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+### Fixed
+
+- `readEnvFile` skips a `__proto__` key on every Node.js version. Node.js 26's `util.parseEnv` keeps the key, which earlier versions drop, so the result held a `__proto__` variable there.
+
 ## 0.3.0
 
 ### Changed

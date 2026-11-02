@@ -61,9 +61,9 @@ const toReadError = (error: unknown, path: string): Exception => {
  * Reads a .env file's variables into a record, without changing `process.env`. The file is read
  * with a size limit, as UTF-8, without a byte-order mark, and parsed by Node.js's own
  * `util.parseEnv`: quotes, multiline values in double quotes, `export`, and comments, with a later
- * key winning and no `${...}` expansion. A line it can't parse is skipped. With `requirePrivate`,
- * the file must be private, inside `rootPath` when one is given, and not reached through a symbolic
- * link, such as an overlay holding secrets. A missing file, or a missing `rootPath`, reads as `{}`
+ * key winning and no `${...}` expansion. A line it can't parse, and a `__proto__` key, are skipped.
+ * With `requirePrivate`, the file must be private, inside `rootPath` when one is given, and not
+ * reached through a symbolic link, such as an overlay holding secrets. A missing file, or a missing `rootPath`, reads as `{}`
  * with `isOptional`. Errors name the file and never a value.
  * @param path The file's path.
  * @param options Whether it must be private, its size limit and root, and whether it may be missing.
@@ -115,7 +115,9 @@ export const readEnvFile = (
   }
   return Object.fromEntries(
     Object.entries(parseEnv(text)).filter(
-      (entry): entry is [string, string] => typeof entry[1] === 'string',
+      // Node.js 26 keeps a "__proto__" key that earlier versions drop, so it's dropped on every one
+      (entry): entry is [string, string] =>
+        entry[0] !== '__proto__' && typeof entry[1] === 'string',
     ),
   );
 };
