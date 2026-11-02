@@ -41,6 +41,6 @@ test.each([
     </AlertDialogContent>,
     'AlertDialogContent requires direct AlertDialogHeader and AlertDialogFooter children.',
   ],
-])('rejects invalid alert composition: %s', (element, message) => {
+])('rejects invalid alert composition: %s', { tags: ['full'] }, (element, message) => {
   expect(() => renderToStaticMarkup(<AlertDialog>{element}</AlertDialog>)).toThrow(message);
 });

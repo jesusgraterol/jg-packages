@@ -48,15 +48,19 @@ const readCorners = (markup: string, fill: string): [number, number][] => {
 };
 
 describe('jg-mark', () => {
-  test('uses the fixed brand colors, so it reads the same in both themes', async () => {
-    const svg = await readFile(SVG_FILE, 'utf8');
+  test(
+    'uses the fixed brand colors, so it reads the same in both themes',
+    { tags: ['full'] },
+    async () => {
+      const svg = await readFile(SVG_FILE, 'utf8');
 
-    expect([...svg.matchAll(/fill="(#[0-9A-F]{6})"/g)].map(([, color]) => color)).toStrictEqual([
-      '#111827',
-      '#F8FAFC',
-      '#6EE7B7',
-    ]);
-  });
+      expect([...svg.matchAll(/fill="(#[0-9A-F]{6})"/g)].map(([, color]) => color)).toStrictEqual([
+        '#111827',
+        '#F8FAFC',
+        '#6EE7B7',
+      ]);
+    },
+  );
 
   test('holds nothing a browser could run or fetch', async () => {
     for (const markup of await Promise.all([
@@ -69,7 +73,7 @@ describe('jg-mark', () => {
     }
   });
 
-  test('is a 64-pixel standalone square', async () => {
+  test('is a 64-pixel standalone square', { tags: ['full'] }, async () => {
     const [svg] = await Promise.all([readFile(SVG_FILE, 'utf8')]);
 
     expect(svg).toMatch(
@@ -77,30 +81,34 @@ describe('jg-mark', () => {
     );
   });
 
-  test("draws the favicon as the mark's tile and its slash alone, scaled about the center", async () => {
-    const [svg, favicon] = await Promise.all([
-      readFile(SVG_FILE, 'utf8'),
-      readFile(FAVICON_FILE, 'utf8'),
-    ]);
-    const slash = readCorners(svg, '#6EE7B7');
-    const center = slash
-      .reduce(([sumX, sumY], [x, y]) => [sumX + x, sumY + y], [0, 0])
-      .map((sum) => sum / slash.length);
+  test(
+    "draws the favicon as the mark's tile and its slash alone, scaled about the center",
+    { tags: ['full'] },
+    async () => {
+      const [svg, favicon] = await Promise.all([
+        readFile(SVG_FILE, 'utf8'),
+        readFile(FAVICON_FILE, 'utf8'),
+      ]);
+      const slash = readCorners(svg, '#6EE7B7');
+      const center = slash
+        .reduce(([sumX, sumY], [x, y]) => [sumX + x, sumY + y], [0, 0])
+        .map((sum) => sum / slash.length);
 
-    expect(favicon).toMatch(
-      /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" width="64" height="64" viewBox="0 0 64 64"/,
-    );
-    expect(readShapes(favicon)).toStrictEqual([
-      readShapes(svg)[0],
-      expect.stringMatching(/^path /),
-    ]);
-    const faviconSlash = readCorners(favicon, '#6EE7B7');
-    expect(slash).toHaveLength(4);
-    expect(faviconSlash).toHaveLength(4);
-    faviconSlash.forEach(([x, y], index) => {
-      const [markX = 0, markY = 0] = slash[index] ?? [];
-      expect(x).toBeCloseTo(32 + (markX - (center[0] ?? 0)) * FAVICON_SCALE, 1);
-      expect(y).toBeCloseTo(32 + (markY - (center[1] ?? 0)) * FAVICON_SCALE, 1);
-    });
-  });
+      expect(favicon).toMatch(
+        /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" width="64" height="64" viewBox="0 0 64 64"/,
+      );
+      expect(readShapes(favicon)).toStrictEqual([
+        readShapes(svg)[0],
+        expect.stringMatching(/^path /),
+      ]);
+      const faviconSlash = readCorners(favicon, '#6EE7B7');
+      expect(slash).toHaveLength(4);
+      expect(faviconSlash).toHaveLength(4);
+      faviconSlash.forEach(([x, y], index) => {
+        const [markX = 0, markY = 0] = slash[index] ?? [];
+        expect(x).toBeCloseTo(32 + (markX - (center[0] ?? 0)) * FAVICON_SCALE, 1);
+        expect(y).toBeCloseTo(32 + (markY - (center[1] ?? 0)) * FAVICON_SCALE, 1);
+      });
+    },
+  );
 });

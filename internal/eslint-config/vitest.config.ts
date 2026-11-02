@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 /*
  * This package can't use @jg-packages/vitest-config, which is linted with this package's
@@ -17,6 +17,13 @@ export default defineConfig({
           unstubEnvs: true,
           unstubGlobals: true,
           include: ['src/**/*.test-integration.ts'],
+          exclude: [
+            ...configDefaults.exclude,
+            '**/_archive/**',
+            '**/_archives/**',
+            '**/_backup/**',
+            '**/_backups/**',
+          ],
           // the same timeouts as @jg-packages/vitest-config: type-aware linting builds a TypeScript
           // program, which took 14 seconds in CI
           testTimeout: 30_000,

@@ -7,8 +7,8 @@ import { expect, test } from 'vitest';
 const ROOT = join(import.meta.dirname, '..', '..', '..');
 
 /**
- * Reads the turbo filters of the two coverage runs in a script or workflow.
- * @param commands The commands, such as the root check script or the CI workflow file.
+ * Reads the complementary coverage groups in the complete check command.
+ * @param commands The complete check command.
  * @returns The sorted filters of the --concurrency=4 run and of the one-at-a-time Chromium run.
  */
 const readCoverageFilters = (commands: string): { shared: string[]; chromium: string[] } => {
@@ -20,14 +20,12 @@ const readCoverageFilters = (commands: string): { shared: string[]; chromium: st
   return { shared: readFilters('4'), chromium: readFilters('1') };
 };
 
-test('pnpm check runs coverage in the same two groups as the CI tests job', () => {
+test('pnpm check:full preserves complementary coverage groups', () => {
   const { scripts } = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as {
     scripts: Record<string, string>;
   };
-  const check = readCoverageFilters(scripts['check'] ?? '');
-  const ci = readCoverageFilters(readFileSync(join(ROOT, '.github/workflows/ci.yml'), 'utf8'));
+  const check = readCoverageFilters(scripts['check:full'] ?? '');
 
   expect(check.chromium.length).toBeGreaterThan(0);
-  expect(check).toStrictEqual(ci);
   expect(check.shared).toStrictEqual(check.chromium.map((name) => `!${name}`).sort());
 });

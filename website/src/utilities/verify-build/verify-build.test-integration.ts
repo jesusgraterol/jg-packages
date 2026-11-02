@@ -77,10 +77,46 @@ afterAll(async () => {
   await rm(temporaryRoot, { recursive: true, force: true });
 });
 
+/** Checks each rejection against its own copy of the real build. */
+const rejectsBuild = async (
+  _name: string,
+  message: string,
+  mutation: IBuildMutation,
+): Promise<void> => {
+  const build = await copyBuild();
+  await mutation(build);
+  await expect(verifyBuild(build)).rejects.toThrow(message);
+};
+
 describe('verifyBuild', () => {
-  test('passes the real build', async () => {
+  test('passes the real build', { tags: ['full'] }, async () => {
     await expect(verifyBuild(BUILD_DIRECTORY)).resolves.toBeUndefined();
   });
+
+  test.each<[string, string, IBuildMutation]>([
+    [
+      'a test file',
+      'Production build contains a test file: leaked.test-unit.js',
+      (build) => writeFile(resolveInBuild(build, 'leaked.test-unit.js'), '// a test\n'),
+    ],
+    [
+      'an event handler',
+      'Page holds an event handler or a URL with a disallowed scheme in index.html: onload attribute',
+      (build) => replaceText(build, 'index.html', '<body', '<body onload="alert(1)"'),
+    ],
+    [
+      'a script URL',
+      `Page holds an event handler or a URL with a disallowed scheme in ${RECIPES_PAGE}: href="javascript:alert(1)"`,
+      (build) =>
+        replaceText(build, RECIPES_PAGE, '</main>', '<a href="javascript:alert(1)">x</a></main>'),
+    ],
+    [
+      'the UI package',
+      'The build names a package the site never mentions in llms-full.txt: jg-personal-astro-ui',
+      (build) =>
+        appendFile(resolveInBuild(build, 'llms-full.txt'), '\nBuilt with jg-personal-astro-ui.\n'),
+    ],
+  ])('rejects a build with %s', rejectsBuild);
 
   test.each<[string, string, IBuildMutation]>([
     [
@@ -131,11 +167,6 @@ describe('verifyBuild', () => {
       (build) => rm(resolveInBuild(build, 'og/jg-packages.png')),
     ],
     [
-      'a test file',
-      'Production build contains a test file: leaked.test-unit.js',
-      (build) => writeFile(resolveInBuild(build, 'leaked.test-unit.js'), '// a test\n'),
-    ],
-    [
       'a missing recipes page',
       'Missing package page: packages/jg-fetch/recipes/index.html',
       (build) => rm(resolveInBuild(build, RECIPES_PAGE)),
@@ -144,17 +175,6 @@ describe('verifyBuild', () => {
       "a missing package page's Markdown version",
       'Missing package page: packages/jg-fetch/index.md',
       (build) => rm(resolveInBuild(build, 'packages/jg-fetch/index.md')),
-    ],
-    [
-      'an event handler',
-      'Page holds an event handler or a URL with a disallowed scheme in index.html: onload attribute',
-      (build) => replaceText(build, 'index.html', '<body', '<body onload="alert(1)"'),
-    ],
-    [
-      'a script URL',
-      `Page holds an event handler or a URL with a disallowed scheme in ${RECIPES_PAGE}: href="javascript:alert(1)"`,
-      (build) =>
-        replaceText(build, RECIPES_PAGE, '</main>', '<a href="javascript:alert(1)">x</a></main>'),
     ],
     [
       'a repeated element ID',
@@ -391,24 +411,17 @@ describe('verifyBuild', () => {
       (build) =>
         replaceText(build, PACKAGE_PAGE, '</main>', '<p>Use error-message-utils.</p></main>'),
     ],
-    [
-      'the UI package',
-      'The build names a package the site never mentions in llms-full.txt: jg-personal-astro-ui',
-      (build) =>
-        appendFile(resolveInBuild(build, 'llms-full.txt'), '\nBuilt with jg-personal-astro-ui.\n'),
-    ],
-  ])('rejects a build with %s', async (_, message, mutation) => {
-    const build = await copyBuild();
-    await mutation(build);
+  ])('rejects a build with %s', { tags: ['full'] }, rejectsBuild);
 
-    await expect(verifyBuild(build)).rejects.toThrow(message);
-  });
+  test(
+    'rejects a build without the pages of a newly listed package',
+    { tags: ['full'] },
+    async () => {
+      const build = await copyBuild();
 
-  test('rejects a build without the pages of a newly listed package', async () => {
-    const build = await copyBuild();
-
-    await expect(verifyBuild(build, [...Object.keys(PACKAGE_CATALOG), 'jg-new'])).rejects.toThrow(
-      'Missing package page: packages/jg-new/index.html',
-    );
-  });
+      await expect(verifyBuild(build, [...Object.keys(PACKAGE_CATALOG), 'jg-new'])).rejects.toThrow(
+        'Missing package page: packages/jg-new/index.html',
+      );
+    },
+  );
 });

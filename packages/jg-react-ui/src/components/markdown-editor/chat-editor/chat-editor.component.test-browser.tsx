@@ -329,6 +329,75 @@ describe('ChatMarkdownEditor', () => {
     expect(onSubmitRequest).toHaveBeenCalledWith(expect.stringContaining('Ready'));
   });
 
+  test('Tab and Shift+Tab leave a message for the controls around it, but stay in a list item', async () => {
+    await act(async () => {
+      root.render(
+        <>
+          <button type="button">Before</button>
+          {/* without its formatting button, the controls around it come right before and after */}
+          <ChatMarkdownEditor
+            formattingContainer={null}
+            maxLength={256}
+            value="Ready"
+            onChange={vi.fn()}
+          />
+          <button type="button">After</button>
+        </>,
+      );
+
+      await Promise.resolve();
+    });
+    await flushEditor();
+
+    const editor = container.querySelector<HTMLElement>('.ProseMirror');
+
+    if (!editor) {
+      throw new Error('The chat editor did not mount.');
+    }
+
+    const pressTab = (shiftKey: boolean): KeyboardEvent => {
+      const event = new KeyboardEvent('keydown', {
+        bubbles: true,
+        cancelable: true,
+        key: 'Tab',
+        shiftKey,
+      });
+      act(() => {
+        editor.dispatchEvent(event);
+      });
+      return event;
+    };
+
+    editor.focus();
+    expect(pressTab(false).defaultPrevented).toBe(true);
+    expect(document.activeElement?.textContent).toBe('After');
+    editor.focus();
+    pressTab(true);
+    expect(document.activeElement?.textContent).toBe('Before');
+
+    // in a list item, Tab nests the item, so the focus stays in the message
+    await act(async () => {
+      root.render(
+        <>
+          <button type="button">Before</button>
+          <ChatMarkdownEditor
+            formattingContainer={null}
+            maxLength={256}
+            value={'- First\n- Second'}
+            onChange={vi.fn()}
+          />
+          <button type="button">After</button>
+        </>,
+      );
+
+      await Promise.resolve();
+    });
+    await vi.waitFor(() => expect(editor.querySelector('li')).not.toBeNull());
+    editor.focus();
+    pressTab(false);
+    expect(editor.contains(document.activeElement)).toBe(true);
+  });
+
   test('normalizes a changed controlled value through the fixed chat policy', async () => {
     const controlsRef = createRef<IChatMarkdownEditorControls>();
     const onChange = vi.fn();

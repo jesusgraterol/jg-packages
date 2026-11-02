@@ -425,22 +425,26 @@ describe('Markdown', () => {
     act(() => root.render(<Markdown>{`\`\`\`\n${source}\`\`\``}</Markdown>));
     expect(container.querySelector('pre code')?.textContent).toBe(source);
   });
-  test('renders the complete GFM prose and table surface with semantic elements', () => {
-    const content =
-      '# Title\n\n## Two\n\n### Three\n\n#### Four\n\n##### Five\n\n###### Six\n\n> Quoted result\n\n1. First\n2. Second\n\n- [x] Complete\n- [ ] Pending\n\n~~Removed~~\n\n---\n\n| Name | State |\n| --- | --- |\n| Build | Ready |\n\nA footnote[^note].\n\n[^note]: Supporting text.';
-    act(() => root.render(<Markdown>{content}</Markdown>));
-    for (const level of [1, 2, 3, 4, 5, 6])
-      expect(container.querySelector(`h${level}`)).not.toBeNull();
-    expect(container.querySelector('blockquote')?.textContent).toContain('Quoted result');
-    expect(container.querySelector('ol')?.textContent).toContain('Second');
-    expect(container.querySelectorAll('input[type="checkbox"]')).toHaveLength(2);
-    expect(container.querySelector('del')?.textContent).toBe('Removed');
-    expect(container.querySelector('hr')).not.toBeNull();
-    expect(container.querySelector('th')?.textContent).toBe('Name');
-    expect(container.querySelector('td')?.textContent).toBe('Build');
-    expect(container.querySelector('sup')).not.toBeNull();
-    expect(container.querySelector('section')?.textContent).toContain('Supporting text.');
-  });
+  test(
+    'renders the complete GFM prose and table surface with semantic elements',
+    { tags: ['full'] },
+    () => {
+      const content =
+        '# Title\n\n## Two\n\n### Three\n\n#### Four\n\n##### Five\n\n###### Six\n\n> Quoted result\n\n1. First\n2. Second\n\n- [x] Complete\n- [ ] Pending\n\n~~Removed~~\n\n---\n\n| Name | State |\n| --- | --- |\n| Build | Ready |\n\nA footnote[^note].\n\n[^note]: Supporting text.';
+      act(() => root.render(<Markdown>{content}</Markdown>));
+      for (const level of [1, 2, 3, 4, 5, 6])
+        expect(container.querySelector(`h${level}`)).not.toBeNull();
+      expect(container.querySelector('blockquote')?.textContent).toContain('Quoted result');
+      expect(container.querySelector('ol')?.textContent).toContain('Second');
+      expect(container.querySelectorAll('input[type="checkbox"]')).toHaveLength(2);
+      expect(container.querySelector('del')?.textContent).toBe('Removed');
+      expect(container.querySelector('hr')).not.toBeNull();
+      expect(container.querySelector('th')?.textContent).toBe('Name');
+      expect(container.querySelector('td')?.textContent).toBe('Build');
+      expect(container.querySelector('sup')).not.toBeNull();
+      expect(container.querySelector('section')?.textContent).toContain('Supporting text.');
+    },
+  );
 
   test('custom plugins retain native non-checkbox input renderers', () => {
     const plugin = () => (tree: { children: unknown[] }) => {

@@ -33,7 +33,7 @@ const stubColorSchemeMediaQuery = (matches: boolean): void => {
   );
 };
 
-describe('resolveSyntaxHighlightTheme', () => {
+describe('resolveSyntaxHighlightTheme', { tags: ['full'] }, () => {
   afterEach(() => {
     document.documentElement.className = '';
     vi.unstubAllGlobals();
@@ -68,14 +68,18 @@ describe('resolveSyntaxHighlightTheme', () => {
 
 const ThemeProbe = () => createElement('output', null, useResolvedSyntaxHighlightTheme());
 
-test('system theme subscriptions work when optional DOM observation is unavailable', () => {
-  vi.stubGlobal('MutationObserver', undefined);
-  vi.stubGlobal('matchMedia', undefined);
-  try {
-    const view = render(createElement(ThemeProbe));
-    expect(view.container.textContent).toBe('light');
-  } finally {
-    cleanup();
-    vi.unstubAllGlobals();
-  }
-});
+test(
+  'system theme subscriptions work when optional DOM observation is unavailable',
+  { tags: ['full'] },
+  () => {
+    vi.stubGlobal('MutationObserver', undefined);
+    vi.stubGlobal('matchMedia', undefined);
+    try {
+      const view = render(createElement(ThemeProbe));
+      expect(view.container.textContent).toBe('light');
+    } finally {
+      cleanup();
+      vi.unstubAllGlobals();
+    }
+  },
+);

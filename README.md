@@ -47,7 +47,7 @@ pnpm --filter jg-sw exec playwright install chromium firefox webkit
 pnpm check
 ```
 
-`pnpm check` runs every check CI runs: lint, typecheck, unit tests, builds, integration and end-to-end tests, the format check, and the release checks. [`docs/development.md`](docs/development.md) covers the rest of the daily workflow.
+`pnpm check` runs lint, typecheck, builds, essential unit/integration/browser/end-to-end tests, and formatting. `pnpm test:full` runs all correctness tests; `pnpm check:full` also runs coverage and release verification. Full runs locally only on explicit request. CI uses essential regression tests and keeps its complete release qualification separate. [`docs/development.md`](docs/development.md) covers the rest of the daily workflow.
 
 Preview the shared Astro components locally with `pnpm --filter jg-personal-astro-ui gallery:dev`. Its private gallery and browser checks are described in [`docs/personal-astro-ui.md`](docs/personal-astro-ui.md#private-gallery).
 

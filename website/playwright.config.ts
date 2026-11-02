@@ -8,6 +8,7 @@ const PORT = 4330;
 export default defineConfig({
   testDir: 'e2e',
   testMatch: '**/*.test-e2e.ts',
+  testIgnore: ['**/_archive/**', '**/_archives/**', '**/_backup/**', '**/_backups/**'],
   forbidOnly: process.env['CI'] !== undefined,
   fullyParallel: true,
   retries: 0,

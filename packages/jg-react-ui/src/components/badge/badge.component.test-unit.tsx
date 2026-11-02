@@ -8,13 +8,13 @@ test.each([
   undefined,
   'Status',
   [createElement('span', { key: 'a' }), createElement('span', { key: 'b' })],
-])('Badge rejects invalid slotted children: %o', (children) => {
+])('Badge rejects invalid slotted children: %o', { tags: ['full'] }, (children) => {
   expect(() => renderToStaticMarkup(createElement(Badge, { asChild: true }, children))).toThrow(
     'asChild requires exactly one valid React element child.',
   );
 });
 
-test('Badge supports SSR with the retained defaults', () => {
+test('Badge supports SSR with the retained defaults', { tags: ['full'] }, () => {
   const markup = renderToStaticMarkup(<Badge>Ready</Badge>);
   expect(markup).toContain('data-variant="default"');
   expect(markup).toContain('>Ready</span>');

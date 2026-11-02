@@ -34,7 +34,7 @@ const splitTheme = (theme: string): { dark: string; light: string } => {
   return { light: theme.slice(0, darkStart), dark: theme.slice(darkStart) };
 };
 
-describe('the inverse surface', () => {
+describe('the inverse surface', { tags: ['full'] }, () => {
   test('keeps dark semantic colors synchronized with the system-preference fallback', async () => {
     const theme = await readFile(THEME_FILE, 'utf8');
     const { dark } = splitTheme(theme);
@@ -65,12 +65,16 @@ describe('the inverse surface', () => {
   });
 });
 
-test('the exported semantic token names match the authoritative theme', async () => {
-  const theme = await readFile(THEME_FILE, 'utf8');
-  const names = [
-    ...new Set([...theme.matchAll(/(--jg-[a-z-]+):/gu)].map(([, name]) => name)),
-  ].sort();
-  expect(JG_PERSONAL_UI_TOKEN_NAMES).toStrictEqual(names);
-  expect(theme).not.toContain('--jg-page-gutter');
-  expect(theme).not.toContain('.jg-section-inverse');
-});
+test(
+  'the exported semantic token names match the authoritative theme',
+  { tags: ['full'] },
+  async () => {
+    const theme = await readFile(THEME_FILE, 'utf8');
+    const names = [
+      ...new Set([...theme.matchAll(/(--jg-[a-z-]+):/gu)].map(([, name]) => name)),
+    ].sort();
+    expect(JG_PERSONAL_UI_TOKEN_NAMES).toStrictEqual(names);
+    expect(theme).not.toContain('--jg-page-gutter');
+    expect(theme).not.toContain('.jg-section-inverse');
+  },
+);

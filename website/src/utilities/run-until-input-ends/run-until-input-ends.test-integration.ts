@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
-import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { runUntilInputEnds } from './run-until-input-ends.ts';
 
@@ -62,19 +62,19 @@ const readStartedPid = async (pidFile: string): Promise<number> => {
 };
 
 describe('runUntilInputEnds', () => {
-  beforeAll(async () => {
+  beforeEach(async () => {
     temporaryDirectory = await mkdtemp(join(tmpdir(), 'jg-run-until-input-ends-'));
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     for (const pid of startedPids.splice(0)) {
       if (isRunning(pid)) {
         process.kill(pid, 'SIGKILL');
+        await vi.waitFor(() => {
+          expect(isRunning(pid)).toBe(false);
+        });
       }
     }
-  });
-
-  afterAll(async () => {
     await rm(temporaryDirectory, { recursive: true, force: true });
   });
 

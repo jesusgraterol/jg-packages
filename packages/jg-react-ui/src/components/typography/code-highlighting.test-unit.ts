@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 
 import { getCodeBlockHighlightStyle } from './code-highlighting.js';
 
-describe('CodeBlock syntax highlighting', () => {
+describe('CodeBlock syntax highlighting', { tags: ['full'] }, () => {
   test.each([
     ['light', '#8b1a89', '#2f6f31', '#1f5fbf'],
     ['dark', '#c678dd', '#98c379', '#61afef'],

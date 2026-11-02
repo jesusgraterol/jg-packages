@@ -125,52 +125,58 @@ describe('AlertDialog', () => {
     );
   });
 
-  test('provides reduced-motion behavior for the alert panel and overlay', () => {
-    act(() => {
-      root.render(
-        <AlertDialog open>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Download database backup?</AlertDialogTitle>
-              <AlertDialogDescription>Review the change before continuing.</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogAction>Continue</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>,
+  test(
+    'provides reduced-motion behavior for the alert panel and overlay',
+    { tags: ['full'] },
+    () => {
+      act(() => {
+        root.render(
+          <AlertDialog open>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Download database backup?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Review the change before continuing.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogAction>Continue</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>,
+        );
+      });
+
+      const dialogContent = document.body.querySelector<HTMLElement>(
+        '[data-slot="alert-dialog-content"]',
       );
-    });
+      const dialogOverlay = document.body.querySelector<HTMLElement>(
+        '[data-slot="alert-dialog-overlay"]',
+      );
 
-    const dialogContent = document.body.querySelector<HTMLElement>(
-      '[data-slot="alert-dialog-content"]',
-    );
-    const dialogOverlay = document.body.querySelector<HTMLElement>(
-      '[data-slot="alert-dialog-overlay"]',
-    );
+      expect(dialogContent?.className).toContain('motion-reduce:animate-none');
+      expect(dialogContent?.className).toContain('motion-reduce:data-open:animate-none');
+      expect(dialogContent?.className).toContain('motion-reduce:data-closed:animate-none');
+      expect(dialogContent?.className).toContain('z-[60]');
+      expect(dialogOverlay?.className).toContain('motion-reduce:animate-none');
+      expect(dialogOverlay?.className).toContain('motion-reduce:data-open:animate-none');
+      expect(dialogOverlay?.className).toContain('motion-reduce:data-closed:animate-none');
+      expect(dialogOverlay?.className).toContain('z-[60]');
+      const closeButton = document.body.querySelector<HTMLButtonElement>(
+        '[data-slot="alert-dialog-close"]',
+      );
+      const dialogTitle = document.body.querySelector<HTMLElement>(
+        '[data-slot="alert-dialog-title"]',
+      );
 
-    expect(dialogContent?.className).toContain('motion-reduce:animate-none');
-    expect(dialogContent?.className).toContain('motion-reduce:data-open:animate-none');
-    expect(dialogContent?.className).toContain('motion-reduce:data-closed:animate-none');
-    expect(dialogContent?.className).toContain('z-[60]');
-    expect(dialogOverlay?.className).toContain('motion-reduce:animate-none');
-    expect(dialogOverlay?.className).toContain('motion-reduce:data-open:animate-none');
-    expect(dialogOverlay?.className).toContain('motion-reduce:data-closed:animate-none');
-    expect(dialogOverlay?.className).toContain('z-[60]');
-    const closeButton = document.body.querySelector<HTMLButtonElement>(
-      '[data-slot="alert-dialog-close"]',
-    );
-    const dialogTitle = document.body.querySelector<HTMLElement>(
-      '[data-slot="alert-dialog-title"]',
-    );
-
-    expect(closeButton?.getAttribute('aria-label')).toBe('Close dialog');
-    expect(closeButton?.className).toContain('size-7');
-    expect(closeButton?.className).not.toContain('size-11');
-    expect(closeButton?.className).toContain('absolute');
-    expect(closeButton?.className).toContain('after:-inset-2');
-    expect(dialogTitle?.className).toContain('px-8');
-  });
+      expect(closeButton?.getAttribute('aria-label')).toBe('Close dialog');
+      expect(closeButton?.className).toContain('size-7');
+      expect(closeButton?.className).not.toContain('size-11');
+      expect(closeButton?.className).toContain('absolute');
+      expect(closeButton?.className).toContain('after:-inset-2');
+      expect(dialogTitle?.className).toContain('px-8');
+    },
+  );
 
   test('keeps compact alert content scrollable above fixed actions', () => {
     act(() => {

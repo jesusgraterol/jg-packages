@@ -31,23 +31,31 @@ const readElementNames = (markup: string): string[] =>
   [...markup.matchAll(/<([a-zA-Z][\w:-]*)/gu)].map(([, name = '']) => name);
 
 describe('agentic-coding-mark', () => {
-  test('draws the same tile, chevrons, and node inline as the standalone SVG', async () => {
-    const [svg, component] = await Promise.all([
-      readFile(SVG_FILE, 'utf8'),
-      readFile(COMPONENT_FILE, 'utf8'),
-    ]);
+  test(
+    'draws the same tile, chevrons, and node inline as the standalone SVG',
+    { tags: ['full'] },
+    async () => {
+      const [svg, component] = await Promise.all([
+        readFile(SVG_FILE, 'utf8'),
+        readFile(COMPONENT_FILE, 'utf8'),
+      ]);
 
-    expect(readShapes(svg)).toHaveLength(4);
-    expect(readShapes(component)).toStrictEqual(readShapes(svg));
-  });
+      expect(readShapes(svg)).toHaveLength(4);
+      expect(readShapes(component)).toStrictEqual(readShapes(svg));
+    },
+  );
 
-  test('uses the brand colors as fixed values, so it reads the same in both themes', async () => {
-    const svg = await readFile(SVG_FILE, 'utf8');
+  test(
+    'uses the brand colors as fixed values, so it reads the same in both themes',
+    { tags: ['full'] },
+    async () => {
+      const svg = await readFile(SVG_FILE, 'utf8');
 
-    expect(
-      [...svg.matchAll(/(?:fill|stroke)="(#[0-9a-f]{6})"/gu)].map(([, color]) => color),
-    ).toStrictEqual(['#111111', '#f4f6f1', '#76c8ad', '#ef6047']);
-  });
+      expect(
+        [...svg.matchAll(/(?:fill|stroke)="(#[0-9a-f]{6})"/gu)].map(([, color]) => color),
+      ).toStrictEqual(['#111111', '#f4f6f1', '#76c8ad', '#ef6047']);
+    },
+  );
 
   test('holds nothing a browser could run or fetch', async () => {
     for (const markup of await Promise.all([
@@ -60,16 +68,20 @@ describe('agentic-coding-mark', () => {
     }
   });
 
-  test('is a 64-pixel square that hides from assistive technology inline', async () => {
-    const [svg, component] = await Promise.all([
-      readFile(SVG_FILE, 'utf8'),
-      readFile(COMPONENT_FILE, 'utf8'),
-    ]);
+  test(
+    'is a 64-pixel square that hides from assistive technology inline',
+    { tags: ['full'] },
+    async () => {
+      const [svg, component] = await Promise.all([
+        readFile(SVG_FILE, 'utf8'),
+        readFile(COMPONENT_FILE, 'utf8'),
+      ]);
 
-    expect(svg).toMatch(
-      /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" width="64" height="64" viewBox="0 0 64 64"/u,
-    );
-    expect(component).toContain('viewBox="0 0 64 64"');
-    expect(component).toContain('aria-hidden="true"');
-  });
+      expect(svg).toMatch(
+        /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" width="64" height="64" viewBox="0 0 64 64"/u,
+      );
+      expect(component).toContain('viewBox="0 0 64 64"');
+      expect(component).toContain('aria-hidden="true"');
+    },
+  );
 });

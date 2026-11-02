@@ -614,7 +614,7 @@ export const RadioGroupItem = ({
 );
 
 /**
- * Renders a binary switch control.
+ * Renders a binary switch control, with a 44px target around it on touch screens.
  * @param props The Base UI switch props and shared size variant.
  * @returns A React element that renders the switch.
  * @example
@@ -651,7 +651,7 @@ export const Switch = ({
           )
     }
     className={cn(
-      'peer group/switch focus-visible:border-foreground focus-visible:ring-foreground/50 data-checked:bg-primary data-unchecked:bg-border dark:data-checked:bg-primary-foreground dark:data-unchecked:bg-border/80 inline-flex shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:ring-[3px] data-disabled:cursor-not-allowed data-disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6 motion-reduce:transition-none',
+      'peer group/switch pointer-coarse:after:absolute pointer-coarse:after:top-1/2 pointer-coarse:after:left-1/2 pointer-coarse:after:size-11 pointer-coarse:after:-translate-1/2 relative focus-visible:border-foreground focus-visible:ring-foreground/50 data-checked:bg-primary data-unchecked:bg-border dark:data-checked:bg-primary-foreground dark:data-unchecked:bg-border/80 inline-flex shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:ring-[3px] data-disabled:cursor-not-allowed data-disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6 motion-reduce:transition-none',
       className,
     )}
     {...props}

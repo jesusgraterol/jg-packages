@@ -6,28 +6,32 @@ import { IconTile } from './index.js';
 
 afterEach(cleanup);
 
-test('IconTile is decorative by default and forwards native props and ref', () => {
-  const ref = createRef<HTMLSpanElement>();
-  render(
-    <IconTile
-      ref={ref}
-      title="Decorative"
-    >
-      1
-    </IconTile>,
-  );
-  expect(ref.current).toBe(screen.getByText('1'));
-  expect(ref.current?.getAttribute('aria-hidden')).toBe('true');
-  expect(ref.current?.dataset['size']).toBe('md');
-  expect(ref.current?.dataset['tone']).toBe('neutral');
-  expect(ref.current?.title).toBe('Decorative');
-});
+test(
+  'IconTile is decorative by default and forwards native props and ref',
+  { tags: ['full'] },
+  () => {
+    const ref = createRef<HTMLSpanElement>();
+    render(
+      <IconTile
+        ref={ref}
+        title="Decorative"
+      >
+        1
+      </IconTile>,
+    );
+    expect(ref.current).toBe(screen.getByText('1'));
+    expect(ref.current?.getAttribute('aria-hidden')).toBe('true');
+    expect(ref.current?.dataset['size']).toBe('md');
+    expect(ref.current?.dataset['tone']).toBe('neutral');
+    expect(ref.current?.title).toBe('Decorative');
+  },
+);
 
 test.each([
   ['sm', 'size-8'],
   ['md', 'size-10'],
   ['lg', 'size-12'],
-] as const)('IconTile retains %s size classes', (size, className) => {
+] as const)('IconTile retains %s size classes', { tags: ['full'] }, (size, className) => {
   render(
     <IconTile
       size={size}
@@ -45,6 +49,7 @@ test.each([
 
 test.each(['neutral', 'brand', 'success', 'warning', 'destructive'] as const)(
   'IconTile retains the %s tone',
+  { tags: ['full'] },
   (tone) => {
     render(<IconTile tone={tone}>Icon</IconTile>);
     expect(screen.getByText('Icon').dataset['tone']).toBe(tone);

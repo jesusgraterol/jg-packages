@@ -53,38 +53,42 @@ describe('ConfirmationDialog', () => {
     vi.clearAllMocks();
   });
 
-  test('opens from the store with routine default copy and controls', async () => {
-    await act(async () => {
-      await Promise.resolve();
-      root.render(<ConfirmationDialog />);
-    });
-
-    expect(document.body.textContent).not.toContain('Confirm action');
-
-    await act(async () => {
-      await Promise.resolve();
-      useConfirmationDialogStore.getState().openConfirmationDialog({
-        onConfirmationDialogClose: vi.fn(),
+  test(
+    'opens from the store with routine default copy and controls',
+    { tags: ['full'] },
+    async () => {
+      await act(async () => {
+        await Promise.resolve();
+        root.render(<ConfirmationDialog />);
       });
-    });
 
-    expect(document.body.textContent).toContain('Confirm action');
-    expect(document.body.querySelector('[data-slot="alert-dialog-description"]')).toBeNull();
-    expect(document.body.textContent).toContain('Confirm');
-    expect(document.body.textContent).not.toContain('Cancel');
-    const closeButton = getConfirmationDialogButton('Close dialog');
-    const confirmButton = getConfirmationDialogButton('Confirm');
+      expect(document.body.textContent).not.toContain('Confirm action');
 
-    expect(closeButton.className).toContain('size-7');
-    expect(closeButton.className).not.toContain('size-11');
-    expect(closeButton.className).toContain('absolute');
-    expect(closeButton.className).toContain('after:-inset-2');
-    expect(confirmButton.className).toContain('min-h-11');
-    expect(confirmButton.closest('[data-slot="alert-dialog-footer"]')?.className).toContain(
-      '*:w-full',
-    );
-    expect(document.body.querySelector('[data-slot="icon-tile"]')).toBeNull();
-  });
+      await act(async () => {
+        await Promise.resolve();
+        useConfirmationDialogStore.getState().openConfirmationDialog({
+          onConfirmationDialogClose: vi.fn(),
+        });
+      });
+
+      expect(document.body.textContent).toContain('Confirm action');
+      expect(document.body.querySelector('[data-slot="alert-dialog-description"]')).toBeNull();
+      expect(document.body.textContent).toContain('Confirm');
+      expect(document.body.textContent).not.toContain('Cancel');
+      const closeButton = getConfirmationDialogButton('Close dialog');
+      const confirmButton = getConfirmationDialogButton('Confirm');
+
+      expect(closeButton.className).toContain('size-7');
+      expect(closeButton.className).not.toContain('size-11');
+      expect(closeButton.className).toContain('absolute');
+      expect(closeButton.className).toContain('after:-inset-2');
+      expect(confirmButton.className).toContain('min-h-11');
+      expect(confirmButton.closest('[data-slot="alert-dialog-footer"]')?.className).toContain(
+        '*:w-full',
+      );
+      expect(document.body.querySelector('[data-slot="icon-tile"]')).toBeNull();
+    },
+  );
 
   test('opens from the store and completes with confirmation', async () => {
     const handleConfirmationDialogClose = vi.fn<(isConfirmed: true | undefined) => void>();

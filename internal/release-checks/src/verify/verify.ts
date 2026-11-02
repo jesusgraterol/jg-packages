@@ -94,7 +94,7 @@ const addProblems = (problems: Map<string, string[]>, name: string, additions: s
 };
 
 /**
- * Checks that every workspace's tests run in `pnpm check`, then packs every publishable package
+ * Checks that every workspace's tests run in `pnpm check:full`, then packs every publishable package
  * into a directory and runs every release check on the tarballs: the file list, the release docs,
  * a consumer install and imports, the examples, the error codes' tests, an Astro fixture build
  * for packages with Astro components, publint and attw, TSDoc, and the registry comparison.

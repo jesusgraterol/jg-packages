@@ -43,11 +43,11 @@ test.each([
     </DrawerContent>,
     'DrawerContent requires direct DrawerHeader and DrawerBody children, with an optional trailing DrawerFooter.',
   ],
-])('rejects invalid drawer composition: %s', (element, message) => {
+])('rejects invalid drawer composition: %s', { tags: ['full'] }, (element, message) => {
   expect(() => renderToStaticMarkup(<Drawer side="left">{element}</Drawer>)).toThrow(message);
 });
 
-test('rejects a panel without its drawer root', () => {
+test('rejects a panel without its drawer root', { tags: ['full'] }, () => {
   expect(() =>
     renderToStaticMarkup(
       <DrawerContent size="small">

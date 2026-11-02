@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+### Fixed
+
+- Requires `jg-react-ui` 0.3.1: Tab and Shift+Tab leave the chat Markdown editor outside list items, `DEFAULT_FORM_PROPS` validates on touch so a fixed field's error clears at once, and `Switch` keeps a 44px target on touch screens.
+
 ## 0.3.0
 
 - Add CodeDiff with the bundled checked viewer, lazy worker chunk, native folding controls, and retained public props.

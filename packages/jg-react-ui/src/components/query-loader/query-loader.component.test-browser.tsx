@@ -122,7 +122,7 @@ describe('QueryLoader', () => {
     expect(container.querySelector('[data-slot="query-loader"]')).toBe(null);
   });
 
-  test('applies the requested size and class names', () => {
+  test('applies the requested size and class names', { tags: ['full'] }, () => {
     act(() => {
       root.render(
         <QueryLoader
@@ -150,19 +150,23 @@ describe('QueryLoader', () => {
     ['inline', 'mt-10'],
     ['dialog', 'h-[clamp(8rem,32svh,16rem)]'],
     ['page', 'fixed'],
-  ] as const)('applies the %s centering layout', (layout, expectedClassName) => {
-    act(() => {
-      root.render(
-        <QueryLoader
-          layout={layout}
-          queries={[createQuery({ isLoading: true })]}
-        />,
-      );
-    });
+  ] as const)(
+    'applies the %s centering layout',
+    { tags: ['full'] },
+    (layout, expectedClassName) => {
+      act(() => {
+        root.render(
+          <QueryLoader
+            layout={layout}
+            queries={[createQuery({ isLoading: true })]}
+          />,
+        );
+      });
 
-    const queryLoader = getQueryLoader(container);
+      const queryLoader = getQueryLoader(container);
 
-    expect(queryLoader.dataset['layout']).toBe(layout);
-    expect(queryLoader.className).toContain(expectedClassName);
-  });
+      expect(queryLoader.dataset['layout']).toBe(layout);
+      expect(queryLoader.className).toContain(expectedClassName);
+    },
+  );
 });

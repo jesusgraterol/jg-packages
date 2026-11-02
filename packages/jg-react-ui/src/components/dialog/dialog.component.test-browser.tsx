@@ -395,6 +395,7 @@ describe('DialogContent', () => {
     ['centered', true, true, false],
   ] as const)(
     'compact %s headers preserve leading=%s actions=%s close=%s',
+    { tags: ['full'] },
     async (layout, hasLeading, hasActions, isCloseButtonVisible) => {
       const leading = vi.fn();
       const action = vi.fn();
@@ -686,91 +687,97 @@ describe('DialogContent', () => {
     expect(reopenedDialogContent?.textContent).not.toContain('Latest session');
   });
 
-  test('renders medium dialogs as centralized page-like surfaces with fixed action regions', async () => {
-    await act(async () => {
-      await Promise.resolve();
-      root.render(
-        <Dialog open>
-          <DialogContent
-            initialFocus="dismiss-control"
-            size="medium"
-          >
-            <DialogHeader actions={<Button type="button">More options</Button>}>
-              <DialogTitle>Edit profile</DialogTitle>
-              <DialogDescription>Update profile details.</DialogDescription>
-            </DialogHeader>
-            <DialogBody>Profile fields</DialogBody>
-            <DialogFooter>
-              <DialogCancel asChild>
-                <Button type="button">Cancel</Button>
-              </DialogCancel>
-              <Button type="button">Save</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>,
+  test(
+    'renders medium dialogs as centralized page-like surfaces with fixed action regions',
+    { tags: ['full'] },
+    async () => {
+      await act(async () => {
+        await Promise.resolve();
+        root.render(
+          <Dialog open>
+            <DialogContent
+              initialFocus="dismiss-control"
+              size="medium"
+            >
+              <DialogHeader actions={<Button type="button">More options</Button>}>
+                <DialogTitle>Edit profile</DialogTitle>
+                <DialogDescription>Update profile details.</DialogDescription>
+              </DialogHeader>
+              <DialogBody>Profile fields</DialogBody>
+              <DialogFooter>
+                <DialogCancel asChild>
+                  <Button type="button">Cancel</Button>
+                </DialogCancel>
+                <Button type="button">Save</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>,
+        );
+      });
+
+      const dialogContent = document.body.querySelector<HTMLElement>(
+        '[data-slot="dialog-content"]',
       );
-    });
+      const dialogBody = document.body.querySelector<HTMLElement>('[data-slot="dialog-body"]');
+      const dialogFooter = document.body.querySelector<HTMLElement>('[data-slot="dialog-footer"]');
+      const dialogHeader = document.body.querySelector<HTMLElement>('[data-slot="dialog-header"]');
+      const cancelButton = document.body.querySelector<HTMLElement>('[data-slot="dialog-cancel"]');
+      const dialogHeaderRow = document.body.querySelector<HTMLElement>(
+        '[data-slot="dialog-header-row"]',
+      );
+      const dialogHeaderSupporting = document.body.querySelector<HTMLElement>(
+        '[data-slot="dialog-header-supporting"]',
+      );
+      const dialogTitle = document.body.querySelector<HTMLElement>('[data-slot="dialog-title"]');
+      const dialogDescription = document.body.querySelector<HTMLElement>(
+        '[data-slot="dialog-description"]',
+      );
+      const backButton = document.body.querySelector<HTMLElement>('[data-slot="dialog-back"]');
+      const headerAction = Array.from(dialogHeaderRow?.querySelectorAll('button') ?? []).find(
+        (button) => button.textContent === 'More options',
+      );
+      const closeButton = document.body.querySelector<HTMLButtonElement>(
+        '[aria-label="Close dialog"]',
+      );
 
-    const dialogContent = document.body.querySelector<HTMLElement>('[data-slot="dialog-content"]');
-    const dialogBody = document.body.querySelector<HTMLElement>('[data-slot="dialog-body"]');
-    const dialogFooter = document.body.querySelector<HTMLElement>('[data-slot="dialog-footer"]');
-    const dialogHeader = document.body.querySelector<HTMLElement>('[data-slot="dialog-header"]');
-    const cancelButton = document.body.querySelector<HTMLElement>('[data-slot="dialog-cancel"]');
-    const dialogHeaderRow = document.body.querySelector<HTMLElement>(
-      '[data-slot="dialog-header-row"]',
-    );
-    const dialogHeaderSupporting = document.body.querySelector<HTMLElement>(
-      '[data-slot="dialog-header-supporting"]',
-    );
-    const dialogTitle = document.body.querySelector<HTMLElement>('[data-slot="dialog-title"]');
-    const dialogDescription = document.body.querySelector<HTMLElement>(
-      '[data-slot="dialog-description"]',
-    );
-    const backButton = document.body.querySelector<HTMLElement>('[data-slot="dialog-back"]');
-    const headerAction = Array.from(dialogHeaderRow?.querySelectorAll('button') ?? []).find(
-      (button) => button.textContent === 'More options',
-    );
-    const closeButton = document.body.querySelector<HTMLButtonElement>(
-      '[aria-label="Close dialog"]',
-    );
-
-    expect(dialogContent?.dataset['size']).toBe('medium');
-    expect(dialogContent?.className).toContain('inset-0');
-    expect(dialogContent?.className).toContain('h-dvh');
-    expect(dialogContent?.className).toContain('max-sm:data-open:zoom-in-96');
-    expect(dialogContent?.className).not.toContain('max-sm:data-closed:fade-out-0');
-    expect(dialogContent?.className).not.toContain('max-sm:data-open:slide-in-from-bottom-1');
-    expect(dialogContent?.className).not.toContain('max-sm:data-closed:slide-out-to-bottom-1');
-    expect(dialogContent?.className).toContain('max-sm:data-open:duration-300');
-    expect(dialogContent?.className).not.toContain('max-sm:data-closed:animate-out');
-    expect(dialogContent?.className).toContain('motion-reduce:max-sm:data-open:animate-none');
-    expect(dialogContent?.className).toContain('sm:data-open:animate-in');
-    expect(dialogContent?.className.split(' ')).not.toContain('data-open:animate-in');
-    expect(getDialogOverlay().className).toContain('max-sm:hidden');
-    expect(dialogContent?.className).toContain('sm:max-w-2xl');
-    expect(dialogBody?.className).toContain('content-start');
-    expect(dialogBody?.className).toContain('overflow-y-auto');
-    expect(dialogFooter?.className).toContain('shrink-0');
-    expect(dialogFooter?.className).toContain('flex-col-reverse');
-    expect(dialogFooter?.className).toContain('sm:justify-end');
-    expect(dialogFooter?.className).toContain('sm:[&>*:first-child:not(:only-child)]:mr-auto');
-    expect(
-      Array.from(dialogFooter?.children ?? []).map((child) => child.textContent),
-    ).toStrictEqual(['Cancel', 'Save']);
-    expect(dialogHeader?.className).toContain('gap-0');
-    expect(cancelButton?.className).toContain('hidden');
-    expect(cancelButton?.className).toContain('sm:inline-flex');
-    expect(dialogHeaderRow?.className).toContain('min-h-9');
-    expect(dialogHeaderRow?.className).not.toContain('min-h-11');
-    expect(backButton?.className).toContain('size-9');
-    expect(backButton?.className).not.toContain('size-11');
-    expect(dialogHeaderRow?.contains(backButton ?? null)).toBe(true);
-    expect(dialogHeaderRow?.contains(dialogTitle ?? null)).toBe(true);
-    expect(dialogHeaderRow?.contains(headerAction ?? null)).toBe(true);
-    expect(dialogHeaderRow?.contains(dialogDescription ?? null)).toBe(false);
-    expect(dialogHeaderSupporting?.contains(dialogDescription ?? null)).toBe(true);
-    await vi.waitFor(() => expect(document.activeElement).toBe(closeButton));
-  });
+      expect(dialogContent?.dataset['size']).toBe('medium');
+      expect(dialogContent?.className).toContain('inset-0');
+      expect(dialogContent?.className).toContain('h-dvh');
+      expect(dialogContent?.className).toContain('max-sm:data-open:zoom-in-96');
+      expect(dialogContent?.className).not.toContain('max-sm:data-closed:fade-out-0');
+      expect(dialogContent?.className).not.toContain('max-sm:data-open:slide-in-from-bottom-1');
+      expect(dialogContent?.className).not.toContain('max-sm:data-closed:slide-out-to-bottom-1');
+      expect(dialogContent?.className).toContain('max-sm:data-open:duration-300');
+      expect(dialogContent?.className).not.toContain('max-sm:data-closed:animate-out');
+      expect(dialogContent?.className).toContain('motion-reduce:max-sm:data-open:animate-none');
+      expect(dialogContent?.className).toContain('sm:data-open:animate-in');
+      expect(dialogContent?.className.split(' ')).not.toContain('data-open:animate-in');
+      expect(getDialogOverlay().className).toContain('max-sm:hidden');
+      expect(dialogContent?.className).toContain('sm:max-w-2xl');
+      expect(dialogBody?.className).toContain('content-start');
+      expect(dialogBody?.className).toContain('overflow-y-auto');
+      expect(dialogFooter?.className).toContain('shrink-0');
+      expect(dialogFooter?.className).toContain('flex-col-reverse');
+      expect(dialogFooter?.className).toContain('sm:justify-end');
+      expect(dialogFooter?.className).toContain('sm:[&>*:first-child:not(:only-child)]:mr-auto');
+      expect(
+        Array.from(dialogFooter?.children ?? []).map((child) => child.textContent),
+      ).toStrictEqual(['Cancel', 'Save']);
+      expect(dialogHeader?.className).toContain('gap-0');
+      expect(cancelButton?.className).toContain('hidden');
+      expect(cancelButton?.className).toContain('sm:inline-flex');
+      expect(dialogHeaderRow?.className).toContain('min-h-9');
+      expect(dialogHeaderRow?.className).not.toContain('min-h-11');
+      expect(backButton?.className).toContain('size-9');
+      expect(backButton?.className).not.toContain('size-11');
+      expect(dialogHeaderRow?.contains(backButton ?? null)).toBe(true);
+      expect(dialogHeaderRow?.contains(dialogTitle ?? null)).toBe(true);
+      expect(dialogHeaderRow?.contains(headerAction ?? null)).toBe(true);
+      expect(dialogHeaderRow?.contains(dialogDescription ?? null)).toBe(false);
+      expect(dialogHeaderSupporting?.contains(dialogDescription ?? null)).toBe(true);
+      await vi.waitFor(() => expect(document.activeElement).toBe(closeButton));
+    },
+  );
 
   test('replaces generated dismissal icons without changing their accessible close behavior', () => {
     const handleOpenChange = vi.fn<(open: boolean) => void>();
@@ -910,6 +917,7 @@ describe('DialogContent', () => {
     ['large', 'sm:max-w-5xl', true],
   ] as const)(
     'renders the %s size with centralized geometry',
+    { tags: ['full'] },
     (size, expectedWidthClassName, hasMobileBackControl) => {
       act(() => {
         root.render(
@@ -974,63 +982,69 @@ describe('DialogContent', () => {
     },
   );
 
-  test('renders a split small header with left-aligned copy and grouped utility actions', () => {
-    act(() => {
-      root.render(
-        <Dialog open>
-          <DialogContent size="small">
-            <DialogHeader
-              actions={
-                <Button
-                  aria-label="Restart recording"
-                  size="icon-touch"
-                  type="button"
-                  variant="ghost"
-                >
-                  Restart
-                </Button>
-              }
-              layout="split"
-            >
-              <DialogTitle>Audio</DialogTitle>
-              <DialogDescription>Record and transcribe audio.</DialogDescription>
-            </DialogHeader>
-            <DialogBody>Recorder</DialogBody>
-          </DialogContent>
-        </Dialog>,
+  test(
+    'renders a split small header with left-aligned copy and grouped utility actions',
+    { tags: ['full'] },
+    () => {
+      act(() => {
+        root.render(
+          <Dialog open>
+            <DialogContent size="small">
+              <DialogHeader
+                actions={
+                  <Button
+                    aria-label="Restart recording"
+                    size="icon-touch"
+                    type="button"
+                    variant="ghost"
+                  >
+                    Restart
+                  </Button>
+                }
+                layout="split"
+              >
+                <DialogTitle>Audio</DialogTitle>
+                <DialogDescription>Record and transcribe audio.</DialogDescription>
+              </DialogHeader>
+              <DialogBody>Recorder</DialogBody>
+            </DialogContent>
+          </Dialog>,
+        );
+      });
+
+      const dialogHeader = document.body.querySelector<HTMLElement>('[data-slot="dialog-header"]');
+      const dialogHeaderActions = document.body.querySelector<HTMLElement>(
+        '[data-slot="dialog-header-actions"]',
       );
-    });
+      const dialogHeading = document.body.querySelector<HTMLElement>(
+        '[data-slot="dialog-heading"]',
+      );
+      const restartButton = document.body.querySelector<HTMLButtonElement>(
+        '[aria-label="Restart recording"]',
+      );
+      const closeButton = document.body.querySelector<HTMLButtonElement>(
+        '[aria-label="Close dialog"]',
+      );
 
-    const dialogHeader = document.body.querySelector<HTMLElement>('[data-slot="dialog-header"]');
-    const dialogHeaderActions = document.body.querySelector<HTMLElement>(
-      '[data-slot="dialog-header-actions"]',
-    );
-    const dialogHeading = document.body.querySelector<HTMLElement>('[data-slot="dialog-heading"]');
-    const restartButton = document.body.querySelector<HTMLButtonElement>(
-      '[aria-label="Restart recording"]',
-    );
-    const closeButton = document.body.querySelector<HTMLButtonElement>(
-      '[aria-label="Close dialog"]',
-    );
-
-    expect(dialogHeader?.className).toContain('text-left');
-    expect(dialogHeader?.className).toContain('items-center');
-    expect(dialogHeader?.className.split(' ')).not.toContain('text-center');
-    expect(dialogHeaderActions?.className).toContain('justify-end');
-    expect(dialogHeaderActions?.contains(restartButton ?? null)).toBe(true);
-    expect(dialogHeaderActions?.contains(closeButton ?? null)).toBe(true);
-    expect(restartButton?.className).toContain('size-11');
-    expect(restartButton?.className).toContain('sm:pointer-fine:size-8');
-    expect(closeButton?.className).toContain('size-11');
-    expect(closeButton?.className).toContain('sm:pointer-fine:size-8');
-    expect(closeButton?.className).toContain('pointer-coarse:min-h-11');
-    expect(closeButton?.className).toContain('pointer-coarse:min-w-11');
-    expect(closeButton?.className).not.toContain('absolute');
-    expect(dialogHeading?.className).not.toContain('[&>[data-slot=dialog-title]]:pr-8');
-    expect(dialogHeader?.className).toContain('pr-5');
-    expect(dialogHeader?.className).not.toContain('pr-16');
-    expect(dialogHeader?.className).not.toContain('pr-15');
-  });
+      expect(dialogHeader?.className).toContain('text-left');
+      expect(dialogHeader?.className).toContain('items-center');
+      expect(dialogHeader?.className.split(' ')).not.toContain('text-center');
+      expect(dialogHeaderActions?.className).toContain('justify-end');
+      expect(dialogHeaderActions?.contains(restartButton ?? null)).toBe(true);
+      expect(dialogHeaderActions?.contains(closeButton ?? null)).toBe(true);
+      expect(restartButton?.className).toContain('size-11');
+      expect(restartButton?.className).toContain('sm:pointer-fine:size-8');
+      expect(closeButton?.className).toContain('size-11');
+      expect(closeButton?.className).toContain('sm:pointer-fine:size-8');
+      expect(closeButton?.className).toContain('pointer-coarse:min-h-11');
+      expect(closeButton?.className).toContain('pointer-coarse:min-w-11');
+      expect(closeButton?.className).not.toContain('absolute');
+      expect(dialogHeading?.className).not.toContain('[&>[data-slot=dialog-title]]:pr-8');
+      expect(dialogHeader?.className).toContain('pr-5');
+      expect(dialogHeader?.className).not.toContain('pr-16');
+      expect(dialogHeader?.className).not.toContain('pr-15');
+    },
+  );
 
   test('omits footer cancellation when a small dialog header owns dismissal', () => {
     act(() => {

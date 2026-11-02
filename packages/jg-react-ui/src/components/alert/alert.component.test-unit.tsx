@@ -8,13 +8,13 @@ test.each([
   undefined,
   'Notice',
   [createElement('span', { key: 'a' }), createElement('span', { key: 'b' })],
-])('Alert rejects invalid slotted children: %o', (children) => {
+])('Alert rejects invalid slotted children: %o', { tags: ['full'] }, (children) => {
   expect(() => renderToStaticMarkup(createElement(Alert, { asChild: true }, children))).toThrow(
     'asChild requires exactly one valid React element child.',
   );
 });
 
-test('Alert supports SSR without browser globals', () => {
+test('Alert supports SSR without browser globals', { tags: ['full'] }, () => {
   const markup = renderToStaticMarkup(
     <Alert>
       <AlertTitle>Saved</AlertTitle>

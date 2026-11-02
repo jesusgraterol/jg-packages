@@ -101,6 +101,7 @@ describe('CopyButton', () => {
 
   test.each(['Copy full document', 'Copy loaded source'])(
     'preserves %s through pending, successful and reset feedback',
+    { tags: ['full'] },
     async (copyLabel) => {
       let finishWrite!: () => void;
       clipboardMock.writeText.mockReturnValueOnce(
@@ -494,34 +495,38 @@ describe('CopyButton', () => {
     });
   });
 
-  test('authored duration remains in milliseconds and a repeat click clears the earlier feedback timer', async () => {
-    await act(async () => {
-      root.render(
-        <CopyButton
-          copiedFeedbackDuration={64}
-          value="repeat"
-        />,
-      );
-      await Promise.resolve();
-    });
-    await act(async () => {
-      getCopyButton(container).click();
-      await Promise.resolve();
-    });
-    act(() => {
-      vi.advanceTimersByTime(32);
-    });
-    await act(async () => {
-      getCopyButton(container).click();
-      await Promise.resolve();
-    });
-    act(() => {
-      vi.advanceTimersByTime(32);
-    });
-    expect(getCopyButton(container).dataset['copied']).toBe('true');
-    act(() => {
-      vi.advanceTimersByTime(32);
-    });
-    expect(getCopyButton(container).dataset['copied']).toBe('false');
-  });
+  test(
+    'authored duration remains in milliseconds and a repeat click clears the earlier feedback timer',
+    { tags: ['full'] },
+    async () => {
+      await act(async () => {
+        root.render(
+          <CopyButton
+            copiedFeedbackDuration={64}
+            value="repeat"
+          />,
+        );
+        await Promise.resolve();
+      });
+      await act(async () => {
+        getCopyButton(container).click();
+        await Promise.resolve();
+      });
+      act(() => {
+        vi.advanceTimersByTime(32);
+      });
+      await act(async () => {
+        getCopyButton(container).click();
+        await Promise.resolve();
+      });
+      act(() => {
+        vi.advanceTimersByTime(32);
+      });
+      expect(getCopyButton(container).dataset['copied']).toBe('true');
+      act(() => {
+        vi.advanceTimersByTime(32);
+      });
+      expect(getCopyButton(container).dataset['copied']).toBe('false');
+    },
+  );
 });

@@ -29,53 +29,65 @@ test('Button forwards its ref and native attributes and responds to activation',
   expect(onClick).toHaveBeenCalledTimes(1);
 });
 
-test.each([undefined, 0, -1])('Button omits a nonpositive badge: %s', (badgeCount) => {
-  const { container } = render(
-    <Button {...(badgeCount === undefined ? {} : { badgeCount })}>Inbox</Button>,
-  );
-  expect(container.querySelector('[data-slot="button-badge"]')).toBeNull();
-});
+test.each([undefined, 0, -1])(
+  'Button omits a nonpositive badge: %s',
+  { tags: ['full'] },
+  (badgeCount) => {
+    const { container } = render(
+      <Button {...(badgeCount === undefined ? {} : { badgeCount })}>Inbox</Button>,
+    );
+    expect(container.querySelector('[data-slot="button-badge"]')).toBeNull();
+  },
+);
 
-test('Button retains badge defaults and custom count, location, and theme', () => {
-  const { container, rerender } = render(<Button badgeCount={12}>Inbox</Button>);
-  const badge = () => container.querySelector('[data-slot="button-badge"]');
-  expect(badge()?.textContent).toBe('9+');
-  expect(badge()?.getAttribute('data-location')).toBe('top-right');
-  expect(badge()?.getAttribute('data-theme')).toBe('primary');
-  rerender(
-    <Button
-      badgeCount={135}
-      maxValue={99}
-      badgeLocation="bottom-left"
-      badgeTheme="destructive"
-    >
-      Inbox
-    </Button>,
-  );
-  expect(badge()?.textContent).toBe('99+');
-  expect(badge()?.getAttribute('data-location')).toBe('bottom-left');
-  expect(badge()?.getAttribute('data-theme')).toBe('destructive');
-});
+test(
+  'Button retains badge defaults and custom count, location, and theme',
+  { tags: ['full'] },
+  () => {
+    const { container, rerender } = render(<Button badgeCount={12}>Inbox</Button>);
+    const badge = () => container.querySelector('[data-slot="button-badge"]');
+    expect(badge()?.textContent).toBe('9+');
+    expect(badge()?.getAttribute('data-location')).toBe('top-right');
+    expect(badge()?.getAttribute('data-theme')).toBe('primary');
+    rerender(
+      <Button
+        badgeCount={135}
+        maxValue={99}
+        badgeLocation="bottom-left"
+        badgeTheme="destructive"
+      >
+        Inbox
+      </Button>,
+    );
+    expect(badge()?.textContent).toBe('99+');
+    expect(badge()?.getAttribute('data-location')).toBe('bottom-left');
+    expect(badge()?.getAttribute('data-theme')).toBe('destructive');
+  },
+);
 
-test('Button renders a child link with and without a badge, retaining its content and href', () => {
-  const { rerender } = render(
-    <Button
-      asChild
-      badgeCount={3}
-    >
-      <a href="#inbox">Inbox</a>
-    </Button>,
-  );
-  const link = screen.getByRole('button', { name: 'Inbox3' });
-  expect(link.getAttribute('href')).toBe('#inbox');
-  expect(link.querySelector('[data-slot="button-badge"]')?.textContent).toBe('3');
-  rerender(
-    <Button asChild>
-      <a href="#inbox">Inbox</a>
-    </Button>,
-  );
-  expect(screen.getByRole('button', { name: 'Inbox' }).getAttribute('href')).toBe('#inbox');
-});
+test(
+  'Button renders a child link with and without a badge, retaining its content and href',
+  { tags: ['full'] },
+  () => {
+    const { rerender } = render(
+      <Button
+        asChild
+        badgeCount={3}
+      >
+        <a href="#inbox">Inbox</a>
+      </Button>,
+    );
+    const link = screen.getByRole('button', { name: 'Inbox3' });
+    expect(link.getAttribute('href')).toBe('#inbox');
+    expect(link.querySelector('[data-slot="button-badge"]')?.textContent).toBe('3');
+    rerender(
+      <Button asChild>
+        <a href="#inbox">Inbox</a>
+      </Button>,
+    );
+    expect(screen.getByRole('button', { name: 'Inbox' }).getAttribute('href')).toBe('#inbox');
+  },
+);
 
 test('Button preserves disabled and busy semantics for native and child buttons', () => {
   const onClick = vi.fn();

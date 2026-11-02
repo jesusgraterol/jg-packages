@@ -22,7 +22,7 @@ describe('isCodeBlockProse', () => {
     ['source.yaml', 'yaml', false],
     ['notes.md.backup', undefined, false],
     [undefined, 'diff-markdown', false],
-  ])('isCodeBlockProse(%s, %s) -> %s', (path, language, expected) => {
+  ])('isCodeBlockProse(%s, %s) -> %s', { tags: ['full'] }, (path, language, expected) => {
     expect(isCodeBlockProse(path, language)).toBe(expected);
   });
 });
@@ -41,6 +41,6 @@ test('extractCodeText preserves nested source and ignores nontext React values',
   ).toBe('first2 nested');
 });
 
-test('unknown diff grammars retain their authored label', () => {
+test('unknown diff grammars retain their authored label', { tags: ['full'] }, () => {
   expect(resolveCodeBlockLanguageLabel('diff-custom')).toBe('Diff (custom)');
 });

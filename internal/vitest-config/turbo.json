@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test:unit": {
+      "inputs": ["$TURBO_EXTENDS$", "$TURBO_ROOT$/package.json"]
+    },
+    "test:coverage": {
+      "inputs": ["$TURBO_EXTENDS$", "$TURBO_ROOT$/package.json"]
+    }
+  }
+}
