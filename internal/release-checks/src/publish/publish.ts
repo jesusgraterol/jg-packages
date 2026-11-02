@@ -22,6 +22,16 @@ import type {
  * it and everything it imports use only Node.js built-ins. A unit test enforces it.
  */
 
+/*
+ * What npm answers when it already holds a version, such as one an earlier run's publish left
+ * accepted while the registry hadn't served it yet: a 409 for a version it calls staged, and a 403
+ * for one it has published.
+ */
+const ALREADY_HELD_ERRORS = [
+  'cannot publish over previously staged version',
+  'cannot publish over the previously published versions',
+];
+
 // what the publish command needs from its environment
 export type IPublishDependencies = {
   runNpm: (args: string[]) => Promise<ICommandResult>;
@@ -114,11 +124,13 @@ const assertSiblingVersions = async (
 };
 
 /**
- * Publishes one tarball. npm accepts it right away, and serves it a few minutes later.
+ * Publishes one tarball. npm accepts it right away, and serves it a few minutes later. A version
+ * npm already holds, which an earlier run published before npm served it, counts as accepted, so
+ * a re-run in those minutes waits for it instead of failing.
  * @param releaseDirectory The release directory.
  * @param entry The manifest entry.
  * @param runNpm Runs npm.
- * @returns A promise that resolves once npm accepted the tarball.
+ * @returns A promise that resolves once npm accepted the tarball, to whether npm already held it.
  * @throws
  * - npm publish {file} failed: {stderr}
  */
@@ -126,15 +138,20 @@ const publishTarball = async (
   releaseDirectory: string,
   { version, file }: IReleaseManifestEntry,
   runNpm: IPublishDependencies['runNpm'],
-): Promise<void> => {
+): Promise<boolean> => {
   const args = ['publish', join(releaseDirectory, file), '--access', 'public'];
   if (isPrerelease(version)) {
     args.push('--tag', PRERELEASE_DIST_TAG);
   }
   const result = await runNpm(args);
-  if (result.exitCode !== 0) {
-    throw new Error(`npm publish ${file} failed: ${result.stderr.trim()}`);
+  if (result.exitCode === 0) {
+    return false;
   }
+  const error = result.stderr.toLowerCase();
+  if (ALREADY_HELD_ERRORS.some((message) => error.includes(message))) {
+    return true;
+  }
+  throw new Error(`npm publish ${file} failed: ${result.stderr.trim()}`);
 };
 
 /**
@@ -176,7 +193,7 @@ const waitForVersions = async (
 /**
  * The `publish` command: publishes a packed release in its manifest's dependency order, then waits
  * until npm serves every version it published. Versions already on npm are skipped, so a re-run is
- * safe; packages that aren't on npm yet are skipped with a warning, because their first publish is
+ * safe, and one npm holds without serving it yet is waited for; packages that aren't on npm yet are skipped with a warning, because their first publish is
  * manual; prereleases go to the `next` dist-tag. Writes `published.json` to the release
  * directory, listing every version of the release that's on npm, including those an earlier run
  * published, so `tag` tags whatever is still untagged.
@@ -219,8 +236,11 @@ export const publishRelease = async (
       files.get('package.json')?.toString('utf8') ?? '{}',
     ) as IPackageManifest;
     await assertSiblingVersions(runNpm, manifest, siblingNames, accepted);
-    await publishTarball(releaseDirectory, entry, runNpm);
-    log(`Published ${name}@${version}`);
+    log(
+      (await publishTarball(releaseDirectory, entry, runNpm))
+        ? `npm already holds ${name}@${version}, which an earlier run published; waiting for npm to serve it`
+        : `Published ${name}@${version}`,
+    );
     accepted.set(name, version);
     released.push({ name, version });
   }
