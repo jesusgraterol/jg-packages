@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+### Fixed
+
+- `useCopyFeedback`'s `copy` clears an earlier copy's `isCopied` as soon as a new copy starts, so the earlier state never claims the new copy worked while it runs or after it fails.
+
 ## 0.6.0
 
 ### Added

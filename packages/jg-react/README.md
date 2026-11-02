@@ -70,13 +70,14 @@ The browser hooks read the browser through `useSyncExternalStore`, so every comp
 `useCopyFeedback` shows that a copy worked, for a moment. `copy` takes the function that writes, such as jg-clipboard's `copyText`, and calls it at once, before awaiting anything, so the write stays inside the click that browsers require for clipboard access:
 
 ```ts
+import { copyText } from 'jg-clipboard';
 import { useCopyFeedback } from 'jg-react';
 
 const { isCopied, copy } = useCopyFeedback({ durationSeconds: 1.4, onError: showCopyError });
-const onClick = () => void copy(() => navigator.clipboard.writeText(inviteLink)); // resolves to whether it worked
+const onClick = () => void copy(() => copyText(inviteLink)); // resolves to whether it worked
 ```
 
-`isCopied` stays true for `durationSeconds`, `DEFAULT_COPY_FEEDBACK_SECONDS` (1.4) by default, and a new copy restarts it. A copy while another runs is ignored and resolves to `false`. A failed one resolves to `false` and calls the latest `onError`; `copy` never rejects. After unmount, a copy that settles changes nothing and calls nothing. A duration that isn't positive and finite throws `INVALID_COPY_FEEDBACK_DURATION`.
+`isCopied` stays true for `durationSeconds`, `DEFAULT_COPY_FEEDBACK_SECONDS` (1.4) by default. A new copy clears it while it runs, so an earlier copy's state never claims the new one worked, and restarts it once the new one succeeds. A copy while another runs is ignored and resolves to `false`. A failed one resolves to `false` and calls the latest `onError`; `copy` never rejects. After unmount, a copy that settles changes nothing and calls nothing. A duration that isn't positive and finite throws `INVALID_COPY_FEEDBACK_DURATION`.
 
 ### Dialog sessions
 

@@ -10,17 +10,19 @@ import type { IUseCopyFeedbackOptions, IUseCopyFeedbackResult } from './types.js
 /**
  * Shows that a copy worked, for a moment, such as a "Copied" label on a copy button. `copy` calls
  * the write function at once, before it awaits anything, so a clipboard write still runs inside
- * the click that browsers require; then `isCopied` stays true for `durationSeconds`. A copy while
- * another runs is ignored, and a failed one calls `onError` and leaves `isCopied` false. `copy`
- * never rejects, and after unmount nothing changes and nothing is called.
+ * the click that browsers require; then `isCopied` stays true for `durationSeconds`. A new copy
+ * clears an earlier one's copied state while it runs, a copy while another runs is ignored, and a
+ * failed one calls `onError` and leaves `isCopied` false. `copy` never rejects, and after unmount
+ * nothing changes and nothing is called.
  * @param options How long the copied state lasts, and what receives a failed copy's error.
  * @returns Whether a copy just succeeded, and `copy`, which keeps its identity.
  * @example
+ * import { copyText } from 'jg-clipboard';
  * import { useCopyFeedback } from 'jg-react';
  *
  * export const useCopyLink = (url: string) => {
  *   const { isCopied, copy } = useCopyFeedback();
- *   return { isCopied, copyLink: () => copy(() => navigator.clipboard.writeText(url)) };
+ *   return { isCopied, copyLink: () => copy(() => copyText(url)) };
  * };
  * @throws
  * - INVALID_COPY_FEEDBACK_DURATION: The copy feedback duration must be a positive, finite number of seconds.
@@ -71,6 +73,8 @@ export const useCopyFeedback = ({
       isCopying.current = true;
       window.clearTimeout(resetTimeoutId.current);
       resetTimeoutId.current = undefined;
+      // an earlier copy's state would claim this one worked before it settles
+      setIsCopied(false);
       try {
         // write runs before this await suspends, within the click that called copy
         await write();
