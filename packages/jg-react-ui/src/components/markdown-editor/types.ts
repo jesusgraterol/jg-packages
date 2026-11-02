@@ -95,6 +95,7 @@ export type IMarkdownEditorVariantProps = Omit<IMarkdownEditorProps, 'layout'>;
 export type IMarkdownEditorContentProps = IMarkdownEditorVariantProps & {
   chatOptions?: IChatMarkdownPolicyOptions & {
     controlsRef: React.Ref<IChatMarkdownEditorInternalControls>;
+    isShiftEnterSubmit?: boolean;
     onSubmitRequest?: ((markdown: string) => void) | undefined;
   };
   editorMode?: 'chat' | 'document';

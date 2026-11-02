@@ -4,7 +4,7 @@
 
 ### Added
 
-- Requires `jg-react-ui` 0.3.3: `CopyButton`'s `value` can be a function that reads the text after the click.
+- Requires `jg-react-ui` 0.3.3: `CopyButton`'s `value` can be a function that reads the text after the click, and `ChatMarkdownEditor`'s `isShiftEnterSubmit` makes Shift+Enter submit.
 
 ## 0.3.1
 
