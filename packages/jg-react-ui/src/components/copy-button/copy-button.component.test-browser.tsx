@@ -99,6 +99,101 @@ describe('CopyButton', () => {
     expect(button.getAttribute('aria-label')).toBe('Copy to Clipboard');
   });
 
+  test('copies text that loads after the click through a ClipboardItem that waits for it', async () => {
+    const written: ClipboardItem[] = [];
+    const write = vi.fn((items: ClipboardItem[]) => {
+      written.push(...items);
+      return Promise.resolve();
+    });
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { ...clipboardMock, write },
+    });
+    let finishRead!: (text: string) => void;
+    await act(async () => {
+      root.render(
+        <CopyButton
+          copyLabel="Copy reply"
+          value={() =>
+            new Promise<string>((resolve) => {
+              finishRead = resolve;
+            })
+          }
+        />,
+      );
+      await Promise.resolve();
+    });
+    const button = getCopyButton(container);
+
+    // the clipboard is called within the click, before the text has loaded
+    await act(async () => {
+      button.click();
+      await Promise.resolve();
+    });
+    expect(write).toHaveBeenCalledOnce();
+    expect(clipboardMock.writeText).not.toHaveBeenCalled();
+    await act(async () => {
+      finishRead('the whole reply');
+      await Promise.resolve();
+    });
+    const blob = await written[0]!.getType('text/plain');
+    expect(await blob.text()).toBe('the whole reply');
+    await vi.waitFor(() => expect(button.getAttribute('aria-label')).toBe('Copied to Clipboard'));
+  });
+
+  test('without ClipboardItem, writes text that loads after the click once it has loaded', async () => {
+    const originalItem = Object.getOwnPropertyDescriptor(globalThis, 'ClipboardItem');
+    Reflect.deleteProperty(globalThis, 'ClipboardItem');
+    try {
+      await act(async () => {
+        root.render(
+          <CopyButton
+            copyLabel="Copy reply"
+            value={() => Promise.resolve('the whole reply')}
+          />,
+        );
+        await Promise.resolve();
+      });
+      const button = getCopyButton(container);
+      await act(async () => {
+        button.click();
+        await Promise.resolve();
+      });
+      await vi.waitFor(() =>
+        expect(clipboardMock.writeText).toHaveBeenCalledExactlyOnceWith('the whole reply'),
+      );
+      await vi.waitFor(() => expect(button.getAttribute('aria-label')).toBe('Copied to Clipboard'));
+    } finally {
+      if (originalItem) Object.defineProperty(globalThis, 'ClipboardItem', originalItem);
+    }
+  });
+
+  test("shows no copied feedback when text that loads after the click can't be read", async () => {
+    const originalItem = Object.getOwnPropertyDescriptor(globalThis, 'ClipboardItem');
+    Reflect.deleteProperty(globalThis, 'ClipboardItem');
+    try {
+      await act(async () => {
+        root.render(
+          <CopyButton
+            copyLabel="Copy reply"
+            value={() => Promise.reject(new Error('The reply could not be read'))}
+          />,
+        );
+        await Promise.resolve();
+      });
+      const button = getCopyButton(container);
+      await act(async () => {
+        button.click();
+        await Promise.resolve();
+      });
+      await vi.waitFor(() => expect(toastr.error).toHaveBeenCalledOnce());
+      expect(clipboardMock.writeText).not.toHaveBeenCalled();
+      expect(button.getAttribute('aria-label')).toBe('Copy reply');
+    } finally {
+      if (originalItem) Object.defineProperty(globalThis, 'ClipboardItem', originalItem);
+    }
+  });
+
   test.each(['Copy full document', 'Copy loaded source'])(
     'preserves %s through pending, successful and reset feedback',
     { tags: ['full'] },

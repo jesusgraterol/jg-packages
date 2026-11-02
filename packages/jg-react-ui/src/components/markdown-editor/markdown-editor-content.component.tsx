@@ -489,10 +489,17 @@ const MarkdownEditorInstance = ({
           )
             return true;
 
+          // Ctrl+Enter and Cmd+Enter submit, and Shift+Enter too where the chat editor asks for it
+          const isSubmitKey =
+            event.ctrlKey ||
+            event.metaKey ||
+            (chatOptionsRef.current?.isShiftEnterSubmit === true &&
+              event.shiftKey &&
+              !event.altKey);
           if (
             chatOptionsRef.current?.onSubmitRequest &&
             event.key === 'Enter' &&
-            (event.ctrlKey || event.metaKey) &&
+            isSubmitKey &&
             !event.isComposing
           ) {
             event.preventDefault();

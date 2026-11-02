@@ -398,6 +398,62 @@ describe('ChatMarkdownEditor', () => {
     expect(editor.contains(document.activeElement)).toBe(true);
   });
 
+  test.each([
+    [true, 1],
+    [false, 0],
+  ])(
+    'with isShiftEnterSubmit %s, Shift+Enter requests submission %i times, never while composing',
+    async (isShiftEnterSubmit, submissions) => {
+      const onSubmitRequest = vi.fn();
+
+      await act(async () => {
+        root.render(
+          <ChatMarkdownEditor
+            isShiftEnterSubmit={isShiftEnterSubmit}
+            maxLength={256}
+            value="Ready"
+            onChange={vi.fn()}
+            onSubmitRequest={onSubmitRequest}
+          />,
+        );
+
+        await Promise.resolve();
+      });
+      await flushEditor();
+
+      const editor = container.querySelector<HTMLElement>('.ProseMirror');
+
+      if (!editor) {
+        throw new Error('The chat editor did not mount.');
+      }
+
+      const composingEvent = new KeyboardEvent('keydown', {
+        bubbles: true,
+        shiftKey: true,
+        key: 'Enter',
+      });
+      Object.defineProperty(composingEvent, 'isComposing', { value: true });
+
+      act(() => {
+        editor.dispatchEvent(composingEvent);
+        editor.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            bubbles: true,
+            altKey: true,
+            shiftKey: true,
+            key: 'Enter',
+          }),
+        );
+        editor.dispatchEvent(
+          new KeyboardEvent('keydown', { bubbles: true, shiftKey: true, key: 'Enter' }),
+        );
+      });
+      expect(onSubmitRequest).toHaveBeenCalledTimes(submissions);
+      if (submissions > 0)
+        expect(onSubmitRequest).toHaveBeenCalledWith(expect.stringContaining('Ready'));
+    },
+  );
+
   test('normalizes a changed controlled value through the fixed chat policy', async () => {
     const controlsRef = createRef<IChatMarkdownEditorControls>();
     const onChange = vi.fn();

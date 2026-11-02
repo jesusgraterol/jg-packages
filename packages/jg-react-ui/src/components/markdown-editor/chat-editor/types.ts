@@ -34,6 +34,8 @@ export type IChatMarkdownEditorProps = Pick<
   disabled?: boolean;
   // undefined keeps formatting inline; null reserves external placement until its container mounts.
   formattingContainer?: HTMLElement | null;
+  // Shift+Enter also requests submission, as Ctrl+Enter and Cmd+Enter do, in place of a line break
+  isShiftEnterSubmit?: boolean;
   maxEditorHeight?: number;
   maxLength: number;
   onChange: (value: string) => void;

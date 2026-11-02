@@ -51,6 +51,7 @@ export const ChatMarkdownEditor = ({
   controlsRef,
   disabled = false,
   formattingContainer,
+  isShiftEnterSubmit = false,
   maxEditorHeight = CHAT_MARKDOWN_EDITOR_DEFAULT_MAX_HEIGHT,
   maxLength,
   onChange,
@@ -131,6 +132,7 @@ export const ChatMarkdownEditor = ({
           chatOptions={{
             controlsRef: internalControlsRef,
             getMaxLength: () => maxLength,
+            isShiftEnterSubmit,
             onNormalization: handleNormalization,
             onPasteRejected: handlePasteRejected,
             onSubmitRequest,
