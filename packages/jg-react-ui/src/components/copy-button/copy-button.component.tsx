@@ -11,8 +11,24 @@ import { COPY_BUTTON_FEEDBACK_DURATION_MS } from './constants.js';
 import type { ICopyButtonProps } from './types.js';
 
 /**
- * Renders a copy command with optional visible text and copied feedback.
- * @param props The text value to copy and the shared button props to render.
+ * Writes text that loads after the click: within the click, through a ClipboardItem that waits
+ * for it, as Safari needs, or once it has loaded where the browser has no ClipboardItem.
+ * @param read What reads the text.
+ * @returns A promise that resolves once the text is on the clipboard.
+ */
+const writeLoadedText = async (read: () => Promise<string>): Promise<void> => {
+  if (typeof ClipboardItem === 'function' && typeof navigator.clipboard.write === 'function') {
+    const text = read().then((loaded) => new Blob([loaded], { type: 'text/plain' }));
+    await navigator.clipboard.write([new ClipboardItem({ 'text/plain': text })]);
+    return;
+  }
+  await navigator.clipboard.writeText(await read());
+};
+
+/**
+ * Renders a copy command with optional visible text and copied feedback. The value can be a
+ * function that reads the text after the click, such as a document the page loads on demand.
+ * @param props The text value to copy, or what reads it, and the shared button props to render.
  * @returns A React element that renders the copy command button.
  * @example
  * import { createElement } from 'react';
@@ -89,7 +105,9 @@ export const CopyButton = ({
         return;
       }
       // invoke within the initiating gesture; do not await capability checks or lazy imports.
-      await navigator.clipboard.writeText(value);
+      await (typeof value === 'string'
+        ? navigator.clipboard.writeText(value)
+        : writeLoadedText(value));
       if (!isMountedRef.current) return;
       setIsCopied(true);
       feedbackTimeoutRef.current = window.setTimeout(() => {

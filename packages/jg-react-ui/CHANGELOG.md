@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.3
+
+### Added
+
+- `CopyButton`'s `value` can be a function that reads the text after the click, such as a document the page loads on demand. The copy calls the clipboard within the click, through a ClipboardItem that waits for the text, as Safari needs, or writes the text once it has loaded where the browser has no ClipboardItem; copied feedback shows once it's on the clipboard. `ICopyButtonProps` leaves out the button's native `value` attribute.
+
 ## 0.3.2
 
 ### Fixed

@@ -520,7 +520,7 @@ test('the installed React gallery uses the packed closure, exact tools, identity
       '@tanstack/react-query-persist-client@5.100.14',
       'tailwindcss@4.3.3',
       '/release/jg-personal-ui-0.2.0.tgz',
-      '/release/jg-react-ui-0.3.2.tgz',
+      '/release/jg-react-ui-0.3.3.tgz',
       '/release/jg-react-router-0.4.0.tgz',
     ]),
   );

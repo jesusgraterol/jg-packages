@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+
+### Added
+
+- Requires `jg-react-ui` 0.3.3: `CopyButton`'s `value` can be a function that reads the text after the click.
+
 ## 0.3.1
 
 ### Fixed
