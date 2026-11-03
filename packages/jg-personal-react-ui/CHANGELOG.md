@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+
+- Re-exports the direct-apply recorder and full-dictation editor APIs from `jg-react-ui` 0.4.0. Standalone AudioInput review remains available.
+- The editor gallery demonstrates distinct main-input Transcribe and ordinary message Send, complete overflow retention, explicit message retry, and fresh document/undo state after successful submission.
+
 ## 0.3.4
 
 ### Fixed

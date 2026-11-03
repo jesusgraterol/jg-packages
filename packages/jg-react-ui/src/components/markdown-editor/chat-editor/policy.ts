@@ -39,6 +39,27 @@ export const escapeChatMarkdownLiteralText = (text: string): string =>
     .join('\n\n');
 
 /**
+ * Builds a complete literal append using the editor's paragraph and escaping policy.
+ * @param markdown The live or not-yet-mounted controlled draft.
+ * @param text The literal text to append.
+ * @param maxLength The normal message length limit.
+ * @param allowOverLimit Whether to retain oversized text for subsequent editing.
+ * @returns The complete source, or null when bounded insertion cannot fit.
+ */
+export const buildChatMarkdownLiteralAppend = (
+  markdown: string,
+  text: string,
+  maxLength: number,
+  allowOverLimit = false,
+): string | null => {
+  const escapedText = escapeChatMarkdownLiteralText(text.trim());
+  if (!escapedText) return markdown;
+  const currentMarkdown = markdown.trimEnd();
+  const nextMarkdown = currentMarkdown ? currentMarkdown + '\n\n' + escapedText : escapedText;
+  return allowOverLimit || measureChatMarkdown(nextMarkdown) <= maxLength ? nextMarkdown : null;
+};
+
+/**
  * Checks whether serialized Markdown contains user-visible content.
  * @param markdown The normalized Markdown snapshot.
  * @returns True when text or an attachment-independent readable token remains.

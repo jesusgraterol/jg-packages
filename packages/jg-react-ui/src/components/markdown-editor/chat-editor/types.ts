@@ -10,8 +10,8 @@ export type IChatMarkdownBlockFormat =
  * @see ChatMarkdownEditor
  */
 export type IChatMarkdownEditorControls = {
-  /** Appends escaped text; returns false before readiness or when the result exceeds maxLength. */
-  appendLiteralText: (text: string) => boolean;
+  /** Appends escaped text. Opted-in overflow is retained even before readiness; ordinary insertion stays bounded. */
+  appendLiteralText: (text: string, options?: { allowOverLimit?: boolean }) => boolean;
   /** Focuses the editor once initialization has completed. */
   focus: () => void;
   /** Reads live serialized Markdown, or the retained controlled draft during initialization. */

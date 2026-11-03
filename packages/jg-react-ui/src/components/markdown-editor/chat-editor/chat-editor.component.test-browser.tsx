@@ -83,7 +83,16 @@ describe('ChatMarkdownEditor', () => {
       return editor;
     });
     const controlsRef = createRef<IChatMarkdownEditorControls>();
-    const onChange = vi.fn();
+    const onChange = vi.fn((value: string) =>
+      root.render(
+        <ChatMarkdownEditor
+          controlsRef={controlsRef}
+          maxLength={256}
+          onChange={onChange}
+          value={value}
+        />,
+      ),
+    );
     try {
       await act(async () => {
         root.render(
@@ -113,10 +122,17 @@ describe('ChatMarkdownEditor', () => {
       });
       expect(controlsRef.current?.getMarkdown()).toBe('Retained draft');
       expect(onChange).not.toHaveBeenCalled();
+      act(() => {
+        expect(controlsRef.current?.appendLiteralText('END', { allowOverLimit: true })).toBe(true);
+      });
+      expect(controlsRef.current?.getMarkdown()).toBe('Retained draft\n\nEND');
+      expect(onChange).toHaveBeenCalledWith('Retained draft\n\nEND');
     } finally {
       releaseCreation?.();
       await flushEditor();
     }
+    expect(controlsRef.current?.getMarkdown()).toBe('Retained draft\n\nEND\n');
+    expect(container.querySelector('[role="textbox"]')?.textContent).toContain('END');
   });
 
   test('exposes a synchronous normalized snapshot and safely appends literal text', async () => {
@@ -146,6 +162,54 @@ describe('ChatMarkdownEditor', () => {
 
     expect(onChange.mock.calls.at(-1)?.[0]).toContain('\\# Not a heading');
     expect(controlsRef.current?.getMarkdown()).toContain('\\# Not a heading');
+  });
+
+  test('opted-in dictation retains 45000 characters and allows shortening the full draft', async () => {
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+    const transcript = 'BEGIN café\n\n' + 'MIDDLE 日本語 '.repeat(4096) + '\n\nEND';
+    let value = 'Existing draft';
+    const renderEditor = (disabled = false): void =>
+      root.render(
+        <ChatMarkdownEditor
+          controlsRef={controlsRef}
+          disabled={disabled}
+          maxLength={32}
+          value={value}
+          onChange={(next) => {
+            value = next;
+            renderEditor();
+          }}
+        />,
+      );
+    act(() => renderEditor());
+    await flushEditor();
+    act(() => {
+      expect(controlsRef.current?.appendLiteralText(transcript)).toBe(false);
+      expect(controlsRef.current?.appendLiteralText(transcript, { allowOverLimit: true })).toBe(
+        true,
+      );
+    });
+    expect(controlsRef.current?.getMarkdown()).toContain('BEGIN café');
+    expect(controlsRef.current?.getMarkdown()).toContain('END');
+    expect(controlsRef.current?.getMarkdown().match(/MIDDLE 日本語/g)).toHaveLength(4096);
+    expect(container.querySelector('[role="textbox"]')?.textContent).toContain('MIDDLE 日本語');
+    expect(container.textContent).toContain('The message is longer than the allowed limit.');
+    const editor = editors.at(-1)!;
+    act(() =>
+      editor.action((ctx) => {
+        const view = ctx.get(editorViewCtx);
+        view.dispatch(
+          view.state.tr.delete(1, view.state.doc.content.size - 1).insertText('Ready', 1),
+        );
+      }),
+    );
+    await act(async () => vi.waitFor(() => expect(value).toBe('Ready\n')));
+    expect(container.textContent).not.toContain('The message is longer than the allowed limit.');
+    act(() => renderEditor(true));
+    act(() =>
+      expect(controlsRef.current?.appendLiteralText('Late', { allowOverLimit: true })).toBe(false),
+    );
+    expect(controlsRef.current?.getMarkdown()).toBe('Ready\n');
   });
 
   test('the first literal insertion into an empty chat starts at the first paragraph', async () => {

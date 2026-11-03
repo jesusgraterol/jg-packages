@@ -273,6 +273,84 @@ describe('AudioInput', () => {
     vi.clearAllMocks();
   });
 
+  test.each(['apply', 'send', 'hidden'] as const)(
+    '%s preserves all chunks and retries retained text without another provider request',
+    async (action) => {
+      const transcript = 'BEGIN café\nMIDDLE **literal**\n\nEND 日本語';
+      const transcribe = vi.fn<(recording: IAudioInputRecording) => Promise<string>>(() =>
+        Promise.resolve(transcript),
+      );
+      const apply = vi
+        .fn()
+        .mockRejectedValueOnce(new Error('private-insertion'))
+        .mockResolvedValue(undefined);
+      const send = vi
+        .fn()
+        .mockRejectedValueOnce(new Error('private-delivery'))
+        .mockResolvedValue(undefined);
+      const parentSubmit = vi.fn();
+      const error = vi.fn();
+      await act(async () => {
+        root.render(
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              parentSubmit();
+            }}
+          >
+            <AudioInput
+              autoStart
+              defaultIsDialogOpen
+              cancelResetDelayMs={0}
+              {...(action === 'apply' ? { onTranscriptionApply: apply } : {})}
+              isResultActionVisible={action !== 'hidden'}
+              transcribe={transcribe}
+              onTranscriptionResult={send}
+              onTranscriptionError={error}
+            />
+          </form>,
+        );
+        await Promise.resolve();
+      });
+      await flushAudioInputRecordingStart();
+      const recorder = getMockRecorder();
+      recorder.stop.mockImplementation(() => {
+        if (recorder.state === 'inactive') return;
+        recorder.emitChunk(new Blob(['END'], { type: 'audio/webm' }));
+        recorder.state = 'inactive';
+        recorder.onstop?.();
+      });
+      await act(async () => {
+        recorder.emitChunk(new Blob(['BEGIN'], { type: 'audio/webm' }));
+        recorder.emitChunk(new Blob(['MIDDLE'], { type: 'audio/webm' }));
+        getAudioInputButtonByText(document.body, action === 'send' ? 'Send' : 'Transcribe').click();
+        await Promise.resolve();
+      });
+      await vi.waitFor(() => expect(error).toHaveBeenCalledOnce());
+      expect(transcribe).toHaveBeenCalledOnce();
+      const recording = transcribe.mock.calls[0]![0];
+      expect(await recording.blob.text()).toBe('BEGINMIDDLEEND');
+      expect(document.querySelector('textarea')).toBeNull();
+      expect(parentSubmit).not.toHaveBeenCalled();
+      expect(document.body.textContent).not.toContain('private-');
+      const selected = action === 'apply' ? apply : send;
+      expect(selected).toHaveBeenCalledExactlyOnceWith(transcript, recording);
+      await act(async () => {
+        getAudioInputButtonByText(document.body, 'Retry').click();
+        await Promise.resolve();
+      });
+      await act(async () =>
+        vi.waitFor(() =>
+          expect(document.querySelector('[role="dialog"]:not([hidden])')).toBeNull(),
+        ),
+      );
+      expect(selected).toHaveBeenCalledTimes(2);
+      expect(transcribe).toHaveBeenCalledOnce();
+      expect(action === 'apply' ? send : apply).not.toHaveBeenCalled();
+      expect(parentSubmit).not.toHaveBeenCalled();
+    },
+  );
+
   test('records chunks and emits a completed audio file', async () => {
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
       requestAnimationFrameCallbacks.push(callback);
@@ -1072,7 +1150,7 @@ describe('AudioInput', () => {
       await Promise.resolve();
       await Promise.resolve();
 
-      expect(sendButton.disabled).toBe(true);
+      expect(sendButton.getAttribute('aria-disabled')).toBe('true');
     });
 
     expect(handleTranscriptionResult).toHaveBeenCalledTimes(1);
@@ -1083,11 +1161,11 @@ describe('AudioInput', () => {
     expect(
       document.body.querySelector<HTMLButtonElement>('button[aria-label="Restart recording"]')
         ?.disabled,
-    ).toBe(false);
+    ).toBe(true);
     expect(
       document.body.querySelector<HTMLButtonElement>('button[aria-label="Close audio recorder"]')
         ?.disabled,
-    ).toBe(false);
+    ).toBe(true);
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(219);
@@ -1105,7 +1183,7 @@ describe('AudioInput', () => {
     ).toBeNull();
   });
 
-  test('disables every dialog button and shows submitting while transcription is pending', async () => {
+  test('keeps the active action focused and shows progress only on its button', async () => {
     const deferredTranscription = createDeferred<string>();
     const handleTranscribe = vi.fn(() => deferredTranscription.promise);
 
@@ -1138,8 +1216,8 @@ describe('AudioInput', () => {
     });
 
     const dialogContent = document.body.querySelector<HTMLElement>('[data-slot="dialog-content"]');
-    const loadingStatus = document.body.querySelector<HTMLElement>(
-      '[data-slot="audio-input-transcription-loading"]',
+    const loadingStatus = document.getElementById(
+      getAudioInputButtonByText(document.body, 'Transcribe').getAttribute('aria-describedby')!,
     );
 
     if (dialogContent === null) {
@@ -1151,7 +1229,18 @@ describe('AudioInput', () => {
     expect(handleTranscribe).toHaveBeenCalledTimes(1);
     expect(loadingStatus?.textContent).toBe('Submitting...');
     expect(dialogButtons).toHaveLength(5);
-    expect(dialogButtons.every((button) => button.disabled)).toBe(true);
+    const active = getAudioInputButtonByText(document.body, 'Transcribe');
+    expect(active.disabled).toBe(false);
+    expect(active.getAttribute('aria-disabled')).toBe('true');
+    expect(
+      dialogButtons.filter((button) => button !== active).every((button) => button.disabled),
+    ).toBe(true);
+    expect(
+      document.body.querySelector('[data-slot="audio-input-transcription-loading"]'),
+    ).toBeNull();
+    expect(active.querySelectorAll('[data-slot="audio-input-action-progress"]')).toHaveLength(1);
+    act(() => active.click());
+    expect(handleTranscribe).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       deferredTranscription.resolve('Pending transcription complete');
@@ -1355,7 +1444,8 @@ describe('AudioInput', () => {
     const sendButton = getAudioInputButtonByText(document.body, 'Send');
 
     expect(cancelButton.dataset['variant']).toBe('destructive');
-    expect(cancelButton.querySelector('svg')).toBeNull();
+    expect(cancelButton.getAttribute('aria-label')).toBe('Cancel');
+    expect(cancelButton.querySelector('svg')).not.toBeNull();
     expect(transcribeButton.querySelector('svg')).toBeNull();
     expect(sendButton.querySelector('svg')).not.toBeNull();
 
@@ -2241,48 +2331,51 @@ describe('AudioInput', () => {
     });
   });
 
-  test.each(['fulfilled', 'rejected'] as const)(
-    'reset invalidates a pending %s result delivery',
-    async (outcome) => {
-      const controlsRef = createRef<IAudioInputControls>();
-      const pending = createDeferred<void>();
-      const onDialogOpenChange = vi.fn();
-      const onTranscriptionError = vi.fn();
-      await act(async () => {
-        root.render(
-          <AudioInput
-            defaultIsDialogOpen
-            controlsRef={controlsRef}
-            transcribe={() => Promise.resolve('Voice')}
-            onTranscriptionResult={() => pending.promise}
-            onDialogOpenChange={onDialogOpenChange}
-            onTranscriptionError={onTranscriptionError}
-          />,
-        );
-        await Promise.resolve();
-      });
-      await flushAudioInputRecordingStart();
-      act(() => getMockRecorder().emitChunk(new Blob(['voice'])));
-      await act(async () => {
-        getAudioInputButtonByText(document.body, 'Send').click();
-        await Promise.resolve();
-      });
-      await vi.waitFor(() => expect(document.body.textContent).toContain('Submitting...'));
-      act(() => controlsRef.current?.resetRecording());
-      onDialogOpenChange.mockClear();
-      await act(async () => {
-        if (outcome === 'fulfilled') {
-          pending.resolve(undefined);
-          await pending.promise;
-        } else {
-          pending.reject(new Error('Obsolete delivery'));
-          await expect(pending.promise).rejects.toThrow('Obsolete delivery');
-        }
-      });
-      expect(onTranscriptionError).not.toHaveBeenCalled();
-      expect(onDialogOpenChange).not.toHaveBeenCalled();
-    },
-  );
+  test.each([
+    ['fulfilled', 'Send'],
+    ['rejected', 'Send'],
+    ['fulfilled', 'Transcribe'],
+    ['rejected', 'Transcribe'],
+  ] as const)('reset invalidates a pending %s %s delivery', async (outcome, action) => {
+    const controlsRef = createRef<IAudioInputControls>();
+    const pending = createDeferred<void>();
+    const onDialogOpenChange = vi.fn();
+    const onTranscriptionError = vi.fn();
+    await act(async () => {
+      root.render(
+        <AudioInput
+          defaultIsDialogOpen
+          controlsRef={controlsRef}
+          transcribe={() => Promise.resolve('Voice')}
+          onTranscriptionResult={() => pending.promise}
+          {...(action === 'Transcribe' ? { onTranscriptionApply: () => pending.promise } : {})}
+          onDialogOpenChange={onDialogOpenChange}
+          onTranscriptionError={onTranscriptionError}
+        />,
+      );
+      await Promise.resolve();
+    });
+    await flushAudioInputRecordingStart();
+    act(() => getMockRecorder().emitChunk(new Blob(['voice'])));
+    await act(async () => {
+      getAudioInputButtonByText(document.body, action).click();
+      await Promise.resolve();
+    });
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Submitting...'));
+    act(() => controlsRef.current?.resetRecording());
+    onDialogOpenChange.mockClear();
+    await act(async () => {
+      if (outcome === 'fulfilled') {
+        pending.resolve(undefined);
+        await pending.promise;
+      } else {
+        pending.reject(new Error('Obsolete delivery'));
+        await expect(pending.promise).rejects.toThrow('Obsolete delivery');
+      }
+    });
+    expect(onTranscriptionError).not.toHaveBeenCalled();
+    expect(onDialogOpenChange).not.toHaveBeenCalled();
+  });
 
   test('the desktop close control cancels recording once and releases the retained view', async () => {
     const onRecordingCancel = vi.fn();

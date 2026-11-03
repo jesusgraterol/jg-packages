@@ -183,6 +183,8 @@ export type IAudioInputProps = IAudioInputRootProps & {
   isDialogOpen?: boolean;
   isErrorVisible?: boolean;
   isRecording?: boolean;
+  /** Shows the separate result action; defaults to true for standalone review. */
+  isResultActionVisible?: boolean;
   isTranscriptionEditorVisible?: boolean;
   maxBytes?: number;
   onDialogOpenChange?: IAudioInputDialogOpenChangeHandler;
@@ -198,6 +200,8 @@ export type IAudioInputProps = IAudioInputRootProps & {
   onRecordingStart?: IAudioInputRecordingStartHandler;
   onRecordingStop?: IAudioInputRecordingStopHandler;
   onStatusChange?: IAudioInputStatusChangeHandler;
+  /** Applies Transcribe directly without the built-in editor; Send keeps its separate handler. */
+  onTranscriptionApply?: IAudioInputTranscriptionResultHandler;
   onTranscriptionComplete?: IAudioInputTranscriptionCompleteHandler;
   onTranscriptionEditorVisibleChange?: IAudioInputTranscriptionEditorVisibleChangeHandler;
   onTranscriptionError?: IAudioInputTranscriptionErrorHandler;

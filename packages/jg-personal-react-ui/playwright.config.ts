@@ -41,7 +41,6 @@ export default defineConfig({
           '**/gallery.component.test-e2e.tsx',
           '**/controls-demo/controls-demo.component.test-e2e.tsx',
           '**/diff-demo/diff-demo.component.test-e2e.tsx',
-          '**/editor-demo/editor-demo.component.test-e2e.tsx',
           '**/markdown-demo/markdown-demo.component.test-e2e.tsx',
           '**/overlay-demo/overlay-demo.component.test-e2e.tsx',
           '**/preferences-demo/preferences-demo.component.test-e2e.tsx',
