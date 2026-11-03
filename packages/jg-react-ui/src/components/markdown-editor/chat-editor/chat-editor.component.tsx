@@ -11,6 +11,7 @@ import {
   CHAT_MARKDOWN_EDITOR_TOOLS,
 } from './constants.js';
 import { ChatMarkdownFormatting } from './formatting/index.js';
+import { measureChatMarkdown } from './policy.js';
 import type {
   IChatMarkdownEditorControls,
   IChatMarkdownEditorInternalControls,
@@ -64,8 +65,9 @@ export const ChatMarkdownEditor = ({
   const internalControlsRef = useRef<IChatMarkdownEditorInternalControls>(null);
   const policySnapshotRef = useRef<string | null>(null);
   const [policyMessage, setPolicyMessage] = useState<string | null>(null);
-  const isOverLimit = value.length > maxLength;
-  const isCharacterCountVisible = value.length >= maxLength * 0.8;
+  const messageLength = measureChatMarkdown(value);
+  const isOverLimit = messageLength > maxLength;
+  const isCharacterCountVisible = messageLength >= maxLength * 0.8;
   const hasVisibleStatus = isOverLimit || policyMessage !== null || isCharacterCountVisible;
   const statusId = useId();
   const describedBy = [ariaDescribedBy, statusId].filter(Boolean).join(' ');
@@ -161,7 +163,7 @@ export const ChatMarkdownEditor = ({
             {isOverLimit ? 'The message is longer than the allowed limit.' : policyMessage}
           </span>
           <span className={isCharacterCountVisible ? 'shrink-0 tabular-nums' : 'sr-only'}>
-            {value.length}/{maxLength}
+            {messageLength}/{maxLength}
           </span>
         </div>
       </div>

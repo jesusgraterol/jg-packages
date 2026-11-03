@@ -8,6 +8,7 @@ import type { IChatMarkdownPolicyOptions } from './types.js';
 import {
   canParseChatMarkdown,
   doesChatMarkdownDocumentNeedNormalization,
+  measureChatMarkdown,
   normalizeChatMarkdownDocument,
 } from './policy.js';
 
@@ -45,7 +46,9 @@ export const createChatMarkdownPolicyPlugin = (
             return true;
           }
 
-          if (ctx.get(serializerCtx)(transaction.doc).length <= options.getMaxLength()) {
+          if (
+            measureChatMarkdown(ctx.get(serializerCtx)(transaction.doc)) <= options.getMaxLength()
+          ) {
             return true;
           }
 
@@ -95,7 +98,9 @@ export const createChatMarkdownPolicyPlugin = (
               new Slice(normalizedDocument.content, 0, 0),
             );
 
-            if (ctx.get(serializerCtx)(transaction.doc).length > options.getMaxLength()) {
+            if (
+              measureChatMarkdown(ctx.get(serializerCtx)(transaction.doc)) > options.getMaxLength()
+            ) {
               options.onPasteRejected();
               return true;
             }

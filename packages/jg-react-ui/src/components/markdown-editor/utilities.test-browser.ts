@@ -315,7 +315,8 @@ describe('markdown editor block action utilities', () => {
     const currentMarkdownRef = { current: 'Note' };
     syncEditorValue(crepe, 'Changed', currentMarkdownRef);
     expect(getMarkdownEditorMarkdown(crepe).trim()).toBe('Changed');
-    expect(currentMarkdownRef.current).toBe('Changed');
+    // the editor records its own Markdown, which its report of the document repeats
+    expect(currentMarkdownRef.current).toBe('Changed\n');
     syncEditorValue(crepe, 'Changed', currentMarkdownRef);
     await crepe.destroy();
     expect(getMarkdownEditorBlockActionTarget(crepe)).toBeNull();
@@ -326,7 +327,7 @@ describe('markdown editor block action utilities', () => {
     expect(insertMarkdownEditorVariable(crepe)).toBe(false);
     syncEditorPlaceholder(crepe, 'e.g. Ignore a late placeholder');
     syncEditorValue(crepe, 'Late replacement', currentMarkdownRef);
-    expect(currentMarkdownRef.current).toBe('Changed');
+    expect(currentMarkdownRef.current).toBe('Changed\n');
   });
 
   test('stale block targets and rejected view transactions preserve the current document', async () => {

@@ -63,6 +63,15 @@ export const canParseChatMarkdown = (markdown: string, maxLength: number): boole
   markdown.length <= maxLength;
 
 /**
+ * Measures a chat message as its limit counts it: its serialized Markdown without the line break
+ * the serializer ends every document with, which the message doesn't hold.
+ * @param markdown The serialized chat Markdown.
+ * @returns The message's length.
+ */
+export const measureChatMarkdown = (markdown: string): number =>
+  markdown.endsWith('\n') ? markdown.length - 1 : markdown.length;
+
+/**
  * Converts a ProseMirror document into the fixed chat Markdown document subset.
  * @param documentNode The parsed or edited ProseMirror document.
  * @returns A policy-compliant document using the same editor schema.

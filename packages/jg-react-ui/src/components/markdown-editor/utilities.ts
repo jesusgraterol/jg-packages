@@ -13,6 +13,7 @@ import {
   editorViewCtx,
   EditorStatus,
   nodesCtx,
+  parserCtx,
   prosePluginsCtx,
   remarkStringifyOptionsCtx,
 } from '@milkdown/kit/core';
@@ -28,16 +29,23 @@ import {
 } from '@milkdown/kit/preset/commonmark';
 import { uploadConfig } from '@milkdown/kit/plugin/upload';
 import { createTable } from '@milkdown/kit/preset/gfm';
-import type {
-  Attrs,
-  DOMOutputSpec,
-  Node as ProseMirrorNode,
-  NodeType,
+import {
+  Slice,
+  type Attrs,
+  type DOMOutputSpec,
+  type Node as ProseMirrorNode,
+  type NodeType,
 } from '@milkdown/kit/prose/model';
-import { NodeSelection, Plugin, PluginKey, TextSelection } from '@milkdown/kit/prose/state';
+import {
+  NodeSelection,
+  Plugin,
+  PluginKey,
+  Selection,
+  TextSelection,
+} from '@milkdown/kit/prose/state';
 import { Decoration, DecorationSet, type EditorView } from '@milkdown/kit/prose/view';
 import type { NodeSchema } from '@milkdown/kit/transformer';
-import { forceUpdate, replaceAll } from '@milkdown/kit/utils';
+import { forceUpdate } from '@milkdown/kit/utils';
 import { prefersReducedMotion } from 'jg-utilities';
 
 import { bindKeyboardButtonBehavior } from './keyboard.utilities.js';
@@ -1626,7 +1634,38 @@ export const syncEditorPlaceholder = (crepe: Crepe, placeholder: string): void =
 };
 
 /**
- * Replaces editor markdown only when the external value diverges from the current document.
+ * Replaces the editor's document with Markdown as one edit kept out of the undo history, with the
+ * caret at the end of the new document, unless the document already holds what the Markdown
+ * describes. Unlike rebuilding the editor's state, the edit keeps the editor's focus and its plugin
+ * views.
+ * @param crepe The current Crepe editor instance.
+ * @param markdown The Markdown that describes the new document.
+ */
+export const replaceMarkdownEditorMarkdown = (crepe: Crepe, markdown: string): void => {
+  crepe.editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx);
+    const documentNode = ctx.get(parserCtx)(markdown);
+
+    if (!documentNode || documentNode.eq(view.state.doc)) {
+      return;
+    }
+
+    const transaction = view.state.tr.replace(
+      0,
+      view.state.doc.content.size,
+      new Slice(documentNode.content, 0, 0),
+    );
+
+    view.dispatch(
+      transaction.setSelection(Selection.atEnd(transaction.doc)).setMeta('addToHistory', false),
+    );
+  });
+};
+
+/**
+ * Replaces editor markdown only when the external value diverges from the current document, then
+ * records the editor's own Markdown, so the editor's report of that document never replaces it
+ * again.
  * @param crepe The current Crepe editor instance.
  * @param nextValue The controlled markdown value.
  * @param currentMarkdownRef The latest editor markdown ref.
@@ -1640,8 +1679,8 @@ export const syncEditorValue = (
     return;
   }
 
-  crepe.editor.action(replaceAll(nextValue, true));
-  currentMarkdownRef.current = nextValue;
+  replaceMarkdownEditorMarkdown(crepe, nextValue);
+  currentMarkdownRef.current = getMarkdownEditorMarkdown(crepe);
 };
 
 /**

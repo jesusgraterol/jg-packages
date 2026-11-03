@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.4
+
+### Fixed
+
+- Requires `jg-react-ui` 0.3.5, whose Markdown editors keep the focus, with the caret at the end, when they take a changed `value`, no longer report that value back as an edit, and whose chat editor counts a message without the line break its Markdown ends with.
+
 ## 0.3.3
 
 ### Changed

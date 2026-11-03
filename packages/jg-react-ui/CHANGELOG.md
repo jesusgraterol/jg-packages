@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.5
+
+### Fixed
+
+- A Markdown editor that takes a changed `value` keeps the focus: it replaces the document as one edit, kept out of the undo history, with the caret at the end of the new text, where it used to rebuild its state and drop the focus. `ChatMarkdownEditor`'s `appendLiteralText` keeps the focus the same way.
+- A Markdown editor no longer reports a `value` it took back through `onChange` as an edit, and a value that already describes its document, such as its own Markdown, leaves the document alone. Before, a value whose Markdown the editor writes differently made it take the same text a second time, which could drop what was typed in between.
+- `ChatMarkdownEditor` counts a message without the line break its Markdown ends with, in its character count, its over-the-limit message and its paste check, so a message of exactly `maxLength` characters fits.
+
 ## 0.3.4
 
 ### Changed
