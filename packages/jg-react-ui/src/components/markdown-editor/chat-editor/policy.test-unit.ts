@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { Schema } from '@milkdown/kit/prose/model';
 
 import {
+  buildChatMarkdownLiteralAppend,
   canParseChatMarkdown,
   escapeChatMarkdownLiteralText,
   isChatMarkdownEmpty,
@@ -11,6 +12,14 @@ import {
 } from './policy.js';
 
 describe('chat Markdown policy', () => {
+  test('literal appends preserve paragraphs and Unicode while ordinary insertion stays bounded', () => {
+    expect(buildChatMarkdownLiteralAppend('Existing\n', '# café\n日本語\n\nEND', 8)).toBeNull();
+    expect(buildChatMarkdownLiteralAppend('Existing\n', '# café\n日本語\n\nEND', 8, true)).toBe(
+      'Existing\n\n\\# café  \n日本語\n\nEND',
+    );
+    expect(buildChatMarkdownLiteralAppend('', 'END', 3)).toBe('END');
+    expect(buildChatMarkdownLiteralAppend('Keep\n', '   ', 8)).toBe('Keep\n');
+  });
   test('flattens a large unsupported block without exhausting the JavaScript argument limit', () => {
     const schema = new Schema({
       nodes: {

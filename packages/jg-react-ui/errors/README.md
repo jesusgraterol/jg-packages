@@ -5,7 +5,7 @@
 | `THEME_PROVIDER_MISSING`            | useTheme must be used within a ThemeProvider                                                                    |
 | `UI_PREFERENCES_STORAGE_ID_INVALID` | UI preferences storage ID must be a non-empty string containing only letters, digits, underscores, and hyphens. |
 
-Audio recording failures are delivered to `onRecordingError`; transcription and result-delivery failures are delivered to `onTranscriptionError`. Provider codes remain distinct when a coded provider failure is supplied. The callback receives diagnostics; visible feedback uses the nearest scoped resolver. Canceled permission/transcription adapters return to idle without an outage alert; their diagnostic callback remains available. Wrapped diagnostics may append the extracted cause after the stable message below.
+Audio recording failures are delivered to `onRecordingError`; transcription and apply/result-delivery failures are delivered to `onTranscriptionError`. Provider codes remain distinct when a coded provider failure is supplied. The callback receives diagnostics; visible feedback uses the nearest scoped resolver. Canceled permission/transcription adapters return to idle without an outage alert; their diagnostic callback remains available. Wrapped diagnostics may append the extracted cause after the stable message below.
 
 | Code                                       | Stable message                                        |
 | ------------------------------------------ | ----------------------------------------------------- |

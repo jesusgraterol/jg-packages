@@ -17,7 +17,7 @@ import {
   Exception,
   type IErrorFeedback,
 } from 'jg-exception';
-import { LoaderCircle, Mic, RefreshCcw, SendHorizontal } from 'lucide-react';
+import { LoaderCircle, Mic, RefreshCcw, SendHorizontal, X } from 'lucide-react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { cn } from 'cnfast';
 
@@ -35,6 +35,7 @@ import {
   DialogTrigger,
 } from '../dialog/index.js';
 import { DEFAULT_FORM_PROPS, FieldError, Textarea } from '../form/index.js';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip/index.js';
 import {
   AUDIO_INPUT_DEFAULT_CANCEL_LABEL,
   AUDIO_INPUT_DEFAULT_CANCEL_RESET_DELAY_MS,
@@ -85,10 +86,13 @@ type IAudioInputWindow = typeof window & {
 };
 
 // transcription actions track which button currently owns the async state.
-type IAudioInputTranscriptionAction = 'transcribe' | 'transcribe-and-send' | 'send';
+type IAudioInputTranscriptionAction = 'transcribe' | 'transcribe-and-send' | 'send' | 'apply';
 
 // transcription request actions can stop a live recording before async work starts.
-type IAudioInputTranscriptionRequestAction = Exclude<IAudioInputTranscriptionAction, 'send'>;
+type IAudioInputTranscriptionRequestAction = Exclude<
+  IAudioInputTranscriptionAction,
+  'send' | 'apply'
+>;
 
 // callback diagnostics and visible feedback share this shape but are derived separately.
 type IAudioInputErrorDetails = {
@@ -280,6 +284,7 @@ const AudioInputRecorder = ({
   disabled = false,
   isErrorVisible = true,
   isRecording: controlledIsRecording,
+  isResultActionVisible = true,
   isTranscriptionEditorVisible: controlledIsTranscriptionEditorVisible,
   maxBytes,
   onCancel,
@@ -294,6 +299,7 @@ const AudioInputRecorder = ({
   onRecordingStart,
   onRecordingStop,
   onStatusChange,
+  onTranscriptionApply,
   onTranscriptionComplete,
   onTranscriptionEditorVisibleChange,
   onTranscriptionError,
@@ -324,6 +330,7 @@ const AudioInputRecorder = ({
     controlledIsTranscriptionEditorVisible !== undefined;
   const generatedId = useId().replaceAll(':', '');
   const transcriptionErrorId = `audio-input-transcription-error-${generatedId}`;
+  const transcriptionStatusId = `audio-input-transcription-status-${generatedId}`;
   const [uncontrolledIsRecording, setUncontrolledIsRecording] = useState(
     () => defaultIsRecording || autoStart,
   );
@@ -403,8 +410,16 @@ const AudioInputRecorder = ({
   const isTranscriptionActionPending = pendingTranscriptionAction !== null;
   const isTranscriptionBusy =
     isAsyncTranscriptionBusy || isTranscriptionActionPending || form.formState.isSubmitting;
-  const isTranscriptionLoadingVisible =
-    isTranscriptionBusy && (!isTranscriptionEditorVisible || activeTranscriptionAction !== 'send');
+  const isTranscribePending =
+    isTranscriptionBusy &&
+    (!isResultActionVisible ||
+      activeTranscriptionAction === 'transcribe' ||
+      activeTranscriptionAction === 'apply');
+  const isResultPending =
+    isTranscriptionBusy &&
+    (activeTranscriptionAction === 'transcribe-and-send' ||
+      activeTranscriptionAction === 'send' ||
+      (activeTranscriptionAction === null && form.formState.isSubmitting));
   const isRetryAvailable = retryTranscriptionAction !== null;
   const isOverLimit = recordedBytes > resolvedMaxBytes;
   const mergedStatusLabels = useMemo(
@@ -1225,10 +1240,17 @@ const AudioInputRecorder = ({
    * Sends transcription text to the parent result handler.
    * @param nextTranscription The transcription text to send.
    * @param recording The recording that produced the transcription.
-   * @returns A promise that resolves after the send attempt finishes.
+   * @param action Whether to apply text or invoke the Send result handler.
+   * @returns A promise that resolves after the result attempt finishes.
    */
   const sendTranscriptionResult = useCallback(
-    async (nextTranscription: string, recording: IAudioInputRecording): Promise<void> => {
+    async (
+      nextTranscription: string,
+      recording: IAudioInputRecording,
+      action: 'apply' | 'send' = 'send',
+    ): Promise<void> => {
+      const resultHandler = action === 'apply' ? onTranscriptionApply : onTranscriptionResult;
+      if (!resultHandler) return;
       if (isTranscriptionResultInFlightRef.current) {
         return;
       }
@@ -1237,11 +1259,11 @@ const AudioInputRecorder = ({
       isTranscriptionResultInFlightRef.current = true;
       setErrorDetails(null);
       setRetryTranscriptionAction(null);
-      setAudioInputActiveTranscriptionAction('send');
+      setAudioInputActiveTranscriptionAction(action);
       setAudioInputTranscriptionStatus('sending');
 
       try {
-        await onTranscriptionResult(nextTranscription, recording);
+        await resultHandler(nextTranscription, recording);
         if (!isRecorderMountedRef.current || recordingSessionRef.current !== recordingSession)
           return;
         clearSendResetTimer();
@@ -1270,6 +1292,7 @@ const AudioInputRecorder = ({
     [
       cancelResetDelayMs,
       clearSendResetTimer,
+      onTranscriptionApply,
       onTranscriptionResult,
       reportTranscriptionError,
       setAudioInputActiveTranscriptionAction,
@@ -1331,8 +1354,12 @@ const AudioInputRecorder = ({
         if (!isRecorderMountedRef.current || recordingSessionRef.current !== recordingSession)
           return;
 
-        if (shouldSend) {
-          await sendTranscriptionResult(nextTranscription, recording);
+        if (shouldSend || onTranscriptionApply) {
+          await sendTranscriptionResult(
+            nextTranscription,
+            recording,
+            shouldSend ? 'send' : 'apply',
+          );
           return;
         }
 
@@ -1354,6 +1381,7 @@ const AudioInputRecorder = ({
     },
     [
       completedRecording,
+      onTranscriptionApply,
       onTranscriptionComplete,
       reportTranscriptionError,
       retryTranscriptionAction,
@@ -1423,11 +1451,11 @@ const AudioInputRecorder = ({
   );
 
   /**
-   * Starts transcription and opens the editable transcription text area.
+   * Transcribes for review or directly applies the result when its separate action is hidden.
    */
   const handleTranscribeClick = useCallback((): void => {
-    requestTranscriptionAction('transcribe');
-  }, [requestTranscriptionAction]);
+    requestTranscriptionAction(isResultActionVisible ? 'transcribe' : 'transcribe-and-send');
+  }, [isResultActionVisible, requestTranscriptionAction]);
 
   /**
    * Transcribes audio captured before the byte limit stopped the recording.
@@ -1439,13 +1467,14 @@ const AudioInputRecorder = ({
       canTranscribeLimitedRecording &&
       completedRecording !== null
     ) {
-      void transcribeRecording(false, completedRecording);
+      void transcribeRecording(!isResultActionVisible, completedRecording);
     }
   }, [
     canTranscribeLimitedRecording,
     completedRecording,
     disabled,
     isTranscriptionBusy,
+    isResultActionVisible,
     transcribeRecording,
   ]);
 
@@ -1456,6 +1485,10 @@ const AudioInputRecorder = ({
    */
   const handleTranscriptionSubmit = useCallback(
     async (values: IAudioInputTranscriptionFormValues): Promise<void> => {
+      if (disabled || isAsyncTranscriptionBusy || pendingTranscriptionAction !== null) {
+        return;
+      }
+
       if (values.action === 'transcribe-and-send') {
         requestTranscriptionAction('transcribe-and-send');
         return;
@@ -1469,7 +1502,10 @@ const AudioInputRecorder = ({
     },
     [
       completedRecording,
+      disabled,
+      isAsyncTranscriptionBusy,
       onTranscriptionResult,
+      pendingTranscriptionAction,
       requestTranscriptionAction,
       sendTranscriptionResult,
     ],
@@ -1485,6 +1521,12 @@ const AudioInputRecorder = ({
       !isTranscriptionBusy &&
       completedRecording !== null
     ) {
+      if (retryTranscriptionAction === 'apply') {
+        if (completedRecording !== null)
+          void sendTranscriptionResult(transcription, completedRecording, 'apply');
+        return;
+      }
+
       if (retryTranscriptionAction === 'send') {
         form.setValue('action', 'send');
         void form.handleSubmit(handleTranscriptionSubmit)();
@@ -1504,6 +1546,8 @@ const AudioInputRecorder = ({
     onTranscriptionResult,
     requestTranscriptionAction,
     retryTranscriptionAction,
+    sendTranscriptionResult,
+    transcription,
     transcribeRecording,
   ]);
 
@@ -1641,7 +1685,7 @@ const AudioInputRecorder = ({
     <div
       data-slot="audio-input-recorder-root"
       data-state={status}
-      className={cn('grid min-w-0 gap-5', className)}
+      className={cn('grid min-w-0 gap-4', className)}
       {...rootProps}
     >
       <div
@@ -1711,12 +1755,23 @@ const AudioInputRecorder = ({
         </div>
       </div>
 
+      <span
+        id={transcriptionStatusId}
+        className="sr-only"
+        role="status"
+      >
+        {isTranscriptionBusy ? 'Submitting...' : null}
+      </span>
       <form
         aria-busy={isTranscriptionBusy}
-        className="grid min-w-0 gap-5"
+        className="grid min-w-0 gap-4"
         data-busy={isTranscriptionBusy ? 'true' : 'false'}
         noValidate
-        onSubmit={(event) => void form.handleSubmit(handleTranscriptionSubmit)(event)}
+        onSubmit={(event) => {
+          // portal submissions must not reach a surrounding application form.
+          event.stopPropagation();
+          void form.handleSubmit(handleTranscriptionSubmit)(event);
+        }}
       >
         {isTranscriptionEditorVisible ? (
           <Controller
@@ -1791,79 +1846,100 @@ const AudioInputRecorder = ({
           </div>
         ) : null}
 
-        {isTranscriptionLoadingVisible ? (
-          <p
-            aria-live="polite"
-            className="text-secondary-foreground flex items-center justify-center gap-2 text-center text-sm"
-            data-slot="audio-input-transcription-loading"
-            role="status"
-          >
-            <LoaderCircle
-              aria-hidden="true"
-              className="size-4 animate-spin motion-reduce:animate-none"
-            />
-            <span>Submitting...</span>
-          </p>
-        ) : null}
-
         {isTranscriptionActionVisible ? (
           <div
             data-slot="audio-input-transcription-actions"
             data-state={transcriptionStatus}
-            className={cn(
-              'grid min-w-0 gap-2 sm:grid-cols-[auto_1fr_auto_auto] sm:items-center',
-              transcriptionActionsClassName,
-            )}
+            className={cn('flex min-w-0 items-center gap-2', transcriptionActionsClassName)}
           >
-            <Button
-              className="order-3 min-w-0 sm:order-1 whitespace-normal wrap-anywhere pointer-coarse:min-h-11 pointer-coarse:min-w-11"
-              disabled={disabled || isTranscriptionBusy}
-              type="button"
-              variant="destructive"
-              onClick={handleCancelClick}
-            >
-              {cancelLabel}
-            </Button>
-            <span
-              aria-hidden="true"
-              className="hidden sm:order-2 sm:block"
-            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label={cancelLabel}
+                  className="me-auto shrink-0"
+                  disabled={disabled || isTranscriptionBusy}
+                  size="icon-touch"
+                  type="button"
+                  variant="destructive"
+                  onClick={handleCancelClick}
+                >
+                  <X aria-hidden="true" />
+                  <span className="sr-only">{cancelLabel}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{cancelLabel}</TooltipContent>
+            </Tooltip>
             {!isTranscriptionEditorVisible ? (
               <Button
-                className="order-2 min-w-0 sm:order-3 whitespace-normal wrap-anywhere pointer-coarse:min-h-11 pointer-coarse:min-w-11"
-                disabled={disabled || !canTranscribe || isTranscriptionBusy || isRetryAvailable}
+                aria-describedby={isTranscribePending ? transcriptionStatusId : undefined}
+                aria-disabled={isTranscribePending || undefined}
+                className="shrink-0"
+                disabled={
+                  disabled ||
+                  !canTranscribe ||
+                  (isTranscriptionBusy && !isTranscribePending) ||
+                  isRetryAvailable
+                }
+                size="touch"
                 type="button"
-                variant="ghost"
+                variant={isResultActionVisible ? 'ghost' : 'default'}
                 onClick={handleTranscribeClick}
               >
+                {isTranscribePending ? (
+                  <LoaderCircle
+                    aria-hidden="true"
+                    className="animate-spin motion-reduce:animate-none"
+                    data-slot="audio-input-action-progress"
+                  />
+                ) : null}
                 {transcribeLabel}
               </Button>
             ) : null}
-            <Button
-              className="order-1 min-w-0 sm:order-4 whitespace-normal wrap-anywhere pointer-coarse:min-h-11 pointer-coarse:min-w-11"
-              disabled={
-                disabled ||
-                isTranscriptionBusy ||
-                isRetryAvailable ||
-                (isTranscriptionEditorVisible ? !canSendTranscription : !canTranscribeAndSend)
-              }
-              type="submit"
-            >
-              {activeTranscriptionAction === 'transcribe-and-send' ||
-              activeTranscriptionAction === 'send' ? (
-                <LoaderCircle
-                  aria-hidden="true"
-                  className="animate-spin motion-reduce:animate-none"
-                  data-icon="inline-start"
-                />
-              ) : (
-                <SendHorizontal
-                  aria-hidden="true"
-                  data-icon="inline-start"
-                />
-              )}
-              {isTranscriptionEditorVisible ? sendTranscriptionLabel : transcribeAndSendLabel}
-            </Button>
+            {isResultActionVisible ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    aria-describedby={isResultPending ? transcriptionStatusId : undefined}
+                    aria-disabled={isResultPending || undefined}
+                    aria-label={
+                      isTranscriptionEditorVisible ? sendTranscriptionLabel : transcribeAndSendLabel
+                    }
+                    className="shrink-0"
+                    disabled={
+                      disabled ||
+                      (isTranscriptionBusy && !isResultPending) ||
+                      isRetryAvailable ||
+                      (isTranscriptionEditorVisible ? !canSendTranscription : !canTranscribeAndSend)
+                    }
+                    size="icon-touch"
+                    type="submit"
+                    onClick={(event) => {
+                      if (isTranscriptionBusy) {
+                        event.preventDefault();
+                      }
+                    }}
+                  >
+                    {isResultPending ? (
+                      <LoaderCircle
+                        aria-hidden="true"
+                        className="animate-spin motion-reduce:animate-none"
+                        data-slot="audio-input-action-progress"
+                      />
+                    ) : (
+                      <SendHorizontal aria-hidden="true" />
+                    )}
+                    <span className="sr-only">
+                      {isTranscriptionEditorVisible
+                        ? sendTranscriptionLabel
+                        : transcribeAndSendLabel}
+                    </span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isTranscriptionEditorVisible ? sendTranscriptionLabel : transcribeAndSendLabel}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
           </div>
         ) : null}
       </form>
@@ -1899,6 +1975,7 @@ export const AudioInput = ({
   isDialogOpen: controlledIsDialogOpen,
   isErrorVisible,
   isRecording,
+  isResultActionVisible = true,
   isTranscriptionEditorVisible,
   maxBytes,
   onCancel,
@@ -1914,6 +1991,7 @@ export const AudioInput = ({
   onRecordingStart,
   onRecordingStop,
   onStatusChange,
+  onTranscriptionApply,
   onTranscriptionComplete,
   onTranscriptionEditorVisibleChange,
   onTranscriptionError,
@@ -2004,7 +2082,8 @@ export const AudioInput = ({
     [scheduleRecorderCommand],
   );
   const resolvedTriggerTitle = triggerTitle ?? triggerAriaLabel;
-  const isDialogTranscribing = dialogTranscriptionStatus === 'transcribing';
+  const isDialogTranscriptionBusy =
+    dialogTranscriptionStatus === 'transcribing' || dialogTranscriptionStatus === 'sending';
 
   /**
    * Updates the controllable dialog open state.
@@ -2036,14 +2115,14 @@ export const AudioInput = ({
    */
   const handleDialogOpenChange = useCallback(
     (nextIsDialogOpen: boolean): void => {
-      if (nextIsDialogOpen || !isDialogTranscribing) {
+      if (nextIsDialogOpen || !isDialogTranscriptionBusy) {
         if (!nextIsDialogOpen && !shouldSkipDialogCloseCancelRef.current)
           cancelRecorderForDialogClose();
         shouldSkipDialogCloseCancelRef.current = false;
         setAudioInputDialogOpen(nextIsDialogOpen);
       }
     },
-    [cancelRecorderForDialogClose, isDialogTranscribing, setAudioInputDialogOpen],
+    [cancelRecorderForDialogClose, isDialogTranscriptionBusy, setAudioInputDialogOpen],
   );
 
   /**
@@ -2070,6 +2149,21 @@ export const AudioInput = ({
       setAudioInputDialogOpen(false);
     },
     [onTranscriptionResult, setAudioInputDialogOpen],
+  );
+
+  /**
+   * Applies a Transcribe result to the consumer and closes the built-in dialog.
+   * @returns A promise resolving after the consumer accepts the complete text.
+   */
+  const handleTranscriptionApply = useCallback(
+    async (nextTranscription: string, recording: IAudioInputRecording): Promise<void> => {
+      const session = dialogSessionRef.current;
+      await onTranscriptionApply?.(nextTranscription, recording);
+      if (dialogSessionRef.current !== session) return;
+      shouldSkipDialogCloseCancelRef.current = true;
+      setAudioInputDialogOpen(false);
+    },
+    [onTranscriptionApply, setAudioInputDialogOpen],
   );
 
   /**
@@ -2143,6 +2237,7 @@ export const AudioInput = ({
 
   useEffect(() => {
     if (!isDialogOpen) {
+      setDialogTranscriptionStatus('idle');
       if (shouldSkipDialogCloseCancelRef.current) {
         shouldSkipDialogCloseCancelRef.current = false;
       } else {
@@ -2159,7 +2254,7 @@ export const AudioInput = ({
       {...rootProps}
     >
       <Dialog
-        isDismissalDisabled={disabled || isDialogTranscribing}
+        isDismissalDisabled={disabled || isDialogTranscriptionBusy}
         open={isDialogOpen}
         onOpenChange={handleDialogOpenChange}
       >
@@ -2183,6 +2278,7 @@ export const AudioInput = ({
 
         <DialogContent
           closeButtonAriaLabel={closeButtonAriaLabel}
+          initialFocus="dismiss-control"
           size="small"
         >
           <DialogHeader
@@ -2194,7 +2290,7 @@ export const AudioInput = ({
                   'whitespace-normal wrap-anywhere pointer-coarse:min-h-11 pointer-coarse:min-w-11',
                   restartButtonClassName,
                 )}
-                disabled={disabled || isDialogTranscribing}
+                disabled={disabled || isDialogTranscriptionBusy}
                 size="icon-touch"
                 title={restartButtonAriaLabel}
                 type="button"
@@ -2224,6 +2320,7 @@ export const AudioInput = ({
               disabled={disabled}
               isErrorVisible={isErrorVisible}
               isRecording={isRecording}
+              isResultActionVisible={isResultActionVisible}
               isTranscriptionEditorVisible={isTranscriptionEditorVisible}
               maxBytes={maxBytes}
               preferredMimeType={preferredMimeType}
@@ -2255,6 +2352,7 @@ export const AudioInput = ({
               onTranscriptionComplete={onTranscriptionComplete}
               onTranscriptionEditorVisibleChange={onTranscriptionEditorVisibleChange}
               onTranscriptionError={onTranscriptionError}
+              onTranscriptionApply={onTranscriptionApply ? handleTranscriptionApply : undefined}
               onTranscriptionResult={handleTranscriptionResult}
               onTranscriptionStatusChange={handleTranscriptionStatusChange}
               onTranscriptionTextChange={onTranscriptionTextChange}

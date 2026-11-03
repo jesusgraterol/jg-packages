@@ -424,7 +424,7 @@ const MessageDraft = () => {
 };
 ```
 
-Read `controlsRef.current?.getMarkdown()` when submitting so a debounced change cannot omit the latest keystroke. Pass reviewed dictation to `appendLiteralText` and handle false by retaining it for another attempt. The private gallery demonstrates the actual upload and audio components with abortable local fixture adapters.
+Read `controlsRef.current?.getMarkdown()` when submitting so a debounced change cannot omit the latest keystroke. Use `onTranscriptionApply` to append Transcribe results with `appendLiteralText(text, { allowOverLimit: true })` and return focus to the main input. Handle false by retaining the result for another attempt. Let `onTranscriptionResult` append once and await the same ordinary submission handler used by the button and keyboard. Read the current editor snapshot in that handler, block both entry points while over limit, preserve failed drafts, and change the editor key with draft identity after success to clear its document and undo history. The private gallery demonstrates the actual upload and audio components with abortable local fixture adapters.
 
 ## Compile retained HQ public imports and source shapes
 

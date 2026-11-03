@@ -232,6 +232,8 @@ for (const theme of ['light', 'dark'] as const) {
         await expect(
           page.getByRole('status', { name: 'Submitted message', exact: true }),
         ).toContainText('Latest unsaved message');
+        await expect(message).toHaveText('');
+        await message.fill('Latest unsaved message');
         const format = page.getByRole('button', { name: 'Format message', exact: true });
         await format.focus();
         await page.keyboard.press('Enter');
@@ -256,47 +258,51 @@ for (const theme of ['light', 'dark'] as const) {
     },
   );
 
-  test(`${theme} selected text in the chat editor stays readable`, async ({ page }) => {
-    await page.goto(`/editors?theme=${theme}`);
-    const message = page.getByRole('textbox', { name: 'Message', exact: true });
-    await expect(message).toBeEditable();
-    await message.click();
-    await page.keyboard.type('Selected words stay readable');
-    await message.press('ControlOrMeta+a');
-    // the selection's color, laid over the surface behind the editor, against the text's color
-    const colors = await message.evaluate((editor) => {
-      const toRgba = (css: string): number[] => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 1;
-        canvas.height = 1;
-        const context = canvas.getContext('2d')!;
-        context.fillStyle = css;
-        context.fillRect(0, 0, 1, 1);
-        return [...context.getImageData(0, 0, 1, 1).data];
-      };
-      const paragraph = editor.querySelector('p')!;
-      let surface = 'rgb(255, 255, 255)';
-      for (let element: Element | null = editor; element; element = element.parentElement) {
-        const color = toRgba(getComputedStyle(element).backgroundColor);
-        if (color[3] === 255) {
-          surface = getComputedStyle(element).backgroundColor;
-          break;
+  test(
+    `${theme} selected text in the chat editor stays readable`,
+    { tag: '@full' },
+    async ({ page }) => {
+      await page.goto(`/editors?theme=${theme}`);
+      const message = page.getByRole('textbox', { name: 'Message', exact: true });
+      await expect(message).toBeEditable();
+      await message.click();
+      await page.keyboard.type('Selected words stay readable');
+      await message.press('ControlOrMeta+a');
+      // the selection's color, laid over the surface behind the editor, against the text's color
+      const colors = await message.evaluate((editor) => {
+        const toRgba = (css: string): number[] => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 1;
+          canvas.height = 1;
+          const context = canvas.getContext('2d')!;
+          context.fillStyle = css;
+          context.fillRect(0, 0, 1, 1);
+          return [...context.getImageData(0, 0, 1, 1).data];
+        };
+        const paragraph = editor.querySelector('p')!;
+        let surface = 'rgb(255, 255, 255)';
+        for (let element: Element | null = editor; element; element = element.parentElement) {
+          const color = toRgba(getComputedStyle(element).backgroundColor);
+          if (color[3] === 255) {
+            surface = getComputedStyle(element).backgroundColor;
+            break;
+          }
         }
-      }
-      return {
-        selection: toRgba(getComputedStyle(paragraph, '::selection').backgroundColor),
-        text: toRgba(getComputedStyle(paragraph).color),
-        surface: toRgba(surface),
-      };
-    });
-    const alpha = colors.selection[3]! / 255;
-    const selected = colors.selection
-      .slice(0, 3)
-      .map((channel, index) => channel * alpha + colors.surface[index]! * (1 - alpha));
-    expect(contrastRatio(selected, colors.text)).toBeGreaterThanOrEqual(4.5);
-    // and the selection still shows against the surface
-    expect(contrastRatio(selected, colors.surface)).toBeGreaterThan(1.15);
-  });
+        return {
+          selection: toRgba(getComputedStyle(paragraph, '::selection').backgroundColor),
+          text: toRgba(getComputedStyle(paragraph).color),
+          surface: toRgba(surface),
+        };
+      });
+      const alpha = colors.selection[3]! / 255;
+      const selected = colors.selection
+        .slice(0, 3)
+        .map((channel, index) => channel * alpha + colors.surface[index]! * (1 - alpha));
+      expect(contrastRatio(selected, colors.text)).toBeGreaterThanOrEqual(4.5);
+      // and the selection still shows against the surface
+      expect(contrastRatio(selected, colors.surface)).toBeGreaterThan(1.15);
+    },
+  );
 
   test(
     `${theme} attachments recover from provider failure and insert literal chat text`,
@@ -341,6 +347,150 @@ for (const theme of ['light', 'dark'] as const) {
     },
   );
 
+  for (const action of ['Transcribe', 'Send', 'Oversized Send'] as const) {
+    test(
+      theme + ' ' + action + ' keeps complete dictation and uses the ordinary message action',
+      async ({ browser, browserName }, testInfo) => {
+        const errors: Array<Error | string> = [];
+        const context = await browser.newContext({
+          viewport: { width: 320, height: 480 },
+          hasTouch: true,
+          colorScheme: theme,
+          reducedMotion: 'reduce',
+        });
+        let releaseSend: (() => void) | undefined;
+        try {
+          const page = await context.newPage();
+          trackEditorErrors(page, errors);
+          if (browserName === 'chromium') {
+            const devtools = await context.newCDPSession(page);
+            await devtools.send('Emulation.setSafeAreaInsetsOverride', {
+              insets: { top: 32, bottom: 24, left: 12, right: 12 },
+            });
+          }
+          await installFakeMicrophone(page);
+          let transcriptions = 0;
+          let submissions = 0;
+          const sendGate = new Promise<void>((resolve) => {
+            releaseSend = resolve;
+          });
+          await page.route('**/route-ready.txt?input=*', async (route) => {
+            const operation = new URL(route.request().url()).searchParams.get('input');
+            if (operation === 'transcribe') transcriptions += 1;
+            if (operation === 'send') {
+              submissions += 1;
+              await sendGate;
+            }
+            await route.fulfill({ body: 'ready' });
+          });
+          await page.goto('/editors?theme=' + theme);
+          await useFirefoxCaptureDevice(page, browserName);
+          const message = page.getByRole('textbox', { name: 'Message', exact: true });
+          await expect(
+            page.getByRole('textbox', { name: 'Project notes', exact: true }),
+          ).toBeEditable();
+          await expect(message).toBeEditable();
+          if (action !== 'Send') await message.fill('Existing message');
+          if (action === 'Oversized Send')
+            await page
+              .getByRole('button', { name: 'Use oversized transcript', exact: true })
+              .click();
+          const microphone = page.getByRole('button', { name: 'Open audio recorder', exact: true });
+          // settle WebKit's contenteditable blur scroll before the pointer activation.
+          await microphone.focus();
+          await microphone.click();
+          const dialog = page.getByRole('dialog', { name: 'Audio', exact: true });
+          await expect(dialog).toBeVisible();
+          if (await page.evaluate(() => typeof MediaRecorder === 'undefined')) {
+            await expect(dialog.getByRole('alert')).toHaveText(
+              'Audio recording is not supported in this browser.',
+            );
+            await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+            return;
+          }
+          await waitForRecordedAudio(page);
+          const recorderAction = dialog.getByRole('button', {
+            name: action === 'Transcribe' ? 'Transcribe' : 'Send',
+            exact: true,
+          });
+          await recorderAction.focus();
+          await recorderAction.click();
+          const submitted = page.getByRole('status', { name: 'Submitted message', exact: true });
+          if (action === 'Send') {
+            await expect.poll(() => submissions).toBe(1);
+            await expect(recorderAction).toBeFocused();
+            await expect(recorderAction).toHaveAttribute('aria-disabled', 'true');
+            await expect(dialog.locator('[data-slot="audio-input-action-progress"]')).toHaveCount(
+              1,
+            );
+            await expect(dialog.locator('[data-slot="audio-input-action-progress"]')).toHaveCSS(
+              'animation-name',
+              'none',
+            );
+            await expect(
+              dialog.getByRole('button', { name: 'Cancel', exact: true }),
+            ).toBeDisabled();
+            await page.keyboard.press('Escape');
+            await expect(dialog).toBeVisible();
+            await page.keyboard.press('Enter');
+            expect(submissions).toBe(1);
+            releaseSend?.();
+            await expect(dialog).toHaveCount(0);
+            await expect(submitted).toContainText('Review the deployment notes before sending.');
+            await expect(message).toHaveText('');
+            await message.focus();
+            await message.press('ControlOrMeta+z');
+            await expect(message).toHaveText('');
+            await message.fill('Next message');
+            await message.press('ControlOrMeta+Enter');
+            await expect(submitted).toContainText('Next message');
+            await expect(message).toHaveText('');
+            expect(submissions).toBe(2);
+          } else {
+            await expect(dialog).toHaveCount(0);
+            await expect(message).toBeFocused();
+            await expect(message).toContainText('Existing message');
+            expect(submissions).toBe(0);
+            await expect(submitted).toHaveText('No message submitted.');
+            if (action === 'Oversized Send') {
+              await expect(message).toContainText('BEGIN café');
+              await expect(message).toContainText('END');
+              expect((await message.innerText()).length).toBeGreaterThan(45000);
+              await expect(
+                page.getByRole('button', { name: 'Submit message', exact: true }),
+              ).toBeDisabled();
+              await message.press('ControlOrMeta+Enter');
+              expect(submissions).toBe(0);
+              await message.fill('Shortened message');
+            } else
+              await expect(message).toContainText('Review the deployment notes before sending.');
+            releaseSend?.();
+            await page.getByRole('button', { name: 'Submit message', exact: true }).click();
+            await expect(submitted).toContainText(
+              action === 'Oversized Send' ? 'Shortened message' : 'Existing message',
+            );
+            await expect(message).toHaveText('');
+            expect(submissions).toBe(1);
+          }
+          expect(transcriptions).toBe(1);
+          await expectNoHorizontalOverflow(page);
+          expect((await new AxeBuilder({ page }).analyze()).violations).toStrictEqual([]);
+          if (testInfo.project.name === 'chromium' && testInfo.repeatEachIndex === 0)
+            await page.screenshot({
+              path: testInfo.outputPath(
+                'dictation-' + theme + '-' + action.toLowerCase().replaceAll(' ', '-') + '.png',
+              ),
+              fullPage: true,
+            });
+        } finally {
+          releaseSend?.();
+          await context.close();
+          expect(errors).toStrictEqual([]);
+        }
+      },
+    );
+  }
+
   test(
     `${theme} reviewed dictation reaches the real chat controls after retry`,
     { tag: '@full' },
@@ -384,19 +534,19 @@ for (const theme of ['light', 'dark'] as const) {
         }
         await waitForRecordedAudio(page);
         await dialog.getByRole('button', { name: 'Transcribe', exact: true }).click();
-        await dialog
-          .getByRole('textbox', { name: 'Transcription', exact: true })
-          .fill('# Literal voice note');
-        await dialog.getByRole('button', { name: 'Send', exact: true }).click();
-        await expect(dialog.getByRole('alert')).toContainText(
-          'The input service is unavailable. Try again.',
-        );
-        shouldFail = false;
-        await dialog.getByRole('button', { name: 'Retry', exact: true }).click();
         await expect(dialog).toHaveCount(0);
         const message = page.getByRole('textbox', { name: 'Message', exact: true });
+        await expect(message).toContainText('Review the deployment notes before sending.');
+        await message.fill('# Literal voice note');
+        await page.getByRole('button', { name: 'Submit message', exact: true }).click();
+        await expect(page.getByRole('alert')).toContainText('Your message was not confirmed.');
         await expect(message).toContainText('# Literal voice note');
-        await expect(message.locator('h1')).toHaveCount(0);
+        shouldFail = false;
+        await page.getByRole('button', { name: 'Submit message', exact: true }).click();
+        await expect(
+          page.getByRole('status', { name: 'Submitted message', exact: true }),
+        ).toContainText('Literal voice note');
+        await expect(message).toHaveText('');
         await expectNoHorizontalOverflow(page);
       } finally {
         await context.close();

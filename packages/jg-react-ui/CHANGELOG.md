@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+
+- `AudioInput` supports direct main-input Transcribe through `onTranscriptionApply` while retaining a separate Send callback and standalone review defaults. `isResultActionVisible` allows a sole direct-apply action.
+- `ChatMarkdownEditor.appendLiteralText` accepts `{ allowOverLimit: true }` to retain complete dictation before readiness and allow editing oversized drafts. Ordinary insertion stays bounded and read-only editors reject insertion.
+
+### Changed
+
+- The recorder uses compact accessible icon actions and shows pending progress only in the active button. Pending actions retain focus and reject repeated activation, restart and dismissal. Portalled recorder submissions stay inside the dialog.
+
 ## 0.3.5
 
 ### Fixed

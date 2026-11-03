@@ -1,4 +1,4 @@
-import { useRef, useState, useId, useImperativeHandle, useCallback } from 'react';
+import { useRef, useState, useId, useImperativeHandle, useCallback, useEffect } from 'react';
 import type * as React from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from 'cnfast';
@@ -11,7 +11,7 @@ import {
   CHAT_MARKDOWN_EDITOR_TOOLS,
 } from './constants.js';
 import { ChatMarkdownFormatting } from './formatting/index.js';
-import { measureChatMarkdown } from './policy.js';
+import { buildChatMarkdownLiteralAppend, measureChatMarkdown } from './policy.js';
 import type {
   IChatMarkdownEditorControls,
   IChatMarkdownEditorInternalControls,
@@ -63,6 +63,8 @@ export const ChatMarkdownEditor = ({
   assertChatMarkdownEditorConfiguration(maxLength, maxEditorHeight);
 
   const internalControlsRef = useRef<IChatMarkdownEditorInternalControls>(null);
+  const latestValueRef = useRef(value);
+  const previousControlledValueRef = useRef(value);
   const policySnapshotRef = useRef<string | null>(null);
   const [policyMessage, setPolicyMessage] = useState<string | null>(null);
   const messageLength = measureChatMarkdown(value);
@@ -90,15 +92,40 @@ export const ChatMarkdownEditor = ({
   useImperativeHandle<IChatMarkdownEditorControls, IChatMarkdownEditorControls>(
     controlsRef,
     () => ({
-      appendLiteralText: (text) => internalControlsRef.current?.appendLiteralText(text) ?? false,
+      appendLiteralText: (text, options) => {
+        if (disabled) return false;
+        if (internalControlsRef.current)
+          return internalControlsRef.current.appendLiteralText(text, options);
+        if (!options?.allowOverLimit) return false;
+        const nextValue = buildChatMarkdownLiteralAppend(
+          latestValueRef.current,
+          text,
+          maxLength,
+          true,
+        );
+        if (nextValue === null) return false;
+        if (nextValue !== latestValueRef.current) {
+          latestValueRef.current = nextValue;
+          onChange(nextValue);
+        }
+        return true;
+      },
       focus: () => internalControlsRef.current?.focus(),
-      getMarkdown: () => internalControlsRef.current?.getMarkdown() ?? value,
+      getMarkdown: () => internalControlsRef.current?.getMarkdown() ?? latestValueRef.current,
     }),
-    [value],
+    [disabled, maxLength, onChange],
   );
+
+  useEffect(() => {
+    if (previousControlledValueRef.current !== value) {
+      previousControlledValueRef.current = value;
+      latestValueRef.current = value;
+    }
+  }, [value]);
 
   const handleChange = useCallback(
     (nextValue: string): void => {
+      latestValueRef.current = nextValue;
       if (nextValue !== policySnapshotRef.current) {
         policySnapshotRef.current = null;
         setPolicyMessage(null);

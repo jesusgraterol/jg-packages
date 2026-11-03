@@ -7,6 +7,7 @@ import {
   Button,
   ChatMarkdownEditor,
   ErrorFeedbackProvider,
+  ERRORS,
   FileUploadDialog,
   Heading,
   Markdown,
@@ -47,6 +48,7 @@ const editorErrorPolicy = createErrorFeedback({
   fallbackMessage: 'The input service is unavailable. Try again.',
   messagesByCode: {
     GALLERY_DRAFT_FULL: 'Shorten the message before inserting more text.',
+    [ERRORS.AUDIO_INPUT_TRANSCRIPTION_RESULT_FAILED]: 'Transcription could not be sent.',
     GALLERY_INPUT_UNAVAILABLE: 'The input service is unavailable. Try again.',
   },
 });
@@ -56,8 +58,14 @@ export const EditorDemo = () => {
   const [layout, setLayout] = useState<IMarkdownEditorLayout>('auto');
   const [notes, setNotes] = useState('## Weekly notes\n\nReview {{PROJECT_NAME}} before release.');
   const [message, setMessage] = useState('');
+  const [draftId, setDraftId] = useState(1);
+  const [isOversized, setIsOversized] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionFeedback, setSubmissionFeedback] = useState<string | null>(null);
   const [submittedMessage, setSubmittedMessage] = useState('No message submitted.');
   const [hasAllTools, setHasAllTools] = useState(true);
+  const submissionGuardRef = useRef(false);
+  const shouldFocusEditorRef = useRef(false);
   const controlsRef = useRef<IChatMarkdownEditorControls>(null);
   const requestsRef = useRef<AbortController | null>(null);
 
@@ -104,18 +112,63 @@ export const EditorDemo = () => {
       'transcribe',
       requestsRef.current === null ? [] : [requestsRef.current.signal],
     );
-    return 'Review the deployment notes before sending.';
-  }, []);
+    return isOversized
+      ? 'BEGIN café\n\n' + 'MIDDLE 日本語 '.repeat(4096) + '\n\nEND'
+      : 'Review the deployment notes before sending.';
+  }, [isOversized]);
 
-  const insertTranscription = useCallback<IAudioInputTranscriptionResultHandler>(
-    async (text) => {
+  /**
+   * Submits the current main-input snapshot once and preserves failed drafts for explicit retry.
+   * @returns A promise resolving after the consumer attempt or a submission guard.
+   */
+  const submitMessage = useCallback(async (markdown?: string): Promise<void> => {
+    if (submissionGuardRef.current) return;
+    const snapshot = markdown ?? controlsRef.current?.getMarkdown() ?? '';
+    if (!snapshot.trim() || snapshot.replace(/\n$/, '').length > 2048) return;
+    submissionGuardRef.current = true;
+    setIsSubmitting(true);
+    setSubmissionFeedback(null);
+    try {
       await waitForInputProvider(
         'send',
         requestsRef.current === null ? [] : [requestsRef.current.signal],
       );
-      insertText(text);
+      setSubmittedMessage(snapshot);
+      setMessage('');
+      setDraftId((previous) => previous + 1);
+    } catch {
+      setSubmissionFeedback('Your message was not confirmed. Your draft has been kept.');
+    } finally {
+      submissionGuardRef.current = false;
+      setIsSubmitting(false);
+    }
+  }, []);
+
+  /**
+   * Retains complete dictation in the main input for review or ordinary submission.
+   * @throws
+   * - AUDIO_INPUT_TRANSCRIPTION_RESULT_FAILED: Transcription could not be sent.
+   */
+  const insertTranscription = useCallback<IAudioInputTranscriptionResultHandler>((text) => {
+    if (!controlsRef.current?.appendLiteralText(text, { allowOverLimit: true })) {
+      throw new Exception('Transcription could not be sent.', {
+        code: ERRORS.AUDIO_INPUT_TRANSCRIPTION_RESULT_FAILED,
+      });
+    }
+    shouldFocusEditorRef.current = true;
+  }, []);
+  /**
+   * Inserts once and awaits the same consumer action used by the button and keyboard.
+   * @returns A promise resolving after insertion and the ordinary consumer attempt.
+   * @throws
+   * - AUDIO_INPUT_TRANSCRIPTION_RESULT_FAILED: Transcription could not be sent.
+   */
+  const sendTranscription = useCallback<IAudioInputTranscriptionResultHandler>(
+    async (text, recording) => {
+      await insertTranscription(text, recording);
+      await submitMessage();
     },
-    [insertText],
+    [insertTranscription, submitMessage],
   );
 
   return (
@@ -197,10 +250,12 @@ export const EditorDemo = () => {
         >
           <Heading level={2}>Message draft</Heading>
           <ChatMarkdownEditor
+            key={draftId}
+            disabled={isSubmitting}
             controlsRef={controlsRef}
             maxLength={2048}
             onChange={setMessage}
-            onSubmitRequest={setSubmittedMessage}
+            onSubmitRequest={(markdown) => void submitMessage(markdown)}
             value={message}
           />
           <div className="flex flex-wrap items-center gap-2">
@@ -223,16 +278,35 @@ export const EditorDemo = () => {
               }
             />
             <AudioInput
-              onTranscriptionResult={insertTranscription}
+              onTranscriptionApply={insertTranscription}
+              onTranscriptionResult={sendTranscription}
+              triggerButtonProps={{
+                onFocus: () => {
+                  if (shouldFocusEditorRef.current) {
+                    shouldFocusEditorRef.current = false;
+                    controlsRef.current?.focus();
+                  }
+                },
+              }}
               transcribe={transcribe}
             />
             <Button
-              onClick={() => setSubmittedMessage(controlsRef.current?.getMarkdown() ?? message)}
+              disabled={isSubmitting || message.replace(/\n$/, '').length > 2048}
+              onClick={() => void submitMessage()}
               size="touch"
             >
               Submit message
             </Button>
           </div>
+          <Button
+            aria-pressed={isOversized}
+            variant="outline"
+            size="touch"
+            onClick={() => setIsOversized((previous) => !previous)}
+          >
+            Use oversized transcript
+          </Button>
+          {submissionFeedback ? <p role="alert">{submissionFeedback}</p> : null}
           <output
             aria-label="Submitted message"
             className="block min-w-0 whitespace-pre-wrap wrap-anywhere"

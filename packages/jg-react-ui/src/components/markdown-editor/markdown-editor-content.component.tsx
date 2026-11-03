@@ -14,6 +14,7 @@ import {
   EditorStatus,
   editorViewCtx,
   editorViewOptionsCtx,
+  parserCtx,
   serializerCtx,
 } from '@milkdown/kit/core';
 import {
@@ -34,7 +35,7 @@ import {
   syncMarkdownEditorEmptyState,
 } from './empty-state.utilities.js';
 import { createChatMarkdownPolicyPlugin } from './chat-editor/policy.plugin.js';
-import { escapeChatMarkdownLiteralText } from './chat-editor/policy.js';
+import { buildChatMarkdownLiteralAppend, measureChatMarkdown } from './chat-editor/policy.js';
 import type {
   IChatMarkdownBlockFormat,
   IChatMarkdownEditorInternalControls,
@@ -111,6 +112,8 @@ const MarkdownEditorInstance = ({
   const currentMarkdownRef = useRef(value);
   const disabledRef = useRef(disabled);
   const latestValueRef = useRef(value);
+  const previousControlledValueRef = useRef(value);
+  const hasPendingLiteralAppendRef = useRef(false);
   const onChangeRef = useRef(onChange);
   const supportedToolsRef = useRef(supportedTools);
   const chatOptionsRef = useRef(chatOptions);
@@ -567,7 +570,12 @@ const MarkdownEditorInstance = ({
   const { loading: isEditorLoading } = useEditor(createEditor, []);
 
   useEffect(() => {
-    latestValueRef.current = value;
+    if (previousControlledValueRef.current !== value) {
+      previousControlledValueRef.current = value;
+      latestValueRef.current = value;
+      const crepe = crepeRef.current;
+      if (crepe) syncEditorValue(crepe, value, currentMarkdownRef);
+    }
   }, [value]);
 
   useEffect(() => {
@@ -670,6 +678,19 @@ const MarkdownEditorInstance = ({
 
   useEffect(() => {
     const crepe = crepeRef.current;
+    if (!crepe || isEditorLoading) return;
+    syncEditorValue(crepe, latestValueRef.current, currentMarkdownRef);
+    if (hasPendingLiteralAppendRef.current) {
+      hasPendingLiteralAppendRef.current = false;
+      const acceptedMarkdown = getMarkdownEditorMarkdown(crepe);
+      latestValueRef.current = acceptedMarkdown;
+      currentMarkdownRef.current = acceptedMarkdown;
+      onChangeRef.current(acceptedMarkdown);
+    }
+  }, [isEditorLoading]);
+
+  useEffect(() => {
+    const crepe = crepeRef.current;
 
     if (!crepe || isEditorLoading) {
       return;
@@ -745,22 +766,12 @@ const MarkdownEditorInstance = ({
     if (crepe) syncEditorPlaceholder(crepe, placeholder);
   }, [placeholder]);
 
-  useEffect(() => {
-    const crepe = crepeRef.current;
-
-    if (!crepe) {
-      return;
-    }
-
-    syncEditorValue(crepe, value, currentMarkdownRef);
-  }, [value]);
-
   const getChatMarkdown = useCallback((): string => {
     const crepe = crepeRef.current;
 
     return crepe?.editor.status === EditorStatus.Created
       ? getMarkdownEditorMarkdown(crepe)
-      : currentMarkdownRef.current;
+      : latestValueRef.current;
   }, []);
 
   const focusChatEditor = useCallback((): void => {
@@ -789,31 +800,42 @@ const MarkdownEditorInstance = ({
     });
   }, []);
 
-  const appendChatLiteralText = useCallback((text: string): boolean => {
+  /** Retains opted-in overflow before readiness and reports the accepted editor snapshot. */
+  const appendChatLiteralText = useCallback<
+    IChatMarkdownEditorInternalControls['appendLiteralText']
+  >((text, insertionOptions): boolean => {
     const crepe = crepeRef.current;
     const options = chatOptionsRef.current;
-
-    if (!crepe || crepe.editor.status !== EditorStatus.Created || !options) {
-      return false;
+    if (!options || disabledRef.current) return false;
+    const isEditorReady = crepe?.editor.status === EditorStatus.Created;
+    if (!isEditorReady && !insertionOptions?.allowOverLimit) return false;
+    const currentMarkdown = isEditorReady
+      ? getMarkdownEditorMarkdown(crepe)
+      : latestValueRef.current;
+    const nextMarkdown = buildChatMarkdownLiteralAppend(
+      currentMarkdown,
+      text,
+      options.getMaxLength(),
+      insertionOptions?.allowOverLimit,
+    );
+    if (nextMarkdown === null) return false;
+    if (nextMarkdown === currentMarkdown) return true;
+    let acceptedMarkdown = nextMarkdown;
+    if (isEditorReady) {
+      if (!insertionOptions?.allowOverLimit) {
+        const serialized = crepe.editor.action((ctx) =>
+          ctx.get(serializerCtx)(ctx.get(parserCtx)(nextMarkdown)),
+        );
+        if (measureChatMarkdown(serialized) > options.getMaxLength()) return false;
+      }
+      replaceMarkdownEditorMarkdown(crepe, nextMarkdown);
+      acceptedMarkdown = getMarkdownEditorMarkdown(crepe);
+    } else {
+      hasPendingLiteralAppendRef.current = true;
     }
-
-    const escapedText = escapeChatMarkdownLiteralText(text.trim());
-
-    if (!escapedText) {
-      return true;
-    }
-
-    const currentMarkdown = getMarkdownEditorMarkdown(crepe).trimEnd();
-    const nextMarkdown = currentMarkdown ? `${currentMarkdown}\n\n${escapedText}` : escapedText;
-
-    if (nextMarkdown.length > options.getMaxLength()) {
-      return false;
-    }
-
-    latestValueRef.current = nextMarkdown;
-    replaceMarkdownEditorMarkdown(crepe, nextMarkdown);
-    currentMarkdownRef.current = getMarkdownEditorMarkdown(crepe);
-    onChangeRef.current(nextMarkdown);
+    latestValueRef.current = acceptedMarkdown;
+    currentMarkdownRef.current = acceptedMarkdown;
+    onChangeRef.current(insertionOptions?.allowOverLimit ? acceptedMarkdown : nextMarkdown);
     return true;
   }, []);
 
