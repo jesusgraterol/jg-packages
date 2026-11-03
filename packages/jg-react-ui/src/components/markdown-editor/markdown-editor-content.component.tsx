@@ -22,7 +22,6 @@ import {
   wrapInHeadingCommand,
   wrapInOrderedListCommand,
 } from '@milkdown/kit/preset/commonmark';
-import { replaceAll } from '@milkdown/kit/utils';
 import { Milkdown, MilkdownProvider, useEditor, type GetEditor } from '@milkdown/react';
 import { createPortal } from 'react-dom';
 import { cn } from 'cnfast';
@@ -78,6 +77,7 @@ import {
   highlightMarkdownEditorVariablesPlugin,
   normalizeMarkdownEditorMarkdown,
   patchMarkdownEditorInlineMathSchemaPlugin,
+  replaceMarkdownEditorMarkdown,
   syncEditorAttributes,
   syncEditorPlaceholder,
   syncEditorValue,
@@ -531,11 +531,13 @@ const MarkdownEditorInstance = ({
         }
 
         const normalizedMarkdown = normalizeMarkdownEditorMarkdown(ctx.get(serializerCtx)(doc));
+        // a document the editor already recorded, such as a controlled value it took, isn't an edit
+        const isEdited = normalizedMarkdown !== currentMarkdownRef.current;
 
         currentMarkdownRef.current = normalizedMarkdown;
         scheduleAccessibility();
 
-        if (normalizedMarkdown !== latestValueRef.current) {
+        if (isEdited && normalizedMarkdown !== latestValueRef.current) {
           emitChange(normalizedMarkdown);
         }
       });
@@ -549,10 +551,11 @@ const MarkdownEditorInstance = ({
         const normalizedMarkdown = normalizeMarkdownEditorMarkdown(
           ctx.get(serializerCtx)(ctx.get(editorViewCtx).state.doc),
         );
+        const isEdited = normalizedMarkdown !== currentMarkdownRef.current;
 
         currentMarkdownRef.current = normalizedMarkdown;
 
-        if (normalizedMarkdown !== latestValueRef.current) {
+        if (isEdited && normalizedMarkdown !== latestValueRef.current) {
           emitChange(normalizedMarkdown);
         }
       });
@@ -808,8 +811,8 @@ const MarkdownEditorInstance = ({
     }
 
     latestValueRef.current = nextMarkdown;
-    currentMarkdownRef.current = nextMarkdown;
-    crepe.editor.action(replaceAll(nextMarkdown, true));
+    replaceMarkdownEditorMarkdown(crepe, nextMarkdown);
+    currentMarkdownRef.current = getMarkdownEditorMarkdown(crepe);
     onChangeRef.current(nextMarkdown);
     return true;
   }, []);

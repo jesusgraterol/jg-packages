@@ -6,6 +6,7 @@ import {
   escapeChatMarkdownLiteralText,
   isChatMarkdownEmpty,
   isChatMarkdownLinkSafe,
+  measureChatMarkdown,
   normalizeChatMarkdownDocument,
 } from './policy.js';
 
@@ -224,5 +225,14 @@ describe('chat Markdown policy', () => {
   test('rejects oversized raw content before parsing', () => {
     expect(canParseChatMarkdown('1234', 4)).toBe(true);
     expect(canParseChatMarkdown('12345', 4)).toBe(false);
+  });
+
+  test.each([
+    ['the line break the serializer ends a document with', 'Hello\n', 5],
+    ['a value without one', 'Hello', 5],
+    ['only that last line break, not one the message holds', 'One\n\nTwo\n', 8],
+    ['an empty document', '', 0],
+  ])('measureChatMarkdown(%s) -> %d', (_case, markdown, length) => {
+    expect(measureChatMarkdown(markdown)).toBe(length);
   });
 });

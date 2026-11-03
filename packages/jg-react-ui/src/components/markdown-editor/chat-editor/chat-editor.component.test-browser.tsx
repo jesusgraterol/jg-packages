@@ -494,6 +494,109 @@ describe('ChatMarkdownEditor', () => {
     expect(markdown).not.toContain('hidden');
   });
 
+  test('a changed controlled value keeps the focus and puts the caret at its end, unreported', async () => {
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+    const onChange = vi.fn<(markdown: string) => void>();
+    const render = async (value: string): Promise<void> => {
+      await act(async () => {
+        root.render(
+          <ChatMarkdownEditor
+            controlsRef={controlsRef}
+            maxLength={256}
+            value={value}
+            onChange={onChange}
+          />,
+        );
+        await Promise.resolve();
+      });
+    };
+
+    await render('First');
+    await flushEditor();
+    act(() => controlsRef.current?.focus());
+    await vi.waitFor(() => {
+      expect(document.activeElement?.getAttribute('role')).toBe('textbox');
+    });
+
+    await render('Second, recalled');
+    await vi.waitFor(() => {
+      expect(controlsRef.current?.getMarkdown().trim()).toBe('Second, recalled');
+    });
+    expect(document.activeElement?.getAttribute('role')).toBe('textbox');
+
+    // what is typed next goes after the new text
+    act(() => {
+      editors.at(-1)?.action((ctx) => {
+        const view = ctx.get(editorViewCtx);
+
+        view.dispatch(view.state.tr.insertText('!'));
+      });
+    });
+    expect(controlsRef.current?.getMarkdown().trim()).toBe('Second, recalled!');
+
+    // the value the editor took is never reported back as an edit, while the typed one is
+    await vi.waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(expect.stringContaining('recalled!'));
+    });
+    expect(onChange.mock.calls.some(([markdown]) => markdown.trim() === 'Second, recalled')).toBe(
+      false,
+    );
+  });
+
+  test('appending literal text keeps the editor focused', async () => {
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+
+    await act(async () => {
+      root.render(
+        <ChatMarkdownEditor
+          controlsRef={controlsRef}
+          maxLength={256}
+          value="Hello"
+          onChange={vi.fn()}
+        />,
+      );
+      await Promise.resolve();
+    });
+    await flushEditor();
+    act(() => controlsRef.current?.focus());
+    await vi.waitFor(() => {
+      expect(document.activeElement?.getAttribute('role')).toBe('textbox');
+    });
+
+    act(() => {
+      expect(controlsRef.current?.appendLiteralText('world')).toBe(true);
+    });
+
+    expect(controlsRef.current?.getMarkdown()).toContain('world');
+    expect(document.activeElement?.getAttribute('role')).toBe('textbox');
+  });
+
+  test('counts a message at its limit without the line break its Markdown ends with', async () => {
+    const render = async (value: string): Promise<void> => {
+      await act(async () => {
+        root.render(
+          <ChatMarkdownEditor
+            maxLength={5}
+            value={value}
+            onChange={vi.fn()}
+          />,
+        );
+        await Promise.resolve();
+      });
+    };
+    const status = (): string =>
+      container.querySelector('[data-slot="chat-markdown-editor-status"]')?.textContent ?? '';
+
+    await render('Hello\n');
+    await flushEditor();
+    expect(status()).toContain('5/5');
+    expect(status()).not.toContain('The message is longer than the allowed limit.');
+
+    await render('Hello!\n');
+    expect(status()).toContain('6/5');
+    expect(status()).toContain('The message is longer than the allowed limit.');
+  });
+
   test('rejects literal insertion beyond the configured serialized limit', async () => {
     const controlsRef = createRef<IChatMarkdownEditorControls>();
     const onChange = vi.fn();

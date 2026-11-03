@@ -260,6 +260,38 @@ Plain **bold**, *italic*, and ***combined*** text with [web](https://example.com
     expect(session.crepe.getMarkdown().trim()).toBe('123456');
   });
 
+  test('accepts a paste that fills the message to exactly the limit', async () => {
+    /*
+     * The pasted text joins as its own paragraph, abc then 123456, which is eleven characters;
+     * the serializer's closing line break isn't part of the message, so they fit a limit of eleven.
+     */
+    const session = await createPolicySession('123456', 11);
+    const pasteEvent = new Event('paste', { bubbles: true, cancelable: true });
+
+    sessions.push(session);
+    Object.defineProperty(pasteEvent, 'clipboardData', {
+      value: {
+        getData: (type: string) => (type === 'text/plain' ? 'abc' : ''),
+      },
+    });
+
+    const handled = session.crepe.editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const policyPlugin = CHAT_MARKDOWN_POLICY_PLUGIN_KEY.get(view.state);
+
+      return policyPlugin?.props.handlePaste?.call(
+        policyPlugin,
+        view,
+        pasteEvent as ClipboardEvent,
+        Slice.empty,
+      );
+    });
+
+    expect(handled).toBe(true);
+    expect(session.onPasteRejected).not.toHaveBeenCalled();
+    expect(session.crepe.getMarkdown()).toBe('abc\n\n123456\n');
+  });
+
   test('rejects oversized HTML paste before the default rich-paste parser runs', async () => {
     const session = await createPolicySession('Retained', 16);
     const pasteEvent = new Event('paste', { bubbles: true, cancelable: true });
