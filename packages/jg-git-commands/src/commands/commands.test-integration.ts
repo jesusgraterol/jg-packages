@@ -852,7 +852,8 @@ describe('repository layout commands', () => {
       const worktree = join(directory, 'app worktree');
       await git(checkout, ['worktree', 'add', '--quiet', '-b', 'feature', worktree]);
       await mkdir(join(checkout, 'src'));
-      const expected = realpathSync(join(checkout, '.git'));
+      // the native realpath, as fs/promises uses, gives Windows' long names, never 8.3 short ones
+      const expected = realpathSync.native(join(checkout, '.git'));
 
       await expect(readCommonDirectory(checkout, ISOLATED)).resolves.toBe(expected);
       await expect(readCommonDirectory(join(checkout, 'src'), ISOLATED)).resolves.toBe(expected);
@@ -864,7 +865,7 @@ describe('repository layout commands', () => {
       await symlink(checkout, link);
 
       await expect(readCommonDirectory(link, ISOLATED)).resolves.toBe(
-        realpathSync(join(checkout, '.git')),
+        realpathSync.native(join(checkout, '.git')),
       );
     });
 
