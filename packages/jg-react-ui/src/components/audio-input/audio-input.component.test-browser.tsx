@@ -2289,6 +2289,47 @@ describe('AudioInput', () => {
     expect(onTranscriptionResult).not.toHaveBeenCalled();
   });
 
+  test('a retried insertion whose handler the parent removed delivers nothing', async () => {
+    const apply = vi.fn().mockRejectedValueOnce(new Error('private-insertion'));
+    const error = vi.fn();
+    const renderInput = (onTranscriptionApply?: typeof apply) =>
+      root.render(
+        <AudioInput
+          autoStart
+          defaultIsDialogOpen
+          cancelResetDelayMs={0}
+          {...(onTranscriptionApply === undefined ? {} : { onTranscriptionApply })}
+          transcribe={() => Promise.resolve('Draft')}
+          onTranscriptionError={error}
+        />,
+      );
+    await act(async () => {
+      renderInput(apply);
+      await Promise.resolve();
+    });
+    await flushAudioInputRecordingStart();
+    await act(async () => {
+      getMockRecorder().emitChunk(new Blob(['voice'], { type: 'audio/webm' }));
+      getAudioInputButtonByText(document.body, 'Transcribe').click();
+      await Promise.resolve();
+    });
+    await vi.waitFor(() => expect(error).toHaveBeenCalledOnce());
+    expect(apply).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      renderInput();
+      await Promise.resolve();
+    });
+    await act(async () => {
+      getAudioInputButtonByText(document.body, 'Retry').click();
+      await Promise.resolve();
+    });
+
+    expect(apply).toHaveBeenCalledOnce();
+    expect(error).toHaveBeenCalledOnce();
+    expect(document.body.textContent).not.toContain('private-');
+  });
+
   test('duplicate native form submissions share one pending result delivery', async () => {
     const controlsRef = createRef<IAudioInputControls>();
     const pending = createDeferred<void>();
@@ -2325,6 +2366,18 @@ describe('AudioInput', () => {
       await Promise.resolve();
     });
     await vi.waitFor(() => expect(onTranscriptionResult).toHaveBeenCalledOnce());
+    // once the pending delivery rendered, another submission and a press of Send do nothing
+    const send = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (send === null) throw new Error('The send action was not rendered.');
+    await vi.waitFor(() => expect(send.getAttribute('aria-disabled')).toBe('true'));
+    const press = new MouseEvent('click', { bubbles: true, cancelable: true });
+    await act(async () => {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      send.dispatchEvent(press);
+      await Promise.resolve();
+    });
+    expect(press.defaultPrevented).toBe(true);
+    expect(onTranscriptionResult).toHaveBeenCalledOnce();
     await act(async () => {
       pending.resolve(undefined);
       await pending.promise;

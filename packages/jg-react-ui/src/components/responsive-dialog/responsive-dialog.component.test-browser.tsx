@@ -189,6 +189,31 @@ describe('ResponsiveDialog', () => {
     });
   });
 
+  test.each([
+    ['a phone', 375, 812, 'drawer'],
+    ['a laptop', 1024, 768, 'dialog'],
+  ])('renders no description on %s when it has none', async (_name, width, height, slot) => {
+    await page.viewport(width, height);
+    await act(async () => {
+      await Promise.resolve();
+      return root.render(
+        <ResponsiveDialog
+          open
+          size="small"
+          title="Model"
+          onOpenChange={() => undefined}
+        >
+          One line
+        </ResponsiveDialog>,
+      );
+    });
+
+    await vi.waitFor(() => {
+      expect(document.body.querySelector(`[data-slot="${slot}-content"]`)).not.toBeNull();
+    });
+    expect(document.body.querySelector(`[data-slot="${slot}-description"]`)).toBeNull();
+  });
+
   test('turns from a sheet into a dialog when the screen widens while it is open', async () => {
     await page.viewport(375, 812);
     await openDetails();

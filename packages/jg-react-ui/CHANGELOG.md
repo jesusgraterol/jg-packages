@@ -19,6 +19,7 @@
 ### Fixed
 
 - `QueryErrorAlert` no longer widens a 320px screen when its error code is long: its text grids have explicit single columns, so the code truncates inside the alert.
+- `ChatMarkdownEditor`'s `appendLiteralText` keeps `~`, `<` and `&` literal, so dictated `~~text~~`, tags and entities no longer turn into strikethrough, HTML or characters, and a controls handle kept after the editor unmounts appends nothing instead of reporting a change.
 
 ## 0.4.0
 

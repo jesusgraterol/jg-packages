@@ -11,7 +11,7 @@ import {
   CHAT_MARKDOWN_EDITOR_TOOLS,
 } from './constants.js';
 import { ChatMarkdownFormatting } from './formatting/index.js';
-import { buildChatMarkdownLiteralAppend, measureChatMarkdown } from './policy.js';
+import { measureChatMarkdown } from './policy.js';
 import type {
   IChatMarkdownEditorControls,
   IChatMarkdownEditorInternalControls,
@@ -92,28 +92,14 @@ export const ChatMarkdownEditor = ({
   useImperativeHandle<IChatMarkdownEditorControls, IChatMarkdownEditorControls>(
     controlsRef,
     () => ({
-      appendLiteralText: (text, options) => {
-        if (disabled) return false;
-        if (internalControlsRef.current)
-          return internalControlsRef.current.appendLiteralText(text, options);
-        if (!options?.allowOverLimit) return false;
-        const nextValue = buildChatMarkdownLiteralAppend(
-          latestValueRef.current,
-          text,
-          maxLength,
-          true,
-        );
-        if (nextValue === null) return false;
-        if (nextValue !== latestValueRef.current) {
-          latestValueRef.current = nextValue;
-          onChange(nextValue);
-        }
-        return true;
-      },
+      // the mounted content owns readiness, limits and disabled; a handle kept past unmount
+      // appends nothing
+      appendLiteralText: (text, options) =>
+        internalControlsRef.current?.appendLiteralText(text, options) ?? false,
       focus: () => internalControlsRef.current?.focus(),
       getMarkdown: () => internalControlsRef.current?.getMarkdown() ?? latestValueRef.current,
     }),
-    [disabled, maxLength, onChange],
+    [],
   );
 
   useEffect(() => {
