@@ -1,3 +1,5 @@
+import { realpath } from 'node:fs/promises';
+
 import { assertGitSucceeded, DEFAULT_GIT_MAX_OUTPUT_BYTES, runGit } from '../run-git/index.js';
 import {
   GIT_NULL_DEVICE,
@@ -692,4 +694,149 @@ export const readGitVersion = async (
     throw invalidOutput('version');
   }
   return version;
+};
+
+/**
+ * Tells whether one commit is an ancestor of another, or the same commit, with
+ * `git merge-base --is-ancestor`, such as whether a branch can fast-forward to a commit.
+ * @param cwd The repository's directory.
+ * @param ancestor The revision that may be the ancestor.
+ * @param descendant The revision that may descend from it.
+ * @param options runGit's options, such as the timeout.
+ * @returns A promise that resolves to whether it is.
+ * @example
+ * import { isAncestor } from 'jg-git-commands';
+ *
+ * const canFastForward = await isAncestor('/srv/app', 'origin/main', 'HEAD');
+ * @throws
+ * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
+ * - GIT_COMMAND_FAILED: The git command failed.
+ * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
+ * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
+ * - PROCESS_START_FAILED: Unable to start the command
+ * - PROCESS_TIMED_OUT: The process didn't finish within the timeout
+ * - PROCESS_OUTPUT_TOO_LARGE: The process wrote more output than allowed
+ * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped
+ * - The signal's reason when the signal aborts.
+ */
+export const isAncestor = async (
+  cwd: string,
+  ancestor: string,
+  descendant: string,
+  options: IGitCommandOptions = {},
+): Promise<boolean> => {
+  if (!isRevisionValid(ancestor)) {
+    throw invalidArgument('ancestor');
+  }
+  if (!isRevisionValid(descendant)) {
+    throw invalidArgument('descendant');
+  }
+  const result = await runGit(
+    ['merge-base', '--is-ancestor', '--end-of-options', ancestor, descendant],
+    { ...options, cwd },
+  );
+  // merge-base exits with 1, and writes nothing, for a commit that isn't an ancestor
+  if (result.exitCode === 1 && result.stderr === '') {
+    return false;
+  }
+  readSuccessfulOutput(result, 'merge-base');
+  return true;
+};
+
+/**
+ * Reads the real path of the Git directory a repository shares with all its worktrees, the same
+ * from the main checkout and from any linked worktree, such as to tell whether two checkouts are
+ * one repository.
+ * @param cwd A checkout, one of its worktrees, or a directory inside one.
+ * @param options runGit's options, such as the timeout.
+ * @returns A promise that resolves to the directory's real path.
+ * @example
+ * import { readCommonDirectory } from 'jg-git-commands';
+ *
+ * await readCommonDirectory('/srv/app-feature'); // '/srv/app/.git', for a worktree of /srv/app
+ * @throws
+ * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
+ * - GIT_COMMAND_FAILED: The git command failed.
+ * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
+ * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
+ * - PROCESS_START_FAILED: Unable to start the command
+ * - PROCESS_TIMED_OUT: The process didn't finish within the timeout
+ * - PROCESS_OUTPUT_TOO_LARGE: The process wrote more output than allowed
+ * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped
+ * - The signal's reason when the signal aborts.
+ */
+export const readCommonDirectory = async (
+  cwd: string,
+  options: IGitCommandOptions = {},
+): Promise<string> => {
+  const output = decodeText(
+    readSuccessfulOutput(
+      await runGit(['rev-parse', '--path-format=absolute', '--git-common-dir'], {
+        ...options,
+        cwd,
+        encoding: 'buffer',
+      }),
+      'rev-parse',
+    ),
+    'rev-parse',
+  );
+  // the path, which may hold spaces, ends with one line feed
+  const directory = output.endsWith('\n') ? output.slice(0, -1) : '';
+  if (directory === '' || directory.includes('\n')) {
+    throw invalidOutput('rev-parse');
+  }
+  return realpath(directory);
+};
+
+/**
+ * Reads the default branch a remote had when the repository was cloned, or when
+ * `git remote set-head` last set it, from the remote's HEAD ref, without reaching the remote.
+ * @param cwd The repository's directory.
+ * @param remote The remote's name. Defaults to `origin`.
+ * @param options runGit's options, such as the timeout.
+ * @returns A promise that resolves to the branch, such as `main`, or null when the repository
+ * doesn't know the remote's default branch.
+ * @example
+ * import { readRemoteDefaultBranch } from 'jg-git-commands';
+ *
+ * const branch = (await readRemoteDefaultBranch('/srv/app')) ?? 'main';
+ * @throws
+ * - GIT_INVALID_ARGUMENT: An argument isn't valid.
+ * - GIT_REPOSITORY_NOT_FOUND: The directory isn't in a Git repository.
+ * - GIT_ACCESS_DENIED: Git can't access the repository.
+ * - GIT_COMMAND_FAILED: The git command failed.
+ * - GIT_OUTPUT_INVALID: Git's output isn't in the expected format.
+ * - GIT_NOT_FOUND: Git isn't installed, or isn't on the PATH.
+ * - PROCESS_START_FAILED: Unable to start the command
+ * - PROCESS_TIMED_OUT: The process didn't finish within the timeout
+ * - PROCESS_OUTPUT_TOO_LARGE: The process wrote more output than allowed
+ * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped
+ * - The signal's reason when the signal aborts.
+ */
+export const readRemoteDefaultBranch = async (
+  cwd: string,
+  remote = 'origin',
+  options: IGitCommandOptions = {},
+): Promise<string | null> => {
+  if (!isArgumentValid(remote) || remote.includes('/') || /\s/.test(remote)) {
+    throw invalidArgument('remote');
+  }
+  const result = await runGit(['symbolic-ref', '--quiet', `refs/remotes/${remote}/HEAD`], {
+    ...options,
+    cwd,
+  });
+  // --quiet exits with 1, and writes nothing, for a ref that isn't there or isn't symbolic
+  if (result.exitCode === 1 && result.stdout === '' && result.stderr === '') {
+    return null;
+  }
+  const ref = readSuccessfulOutput(result, 'symbolic-ref').trim();
+  const prefix = `refs/remotes/${remote}/`;
+  if (!ref.startsWith(prefix) || ref.length === prefix.length || /\s/.test(ref)) {
+    throw invalidOutput('symbolic-ref');
+  }
+  return ref.slice(prefix.length);
 };

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+
+- `isAncestor(cwd, ancestor, descendant, options?)`, whether one commit is an ancestor of another or the same one, with `git merge-base --is-ancestor`, such as whether a branch can fast-forward. A revision that names no commit fails with `GIT_COMMAND_FAILED`.
+- `readCommonDirectory(cwd, options?)`, the real path of the Git directory a repository shares with all its worktrees, the same from the main checkout, a linked worktree, or a directory inside either.
+- `readRemoteDefaultBranch(cwd, remote?, options?)`, the default branch a remote's HEAD ref names, such as `main`, read without reaching the remote, or null when the repository doesn't know it.
+- `parseRemoteRepository(url)` and `IRemoteRepository`, a hosted repository's `{ owner, name }` from its SCP-like SSH, `ssh://` or HTTPS remote URL, with or without `.git`, or null for a local path, nested groups, or a URL that carries credentials.
+
 ## 0.4.0
 
 ### Changed

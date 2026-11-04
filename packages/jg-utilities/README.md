@@ -26,6 +26,7 @@ Format values for people:
 ```ts
 import {
   escapeHtml,
+  formatRelativeTime,
   pluralize,
   prettifyDate,
   prettifyFileSize,
@@ -37,6 +38,7 @@ prettifyNumber(1234567.891); // '1,234,567.89'
 prettifyNumber(-5, { prefix: '$' }); // '-$5'
 prettifyFileSize(1536); // '1.50 kB'
 prettifyDate(createdAt, 'date-medium'); // 'October 17, 2026'
+formatRelativeTime(observedAt); // '5 minutes ago', 'in 2 hours', 'yesterday'
 toSlug('Héllo, World! 2026'); // 'hello-world-2026'
 `${count} ${pluralize(count, 'file')}`; // '1 file', '3 files'
 escapeHtml(name); // safe to put into HTML, such as an email's body
@@ -70,11 +72,26 @@ const embedUrl = videoId === null ? undefined : toYouTubeEmbedUrl(videoId);
 Generate secure random values, IDs, and timestamps:
 
 ```ts
-import { createTimestamp, generateRandomString, generateUuid } from 'jg-utilities';
+import {
+  createTimestamp,
+  generateNameBasedUuid,
+  generateRandomString,
+  generateUuid,
+} from 'jg-utilities';
 
 generateRandomString(16); // drawn with crypto.getRandomValues, fit for secrets
 generateUuid(7); // a time-ordered UUID
+generateNameBasedUuid(namespace, `${operationId}:step-2`); // the same version 5 UUID every time
 createTimestamp(); // '2026-10-17T08:30:00.000Z'
+```
+
+Name what an upload really is from its first bytes, never from its name or the type the client sent:
+
+```ts
+import { detectMediaType } from 'jg-utilities';
+
+const type = detectMediaType(bytes, ['image/png', 'image/jpeg', 'application/pdf']);
+// 'image/png', 'image/jpeg', 'application/pdf', or null for anything else
 ```
 
 Work with UTC calendar dates, such as the days a report covers, and fit text into a byte budget, such as a push notification's payload limit:

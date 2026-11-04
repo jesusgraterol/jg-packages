@@ -1,4 +1,4 @@
-import { v4 as uuidv4, v7 as uuidv7 } from 'uuid';
+import { validate as isUuid, v4 as uuidv4, v5 as uuidv5, v7 as uuidv7 } from 'uuid';
 
 import { Exception } from 'jg-exception';
 
@@ -25,6 +25,31 @@ export const generateUuid = (version: IUuidVersion): string => {
     return uuidv7();
   }
   return uuidv4();
+};
+
+/**
+ * Generates the version 5 UUID of a name within a namespace, as RFC 9562 defines it: the same
+ * namespace and name always give the same UUID, and any other name gives another, such as for a
+ * stable ID derived from an operation's own ID.
+ * @param namespace The namespace, a UUID, such as one an app picks for its own IDs.
+ * @param name The name, as text whose UTF-8 bytes are hashed.
+ * @returns The UUID, version 5.
+ * @example
+ * import { generateNameBasedUuid } from 'jg-utilities';
+ *
+ * // the DNS namespace from RFC 9562
+ * generateNameBasedUuid('6ba7b810-9dad-11d1-80b4-00c04fd430c8', 'www.example.com'); // => '2ed6657d-e927-568b-95e1-2665a8aea6a2'
+ * @throws
+ * - INVALID_UUID_NAMESPACE: The namespace is not a valid UUID.
+ */
+export const generateNameBasedUuid = (namespace: string, name: string): string => {
+  if (!isUuid(namespace)) {
+    throw new Exception('The namespace is not a valid UUID.', {
+      code: ERRORS.INVALID_UUID_NAMESPACE,
+      data: { namespace },
+    });
+  }
+  return uuidv5(name, namespace);
 };
 
 /**

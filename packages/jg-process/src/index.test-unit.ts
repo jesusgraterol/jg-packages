@@ -15,6 +15,7 @@ describe('public API', () => {
       'isProcessRunning',
       'parseStrictArgs',
       'readStdin',
+      'readStream',
       'reservePort',
       'resolvePackageManagerCommand',
       'runProcess',
