@@ -148,8 +148,8 @@ describe('useSearchParamDialog', () => {
     });
     expect(latest('dialog').openId).toBe('');
     await settle();
-    // each component that reads the dialog repairs the URL it rendered with, to the same search
-    expect(new Set(navigations)).toStrictEqual(new Set(['REPLACE ?tab=events']));
+    // both components read the dialog, and the URL is replaced once
+    expect(navigations).toStrictEqual(['REPLACE ?tab=events']);
     expect(router.state.location.search).toBe('?tab=events');
     cleanup();
 
