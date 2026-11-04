@@ -155,6 +155,7 @@ Packages support Node.js 22.17.0 and later, and typecheck with the newest Node.j
   4. `## Documentation`: that the API reference ships as `API.md` and the recipes as `RECIPES.md`, with links to the package's pages on the site
   5. `## License`
 - README links are absolute URLs, because the README is also the package's npm page. There's no hand-written API reference: every build renders `API.md` from the TSDoc, which ships in the tarball, so an agent reads the reference of the installed version in `node_modules/<package>/API.md`, and the site shows the same reference.
+- The unlisted packages link their own shipped docs at their own version, such as `https://unpkg.com/<name>@<version>/API.md`, and another package's docs without a version, such as `https://unpkg.com/jg-react/API.md`, so a sibling's release never leaves them stale. `release:verify` fails on a link that pins a workspace package at a version other than the one the workspace has.
 
 ## Recipes
 

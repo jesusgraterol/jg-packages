@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1
+
+### Fixed
+
+- The README links `API.md`, `RECIPES.md` and `errors/README.md` at this version, where they pointed at 0.3.4.
+- `errors/README.md` links jg-react's current API reference, where it pointed at 0.6.1, and `INVALID_YOUTUBE_VIDEO_ID`'s contract in jg-utilities' API reference, where it pointed at an `errors/README.md` jg-utilities doesn't ship.
+
 ## 0.5.0
 
 ### Added

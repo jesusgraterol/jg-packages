@@ -32,7 +32,7 @@ The preference provider supports explicit `local`, `read-only`, and `remote` mod
 
 Optional `storageId` defaults to `jg-ui-preferences`. It must be non-empty and contain only ASCII letters, digits, underscores, and hyphens. `getUiPreferencesStorageKey` returns its raw `jg-storage:` key. IDs are captured for the provider lifetime; use a keyed remount to change namespaces. Invalid IDs fail before storage access or initialization-script creation.
 
-Render `ThemeInitializationScript` in the document head before application JavaScript, using the same `storageId` as the provider and your CSP `nonce` when required. Server snapshots use initial props or defaults, then storage synchronizes after hydration. See the recipes for composition and the shared [owned error contracts](https://unpkg.com/jg-react-ui@0.3.3/errors/README.md).
+Render `ThemeInitializationScript` in the document head before application JavaScript, using the same `storageId` as the provider and your CSP `nonce` when required. Server snapshots use initial props or defaults, then storage synchronizes after hydration. See the recipes for composition and the shared [owned error contracts](https://unpkg.com/jg-react-ui/errors/README.md).
 
 ## Controls, forms, and plain text
 
@@ -76,7 +76,7 @@ These components are direct exports of `jg-react-ui`. `FileUpload`, `FileUploadD
 
 The upload dialog finalizes successful results through `onSubmit`, retries finalization without reuploading, and reports abandoned successful items through `onDiscard`. The caller owns remote cleanup and callback failures. Audio input owns microphone tracks, recorder handlers, waveform contexts, intervals, and deferred commands. Obsolete permission/transcription results cannot update a replacement session or call completion after unmount. Recording reset is immediate; closing retains the source's short visual reset delay.
 
-`transcribe` receives the captured recording and returns text. Users can send directly or edit the transcription first; a failed send retries the authored text without transcribing again. Provider operations remain caller-owned and should have their own deadline/cancellation policy. Recording/transcription error callbacks receive diagnostic exceptions, while visible feedback uses the nearest scoped resolver. The seven owned audio codes and stable messages are listed in `errors/README.md`; coded provider exceptions preserve their diagnostic identity. Canceled permission/transcription work stays silent and can be restarted; diagnostic callbacks still run. Optional result callbacks remain optional. Standalone review remains the default. Supply `onTranscriptionApply` for main-input Transcribe and `onTranscriptionResult` for the consumer's ordinary Send action. `isResultActionVisible={false}` keeps a single direct-apply action. The active button alone shows pending progress, and pending work blocks restart and dismissal.
+`transcribe` receives the captured recording and returns text. Users can send directly or edit the transcription first; a failed send retries the authored text without transcribing again. Provider operations remain caller-owned and should have their own deadline/cancellation policy. Recording/transcription error callbacks receive diagnostic exceptions, while visible feedback uses the nearest scoped resolver. The seven owned audio codes and stable messages are listed in [jg-react-ui's error contracts](https://unpkg.com/jg-react-ui/errors/README.md); coded provider exceptions preserve their diagnostic identity. Canceled permission/transcription work stays silent and can be restarted; diagnostic callbacks still run. Optional result callbacks remain optional. Standalone review remains the default. Supply `onTranscriptionApply` for main-input Transcribe and `onTranscriptionResult` for the consumer's ordinary Send action. `isResultActionVisible={false}` keeps a single direct-apply action. The active button alone shows pending progress, and pending work blocks restart and dismissal.
 
 ## Markdown and code
 
@@ -107,7 +107,7 @@ Invalid configuration retains these native Error messages:
 
 ## Documentation
 
-The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.3.3/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.3.3/RECIPES.md). These personal-use packages are unlisted on the public package website.
+The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.5.1/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.5.1/RECIPES.md). These personal-use packages are unlisted on the public package website.
 
 ## License
 

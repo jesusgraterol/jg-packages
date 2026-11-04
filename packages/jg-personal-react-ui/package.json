@@ -1,6 +1,6 @@
 {
   "name": "jg-personal-react-ui",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "JG-branded React components and styles, sharing Moldea-derived APIs with the unbranded jg-react-ui implementation.",
   "author": "Jesus Graterol",
   "license": "MIT",

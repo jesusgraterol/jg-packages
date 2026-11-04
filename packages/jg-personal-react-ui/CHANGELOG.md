@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1
+
+### Fixed
+
+- The README links `API.md` and `RECIPES.md` at this version, where they pointed at 0.3.3, and jg-react-ui's current error contracts, which it also names for the audio codes it had placed in an `errors/README.md` this package doesn't ship.
+- Requires `jg-react-ui` 0.5.1, whose README and error contracts link the current docs.
+
 ## 0.5.0
 
 ### Added
