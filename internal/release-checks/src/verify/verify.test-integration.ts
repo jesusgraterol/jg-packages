@@ -213,6 +213,25 @@ describe('packAndCheck', () => {
     },
   );
 
+  test(
+    'fails a shipped link that pins the package at a version other than its own',
+    { tags: ['full'], timeout: 120_000 },
+    async () => {
+      await editFile(
+        'README.md',
+        'https://jg-packages.jesusgraterol.dev\n',
+        [
+          'The [API.md](https://unpkg.com/jg-release-checks-sample@0.9.0/API.md) and',
+          '[RECIPES.md](https://unpkg.com/jg-release-checks-sample@1.0.0/RECIPES.md).\n',
+        ].join('\n'),
+      );
+
+      expect(await checkProblems()).toStrictEqual([
+        'README.md links jg-release-checks-sample@0.9.0, but the workspace has 1.0.0: https://unpkg.com/jg-release-checks-sample@0.9.0/API.md',
+      ]);
+    },
+  );
+
   test('fails a test file in the build output and a missing exports target', async () => {
     await writeFile(join(packageDirectory, 'dist', 'index.test-unit.js'), 'export {};\n');
     await rm(join(packageDirectory, 'dist', 'index.d.ts'));

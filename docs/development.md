@@ -28,13 +28,14 @@ How to set up the repository, run its checks, and change its dependencies.
 
    On Linux, run `sudo pnpm --filter jg-sw exec playwright install-deps chromium firefox webkit` the first time, to install the system libraries they need. WebKit needs some that a desktop rarely has, such as `libevent-2.1-7t64`, `libavif16`, and `libmanette-0.2-0`.
 
-3. Run every check once:
+3. Run every check once, then the release checks:
 
    ```bash
    pnpm check
+   pnpm release:verify
    ```
 
-   It should end with a `PASS <name>@<version>` line for every package.
+   `release:verify` should end with a `PASS <name>@<version>` line for every package.
 
 ## Commands
 
