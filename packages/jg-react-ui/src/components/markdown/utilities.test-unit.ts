@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest';
 
 import { getMarkdownImageDisplayWidth } from './index.js';
 import {
+  createHeadingLevelShiftRehypePlugin,
   extractMarkdownText,
   highlightMarkdownVariablesRehypePlugin,
   isMarkdownWebNavigationHref,
@@ -108,5 +109,50 @@ test('large variable documents do not depend on the engine function-argument lim
     type: 'element',
     tagName: 'mark',
     children: [{ type: 'text', value: '{{A}}' }],
+  });
+});
+
+describe('createHeadingLevelShiftRehypePlugin', () => {
+  type INode = { type: string; tagName?: string; children?: INode[] };
+
+  test('lowers each heading by the offset, to h6 at most, and leaves every other node', () => {
+    const tree: INode = {
+      type: 'root',
+      children: [
+        { type: 'element', tagName: 'h1', children: [{ type: 'text' }] },
+        { type: 'element', tagName: 'h5' },
+        { type: 'element', tagName: 'h6' },
+        { type: 'element', tagName: 'p', children: [{ type: 'element', tagName: 'h2' }] },
+        { type: 'element', tagName: 'header' },
+        { type: 'element' },
+      ],
+    };
+
+    createHeadingLevelShiftRehypePlugin(2)()(tree);
+
+    expect(tree.children?.map((node) => node.tagName)).toStrictEqual([
+      'h3',
+      'h6',
+      'h6',
+      'p',
+      'header',
+      undefined,
+    ]);
+    expect(tree.children?.[3]?.children?.[0]?.tagName).toBe('h4');
+  });
+
+  test('walks a deeply nested tree without overflowing the call stack', () => {
+    const tree: INode = { type: 'root', children: [] };
+    let parent = tree;
+    for (let depth = 0; depth < 100_000; depth += 1) {
+      const child: INode = { type: 'element', tagName: 'blockquote', children: [] };
+      parent.children?.push(child);
+      parent = child;
+    }
+    parent.children?.push({ type: 'element', tagName: 'h1' });
+
+    createHeadingLevelShiftRehypePlugin(1)()(tree);
+
+    expect(parent.children?.[0]?.tagName).toBe('h2');
   });
 });

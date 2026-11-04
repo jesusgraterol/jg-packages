@@ -24,13 +24,16 @@ import { runGit } from '../run-git/index.js';
 import {
   fetchCommit,
   getRemoteUrl,
+  isAncestor,
   isWorkingTreeClean,
   listUntrackedFiles,
   readChangedPaths,
+  readCommonDirectory,
   readConfigBoolean,
   readFileAtRevision,
   readGitVersion,
   readIndexEntries,
+  readRemoteDefaultBranch,
   readRemoteRefs,
   readStatus,
   readTopLevel,
@@ -791,5 +794,129 @@ describe('git commands', () => {
       ).resolves.toBe('second\n');
       expect(await listMissing()).not.toContain(`?${readmeObjectId}`);
     });
+  });
+});
+
+describe('repository layout commands', () => {
+  let directory: string;
+  let checkout: string;
+  let first: string;
+  let second: string;
+
+  beforeEach(async () => {
+    directory = await createTemporaryDirectory('layout');
+    checkout = join(directory, 'app');
+    await mkdir(checkout);
+    await initRepository(checkout);
+    await writeFile(join(checkout, 'README.md'), 'first\n');
+    await commitAll(checkout);
+    first = (await git(checkout, ['rev-parse', 'HEAD'])).trim();
+    await writeFile(join(checkout, 'README.md'), 'second\n');
+    await commitAll(checkout);
+    second = (await git(checkout, ['rev-parse', 'HEAD'])).trim();
+  });
+
+  afterEach(async () => {
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  describe('isAncestor', () => {
+    test('tells an ancestor, the same commit, and a commit that is not one apart', async () => {
+      await expect(isAncestor(checkout, first, second, ISOLATED)).resolves.toBe(true);
+      await expect(isAncestor(checkout, second, second, ISOLATED)).resolves.toBe(true);
+      await expect(isAncestor(checkout, second, first, ISOLATED)).resolves.toBe(false);
+      await expect(isAncestor(checkout, 'main~1', 'main', ISOLATED)).resolves.toBe(true);
+    });
+
+    test('fails with GIT_COMMAND_FAILED for a revision that names no commit', async () => {
+      await expectToRejectCode(
+        isAncestor(checkout, 'missing', 'main', ISOLATED),
+        ERRORS.GIT_COMMAND_FAILED,
+      );
+    });
+
+    test('rejects an empty revision', async () => {
+      await expectToRejectCode(
+        isAncestor(checkout, '', 'main', ISOLATED),
+        ERRORS.GIT_INVALID_ARGUMENT,
+      );
+      await expectToRejectCode(
+        isAncestor(checkout, 'main', '', ISOLATED),
+        ERRORS.GIT_INVALID_ARGUMENT,
+      );
+    });
+  });
+
+  describe('readCommonDirectory', () => {
+    test('reads the same Git directory from the checkout, a subdirectory and a linked worktree', async () => {
+      const worktree = join(directory, 'app worktree');
+      await git(checkout, ['worktree', 'add', '--quiet', '-b', 'feature', worktree]);
+      await mkdir(join(checkout, 'src'));
+      // the native realpath, as fs/promises uses, gives Windows' long names, never 8.3 short ones
+      const expected = realpathSync.native(join(checkout, '.git'));
+
+      await expect(readCommonDirectory(checkout, ISOLATED)).resolves.toBe(expected);
+      await expect(readCommonDirectory(join(checkout, 'src'), ISOLATED)).resolves.toBe(expected);
+      await expect(readCommonDirectory(worktree, ISOLATED)).resolves.toBe(expected);
+    });
+
+    test('resolves a checkout reached through a link to its real path', async () => {
+      const link = join(directory, 'link');
+      await symlink(checkout, link);
+
+      await expect(readCommonDirectory(link, ISOLATED)).resolves.toBe(
+        realpathSync.native(join(checkout, '.git')),
+      );
+    });
+
+    test('fails with GIT_REPOSITORY_NOT_FOUND outside a repository', async () => {
+      const outside = join(directory, 'outside');
+      await mkdir(outside);
+
+      await expectToRejectCode(
+        readCommonDirectory(outside, { ...ISOLATED, env: { GIT_CEILING_DIRECTORIES: directory } }),
+        ERRORS.GIT_REPOSITORY_NOT_FOUND,
+      );
+    });
+  });
+
+  describe('readRemoteDefaultBranch', () => {
+    test("reads the branch a remote's HEAD names, and null once it names none", async () => {
+      await git(checkout, ['remote', 'add', 'origin', 'https://example.com/acme/app.git']);
+      await git(checkout, ['update-ref', 'refs/remotes/origin/development', second]);
+      await expect(readRemoteDefaultBranch(checkout, 'origin', ISOLATED)).resolves.toBeNull();
+
+      await git(checkout, ['remote', 'set-head', 'origin', 'development']);
+      await expect(readRemoteDefaultBranch(checkout, undefined, ISOLATED)).resolves.toBe(
+        'development',
+      );
+
+      await git(checkout, ['remote', 'set-head', 'origin', '--delete']);
+      await expect(readRemoteDefaultBranch(checkout, 'origin', ISOLATED)).resolves.toBeNull();
+    });
+
+    test('reads a branch name with slashes, and null for a remote the repository lacks', async () => {
+      await git(checkout, ['update-ref', 'refs/remotes/upstream/release/2026', second]);
+      await git(checkout, [
+        'symbolic-ref',
+        'refs/remotes/upstream/HEAD',
+        'refs/remotes/upstream/release/2026',
+      ]);
+
+      await expect(readRemoteDefaultBranch(checkout, 'upstream', ISOLATED)).resolves.toBe(
+        'release/2026',
+      );
+      await expect(readRemoteDefaultBranch(checkout, 'missing', ISOLATED)).resolves.toBeNull();
+    });
+
+    test.each([[''], ['origin/main'], ['two words']])(
+      'readRemoteDefaultBranch(%o) -> rejects with GIT_INVALID_ARGUMENT',
+      async (remote) => {
+        await expectToRejectCode(
+          readRemoteDefaultBranch(checkout, remote, ISOLATED),
+          ERRORS.GIT_INVALID_ARGUMENT,
+        );
+      },
+    );
   });
 });

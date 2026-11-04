@@ -4,6 +4,7 @@ import { expectToThrowCode } from 'jg-exception/testing';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { useBreakpoint } from './breakpoint/index.js';
+import { useCurrentTime } from './current-time/index.js';
 import {
   getBreakpointFromWidth,
   getBreakpointSnapshot,
@@ -12,11 +13,15 @@ import {
 } from './breakpoint/utilities.js';
 import { useDocumentVisibility } from './document-visibility/index.js';
 import { useFormChanges } from './form-changes/index.js';
+import { useNearViewport } from './near-viewport/index.js';
+import { useNewBuildAvailable } from './new-build/index.js';
 import { getVisibilitySnapshot, subscribeToVisibility } from './document-visibility/utilities.js';
 import { useOnlineStatus } from './online-status/index.js';
 import { useResendCooldown } from './resend-cooldown/index.js';
 import { ERRORS } from './shared/index.js';
+import { useIsTextClamped } from './text-clamp/index.js';
 import { useAppliedTheme, useResolvedTheme } from './theme/index.js';
+import { useThemeColorMeta } from './theme-color/index.js';
 import { getOnlineSnapshot, subscribeToOnlineStatus } from './online-status/utilities.js';
 import { useIsWindowScrolledPast } from './window-scroll/index.js';
 import { getScrollY, subscribeToScroll } from './window-scroll/utilities.js';
@@ -113,6 +118,45 @@ describe('in a server render', () => {
       expectToThrowCode(
         () => renderToString(createElement(Probe)),
         ERRORS.INVALID_COOLDOWN_DURATION,
+      );
+    },
+  );
+
+  test('the layout, time and build hooks render their server values, with no window to read', () => {
+    vi.useFakeTimers({ now: 1_000 });
+    try {
+      const Probe = () => {
+        useThemeColorMeta({ light: '#ffffff', dark: '#000000' });
+        return createElement(
+          'p',
+          null,
+          JSON.stringify([
+            useNearViewport().isNear,
+            useIsTextClamped({ lines: 3, content: 'text' }).isClamped,
+            useNewBuildAvailable().isNewBuildAvailable,
+            useCurrentTime(),
+          ]),
+        );
+      };
+
+      expect(renderToString(createElement(Probe))).toBe('<p>[false,false,false,1000]</p>');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test.each([[0], [-1], [1.5], [Number.NaN]])(
+    'useIsTextClamped throws INVALID_CLAMPED_LINES for %d lines',
+    (lines) => {
+      const Probe = () => {
+        useIsTextClamped({ lines });
+        return null;
+      };
+
+      expectToThrowCode(
+        () => renderToString(createElement(Probe)),
+        ERRORS.INVALID_CLAMPED_LINES,
+        'The clamped lines must be a positive safe integer.',
       );
     },
   );

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.0
+
+### Added
+
+- `readStream(stream, { maxBytes, signal? })`, which reads a stream, such as a request body or a socket's message, to its end into one buffer. It throws the new `STREAM_TOO_LARGE` the moment the content passes `maxBytes`, rejects with the signal's reason when it aborts, and leaves a refused or stopped stream open and paused, so its owner can still answer it, such as with a 413, before closing it. `readStdin` is unchanged.
+
 ## 1.6.2
 
 ### Fixed

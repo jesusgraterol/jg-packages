@@ -492,6 +492,9 @@ test('the installed React gallery uses the packed closure, exact tools, identity
       };
     }),
   );
+  // each tarball is named for the version its manifest holds now, so a release never stales it
+  const tarballOf = (name: string): string =>
+    `/release/${name}-${String(packages.find((entry) => entry.workspacePackage.name === name)?.workspacePackage.version)}.tgz`;
   const commands: string[][] = [];
   let consumer = '';
   const runner: IRunAstroFixtureCommand = async (_executable, args, options) => {
@@ -527,9 +530,9 @@ test('the installed React gallery uses the packed closure, exact tools, identity
       '@tanstack/react-query@5.100.14',
       '@tanstack/react-query-persist-client@5.100.14',
       'tailwindcss@4.3.3',
-      '/release/jg-personal-ui-0.2.0.tgz',
-      '/release/jg-react-ui-0.4.0.tgz',
-      '/release/jg-react-router-0.4.0.tgz',
+      tarballOf('jg-personal-ui'),
+      tarballOf('jg-react-ui'),
+      tarballOf('jg-react-router'),
     ]),
   );
   expect(commands[1]?.at(-1)).toBe('build');

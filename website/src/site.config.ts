@@ -26,7 +26,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
   'jg-utilities': {
     title: 'Utilities',
     description:
-      'Validations, formatters, secure random generators, pagination cursors, and collection, async, and environment helpers.',
+      'Validations, formatters and relative times, media type detection, secure and name-based IDs, cursors, and collection, async, and environment helpers.',
     icon: 'wrench',
     runtimes: ['universal'],
     order: 3,
@@ -74,7 +74,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
   'jg-process': {
     title: 'Child processes',
     description:
-      'Run and stop child processes without a shell: timeouts, output limits, abort signals, and whole process trees.',
+      'Run and stop child processes without a shell, with timeouts, output limits, abort signals, and whole process trees, and read streams within a limit.',
     icon: 'cpu',
     runtimes: ['node'],
     order: 9,
@@ -114,7 +114,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
   'jg-react': {
     title: 'React hooks',
     description:
-      'React hooks for online status, page visibility, Tailwind CSS breakpoints, and scroll thresholds, each safe in a server render.',
+      'React hooks for online status, page visibility, breakpoints, viewport proximity, clamped text, new builds, and theme colors, each safe in a server render.',
     icon: 'atom',
     runtimes: ['browser'],
     order: 14,
@@ -122,7 +122,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
   'jg-tanstack-query': {
     title: 'Server data',
     description:
-      'TanStack Query with safe defaults, opt-in IndexedDB persistence, and a sign-out clear that waits for the cache to finish restoring.',
+      'TanStack Query with safe defaults, opt-in IndexedDB persistence, polled first pages, and a sign-out clear that waits for the cache to finish restoring.',
     icon: 'refresh-cw',
     runtimes: ['browser'],
     order: 15,
@@ -130,7 +130,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
   'jg-react-router': {
     title: 'React Router',
     description:
-      'React Router helpers: a page outlet that focuses each new page and restores scroll on Back and Forward, and dialogs that close when the route changes.',
+      'React Router helpers: a page outlet that restores focus and scroll, dialogs kept in the URL or closed on navigation, and pages whose code fails to load.',
     icon: 'route',
     runtimes: ['browser'],
     order: 16,
@@ -154,7 +154,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
   'jg-git-commands': {
     title: 'Git',
     description:
-      'Git commands for Node.js that never prompt or inherit Git environment variables, with time and output limits and typed reads.',
+      'Git commands for Node.js that never prompt or inherit Git environment variables, with time and output limits, typed reads, and remote URL parsing.',
     icon: 'git-branch',
     runtimes: ['node'],
     order: 19,

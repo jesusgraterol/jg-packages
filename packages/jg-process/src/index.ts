@@ -55,6 +55,9 @@ export {
   createShutdownSignal,
 } from './shutdown-signal/index.js';
 
+// stream reads
+export { type IReadStreamOptions, readStream } from './read-stream/index.js';
+
 // command-line scripts
 export {
   type IReadStdinOptions,

@@ -7,6 +7,7 @@ import { ERRORS } from '../shared/errors.js';
 
 import {
   generateDateId,
+  generateNameBasedUuid,
   generateRandomFloat,
   generateRandomInteger,
   generateRandomString,
@@ -263,4 +264,41 @@ describe('generateUtcDateSequence', () => {
       );
     },
   );
+});
+
+describe('generateNameBasedUuid', () => {
+  // the DNS and URL namespaces RFC 9562 defines
+  const DNS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+  const URL_NAMESPACE = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
+
+  test("matches RFC 9562's version 5 example", () => {
+    expect(generateNameBasedUuid(DNS, 'www.example.com')).toBe(
+      '2ed6657d-e927-568b-95e1-2665a8aea6a2',
+    );
+  });
+
+  test('gives one UUID for a namespace and name, and another for any other', () => {
+    const id = generateNameBasedUuid(DNS, 'step-1');
+    expect(generateNameBasedUuid(DNS, 'step-1')).toBe(id);
+    expect(generateNameBasedUuid(DNS, 'step-2')).not.toBe(id);
+    expect(generateNameBasedUuid(URL_NAMESPACE, 'step-1')).not.toBe(id);
+    // version 5, with the RFC 9562 variant
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  });
+
+  test('hashes the name as UTF-8', () => {
+    expect(generateNameBasedUuid(DNS, 'café')).not.toBe(generateNameBasedUuid(DNS, 'cafe'));
+  });
+
+  test.each([
+    [''],
+    ['not-a-uuid'],
+    ['6ba7b810-9dad-11d1-80b4-00c04fd430c'],
+    ['6BA7B810-9DAD-11D1-80B4-00C04FD430C8x'],
+  ])('generateNameBasedUuid(%o) -> throws INVALID_UUID_NAMESPACE', (namespace) => {
+    expectToThrowCode(
+      () => generateNameBasedUuid(namespace, 'name'),
+      ERRORS.INVALID_UUID_NAMESPACE,
+    );
+  });
 });

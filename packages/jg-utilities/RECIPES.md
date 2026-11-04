@@ -1,6 +1,6 @@
 # jg-utilities recipes
 
-Patterns for apps that page through lists, cache results by request, check what clients send, and share a rate-limited API, with jg-utilities' cursor codecs, JSON helpers, validations, and request coordinator.
+Patterns for apps that page through lists, cache results by request, check what clients send and upload, and share a rate-limited API.
 
 ## Paginating with cursors
 
@@ -348,3 +348,33 @@ export const handleWebhook = async (installationId: number, url: string, signal:
 ```
 
 A request that waits for a slot holds nothing: the cooldown blocks no slot, and an aborted signal takes its request out of the queue. `maxQueuedForCaller` keeps one busy installation from filling the queue for the rest. Discard the coordinator only when `isIdle()` is true, or call `close()`, which rejects what's still waiting.
+
+## Accepting an upload by what it holds
+
+A file's name and the type a browser sends are whatever the client says. Read the first bytes instead, and keep the type you detected with the file, so whatever serves it later sends that type:
+
+```ts
+import { readFile } from 'node:fs/promises';
+
+import { Exception } from 'jg-exception';
+import { detectMediaType } from 'jg-utilities';
+
+// what the app takes as an attachment
+const ACCEPTED = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'] as const;
+
+// the attachment once its type is known
+type IAttachment = { path: string; mediaType: (typeof ACCEPTED)[number] };
+
+// accepts a stored upload only when its bytes are one of the accepted types
+const acceptAttachment = async (path: string): Promise<IAttachment> => {
+  const mediaType = detectMediaType(await readFile(path), ACCEPTED);
+  if (mediaType === null) {
+    throw new Exception('The file is not a supported image or PDF.', {
+      code: 'UNSUPPORTED_ATTACHMENT',
+    });
+  }
+  return { path, mediaType };
+};
+```
+
+The detected type is one of the types you passed, so `mediaType` needs no cast. A WebM or MP4 file reads as its audio type, since its first bytes name only the container: check the codec yourself when video matters.

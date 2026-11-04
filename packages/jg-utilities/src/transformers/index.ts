@@ -5,6 +5,7 @@ export type {
   IDeterministicJsonOptions,
   INumberFormatConfig,
   IRedactSecretsOptions,
+  IRelativeTimeOptions,
   IRedactSecretsResult,
   ISubstitutionOptions,
   ITimeString,
@@ -14,7 +15,15 @@ export type {
 export { decodeBase64Url, encodeBase64Url } from './base64url.js';
 
 // date transformers
-export { createTimestamp, prettifyDate, prettifyTime, toDate, toMS, toUtcDate } from './date.js';
+export {
+  createTimestamp,
+  formatRelativeTime,
+  prettifyDate,
+  prettifyTime,
+  toDate,
+  toMS,
+  toUtcDate,
+} from './date.js';
 
 // cursor transformers
 export { type ICursorValue, decodeCursor, encodeCursor } from './cursor.js';

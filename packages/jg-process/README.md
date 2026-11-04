@@ -80,6 +80,26 @@ if (isMainModule(import.meta.url)) {
 }
 ```
 
+Read a request body or a socket's message within a limit, and still answer one that's too large:
+
+```ts
+import { createServer } from 'node:http';
+
+import { hasErrorCode } from 'jg-exception';
+import { ERRORS, readStream } from 'jg-process';
+
+createServer((request, response) => {
+  void readStream(request, { maxBytes: 65_536 }).then(
+    (body) => response.end(body),
+    (error: unknown) => {
+      response.statusCode = hasErrorCode(error, ERRORS.STREAM_TOO_LARGE) ? 413 : 400;
+      response.setHeader('connection', 'close');
+      response.end();
+    },
+  );
+});
+```
+
 `parseStrictArgs` refuses unknown options, positional arguments, an option given twice that isn't `multiple`, an empty value, and a missing `required` option, with `INVALID_ARGUMENTS` and `data.option` naming it. `isMainModule` compares real paths, so a script started through a symbolic link, such as an npm bin entry, counts. `isProcessRunning(pid)` tells whether a process, such as a lock's owner, is still running.
 
 ## Documentation

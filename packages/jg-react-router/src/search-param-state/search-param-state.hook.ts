@@ -7,13 +7,22 @@ import { buildSearch, readSearchParamInput, shouldRepairSearch } from './utiliti
 // the state changes made in one tick, navigated to once at its end
 type IPendingChange<T> = { value: T; replace: boolean };
 
+/*
+ * The search each location was last repaired to, keyed by the location object that every
+ * component reading it shares, so components that own keys in the same URL build on each other's
+ * repair instead of each replacing the URL from the same location.
+ */
+const REPAIRED_SEARCHES = new WeakMap<object, string>();
+
 /**
  * Keeps typed state, such as a list's filters and page, in the URL's search parameters. It reads
  * the owned keys through the schema, with the defaults filling missing keys, and falls back to
  * `defaultValue` when the schema rejects them. The URL holds the state's canonical form, without
  * keys at their defaults; a URL that isn't canonical, such as an old bookmark, is replaced once,
- * keeping the router state and the hash, so the way back to the previous page isn't lost. The
- * value keeps its identity while the URL's owned keys don't change.
+ * keeping the router state and the hash, so the way back to the previous page isn't lost.
+ * Components that own keys in the same URL build on each other's repair, so one that owns the
+ * same keys as another replaces nothing more. The value keeps its identity while the URL's owned
+ * keys don't change.
  *
  * The setter keeps its identity, takes a value or an updater, and pushes a history entry unless
  * given `replace`. Changes made in the same tick compose, each updater seeing the one before it,
@@ -89,10 +98,30 @@ export const useSearchParamState = <T extends object>(
     if (!shouldRepairSearch(currentSearch, canonicalSearch, lastRepair.current)) {
       return;
     }
-    lastRepair.current = { from: currentSearch, to: canonicalSearch };
-    const { location: current, navigate: go } = latest.current;
+    const {
+      location: current,
+      navigate: go,
+      value: currentValue,
+      options: currentOptions,
+    } = latest.current;
+    const repaired = REPAIRED_SEARCHES.get(current);
+    const search =
+      repaired === undefined
+        ? canonicalSearch
+        : buildSearch(
+            currentValue,
+            new URLSearchParams(repaired),
+            currentOptions.params,
+            currentOptions.defaultValue,
+            currentOptions.unknownParams !== 'remove',
+          );
+    lastRepair.current = { from: currentSearch, to: search };
+    if (search === repaired) {
+      return;
+    }
+    REPAIRED_SEARCHES.set(current, search);
     void go(
-      { pathname: current.pathname, search: canonicalSearch, hash: current.hash },
+      { pathname: current.pathname, search, hash: current.hash },
       { replace: true, state: current.state as unknown },
     );
   }, [currentSearch, canonicalSearch]);

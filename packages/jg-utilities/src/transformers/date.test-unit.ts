@@ -6,7 +6,15 @@ import { expectToThrowCode } from 'jg-exception/testing';
 
 import type { IDateTemplate, ITimeString } from './types.js';
 import { DATE_LOCALE, DATE_TEMPLATES_WITH_TIME } from './constants.js';
-import { createTimestamp, prettifyDate, prettifyTime, toDate, toMS, toUtcDate } from './date.js';
+import {
+  createTimestamp,
+  formatRelativeTime,
+  prettifyDate,
+  prettifyTime,
+  toDate,
+  toMS,
+  toUtcDate,
+} from './date.js';
 
 describe('toDate', () => {
   test.each(<Array<[number | string | Date]>>[
@@ -286,5 +294,46 @@ describe('toUtcDate', () => {
     [Date.parse('9999-12-31T23:59:59.999Z') + 1],
   ])('toUtcDate(%o) -> throws INVALID_DATE', (value) => {
     expectToThrowCode(() => toUtcDate(value), ERRORS.INVALID_DATE);
+  });
+});
+
+describe('formatRelativeTime', () => {
+  // the moment the relative times count from
+  const now = Date.UTC(2026, 9, 27, 12, 0, 0);
+
+  test.each([
+    [now, 'now'],
+    [now - 59_999, 'now'],
+    [now + 59_999, 'now'],
+    [now - 60_000, '1 minute ago'],
+    [now - 100 * 60_000, '2 hours ago'],
+    [now - 86_400_000, 'yesterday'],
+    [now - 3 * 86_400_000, '3 days ago'],
+    [now + 5 * 60_000, 'in 5 minutes'],
+    [now + 86_400_000, 'tomorrow'],
+  ])('formatRelativeTime(%d) -> %s', (value, expected) => {
+    expect(formatRelativeTime(value, { now })).toBe(expected);
+  });
+
+  test('takes dates and date strings, and the locale it is written in', () => {
+    expect(formatRelativeTime(new Date(now - 2 * 3_600_000), { now: new Date(now) })).toBe(
+      '2 hours ago',
+    );
+    expect(formatRelativeTime('2026-10-27T11:55:00.000Z', { now })).toBe('5 minutes ago');
+    expect(formatRelativeTime(now - 3 * 86_400_000, { now, locale: 'es' })).toBe('hace 3 días');
+  });
+
+  test('counts from the current time by default', () => {
+    vi.useFakeTimers({ now });
+
+    expect(formatRelativeTime(now - 10 * 60_000)).toBe('10 minutes ago');
+  });
+
+  test.each([
+    ['not a date', now],
+    [now, Number.NaN],
+    [new Date(Number.NaN), now],
+  ])('formatRelativeTime(%o, %o) -> throws INVALID_DATE', (value, reference) => {
+    expectToThrowCode(() => formatRelativeTime(value, { now: reference }), ERRORS.INVALID_DATE);
   });
 });

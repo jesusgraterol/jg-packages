@@ -39,6 +39,20 @@ export type IWaitUntilOptions = {
   signal?: AbortSignal;
 };
 
+// the media types detectMediaType recognizes from their leading bytes
+export type IDetectableMediaType =
+  | 'image/png'
+  | 'image/jpeg'
+  | 'image/gif'
+  | 'image/webp'
+  | 'image/x-icon'
+  | 'application/pdf'
+  | 'audio/webm'
+  | 'audio/ogg'
+  | 'audio/mp4'
+  | 'audio/mpeg'
+  | 'audio/wav';
+
 // an inclusive range of UTC calendar dates, each as `YYYY-MM-DD`
 export type IUtcDateRange = {
   fromDate: string;

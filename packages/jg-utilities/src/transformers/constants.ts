@@ -15,6 +15,13 @@ export const FILE_SIZE_UNITS: string[] = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'Z
 // the locale every date is formatted in, so output doesn't depend on the runtime's locale
 export const DATE_LOCALE = 'en-US';
 
+// the units a relative time picks from, largest first, in milliseconds
+export const RELATIVE_TIME_UNITS: readonly [Intl.RelativeTimeFormatUnit, number][] = [
+  ['day', 86_400_000],
+  ['hour', 3_600_000],
+  ['minute', 60_000],
+];
+
 // the templates that include a time, which get the time zone's name when a time zone is provided
 export const DATE_TEMPLATES_WITH_TIME: IDateTemplate[] = [
   'time-short',

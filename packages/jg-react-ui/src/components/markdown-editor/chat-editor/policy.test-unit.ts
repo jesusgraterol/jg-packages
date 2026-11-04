@@ -231,6 +231,14 @@ describe('chat Markdown policy', () => {
     ).toBe('\\# Heading  \n\\*\\*bold\\*\\*\n\n\\[link\\]\\(https://example\\.com\\)');
   });
 
+  test.each([
+    ['strikethrough', '~~gone~~', '\\~\\~gone\\~\\~'],
+    ['an entity', '&amp;', '\\&amp;'],
+    ['an HTML tag', '<div>', '\\<div\\>'],
+  ])('escapeChatMarkdownLiteralText(%s) keeps the text literal', (_case, text, escaped) => {
+    expect(escapeChatMarkdownLiteralText(text)).toBe(escaped);
+  });
+
   test('rejects oversized raw content before parsing', () => {
     expect(canParseChatMarkdown('1234', 4)).toBe(true);
     expect(canParseChatMarkdown('12345', 4)).toBe(false);

@@ -8,6 +8,7 @@ export type {
 
 // constants
 export {
+  LOAD_MORE_BUTTON_AUTO_LOAD_MARGIN,
   LOAD_MORE_BUTTON_DEFAULT_LABEL,
   LOAD_MORE_BUTTON_DEFAULT_LOADING_LABEL,
 } from 'jg-react-ui/components/load-more-button';

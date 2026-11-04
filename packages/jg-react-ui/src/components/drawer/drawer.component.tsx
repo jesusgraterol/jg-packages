@@ -45,7 +45,9 @@ const DrawerLayoutContext = createContext<IDrawerLayoutContext | null>(null);
 const DrawerDensityContext = createContext<IDrawerDensity>('comfortable');
 
 /**
- * Provides a modal side drawer with swipe, focus, and controlled-state behavior.
+ * Provides a modal side drawer, or a bottom sheet, with swipe, focus, and controlled-state
+ * behavior. A bottom sheet spans the view's width, grows with its content up to all but 3rem of the
+ * view's height, and closes with a swipe down.
  * @param props The drawer root props and required side.
  * @returns A React element that renders the drawer root.
  * @example
@@ -132,7 +134,7 @@ export const Drawer = ({
           disablePointerDismissal={isDismissalDisabled}
           modal={modal}
           open={open}
-          swipeDirection={side}
+          swipeDirection={side === 'bottom' ? 'down' : side}
           onOpenChange={handleOpenChange}
           onOpenChangeComplete={handleOpenChangeComplete}
         >
@@ -273,7 +275,8 @@ export const DrawerContent = ({
         data-slot="drawer-viewport"
         style={viewportStyle}
         className={cn(
-          'fixed inset-0 z-50 flex items-stretch',
+          'fixed inset-0 z-50 flex',
+          side === 'bottom' ? 'items-end' : 'items-stretch',
           side === 'left' ? 'justify-start' : 'justify-end',
         )}
       >
@@ -283,7 +286,7 @@ export const DrawerContent = ({
           data-side={side}
           data-size={size}
           data-slot="drawer-content"
-          className={drawerPopupVariants({ side, size })}
+          className={cn(drawerPopupVariants({ side, size }))}
         >
           <BaseDrawer.Content className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
             <DrawerDensityContext value={density}>{children}</DrawerDensityContext>
@@ -293,7 +296,9 @@ export const DrawerContent = ({
               type="button"
               className={cn(
                 buttonVariants({ size: 'icon-touch', variant: 'ghost' }),
-                'absolute top-[max(1rem,env(safe-area-inset-top))] right-[max(0.75rem,env(safe-area-inset-right))] z-10 rounded-none not-disabled:not-aria-disabled:hover:bg-transparent not-disabled:not-aria-disabled:active:not-aria-[haspopup]:translate-y-0 lg:rounded-lg',
+                'absolute right-[max(0.75rem,env(safe-area-inset-right))] z-10 rounded-none not-disabled:not-aria-disabled:hover:bg-transparent not-disabled:not-aria-disabled:active:not-aria-[haspopup]:translate-y-0 lg:rounded-lg',
+                // a bottom sheet stops short of the notch, so only a side drawer keeps its inset
+                side === 'bottom' ? 'top-4' : 'top-[max(1rem,env(safe-area-inset-top))]',
               )}
             >
               <span
@@ -330,6 +335,7 @@ export const DrawerHeader = ({
   ...props
 }: IDrawerHeaderProps): React.ReactElement => {
   const density = useContext(DrawerDensityContext);
+  const side = useContext(DrawerLayoutContext)?.side;
 
   return (
     <header
@@ -337,6 +343,8 @@ export const DrawerHeader = ({
       data-slot="drawer-header"
       className={cn(
         drawerHeaderVariants({ density }),
+        // a bottom sheet stops short of the notch, so only a side drawer pads for it
+        side === 'bottom' ? 'pt-4' : undefined,
         actions ? 'grid-cols-[minmax(0,1fr)_auto] items-start' : undefined,
       )}
     >

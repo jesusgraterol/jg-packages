@@ -32,7 +32,7 @@ export const isChatMarkdownLinkSafe = (href: string): boolean => {
 export const escapeChatMarkdownLiteralText = (text: string): string =>
   text
     .replace(/\\/g, '\\\\')
-    .replace(/([`*_[\]{}()#+\-.!>|])/g, '\\$1')
+    .replace(/([`*_[\]{}()#+\-.!<>|~&])/g, '\\$1')
     .replace(/\r\n?/g, '\n')
     .split(/\n{2,}/)
     .map((paragraph) => paragraph.replace(/\n/g, '  \n'))

@@ -2,7 +2,7 @@ import { Exception } from 'jg-exception';
 
 import { ERRORS } from '../shared/errors.js';
 
-import type { IDateTemplate, IDateValue, ITimeString } from './types.js';
+import type { IDateTemplate, IDateValue, IRelativeTimeOptions, ITimeString } from './types.js';
 import {
   DATE_LOCALE,
   ONE_DAY_IN_MILLISECONDS,
@@ -12,6 +12,7 @@ import {
   ONE_SECOND_IN_MILLISECONDS,
   ONE_WEEK_IN_MILLISECONDS,
   ONE_YEAR_IN_MILLISECONDS,
+  RELATIVE_TIME_UNITS,
 } from './constants.js';
 import { buildDateFormatOptions, parseTimeString } from './utilities.js';
 
@@ -197,4 +198,49 @@ export const createTimestamp = (value?: Date | number | string): string => {
     return new Date(value).toISOString();
   }
   return new Date().toISOString();
+};
+
+// one relative time formatter for each locale, created by the first call that needs it
+const relativeTimeFormats = new Map<string, Intl.RelativeTimeFormat>();
+
+/**
+ * Says how long before or after another moment a date is, in the largest whole unit of days, hours
+ * and minutes, rounded, such as for "Observed 5 minutes ago". Less than a minute either way reads
+ * as now.
+ * @param value The date: a Date, a millisecond epoch, or a date string.
+ * @param options The moment it's relative to, which defaults to now, and the locale.
+ * @returns The relative time, such as `5 minutes ago`, `in 2 hours` or `yesterday`.
+ * @example
+ * import { formatRelativeTime } from 'jg-utilities';
+ *
+ * const now = Date.UTC(2026, 9, 27, 12, 0, 0);
+ * formatRelativeTime(now - 5 * 60_000, { now }); // => '5 minutes ago'
+ * formatRelativeTime(now + 100 * 60_000, { now }); // => 'in 2 hours'
+ * formatRelativeTime(now - 86_400_000, { now }); // => 'yesterday'
+ * formatRelativeTime(now - 30_000, { now }); // => 'now'
+ * @throws
+ * - INVALID_DATE: The date or the moment it is relative to is not a valid date.
+ */
+export const formatRelativeTime = (
+  value: IDateValue,
+  { now = Date.now(), locale = DATE_LOCALE }: IRelativeTimeOptions = {},
+): string => {
+  const elapsed = toDate(value).getTime() - toDate(now).getTime();
+  if (Number.isNaN(elapsed)) {
+    throw new Exception('The date or the moment it is relative to is not a valid date.', {
+      code: ERRORS.INVALID_DATE,
+      data: { value: String(value), now: String(now) },
+    });
+  }
+  let format = relativeTimeFormats.get(locale);
+  if (!format) {
+    format = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+    relativeTimeFormats.set(locale, format);
+  }
+  for (const [unit, size] of RELATIVE_TIME_UNITS) {
+    if (Math.abs(elapsed) >= size) {
+      return format.format(Math.round(elapsed / size), unit);
+    }
+  }
+  return format.format(0, 'second');
 };

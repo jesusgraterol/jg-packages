@@ -204,6 +204,35 @@ const highlightMarkdownVariablesTree = (tree: unknown): void => {
 export const highlightMarkdownVariablesRehypePlugin = (): typeof highlightMarkdownVariablesTree =>
   highlightMarkdownVariablesTree;
 
+// a heading element's tag, with its level
+const HEADING_TAG_PATTERN = /^h([1-6])$/u;
+
+/**
+ * Creates the rehype plugin that lowers every heading by a number of levels, to h6 at most, so
+ * Markdown nests under the headings of the page that shows it. It walks the tree with a stack
+ * rather than recursion, so deeply nested Markdown can't overflow the call stack.
+ * @param offset How many levels each heading moves down.
+ * @returns The rehype plugin.
+ */
+export const createHeadingLevelShiftRehypePlugin =
+  (offset: number) =>
+  () =>
+  (tree: IMarkdownHastNode): void => {
+    const pending = [tree];
+    for (let node = pending.pop(); node !== undefined; node = pending.pop()) {
+      const level =
+        node.type === 'element' && typeof node.tagName === 'string'
+          ? HEADING_TAG_PATTERN.exec(node.tagName)
+          : null;
+      if (level !== null) {
+        node.tagName = `h${String(Math.min(6, Number(level[1]) + offset))}`;
+      }
+      for (const child of node.children ?? []) {
+        pending.push(child);
+      }
+    }
+  };
+
 /**
  * Extracts plain text from React-rendered markdown node content.
  * @param node The node content emitted by React Markdown.

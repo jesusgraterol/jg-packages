@@ -43,6 +43,7 @@ export type {
   INumberFormatConfig,
   IRedactSecretsOptions,
   IRedactSecretsResult,
+  IRelativeTimeOptions,
   ISubstitutionOptions,
   ITimeString,
 } from './transformers/index.js';
@@ -55,6 +56,7 @@ export {
   createTimestamp,
   prettifyDate,
   prettifyTime,
+  formatRelativeTime,
   prettifyFileSize,
   prettifyBadgeCount,
   capitalizeFirst,
@@ -125,11 +127,14 @@ export type {
   ITaskRunnerOptions,
   IUtcDateRange,
   IWaitUntilOptions,
+  IDetectableMediaType,
 } from './utils/index.js';
 
 export {
   applyDefaults,
   generateUuid,
+  generateNameBasedUuid,
+  detectMediaType,
   generateRandomString,
   generateRandomFloat,
   generateRandomInteger,

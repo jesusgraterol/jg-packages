@@ -210,6 +210,14 @@ describe('ChatMarkdownEditor', () => {
       expect(controlsRef.current?.appendLiteralText('Late', { allowOverLimit: true })).toBe(false),
     );
     expect(controlsRef.current?.getMarkdown()).toBe('Ready\n');
+    // a handle kept past unmount appends nothing and reports nothing to the unmounted owner
+    const retainedControls = controlsRef.current;
+    act(() => {
+      root.unmount();
+    });
+    expect(retainedControls?.appendLiteralText('After', { allowOverLimit: true })).toBe(false);
+    expect(value).toBe('Ready\n');
+    root = createRoot(container);
   });
 
   test('the first literal insertion into an empty chat starts at the first paragraph', async () => {
@@ -843,5 +851,53 @@ describe('ChatMarkdownEditor', () => {
     expect(container.textContent).toContain(
       'Some pasted formatting was simplified to keep this message safe and compatible.',
     );
+  });
+
+  test('keeps dictated strikethrough, entities and tags as the literal text they are', async () => {
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+    await act(async () => {
+      root.render(
+        <ChatMarkdownEditor
+          controlsRef={controlsRef}
+          maxLength={256}
+          value=""
+          onChange={vi.fn()}
+        />,
+      );
+      await Promise.resolve();
+    });
+    await flushEditor();
+
+    act(() => {
+      expect(controlsRef.current?.appendLiteralText('~~gone~~ &amp; <div>')).toBe(true);
+    });
+
+    expect(container.querySelector('[role="textbox"]')?.textContent).toBe('~~gone~~ &amp; <div>');
+  });
+
+  test('refuses an append that only the editor would lengthen past the limit, such as a link', async () => {
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+    const onChange = vi.fn();
+    // the escaped source fits exactly; the editor writes the address as a longer autolink
+    const text = 'Visit http://example.com';
+    await act(async () => {
+      root.render(
+        <ChatMarkdownEditor
+          controlsRef={controlsRef}
+          maxLength={'Visit http://example\\.com'.length}
+          value=""
+          onChange={onChange}
+        />,
+      );
+      await Promise.resolve();
+    });
+    await flushEditor();
+
+    act(() => {
+      expect(controlsRef.current?.appendLiteralText(text)).toBe(false);
+    });
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(controlsRef.current?.getMarkdown()).toBe('');
   });
 });

@@ -228,3 +228,91 @@ describe('useSearchParamState', () => {
     }).toThrow(expect.objectContaining({ code: ERRORS.INVALID_SEARCH_PARAM_VALUE }) as Error);
   });
 });
+
+describe('useSearchParamState in several components of one page', () => {
+  /**
+   * Renders two components with their own options in one memory router, recording every
+   * navigation.
+   * @param search The search the router starts at.
+   * @param first The first component's options.
+   * @param second The second component's options.
+   * @returns The router, and its navigations.
+   */
+  const renderTwo = (
+    search: string,
+    first: IUseSearchParamStateOptions<object>,
+    second: IUseSearchParamStateOptions<object>,
+  ) => {
+    const First = () => {
+      useSearchParamState(first);
+      return null;
+    };
+    const Second = () => {
+      useSearchParamState(second);
+      return null;
+    };
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/payments',
+          element: (
+            <>
+              <First />
+              <Second />
+            </>
+          ),
+        },
+      ],
+      { initialEntries: [{ pathname: '/payments', search }] },
+    );
+    const navigations: string[] = [];
+    router.subscribe((state) => {
+      navigations.push(`${state.historyAction} ${state.location.search}`);
+    });
+    render(
+      <StrictMode>
+        <RouterProvider router={router} />
+      </StrictMode>,
+    );
+    return { router, navigations };
+  };
+
+  const PAGE_OPTIONS: IUseSearchParamStateOptions<{ page: number }> = {
+    params: { page: 'one' },
+    schema: z.object({ page: z.coerce.number().int().min(1) }),
+    defaultValue: { page: 1 },
+  };
+
+  const QUERY_OPTIONS: IUseSearchParamStateOptions<{ query: string }> = {
+    params: { query: 'one' },
+    schema: z.object({ query: z.string() }),
+    defaultValue: { query: '' },
+  };
+
+  test('replaces a URL that is not canonical once when both own the same keys', async () => {
+    const { router, navigations } = renderTwo('?page=1&tab=open', PAGE_OPTIONS, PAGE_OPTIONS);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(navigations).toStrictEqual(['REPLACE ?tab=open']);
+    expect(router.state.location.search).toBe('?tab=open');
+  });
+
+  test('repairs the keys each owns without undoing the other', async () => {
+    const { router, navigations } = renderTwo(
+      '?query=&page=1&tab=open',
+      QUERY_OPTIONS,
+      PAGE_OPTIONS,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(router.state.location.search).toBe('?tab=open');
+    expect(navigations.at(-1)).toBe('REPLACE ?tab=open');
+    expect(navigations.length).toBeLessThanOrEqual(2);
+  });
+});

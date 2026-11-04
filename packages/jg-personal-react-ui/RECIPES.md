@@ -264,6 +264,45 @@ const dialog = h(
 );
 ```
 
+## Open details as a bottom sheet on phones
+
+Keep the open details in the URL with jg-react-router's `useSearchParamDialog`, so a link opens them and Back, or the back gesture on a phone, closes them. `ResponsiveDialog` shows a dialog from the md breakpoint up and a bottom sheet below it.
+
+```tsx
+import { useSearchParamDialog } from 'jg-react-router';
+import { Button, ResponsiveDialog } from 'jg-personal-react-ui';
+
+export const SessionDetails = () => {
+  const { openId, open, close } = useSearchParamDialog('details');
+  return (
+    <>
+      <Button
+        size="touch"
+        type="button"
+        onClick={() => {
+          open('session');
+        }}
+      >
+        Details
+      </Button>
+      <ResponsiveDialog
+        isOverlayCloseEnabled
+        getNavigationSession={() => null}
+        open={openId !== ''}
+        title="Session details"
+        onOpenChange={(isOpen) => {
+          if (!isOpen) close();
+        }}
+      >
+        <p>Started an hour ago.</p>
+      </ResponsiveDialog>
+    </>
+  );
+};
+```
+
+The dialog's own navigations, opening and closing it, must not close it, so it reads no navigation session.
+
 ## Share route dismissal and confirmation sessions
 
 The navigation primitives share jg-react-router's context. Place one observer inside the router, and keep persistent dialog hosts under the same provider. Committed navigation cancels outgoing sessions without adding history entries. The host owns route history and drawer dismissal; compose DrawerClose around a navigation action when it should close the drawer.
@@ -337,6 +376,45 @@ const router = createBrowserRouter([
     element: createElement(RouterRoot),
     errorElement: createElement(GlobalErrorBoundary),
     children: [{ path: '/', element: 'Home' }],
+  },
+]);
+```
+
+## Offer a reload for pages a deploy replaced
+
+Load each page with jg-react-router's `createLazyRoute`, and group the lazy pages under a pathless route whose error element is `RouteLoadError`, inside the layout, so the navigation stays while the notice offers Reload.
+
+```tsx
+import { createBrowserRouter } from 'react-router';
+import { createLazyRoute } from 'jg-react-router';
+import { GlobalErrorBoundary, RouteLoadError, RouterRoot } from 'jg-personal-react-ui';
+
+declare const importSettings: () => Promise<{ SettingsPage: () => null }>;
+
+const reloadApp = (): void => {
+  window.location.reload();
+};
+
+export const router = createBrowserRouter([
+  {
+    element: <RouterRoot />,
+    errorElement: <GlobalErrorBoundary onRefreshClick={reloadApp} />,
+    children: [
+      {
+        errorElement: (
+          <RouteLoadError
+            appName="Acme"
+            onReload={reloadApp}
+          />
+        ),
+        children: [
+          {
+            path: '/settings',
+            lazy: createLazyRoute(importSettings, (module) => module.SettingsPage),
+          },
+        ],
+      },
+    ],
   },
 ]);
 ```

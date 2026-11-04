@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.0
+
+### Added
+
+- `formatRelativeTime(value, { now?, locale? })`, how long before or after another moment a date is, in the largest whole unit of days, hours and minutes, such as `5 minutes ago`, `in 2 hours` or `yesterday`, through `Intl.RelativeTimeFormat` in `en-US` unless told otherwise. It throws `INVALID_DATE` for a date that isn't one.
+- `detectMediaType(bytes, allowed)`, the media type of content read from its leading bytes, among the types a caller accepts: PNG, JPEG, GIF, WebP and ICO images, PDF, and WebM, Ogg, MP4, MP3 and WAV audio. It never trusts a name or a claimed type.
+- `generateNameBasedUuid(namespace, name)`, the RFC 9562 version 5 UUID of a name in a namespace, which is the same for the same pair every time. A namespace that isn't a UUID throws the new `INVALID_UUID_NAMESPACE`.
+
 ## 1.7.2
 
 ### Fixed

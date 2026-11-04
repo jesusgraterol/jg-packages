@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+
+- `useSearchParamDialog(name)`, built on `useSearchParamState`, which keeps a page's open dialog in one search parameter and returns `{ openId, open, close }`. Opening adds a history entry, so Back closes the dialog; closing goes back past that entry, or replaces the URL when the URL opened the dialog.
+- `loadRouteModule(load)`, which rejects a route module's failed import, or one that resolves with no module, with `ROUTE_MODULE_UNAVAILABLE` ("The page's code couldn't be loaded."), keeping the failure as its cause.
+- `createLazyRoute(load, select)`, which builds a route's `lazy` function from a module's named export through `loadRouteModule`.
+- `ISearchParamDialog`, `IRouteModuleLoader`, and `ILazyRoute`, and the `ROUTE_MODULE_UNAVAILABLE` error code.
+
+### Fixed
+
+- Components whose `useSearchParamState` own keys in the same URL build on each other's repair of a URL that isn't canonical, so two that own the same keys replace it once instead of once each, and two that own different keys no longer undo each other's repair.
+
 ## 0.4.0
 
 ### Changed

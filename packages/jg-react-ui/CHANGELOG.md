@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+
+- `Drawer` takes `side: 'bottom'`, a bottom sheet that spans the view's width, grows with its content up to all but 3rem of the view's height, closes with a swipe down, and skips the notch inset that only a side drawer needs.
+- `ResponsiveDialog`, which opens a `Dialog` from the md breakpoint up and a bottom sheet below it, with the same title, description and body, `initialFocus` for the dialog and `sheetInitialFocus` for the sheet.
+- `ClampedText`, a text clamped to 2 to 6 lines with Show all only when the clamp cuts it off and Show less after, controlled or on its own, with details beside the toggle.
+- `PathText`, which breaks a path or identifier after `/`, `\`, `_`, `.` and `-` with `<wbr>`, which copying leaves out.
+- `Avatar`, an image on a fixed-size tile, xs to xl, filling it or inset as a logo, with the first character of its fallback in the same tile when there's no image or it fails to load.
+- `Illustration`, decorative drawings in the theme's tokens for an empty list, conversation or checklist, an error, and being offline.
+- `RouteLoadError`, a route error element for `ROUTE_MODULE_UNAVAILABLE` from jg-react-router 0.5.0, which offers Reload after an update or offline and passes every other error on.
+- `QueryFailure`, a `QueryBoundary` error alert that illustrates a first read that failed, and says when the browser is offline.
+- `ViewNav`, a row of link buttons for a page's views that scrolls sideways with complete labels, and `InnerPageBar`, an inner page's sticky bar with Back to the page it was reached from, its title and its actions, whose height is `--inner-page-bar-height`.
+- `Markdown` takes `headingLevelOffset`, which lowers its headings so a document nests under the page's own.
+- `LoadMoreButton` takes `autoLoad` and `autoLoadMargin`, which load the next page as the control nears the viewport, and again while it stays near, keeping the button for keyboards.
+
+### Fixed
+
+- `QueryErrorAlert` no longer widens a 320px screen when its error code is long: its text grids have explicit single columns, so the code truncates inside the alert.
+- `ChatMarkdownEditor`'s `appendLiteralText` keeps `~`, `<` and `&` literal, so dictated `~~text~~`, tags and entities no longer turn into strikethrough, HTML or characters, and a controls handle kept after the editor unmounts appends nothing instead of reporting a change.
+
 ## 0.4.0
 
 ### Added

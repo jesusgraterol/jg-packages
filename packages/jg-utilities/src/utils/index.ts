@@ -31,6 +31,7 @@ export type {
   ITaskRunnerOptions,
   IUtcDateRange,
   IWaitUntilOptions,
+  IDetectableMediaType,
 } from './types.js';
 
 // async utilities
@@ -94,6 +95,7 @@ export { resolveSafeInternalPath } from './internal-path.js';
 // generators
 export {
   generateDateId,
+  generateNameBasedUuid,
   generateRandomFloat,
   generateRandomInteger,
   generateRandomString,
@@ -102,6 +104,9 @@ export {
   generateUuid,
   getTrailingUtcDateRange,
 } from './generators.js';
+
+// media types
+export { detectMediaType } from './media-type.js';
 
 // Markdown utilities
 export {

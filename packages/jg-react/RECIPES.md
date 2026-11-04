@@ -1,6 +1,6 @@
 # jg-react recipes
 
-Patterns for components that follow the browser: the network, the viewport, the theme, copying to the clipboard, and uploading files.
+Patterns for components that follow the browser: the network, the viewport, the theme, new builds, copying to the clipboard, and uploading files.
 
 ## An offline banner
 
@@ -51,6 +51,45 @@ export const AppHeader = () => {
 ```
 
 `useBreakpoint` is `undefined` in a server render, so `isBreakpointAtLeast` is false there, and the page renders the phone layout first, then the wider one once it hydrates.
+
+## A reload banner after a deploy
+
+Offer a reload when the server serves a newer build than the open tab, and check again as soon as the app's connection comes back:
+
+```tsx
+import { useEffect } from 'react';
+import { useNewBuildAvailable, useOnlineStatus } from 'jg-react';
+
+export const UpdateBanner = () => {
+  const { isNewBuildAvailable, check } = useNewBuildAvailable();
+  const isOnline = useOnlineStatus();
+
+  useEffect(() => {
+    if (isOnline) {
+      void check();
+    }
+  }, [check, isOnline]);
+
+  if (!isNewBuildAvailable) {
+    return null;
+  }
+  return (
+    <div role="status">
+      A new version is available.{' '}
+      <button
+        type="button"
+        onClick={() => {
+          window.location.reload();
+        }}
+      >
+        Reload
+      </button>
+    </div>
+  );
+};
+```
+
+The hook also checks each time the tab becomes visible again, and treats a lazy chunk that's gone after a deploy as a new build, so a route that fails to load can point at the same banner.
 
 ## A theme that applies before the first paint
 

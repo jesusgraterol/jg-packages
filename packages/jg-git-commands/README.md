@@ -59,6 +59,23 @@ const result = await runGit(['log', '-1', '--format=%s'], { cwd: '/srv/app', tim
 assertGitSucceeded(result, 'log');
 ```
 
+Tell how commits, worktrees and remotes relate, such as before a fast-forward, or to name a repository by its host's `owner/name`:
+
+```ts
+import {
+  getRemoteUrl,
+  isAncestor,
+  parseRemoteRepository,
+  readCommonDirectory,
+  readRemoteDefaultBranch,
+} from 'jg-git-commands';
+
+const canFastForward = await isAncestor('/srv/app', 'origin/main', 'HEAD');
+const gitDirectory = await readCommonDirectory('/srv/app-feature'); // '/srv/app/.git' from a worktree
+const defaultBranch = await readRemoteDefaultBranch('/srv/app'); // 'main', or null when unknown
+const repository = parseRemoteRepository(await getRemoteUrl('/srv/app')); // { owner, name }, or null
+```
+
 `calculateGitBlobObjectId(content, { algorithm })` gives the object ID `git hash-object` would, for SHA-1 or SHA-256 repositories, without running Git.
 
 ### What every command runs with

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+
+- Re-exports jg-react-ui 0.5.0's `ResponsiveDialog`, `ClampedText`, `PathText`, `Avatar`, `Illustration`, `RouteLoadError`, `QueryFailure`, `ViewNav` and `InnerPageBar`, the bottom `Drawer`, `Markdown`'s `headingLevelOffset` and `LoadMoreButton`'s `autoLoad`, each from the root and its own `components/*` entry.
+- Re-exports jg-react-ui 0.5.0's fixes: `QueryErrorAlert` keeps a long error code within a 320px screen, and `ChatMarkdownEditor`'s literal appends keep `~`, `<` and `&`.
+- The gallery's app patterns page composes them with the JG styles, and its browser tests check the bottom sheet's geometry and swipe on a 320px phone, the dialog's focus return, auto-loading, the route reload notice, coarse-pointer targets, and both themes at 320, 768 and 1280px.
+
 ## 0.4.0
 
 ### Added

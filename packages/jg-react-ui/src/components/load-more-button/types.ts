@@ -41,4 +41,8 @@ export type ILoadMoreButtonProps = Omit<
   loadingLabel?: ReactNode;
   query: ILoadMoreButtonQuery;
   shouldDisableWhenLoading?: boolean;
+  // loads the next page by itself once the control nears the viewport, keeping it for keyboards
+  autoLoad?: boolean;
+  // how near, as IntersectionObserver's rootMargin. Defaults to 512px below the viewport
+  autoLoadMargin?: string;
 };

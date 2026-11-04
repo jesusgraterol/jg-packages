@@ -98,9 +98,10 @@ export const QueryErrorAlert = ({
         <TriangleAlert aria-hidden="true" />
       </IconTile>
 
+      {/* explicit single columns let the text shrink to the alert, so a long code never widens it */}
       <div
         className={cn(
-          'grid min-w-0 gap-3',
+          'grid min-w-0 grid-cols-1 gap-3',
           presentation === 'blocking'
             ? 'w-full max-w-md justify-items-center'
             : 'w-full gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center',
@@ -108,7 +109,7 @@ export const QueryErrorAlert = ({
       >
         <div
           className={cn(
-            'grid min-w-0 gap-2',
+            'grid min-w-0 grid-cols-1 gap-2',
             presentation === 'blocking' && 'justify-items-center',
           )}
         >

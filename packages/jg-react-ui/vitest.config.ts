@@ -18,6 +18,7 @@ const shared = createVitestConfig({
     'src/components/empty-state/empty-state.component.test-unit.tsx',
     'src/components/form/form.component.test-unit.tsx',
     'src/components/icon-tile/icon-tile.component.test-browser.tsx',
+    'src/components/illustration/illustration.component.test-browser.tsx',
     'src/components/inline-code/inline-code.component.test-unit.tsx',
     'src/components/inline-code/utilities.test-unit.ts',
     'src/components/layout/layout.component.test-browser.tsx',

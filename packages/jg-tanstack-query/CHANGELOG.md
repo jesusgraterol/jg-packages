@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+
+### Added
+
+- `usePolledFirstPage({ queryKey, list, readFirstPage, getRowId, intervalSeconds, isEnabled? })`, which keeps a paged list fresh by reading only its first page every `intervalSeconds`, polling as `createPollingQueryOptions` does, and merging each read into the loaded pages. The poll starts from the page the list read and is dropped once the list unmounts. An interval that isn't positive and finite throws `INVALID_POLLING_INTERVAL`.
+- `mergeFirstPage(data, firstPage, getRowId)`, which merges a newly read first page into an infinite query's loaded pages by row ID: new rows go ahead, rows the list holds take the new version on any page, and the later pages keep their place, cursors and page params.
+- `IUsePolledFirstPageOptions`, `IRowPage`, and `IPageRow`.
+
 ## 0.5.0
 
 ### Added

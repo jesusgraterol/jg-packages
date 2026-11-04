@@ -1,5 +1,6 @@
 import { Exception } from 'jg-exception';
 
+import { readBoundedStream } from '../read-stream/utilities.js';
 import { ERRORS } from '../shared/index.js';
 
 import type { IReadStdinOptions } from './types.js';
@@ -19,60 +20,18 @@ import type { IReadStdinOptions } from './types.js';
  * - The signal's reason when the signal aborts.
  */
 export const readStdin = ({ maxBytes, signal }: IReadStdinOptions): Promise<Buffer> =>
-  new Promise((resolve, reject) => {
-    if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) {
-      reject(
-        new Exception('The stdin limit must be a positive safe integer.', {
-          code: ERRORS.INVALID_PROCESS_OPTIONS,
-          data: { maxBytes: String(maxBytes) },
-        }),
-      );
-      return;
-    }
-    const { stdin } = process;
-    const chunks: Buffer[] = [];
-    let byteLength = 0;
-    const cleanUp = (): void => {
-      stdin.off('data', onData);
-      stdin.off('end', onEnd);
-      stdin.off('error', onError);
-      signal?.removeEventListener('abort', onAbort);
-    };
-    const fail = (error: unknown): void => {
-      cleanUp();
-      stdin.destroy();
-      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- rejects with the signal's reason, as native APIs do
-      reject(error);
-    };
-    const onData = (chunk: Buffer): void => {
-      byteLength += chunk.length;
-      if (byteLength > maxBytes) {
-        fail(
-          new Exception(`The input on stdin is larger than ${maxBytes} bytes.`, {
-            code: ERRORS.STDIN_TOO_LARGE,
-            data: { maxBytes },
-          }),
-        );
-        return;
-      }
-      chunks.push(chunk);
-    };
-    const onEnd = (): void => {
-      cleanUp();
-      resolve(Buffer.concat(chunks));
-    };
-    const onError = (error: Error): void => {
-      fail(error);
-    };
-    const onAbort = (): void => {
-      fail(signal?.reason);
-    };
-    if (signal?.aborted) {
-      fail(signal.reason);
-      return;
-    }
-    signal?.addEventListener('abort', onAbort, { once: true });
-    stdin.on('data', onData);
-    stdin.once('end', onEnd);
-    stdin.once('error', onError);
+  readBoundedStream(process.stdin, {
+    maxBytes,
+    signal,
+    isDestroyedOnFailure: true,
+    invalidLimit: () =>
+      new Exception('The stdin limit must be a positive safe integer.', {
+        code: ERRORS.INVALID_PROCESS_OPTIONS,
+        data: { maxBytes: String(maxBytes) },
+      }),
+    tooLarge: () =>
+      new Exception(`The input on stdin is larger than ${maxBytes} bytes.`, {
+        code: ERRORS.STDIN_TOO_LARGE,
+        data: { maxBytes },
+      }),
   });

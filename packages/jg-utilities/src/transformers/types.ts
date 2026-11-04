@@ -127,3 +127,12 @@ export type IDeterministicJsonOptions = {
   // throws for anything JSON.stringify would drop, convert, or call toJSON on
   strict?: boolean | undefined;
 };
+
+// the options accepted by formatRelativeTime
+export type IRelativeTimeOptions = {
+  // the moment the time is relative to. Defaults to now
+  now?: IDateValue;
+
+  // the locale it's written in, as Intl.RelativeTimeFormat takes it. Defaults to en-US
+  locale?: string;
+};

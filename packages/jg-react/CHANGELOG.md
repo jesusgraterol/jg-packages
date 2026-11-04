@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.0
+
+### Added
+
+- `useNearViewport({ rootMargin? })`, which watches whether an element is within a margin of the viewport with one `IntersectionObserver`, returning `{ ref, isNear }`.
+- `useIsTextClamped({ lines, content? })`, which measures whether a text runs past the lines its clamp shows, whether it shows clamped or in full, again when its box resizes and when `content` changes, returning `{ ref, isClamped }`. Lines that aren't a positive safe integer throw `INVALID_CLAMPED_LINES`.
+- `useCurrentTime({ intervalSeconds? })`, which keeps the current time in Unix milliseconds, moving it on once an interval, 60 seconds by default. An interval that isn't a positive, finite number of seconds throws `INVALID_CURRENT_TIME_INTERVAL`.
+- `useThemeColorMeta({ light, dark })`, which keeps every `<meta name="theme-color">` tag on the color of the theme `<html>` shows.
+- `useNewBuildAvailable({ entryPath?, assetPrefix? })`, which compares the entry script the server's entry page loads with the open page's whenever the page becomes visible again and on `check()`, and treats a `vite:preloadError` while online as a new build, preventing its default, returning `{ isNewBuildAvailable, check }`.
+- `IUseNearViewportOptions`, `IUseNearViewportResult`, `IUseIsTextClampedOptions`, `IUseIsTextClampedResult`, `IUseCurrentTimeOptions`, `IThemeColors`, `IUseNewBuildAvailableOptions`, and `IUseNewBuildAvailableResult`.
+
 ## 0.6.1
 
 ### Fixed

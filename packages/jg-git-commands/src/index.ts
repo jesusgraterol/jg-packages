@@ -30,18 +30,24 @@ export {
   type IStatusEntry,
   fetchCommit,
   getRemoteUrl,
+  isAncestor,
   isWorkingTreeClean,
   listUntrackedFiles,
   readChangedPaths,
+  readCommonDirectory,
   readConfigBoolean,
   readFileAtRevision,
   readGitVersion,
   readIndexEntries,
+  readRemoteDefaultBranch,
   readRemoteRefs,
   readStatus,
   readTopLevel,
   resolveCommit,
 } from './commands/index.js';
+
+// remote URLs
+export { type IRemoteRepository, parseRemoteRepository } from './remote/index.js';
 
 // blob object IDs
 export {
