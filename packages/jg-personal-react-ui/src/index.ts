@@ -515,6 +515,7 @@ export type {
 
 // constants
 export {
+  LOAD_MORE_BUTTON_AUTO_LOAD_MARGIN,
   LOAD_MORE_BUTTON_DEFAULT_LABEL,
   LOAD_MORE_BUTTON_DEFAULT_LOADING_LABEL,
 } from './components/load-more-button/index.js';
@@ -614,7 +615,7 @@ export {
 
 // markdown
 // types
-export type { IMarkdownProps } from './components/markdown/index.js';
+export type { IMarkdownHeadingLevelOffset, IMarkdownProps } from './components/markdown/index.js';
 
 // components
 export { Markdown } from './components/markdown/index.js';
@@ -693,3 +694,59 @@ export {
   type ICodeDiffLanguage,
   type ICodeDiffProps,
 } from './components/code-diff/index.js';
+
+// responsive dialog
+export {
+  ResponsiveDialog,
+  type IResponsiveDialogProps,
+  type IResponsiveDialogSize,
+} from './components/responsive-dialog/index.js';
+
+// clamped text
+export {
+  ClampedText,
+  type IClampedTextLines,
+  type IClampedTextProps,
+} from './components/clamped-text/index.js';
+
+// path text
+export { PathText, type IPathTextProps } from './components/path-text/index.js';
+
+// avatar
+export {
+  Avatar,
+  type IAvatarFit,
+  type IAvatarProps,
+  type IAvatarSize,
+} from './components/avatar/index.js';
+
+// illustration
+export {
+  Illustration,
+  type IIllustrationName,
+  type IIllustrationProps,
+} from './components/illustration/index.js';
+
+// route load error
+export {
+  RouteLoadError,
+  ROUTE_LOAD_ERROR_OFFLINE_MESSAGE,
+  ROUTE_LOAD_ERROR_RELOAD_LABEL,
+  ROUTE_LOAD_ERROR_UPDATED_MESSAGE,
+  type IRouteLoadErrorMessage,
+  type IRouteLoadErrorMessages,
+  type IRouteLoadErrorProps,
+} from './components/route-load-error/index.js';
+
+// query failure
+export {
+  QueryFailure,
+  QUERY_FAILURE_OFFLINE_MESSAGE,
+  type IQueryFailureProps,
+} from './components/query-failure/index.js';
+
+// view nav
+export { ViewNav, type IViewNavItem, type IViewNavProps } from './components/view-nav/index.js';
+
+// inner page bar
+export { InnerPageBar, type IInnerPageBarProps } from './components/inner-page-bar/index.js';

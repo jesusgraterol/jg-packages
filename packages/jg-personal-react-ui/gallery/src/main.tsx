@@ -4,11 +4,12 @@ import { createBrowserRouter, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { createErrorFeedback } from 'jg-exception';
-import { PageOutlet } from 'jg-react-router';
+import { createLazyRoute, PageOutlet } from 'jg-react-router';
 
 import {
   DEFAULT_UI_PREFERENCES,
   ConfirmationDialog,
+  RouteLoadError,
   RouterRoot,
   DialogNavigationProvider,
   ErrorFeedbackProvider,
@@ -26,6 +27,7 @@ import { MarkdownDemo } from './markdown-demo/index.js';
 import { DiffDemo } from './diff-demo/diff-demo.component.js';
 import { InputDemo } from './input-demo/index.js';
 import { LayoutDemo } from './layout-demo/layout-demo.component.js';
+import { AppDemo } from './app-demo/index.js';
 import './styles.css';
 
 declare const __JG_UI_STORAGE_ID__: string;
@@ -55,6 +57,28 @@ const router = createBrowserRouter([
         children: [
           { path: '/', element: <Gallery /> },
           { path: '/layout', element: <LayoutDemo /> },
+          { path: '/app', element: <AppDemo /> },
+          // a page whose code a newer build replaced, as an app's pathless group of lazy pages
+          {
+            errorElement: (
+              <RouteLoadError
+                appName="JG UI gallery"
+                onReload={() => {
+                  window.location.reload();
+                }}
+              />
+            ),
+            children: [
+              {
+                path: '/app/replaced',
+                lazy: createLazyRoute(
+                  (): Promise<{ ReplacedPage: () => null }> =>
+                    Promise.reject(new TypeError('Failed to fetch dynamically imported module')),
+                  (module) => module.ReplacedPage,
+                ),
+              },
+            ],
+          },
           { path: '/inputs', element: <InputDemo /> },
           { path: '/markdown', element: <MarkdownDemo /> },
           { path: '/diff', element: <DiffDemo /> },

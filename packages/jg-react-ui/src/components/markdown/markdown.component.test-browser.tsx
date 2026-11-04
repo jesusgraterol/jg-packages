@@ -205,6 +205,28 @@ describe('Markdown', () => {
     expect(link?.textContent).toBe('Account settings');
   });
 
+  test.each([
+    [0, ['H1', 'H2', 'H6']],
+    [1, ['H2', 'H3', 'H6']],
+    [5, ['H6', 'H6', 'H6']],
+  ] as const)('headingLevelOffset %d -> headings %o', (headingLevelOffset, tags) => {
+    act(() => {
+      root.render(
+        <Markdown headingLevelOffset={headingLevelOffset}>
+          {'# Plan\n\n## Steps\n\n###### Notes'}
+        </Markdown>,
+      );
+    });
+
+    const headings = [...container.querySelectorAll('h1, h2, h3, h4, h5, h6')];
+    expect(headings.map((heading) => heading.tagName)).toStrictEqual(tags);
+    expect(headings.map((heading) => heading.textContent)).toStrictEqual([
+      'Plan',
+      'Steps',
+      'Notes',
+    ]);
+  });
+
   test('keeps raw iframe HTML disabled', () => {
     act(() => {
       root.render(

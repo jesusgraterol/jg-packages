@@ -1,6 +1,7 @@
 import { cva } from 'class-variance-authority';
 
-// drawer widths cover compact navigation and navigation with header actions.
+// drawer widths cover compact navigation and navigation with header actions; a bottom sheet spans
+// the view's width and grows with its content up to most of its height.
 /** Shared drawer styling contract.
  * @see drawerPopupVariants
  */
@@ -12,12 +13,21 @@ export const drawerPopupVariants = cva(
         left: 'border-r [transform:translateX(var(--drawer-swipe-movement-x))] data-ending-style:[transform:translateX(-100%)] data-starting-style:[transform:translateX(-100%)]',
         right:
           'border-l [transform:translateX(var(--drawer-swipe-movement-x))] data-ending-style:[transform:translateX(100%)] data-starting-style:[transform:translateX(100%)]',
+        bottom:
+          'rounded-t-2xl border-t [transform:translateY(var(--drawer-swipe-movement-y))] data-ending-style:[transform:translateY(100%)] data-starting-style:[transform:translateY(100%)]',
       },
       size: {
         small: 'max-w-64',
         medium: 'max-w-72',
       },
     },
+    compoundVariants: [
+      {
+        side: 'bottom',
+        size: ['small', 'medium'],
+        className: 'h-auto max-h-[calc(100dvh-3rem)] max-w-none',
+      },
+    ],
   },
 );
 

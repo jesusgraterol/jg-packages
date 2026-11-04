@@ -1,7 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import type { MouseEvent, ReactElement } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from 'cnfast';
+import { useNearViewport } from 'jg-react';
 import { canQueryLoadMore, isQueryLoadingMore } from 'jg-tanstack-query';
 
 import { Button } from '../button/index.js';
@@ -9,6 +10,7 @@ import { Spinner } from '../spinner/index.js';
 
 import type { ILoadMoreButtonProps } from './types.js';
 import {
+  LOAD_MORE_BUTTON_AUTO_LOAD_MARGIN,
   LOAD_MORE_BUTTON_DEFAULT_LABEL,
   LOAD_MORE_BUTTON_DEFAULT_LOADING_LABEL,
 } from './constants.js';
@@ -16,6 +18,9 @@ import {
 /**
  * Renders a reusable load-more command with customizable idle and loading presentation.
  * Visible text supplies its accessible name unless the corresponding ARIA label is explicitly set.
+ * With `autoLoad`, it loads the next page by itself once it nears the viewport, again after each
+ * page while it stays near, and never after a failed page, which hides it; the button stays for
+ * keyboard and assistive-technology users.
  * @param props The infinite query plus load-more labels, icons, and shared button props.
  * @returns A React element that renders the load-more control, or null when no page remains.
  * @example
@@ -38,6 +43,8 @@ export const LoadMoreButton = ({
   onClick,
   query,
   shouldDisableWhenLoading = true,
+  autoLoad = false,
+  autoLoadMargin = LOAD_MORE_BUTTON_AUTO_LOAD_MARGIN,
   size = 'default',
   variant = 'outline',
   ...props
@@ -67,6 +74,14 @@ export const LoadMoreButton = ({
       </span>
     );
   const shouldDisableButton = disabled === true || (isLoadingMore && shouldDisableWhenLoading);
+  const { ref: nearViewportRef, isNear } = useNearViewport({ rootMargin: autoLoadMargin });
+
+  // each page that lands with the control still near the viewport loads the next one
+  useEffect(() => {
+    if (autoLoad && isNear && canLoadMore && !isLoadingMore && disabled !== true) {
+      void fetchNextPage();
+    }
+  }, [autoLoad, canLoadMore, disabled, fetchNextPage, isLoadingMore, isNear]);
 
   /**
    * Preserves consumer click handling before requesting the next query page.
@@ -91,6 +106,7 @@ export const LoadMoreButton = ({
 
   return (
     <div
+      ref={autoLoad ? nearViewportRef : undefined}
       data-loading={isLoadingMore ? 'true' : 'false'}
       data-slot="load-more-button-root"
       className={cn('mt-3 flex w-full justify-center pt-1', className)}

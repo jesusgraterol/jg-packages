@@ -5,11 +5,11 @@ import type { VariantProps } from 'class-variance-authority';
 import type { drawerHeaderVariants, drawerPopupVariants } from './constants.js';
 
 // drawer placement, width, and density are explicit so consumers preserve coordinated geometry.
-/** Left or right edge placement.
+/** Left, right, or bottom edge placement.
  * @see drawer
  */
 export type IDrawerSide = NonNullable<VariantProps<typeof drawerPopupVariants>['side']>;
-/** Compact or medium drawer width.
+/** Compact or medium drawer width; a bottom sheet spans the view's width.
  * @see drawer
  */
 export type IDrawerSize = NonNullable<VariantProps<typeof drawerPopupVariants>['size']>;

@@ -8,13 +8,17 @@ import { cn } from 'cnfast';
 import { defaultMarkdownComponents } from './markdown-renderers.component.js';
 import { MarkdownPreferencesProvider } from './markdown-preferences.context.js';
 import type { IMarkdownProps } from './types.js';
-import { highlightMarkdownVariablesRehypePlugin } from './utilities.js';
+import {
+  createHeadingLevelShiftRehypePlugin,
+  highlightMarkdownVariablesRehypePlugin,
+} from './utilities.js';
 
 // stable parser props avoid reparsing unchanged documents after unrelated parent updates.
 const MemoizedReactMarkdown = memo(ReactMarkdown);
 
 /**
- * Renders trusted markdown text through the shared typography system.
+ * Renders trusted markdown text through the shared typography system. `headingLevelOffset` lowers
+ * its headings, so a document shown under a page's own h1 starts at h2.
  * @param props The markdown content and optional renderer overrides.
  * @returns A React element that renders the markdown document.
  * @example
@@ -31,6 +35,7 @@ export const Markdown = ({
   remarkPlugins,
   shouldOpenLinksInNewTab = true,
   skipHtml = true,
+  headingLevelOffset = 0,
   ...props
 }: IMarkdownProps): React.ReactElement => {
   const resolvedComponents = useMemo(
@@ -41,8 +46,14 @@ export const Markdown = ({
     [components],
   );
   const resolvedRehypePlugins = useMemo(
-    () => [...(rehypePlugins ?? []), highlightMarkdownVariablesRehypePlugin],
-    [rehypePlugins],
+    () => [
+      ...(rehypePlugins ?? []),
+      highlightMarkdownVariablesRehypePlugin,
+      ...(headingLevelOffset === 0
+        ? []
+        : [createHeadingLevelShiftRehypePlugin(headingLevelOffset)]),
+    ],
+    [headingLevelOffset, rehypePlugins],
   );
   const resolvedRemarkPlugins = useMemo(
     () => [remarkGfm, ...(remarkPlugins ?? [])],

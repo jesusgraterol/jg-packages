@@ -110,6 +110,18 @@ export const Gallery = () => {
         </Button>
         <Button
           size="touch"
+          variant="outline"
+          asChild
+        >
+          <Link
+            role="link"
+            to="/app"
+          >
+            Open app patterns
+          </Link>
+        </Button>
+        <Button
+          size="touch"
           asChild
         >
           <Link

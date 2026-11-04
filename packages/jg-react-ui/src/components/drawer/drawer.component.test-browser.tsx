@@ -501,4 +501,90 @@ describe('Drawer', () => {
       'DrawerContent requires direct DrawerHeader and DrawerBody children, with an optional trailing DrawerFooter.',
     );
   });
+
+  /*
+   * Component tests run without the Tailwind stylesheet, so these check the sheet's classes and
+   * behavior; the gallery's Playwright suite checks its geometry at 320px in both themes, and
+   * closing it with a real swipe.
+   */
+  describe('as a bottom sheet', () => {
+    /**
+     * Renders a bottom sheet with a trigger outside it, and opens it.
+     * @param onOpenChange What hears the sheet open and close.
+     * @returns The trigger and the open sheet.
+     */
+    const openBottomSheet = async (onOpenChange: (open: boolean) => void = () => undefined) => {
+      await act(async () => {
+        await Promise.resolve();
+        return root.render(
+          <Drawer
+            side="bottom"
+            onOpenChange={onOpenChange}
+          >
+            <DrawerTrigger>Session details</DrawerTrigger>
+            <DrawerContent size="medium">
+              <DrawerHeader>
+                <DrawerTitle>Session details</DrawerTitle>
+              </DrawerHeader>
+              <DrawerBody>Started an hour ago</DrawerBody>
+            </DrawerContent>
+          </Drawer>,
+        );
+      });
+      const trigger = container.querySelector<HTMLButtonElement>('[data-slot="drawer-trigger"]');
+      await act(async () => {
+        await Promise.resolve();
+        return trigger?.click();
+      });
+      const sheet = document.body.querySelector<HTMLElement>('[data-slot="drawer-content"]');
+      await vi.waitFor(() => {
+        expect(sheet?.hasAttribute('data-open')).toBe(true);
+      });
+      return { trigger, sheet: sheet as HTMLElement };
+    };
+
+    test('spans the width at the bottom, grows with its content, and skips the notch inset', async () => {
+      const { sheet } = await openBottomSheet();
+
+      expect(sheet.dataset['side']).toBe('bottom');
+      expect(sheet.className).toContain('rounded-t-2xl');
+      expect(sheet.className).toContain('h-auto');
+      expect(sheet.className).toContain('max-h-[calc(100dvh-3rem)]');
+      expect(sheet.className).toContain('max-w-none');
+      expect(sheet.className).not.toContain('max-w-72');
+      expect(sheet.className).not.toContain('h-full');
+      expect(sheet.className).toContain('data-starting-style:[transform:translateY(100%)]');
+      expect(sheet.className).toContain('[transform:translateY(var(--drawer-swipe-movement-y))]');
+      expect(sheet.className).toContain('motion-reduce:transition-none');
+      const viewport = document.body.querySelector<HTMLElement>('[data-slot="drawer-viewport"]');
+      expect(viewport?.className).toContain('items-end');
+      // the sheet stops short of the notch, so its header and close button skip its inset
+      const header = document.body.querySelector<HTMLElement>('[data-slot="drawer-header"]');
+      expect(header?.className).toContain('pt-4');
+      expect(header?.className).not.toContain('safe-area-inset-top');
+      const closeButton = document.body.querySelector<HTMLElement>('[aria-label="Close drawer"]');
+      expect(closeButton?.className).toContain('top-4');
+      expect(closeButton?.className).not.toContain('safe-area-inset-top');
+      const body = document.body.querySelector<HTMLElement>('[data-slot="drawer-body"]');
+      expect(body?.className).toContain('overscroll-contain');
+      expect(body?.className).toContain('pb-[max(1rem,env(safe-area-inset-bottom))]');
+    });
+
+    test('closes on Escape and returns focus to its trigger', async () => {
+      const handleOpenChange = vi.fn<(open: boolean) => void>();
+      const { trigger } = await openBottomSheet(handleOpenChange);
+
+      await act(async () => {
+        await Promise.resolve();
+        return document.dispatchEvent(
+          new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Escape' }),
+        );
+      });
+
+      expect(handleOpenChange).toHaveBeenLastCalledWith(false);
+      await vi.waitFor(() => {
+        expect(document.activeElement).toBe(trigger);
+      });
+    });
+  });
 });

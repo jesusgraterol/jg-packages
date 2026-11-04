@@ -203,4 +203,94 @@ describe('LoadMoreButton', () => {
       );
     },
   );
+
+  describe('with autoLoad', () => {
+    /*
+     * Each scenario renders a second auto-loading control in view; once it loads, the observer has
+     * reported every control's place, so a control that didn't load never will without scrolling.
+     */
+    const renderWithWitness = (
+      query: ILoadMoreButtonQuery,
+      props: { autoLoad?: boolean; disabled?: boolean } = {},
+    ) => {
+      const witness = createLoadMoreQuery();
+      act(() => {
+        root.render(
+          <>
+            <LoadMoreButton
+              autoLoad
+              label="Witness"
+              query={witness}
+            />
+            <LoadMoreButton
+              autoLoad
+              autoLoadMargin="0px 0px 64px 0px"
+              query={query}
+              {...props}
+            />
+          </>,
+        );
+      });
+      return witness;
+    };
+
+    test('loads the next page once it nears the viewport, and again while it stays near', async () => {
+      const query = createLoadMoreQuery();
+      renderWithWitness(query);
+
+      await vi.waitFor(() => {
+        expect(query.fetchNextPage).toHaveBeenCalledOnce();
+      });
+
+      // nothing more while the page is on its way
+      renderWithWitness({ ...query, isFetchingNextPage: true });
+      expect(query.fetchNextPage).toHaveBeenCalledOnce();
+
+      // the page landed and the control is still near, so the next one loads
+      renderWithWitness({ ...query, isFetchingNextPage: false });
+      await vi.waitFor(() => {
+        expect(query.fetchNextPage).toHaveBeenCalledTimes(2);
+      });
+      expect(container.querySelectorAll('[data-slot="load-more-button"]')[1]?.textContent).toBe(
+        'Load more',
+      );
+    });
+
+    test('waits until the reader scrolls it near', async () => {
+      const spacer = document.createElement('div');
+      spacer.style.height = '4000px';
+      const query = createLoadMoreQuery();
+      const witness = renderWithWitness(query);
+      const target = container.querySelectorAll('[data-slot="load-more-button-root"]')[1];
+      target?.before(spacer);
+
+      await vi.waitFor(() => {
+        expect(witness.fetchNextPage).toHaveBeenCalled();
+      });
+      expect(query.fetchNextPage).not.toHaveBeenCalled();
+
+      target?.scrollIntoView({ block: 'center', behavior: 'instant' });
+
+      await vi.waitFor(() => {
+        expect(query.fetchNextPage).toHaveBeenCalledOnce();
+      });
+      spacer.remove();
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
+
+    test.each<[string, ILoadMoreButtonQuery, { autoLoad?: boolean; disabled?: boolean }]>([
+      ['while disabled', createLoadMoreQuery(), { disabled: true }],
+      ['after a page failed', createLoadMoreQuery({ isError: true }), {}],
+      ['without a next page', createLoadMoreQuery({ hasNextPage: false }), {}],
+      ['without autoLoad', createLoadMoreQuery(), { autoLoad: false }],
+    ])('loads nothing %s', async (_case, query, props) => {
+      const witness = renderWithWitness(query, props);
+
+      await vi.waitFor(() => {
+        expect(witness.fetchNextPage).toHaveBeenCalled();
+      });
+
+      expect(query.fetchNextPage).not.toHaveBeenCalled();
+    });
+  });
 });
