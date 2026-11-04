@@ -90,6 +90,35 @@ export const router = createBrowserRouter([
 
 An eager page becomes `{ path, handle, element }`, and a lazy one `{ path, handle, HydrateFallback, lazy }`, whose `lazy` resolves to the element. The `wrapElement` option wraps every page's element, such as in an error boundary, and `HydrateFallback` shows while a lazy page loads during hydration. `usePageRouteMetadata` skips a handle without a string title and description, and gives `null` when no matched route is a page.
 
+### Route code that couldn't load
+
+After a deploy, the scripts an open tab's build names are gone, and offline they can't be fetched, so a lazy route's import fails. `createLazyRoute` builds a route's `lazy` function from a module's named export, and rejects that failure with `ROUTE_MODULE_UNAVAILABLE`, which the route's error element can tell from the page's own errors:
+
+```tsx
+import { useRouteError } from 'react-router';
+import { hasErrorCode } from 'jg-exception';
+import { createLazyRoute, ERRORS } from 'jg-react-router';
+
+const RouteError = () => {
+  const error = useRouteError();
+  if (!hasErrorCode(error, ERRORS.ROUTE_MODULE_UNAVAILABLE)) throw error;
+  return <ReloadNotice />; // the page opens once the app reloads
+};
+
+const routes = [
+  {
+    path: '/settings',
+    errorElement: <RouteError />,
+    lazy: createLazyRoute(
+      () => import('./settings.page.js'),
+      (module) => module.SettingsPage,
+    ),
+  },
+];
+```
+
+`loadRouteModule(load)` is the same check for any module a route loads. Both reject an import that resolves with no module too, as Vite's does once a `vite:preloadError` handler prevented the error, and keep a failed import as the exception's `cause`.
+
 ### URL state
 
 `useSearchParamState` keeps typed state, such as a list's filters and page, in the URL's search parameters, so a reload, a shared link, and Back all show the same list:
@@ -117,6 +146,19 @@ setFilters({ ...filters, query: 'card', page: 1 }, { replace: true }); // replac
 The schema reads the URL's strings, with the defaults filling missing keys, so give numbers and booleans `z.coerce` or a preprocess step. The URL holds the canonical form, without keys at their defaults, and a URL that isn't canonical, such as an old bookmark, is replaced once, keeping the router state and the hash, so the way back to the previous page isn't lost. The value keeps its identity while its keys don't change, and the setter always keeps its identity. Changes made in the same tick compose, each updater seeing the one before, and navigate once; a change that leaves the search as it is navigates nowhere. Parameters the state doesn't own, such as `utm_source`, stay, unless `unknownParams` is `'remove'`. A value the URL can't hold, such as an object or `NaN`, throws `INVALID_SEARCH_PARAM_VALUE` where it's set.
 
 Each change is a navigation, so `DialogNavigationProvider` closes the dialogs open at the time, as for any other navigation.
+
+### Dialogs in the URL
+
+`useSearchParamDialog` keeps a page's open dialog in one search parameter, holding the ID of what it shows, so a link or a reload opens it, and Back, or the system back gesture on a phone, closes it:
+
+```tsx
+import { useSearchParamDialog } from 'jg-react-router';
+
+const { openId, open, close } = useSearchParamDialog('event'); // ?event=event-7
+// <button onClick={() => open(event.id)}>, and <EventDialog id={openId} open={openId !== ''} onClose={close} />
+```
+
+Opening adds a history entry, marked in its router state, and `close` goes back past it, so the dialog never lingers in history, whichever component opens or closes it. A dialog the URL opened as the page loaded closes in place, replacing the entry and keeping the other parameters. An empty ID, or one longer than 4,096 characters, reads as closed. These are navigations, so a dialog that `DialogNavigationProvider` closes takes a session reader that returns `null`, and a link that moves it to another ID keeps the router state, so Back still closes it.
 
 ### Page return
 

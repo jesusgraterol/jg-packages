@@ -1,6 +1,6 @@
 # jg-tanstack-query recipes
 
-Patterns for React apps that cache server data with TanStack Query: setting it up, keeping a query across reloads, signing out safely, and a query boundary.
+TanStack Query patterns for React apps: setting up the client, keeping a query across reloads, signing out safely, query boundaries, and fresh paged lists.
 
 ## Setting up the client at the root
 
@@ -145,3 +145,42 @@ export const QueryBoundary = ({ queries, resolutionKey, children }: IQueryBounda
 ```
 
 A `blocking` error replaces the content, so it deserves the space the content would take; a `retained` one sits beside content that's still current, so a compact notice fits. Pass an `isAccessDenied` that recognizes the API's 403 code, so content the user lost access to disappears at once.
+
+## A feed that shows new items at the top
+
+Load a feed page by page, and keep its newest items coming in at the top while the reader scrolls through older pages, without reading those pages again:
+
+```ts
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { usePolledFirstPage } from 'jg-tanstack-query';
+
+type IActivity = { id: string; summary: string };
+type IActivityPage = { data: IActivity[]; nextCursor: string | null };
+
+declare const fetchActivity: (cursor: string | null, signal: AbortSignal) => Promise<IActivityPage>;
+
+const ACTIVITY_KEY = ['activity'];
+
+const getActivityId = (activity: IActivity) => activity.id;
+
+const readLatestActivity = (signal: AbortSignal) => fetchActivity(null, signal);
+
+export const useActivityFeed = () => {
+  const feed = useInfiniteQuery({
+    queryKey: ACTIVITY_KEY,
+    queryFn: ({ pageParam, signal }) => fetchActivity(pageParam, signal),
+    initialPageParam: null as string | null,
+    getNextPageParam: (page) => page.nextCursor,
+  });
+  usePolledFirstPage({
+    queryKey: ACTIVITY_KEY,
+    list: feed,
+    readFirstPage: readLatestActivity,
+    getRowId: getActivityId,
+    intervalSeconds: 15,
+  });
+  return feed;
+};
+```
+
+An item edited since it loaded takes its new version in place, on whichever page holds it, and the pages after the first keep their cursors, so Load more continues where it was. Keep the key and the functions outside the component, as here, so they don't change on every render.

@@ -29,6 +29,8 @@ export type {
   ISetSearchParamStateOptions,
   IUseSearchParamStateOptions,
 } from './search-param-state/index.js';
+export type { ISearchParamDialog } from './search-param-dialog/index.js';
+export type { ILazyRoute, IRouteModuleLoader } from './route-module/index.js';
 export type { ISchema } from './shared/index.js';
 
 // error codes
@@ -54,8 +56,12 @@ export {
   usePageRouteMetadata,
 } from './page-route/index.js';
 
+// route modules
+export { createLazyRoute, loadRouteModule } from './route-module/index.js';
+
 // URL state
 export { useSearchParamState } from './search-param-state/index.js';
+export { useSearchParamDialog } from './search-param-dialog/index.js';
 
 // page returns
 export {

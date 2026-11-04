@@ -6,6 +6,7 @@ export type {
 } from './identity-approval/index.js';
 export type { IIndexedDbPersisterOptions } from './persister/index.js';
 export type { IPolledQuery, IPollingOptions, IPollingQueryOptions } from './polling/index.js';
+export type { IPageRow, IRowPage, IUsePolledFirstPageOptions } from './first-page-poll/index.js';
 export type { IPersistedQueryProviderProps } from './provider/index.js';
 export type {
   IQueryBoundaryQuery,
@@ -51,6 +52,7 @@ export { useQueryBoundary } from './query-boundary/index.js';
 
 // polling
 export { createPollingQueryOptions } from './polling/index.js';
+export { mergeFirstPage, usePolledFirstPage } from './first-page-poll/index.js';
 
 // identity-bound queries
 export { useIdentityBoundQueryApproval } from './identity-approval/index.js';

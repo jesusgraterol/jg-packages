@@ -1,6 +1,6 @@
 # jg-react-router recipes
 
-Layouts that restore scroll on Back and Forward, dialogs that close when the user navigates away, and titles from a route map, in React Router apps.
+Layouts that restore scroll, dialogs that follow navigation, titles from a route map, and pages whose code a deploy replaced, in React Router apps.
 
 ## A layout route that restores scroll
 
@@ -158,6 +158,55 @@ export const router = createBrowserRouter([
 ```
 
 The page's heading and the document's title come from the same entry, so they can't drift apart, and a route without page metadata, such as a redirect, leaves the default title.
+
+## A reload notice for a page a deploy replaced
+
+After a deploy, an open tab's lazy routes name scripts the server no longer has. Show a reload notice inside the layout instead of the app's crash screen, and let every other error through:
+
+```tsx
+import { createBrowserRouter, Outlet, useRouteError } from 'react-router';
+import { hasErrorCode } from 'jg-exception';
+import { createLazyRoute, ERRORS } from 'jg-react-router';
+
+declare const importSettings: () => Promise<{ SettingsPage: () => null }>;
+
+const RouteError = () => {
+  const error = useRouteError();
+  if (!hasErrorCode(error, ERRORS.ROUTE_MODULE_UNAVAILABLE)) throw error;
+  return (
+    <div role="alert">
+      <p>This page changed with an update, so it opens once the app reloads.</p>
+      <button
+        type="button"
+        onClick={() => {
+          window.location.reload();
+        }}
+      >
+        Reload
+      </button>
+    </div>
+  );
+};
+
+export const router = createBrowserRouter([
+  {
+    element: <Outlet />,
+    children: [
+      {
+        errorElement: <RouteError />,
+        children: [
+          {
+            path: '/settings',
+            lazy: createLazyRoute(importSettings, (module) => module.SettingsPage),
+          },
+        ],
+      },
+    ],
+  },
+]);
+```
+
+The notice never reloads on its own, so a form the user is filling in elsewhere isn't cleared until they choose to. Offline, the same failure means the script can't be fetched, so the notice can say so with `useOnlineStatus` from jg-react.
 
 ## List filters in the URL, with a way back
 

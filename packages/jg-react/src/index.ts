@@ -56,6 +56,14 @@ export type {
   IUseDebouncedSearchResult,
 } from './debounced-search/index.js';
 export type { IUseActiveHeadingOptions, IUseActiveHeadingResult } from './active-heading/index.js';
+export type { IUseNearViewportOptions, IUseNearViewportResult } from './near-viewport/index.js';
+export type { IUseCurrentTimeOptions } from './current-time/index.js';
+export type { IThemeColors } from './theme-color/index.js';
+export type { IUseIsTextClampedOptions, IUseIsTextClampedResult } from './text-clamp/index.js';
+export type {
+  IUseNewBuildAvailableOptions,
+  IUseNewBuildAvailableResult,
+} from './new-build/index.js';
 
 // error codes
 export { ERRORS } from './shared/index.js';
@@ -66,10 +74,18 @@ export { useOnlineStatus } from './online-status/index.js';
 // visibility
 export { useDocumentVisibility } from './document-visibility/index.js';
 
+// time
+export { useCurrentTime } from './current-time/index.js';
+
+// builds
+export { useNewBuildAvailable } from './new-build/index.js';
+
 // viewport
 export { isBreakpointAtLeast, useBreakpoint } from './breakpoint/index.js';
 export { useIsWindowScrolledPast } from './window-scroll/index.js';
 export { useElementWidth } from './element-width/index.js';
+export { useNearViewport } from './near-viewport/index.js';
+export { useIsTextClamped } from './text-clamp/index.js';
 
 // forms
 export { useFormChanges } from './form-changes/index.js';
@@ -105,3 +121,4 @@ export {
   useDocumentTheme,
   useResolvedTheme,
 } from './theme/index.js';
+export { useThemeColorMeta } from './theme-color/index.js';

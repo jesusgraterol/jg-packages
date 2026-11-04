@@ -213,6 +213,70 @@ const { ref, value: columns } = useElementWidth((width) => Math.max(1, Math.floo
 
 It measures the element's border box as soon as `ref` attaches it, before the browser paints, then follows it with a `ResizeObserver`, or the window's `resize` event where there's none. A width of 0, such as while the element is hidden with `display: none`, keeps the last value. Attaching another element measures that one, and detaching resets the value to `undefined`, as on a server. Return a primitive from the function, so an unchanged result never re-renders.
 
+### Near the viewport
+
+`useNearViewport` tells when an element is within a margin of the viewport, such as a sentinel at the end of a list that loads the next page before the reader gets there:
+
+```ts
+import { useNearViewport } from 'jg-react';
+
+const { ref, isNear } = useNearViewport({ rootMargin: '0px 0px 512px 0px' });
+// <div ref={ref} /> after the last row; load the next page while `isNear`
+```
+
+It reads `false` with no element attached, on a server, and in a browser without `IntersectionObserver`. A new margin starts a new observer.
+
+### Clamped text
+
+`useIsTextClamped` tells whether a text runs past the lines its CSS `line-clamp` shows, so a Show all control appears only on text the clamp cuts off:
+
+```ts
+import { useIsTextClamped } from 'jg-react';
+
+const { ref, isClamped } = useIsTextClamped({ lines: 3, content: message });
+// <p ref={ref} className={isExpanded ? '' : 'line-clamp-3'}>, with Show all while `isClamped`
+```
+
+It compares the text's full height with those lines, so the answer holds whether the text shows clamped or in full, and a row that opens expanded still offers Show less. It measures again before the browser paints when `content` changes, and whenever the box resizes. Lines that aren't a positive safe integer throw `INVALID_CLAMPED_LINES`.
+
+### The current time
+
+`useCurrentTime` keeps the time for labels that read relative to it, moving it on once an interval, a minute by default, so "5 minutes ago" changes without a re-render every second:
+
+```ts
+import { useCurrentTime } from 'jg-react';
+import { formatRelativeTime } from 'jg-utilities';
+
+const label = formatRelativeTime(observedAt, { now: useCurrentTime() });
+```
+
+An interval that isn't a positive, finite number of seconds throws `INVALID_CURRENT_TIME_INTERVAL`.
+
+### The browser's theme color
+
+`useThemeColorMeta` keeps every `<meta name="theme-color">` tag, which colors the browser's chrome and an installed app's title bar, on the color of the theme the page shows:
+
+```ts
+import { useThemeColorMeta } from 'jg-react';
+
+useThemeColorMeta({ light: '#fefdfb', dark: '#1e2939' });
+```
+
+It follows `<html>`'s theme as `useDocumentTheme` reads it, so a theme the user picks in the app wins over the system's. Leave `media` queries off those tags, or start them with the system's colors.
+
+### New builds
+
+`useNewBuildAvailable` tells when the server serves a newer build of the app than the open page, so an old tab can offer a reload:
+
+```ts
+import { useNewBuildAvailable } from 'jg-react';
+
+const { isNewBuildAvailable, check } = useNewBuildAvailable();
+// show a Reload banner while `isNewBuildAvailable`; call `check()` when the server is back
+```
+
+It reads the entry page, `/` by default, without the cache and without following redirects, and compares the entry script it loads from `/assets/` with the open page's, each time the page becomes visible again and when `check` asks. A lazy chunk that's gone after a deploy, which Vite reports with `vite:preloadError`, counts as a new build while the browser is online; the hook prevents that event's default, so the import resolves with no module instead of rejecting, which jg-react-router's `loadRouteModule` treats as code that couldn't load. A read that fails, is redirected or isn't HTML, such as a proxy's sign-in page, says nothing, and the page never reloads on its own.
+
 ## Documentation
 
 The full API reference ships in the package as `API.md`, generated from its TSDoc for the installed version, and is at https://jg-packages.jesusgraterol.dev/packages/jg-react/.

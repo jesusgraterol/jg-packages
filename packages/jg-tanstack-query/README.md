@@ -142,6 +142,33 @@ const exportJob = useQuery({
 
 It polls only while `isEnabled` holds and the last fetch succeeded: a hidden tab pauses it, the tab or the network coming back fetches once, and a failed fetch stops it until something else refetches the query. The interval can follow the data, and `false` stops it, such as once a job finished. An interval that isn't positive and finite throws `INVALID_POLLING_INTERVAL`.
 
+### A paged list that stays fresh
+
+`usePolledFirstPage` keeps a cursor-paged list current without reading every loaded page again: it reads only the first page each interval and merges it into the pages the list holds:
+
+```ts
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { usePolledFirstPage } from 'jg-tanstack-query';
+
+const queryKey = ['events'];
+const events = useInfiniteQuery({
+  queryKey,
+  queryFn: ({ pageParam, signal }) => fetchEvents(pageParam, signal),
+  initialPageParam: null as string | null,
+  getNextPageParam: (page) => page.nextCursor,
+});
+usePolledFirstPage({
+  queryKey,
+  list: events,
+  readFirstPage: (signal) => fetchEvents(null, signal),
+  getRowId: (event) => event.id,
+  intervalSeconds: 15,
+  isEnabled: isListShown, // optional
+});
+```
+
+`mergeFirstPage`, which the hook uses, matches rows by ID: rows the list doesn't hold yet go ahead of its first page, rows it holds take the new version wherever they are, and the pages after the first keep their place, cursors and page params, so a list that loaded more keeps them and its scroll. The poll pauses and stops as `createPollingQueryOptions` does, starts from the page the list read, so opening the list reads its first page once, and is dropped as soon as the list unmounts. Pages hold their rows in `data`.
+
 ### Errors
 
 | Code                       | When                                                                      |
