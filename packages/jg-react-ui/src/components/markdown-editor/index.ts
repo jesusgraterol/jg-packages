@@ -30,4 +30,5 @@ export {
   type IChatMarkdownBlockFormat,
   type IChatMarkdownEditorControls,
   type IChatMarkdownEditorProps,
+  type IChatMarkdownEditorTool,
 } from './chat-editor/index.js';

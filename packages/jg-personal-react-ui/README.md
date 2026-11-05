@@ -94,9 +94,11 @@ The personal adapter maps syntax and file-status roles to `jg-personal-ui`'s exi
 
 `MarkdownEditor` retains the controlled `value`/`onChange`, `supportedTools`, accessibility props, and `auto`/`compact`/`wide` layouts. Auto measures the owning container and selects wide at 640px. `CompactMarkdownEditor` and `WideMarkdownEditor` expose the same props without `layout`. A changed `value` replaces the document as one edit that keeps the editor's focus, with the caret at the end of the text, and isn't reported back through `onChange`. The exported all-tools, authoring, and prose policies retain the source command sets; existing documents remain readable when authoring tools are constrained.
 
-`ChatMarkdownEditor` retains paragraph, H1–H3, bullet/numbered-list, bold/italic, and safe-link formatting. HTML is removed, unsupported blocks become readable prose, and image alternatives remain text. Paste checks bound raw input before parsing and the serialized result before replacing the draft. Rejected paste leaves the draft intact; formatting feedback remains until the next edit.
+`ChatMarkdownEditor` defaults to paragraph, H1–H3, bullet/numbered-list, bold/italic, and safe-link formatting. Its optional `supportedTools` accepts `IChatMarkdownEditorTool`; add `inline-code`, `code-block` and `table` to the existing seven tools to enable the selection and slash-menu actions together with their document structures. Code retains literal whitespace, character references and language labels; tables retain alignment. HTML outside code is removed, unsupported blocks become readable prose, and image alternatives remain text. Paste checks bound raw input before parsing and the serialized result before replacing the draft. Rejected paste leaves the draft intact; formatting feedback remains until the next edit.
 
 Supply a positive safe-integer `maxLength`, which counts the message without the line break its Markdown ends with. `maxEditorHeight` defaults to 256px, must be positive and finite, and is constrained to 50dvh by the stylesheet. `controlsRef` exposes `getMarkdown()`, `focus()`, and `appendLiteralText(text)`. Literal insertion escapes Markdown and normally returns false before readiness or when the draft is too long. Opt into `{ allowOverLimit: true }` for complete dictation retention before readiness and subsequent editing; read-only editors still reject insertion. Consumers own length and submission guards. Change the editor key with draft identity after success to reset content and undo history. Initial snapshots retain the controlled draft, and focus waits for the initialized editor. Use these controls to compose caller-owned upload and dictation flows.
+
+Ctrl+Enter and Cmd+Enter request submission from prose and embedded code editors, except during composition or while read-only. Enter and Shift+Enter edit by default; `isShiftEnterSubmit` retains the optional Shift+Enter submission behavior. Live theme changes use CSS tokens without remounting chat editors or replacing their document, selection or undo history.
 
 `formattingContainer` uses inline placement when omitted, reserves external placement with null, and portals the formatting menu into a supplied HTMLElement. The existing `styles.css` entry includes Milkdown's common/frame styles before editor overrides. The personal package re-exports the generic implementations directly and supplies the shared JG tokens.
 
@@ -107,7 +109,7 @@ Invalid configuration retains these native Error messages:
 
 ## Documentation
 
-The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.5.1/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.5.1/RECIPES.md). These personal-use packages are unlisted on the public package website.
+The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.6.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.6.0/RECIPES.md). These personal-use packages are unlisted on the public package website.
 
 ## License
 

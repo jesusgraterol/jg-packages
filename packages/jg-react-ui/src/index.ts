@@ -688,6 +688,7 @@ export {
   type IChatMarkdownBlockFormat,
   type IChatMarkdownEditorControls,
   type IChatMarkdownEditorProps,
+  type IChatMarkdownEditorTool,
 } from './components/markdown-editor/index.js';
 
 // code diff

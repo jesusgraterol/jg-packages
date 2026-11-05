@@ -1,4 +1,4 @@
-// fixed tools exposed by the compact chat authoring surface.
+// the simple default remains unchanged when a consumer does not select chat tools
 export const CHAT_MARKDOWN_EDITOR_TOOLS = [
   'text',
   'heading',

@@ -2,9 +2,12 @@ import { act } from 'react';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import { editorViewCtx } from '@milkdown/kit/core';
 import { Slice } from '@milkdown/kit/prose/model';
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { getByRole } from '@testing-library/dom';
+import { afterEach, describe, expect, onTestFinished, test, vi } from 'vitest';
 
 import { createChatPasteEvent } from './clipboard.test-utils.js';
+import { CHAT_MARKDOWN_EDITOR_TOOLS } from './constants.js';
+import type { IChatMarkdownEditorTool } from './types.js';
 import {
   CHAT_MARKDOWN_POLICY_PLUGIN_KEY,
   createChatMarkdownPolicyPlugin,
@@ -20,6 +23,7 @@ type IChatPolicySession = {
 const createPolicySession = async (
   markdown: string,
   maxLength = 4096,
+  supportedTools: ReadonlyArray<IChatMarkdownEditorTool> = CHAT_MARKDOWN_EDITOR_TOOLS,
 ): Promise<IChatPolicySession> => {
   const root = document.createElement('div');
   const crepe = new Crepe({
@@ -31,11 +35,25 @@ const createPolicySession = async (
   });
   const onNormalization = vi.fn();
   const onPasteRejected = vi.fn();
+  let isDestroyed = false;
+  const destroy = async (): Promise<void> => {
+    if (isDestroyed) return;
+    isDestroyed = true;
+    try {
+      await act(async () => {
+        await crepe.destroy();
+      });
+    } finally {
+      root.remove();
+    }
+  };
+  onTestFinished(destroy);
 
   document.body.append(root);
   crepe.editor.use(
     createChatMarkdownPolicyPlugin({
       getMaxLength: () => maxLength,
+      getSupportedTools: () => supportedTools,
       onNormalization,
       onPasteRejected,
     }),
@@ -49,12 +67,7 @@ const createPolicySession = async (
 
   return {
     crepe,
-    destroy: async () => {
-      await act(async () => {
-        await crepe.destroy();
-      });
-      root.remove();
-    },
+    destroy,
     onNormalization,
     onPasteRejected,
   };
@@ -67,6 +80,84 @@ describe('chat Markdown policy plugin', () => {
     for (const session of sessions.splice(0)) {
       await session.destroy();
     }
+  });
+
+  test('technical round trip', async () => {
+    const tools = [...CHAT_MARKDOWN_EDITOR_TOOLS, 'inline-code', 'code-block', 'table'] as const;
+    const code = '  {}\n\t&#x20; <tag> `value`\n  café 日本語';
+    const source =
+      '`{}` and [safe](https://example.com)\n\n```typescript\n' +
+      code +
+      '\n```\n\n| Name | Code |\n| :--- | ---: |\n| Example | `[]` |';
+    const session = await createPolicySession(source, 4096, tools);
+    sessions.push(session);
+    const markdown = session.crepe.getMarkdown();
+
+    expect(markdown).toContain('`{}`');
+    expect(markdown).toContain('```typescript\n' + code + '\n```');
+    expect(markdown).toContain('`[]`');
+    expect(markdown).toContain('[safe](https://example.com)');
+    const readCell = () =>
+      session.crepe.editor.action((ctx) =>
+        getByRole(ctx.get(editorViewCtx).dom, 'cell', { name: '[]' }),
+      );
+    await vi.waitFor(() => expect(readCell().textContent).toBe('[]'));
+    const table = readCell().closest('table');
+    expect(table?.rows).toHaveLength(2);
+    expect(table?.rows[1]?.cells[1]?.textContent).toBe('[]');
+    const replay = await createPolicySession(markdown, 4096, tools);
+    sessions.push(replay);
+    expect(replay.crepe.getMarkdown()).toBe(markdown);
+    expect(session.onNormalization).not.toHaveBeenCalled();
+  });
+
+  test('inline-only policy', async () => {
+    const session = await createPolicySession(
+      '`{}`\n\n```ts\n  literal\n```\n\n| A |\n| - |\n| B |',
+      4096,
+      [...CHAT_MARKDOWN_EDITOR_TOOLS, 'inline-code'],
+    );
+    sessions.push(session);
+
+    const markdown = session.crepe.getMarkdown();
+    expect(markdown).toContain('`{}`');
+    expect(markdown).not.toContain('```');
+    expect(
+      session.crepe.editor.action((ctx) => ctx.get(editorViewCtx).dom.querySelector('table')),
+    ).toBeNull();
+    expect(markdown).toContain('literal');
+    expect(markdown).toContain('B');
+  });
+
+  test.each([
+    ['text/plain', '```typescript\n  {} &#x20;\n\t<tag>\n```\n\n| A |\n| - |\n| `[]` |'],
+    [
+      'text/html',
+      '<pre><code>  {} &amp;#x20;\n\t&lt;tag&gt;</code></pre><table><tr><th>A</th></tr><tr><td><code>[]</code></td></tr></table>',
+    ],
+  ])('technical paste %s', async (mimeType, source) => {
+    const session = await createPolicySession('', 4096, [
+      ...CHAT_MARKDOWN_EDITOR_TOOLS,
+      'inline-code',
+      'code-block',
+      'table',
+    ]);
+    sessions.push(session);
+    const clipboard = new DataTransfer();
+    clipboard.setData(mimeType, source);
+    act(() =>
+      session.crepe.editor.action((ctx) => {
+        ctx.get(editorViewCtx).dom.dispatchEvent(createChatPasteEvent(clipboard));
+      }),
+    );
+    const markdown = session.crepe.getMarkdown();
+    expect(markdown).toContain('  {} &#x20;\n\t<tag>');
+    expect(markdown).toContain('`[]`');
+    expect(session.onPasteRejected).not.toHaveBeenCalled();
+    const cell = session.crepe.editor.action((ctx) =>
+      getByRole(ctx.get(editorViewCtx).dom, 'cell', { name: '[]' }),
+    );
+    expect(cell.textContent).toBe('[]');
   });
 
   test('normalizes unsupported blocks, marks, headings, media, and unsafe links', async () => {

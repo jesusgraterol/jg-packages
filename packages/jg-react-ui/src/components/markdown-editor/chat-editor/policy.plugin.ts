@@ -60,12 +60,15 @@ export const createChatMarkdownPolicyPlugin = (
             transactions.some(
               (transaction) => transaction.getMeta(CHAT_MARKDOWN_POLICY_TRANSACTION_META) === true,
             ) ||
-            !doesChatMarkdownDocumentNeedNormalization(nextState.doc)
+            !doesChatMarkdownDocumentNeedNormalization(nextState.doc, options.getSupportedTools?.())
           ) {
             return null;
           }
 
-          const normalizedDocument = normalizeChatMarkdownDocument(nextState.doc);
+          const normalizedDocument = normalizeChatMarkdownDocument(
+            nextState.doc,
+            options.getSupportedTools?.(),
+          );
           const transaction = nextState.tr
             .replaceWith(0, nextState.doc.content.size, normalizedDocument.content)
             .setMeta(CHAT_MARKDOWN_POLICY_TRANSACTION_META, true);
@@ -92,8 +95,14 @@ export const createChatMarkdownPolicyPlugin = (
             const parsedDocument = html
               ? view.state.schema.topNodeType.create(null, pastedSlice.content)
               : ctx.get(parserCtx)(markdown);
-            const needsNormalization = doesChatMarkdownDocumentNeedNormalization(parsedDocument);
-            const normalizedDocument = normalizeChatMarkdownDocument(parsedDocument);
+            const needsNormalization = doesChatMarkdownDocumentNeedNormalization(
+              parsedDocument,
+              options.getSupportedTools?.(),
+            );
+            const normalizedDocument = normalizeChatMarkdownDocument(
+              parsedDocument,
+              options.getSupportedTools?.(),
+            );
             const transaction = view.state.tr.replaceSelection(
               new Slice(normalizedDocument.content, 0, 0),
             );
@@ -116,8 +125,17 @@ export const createChatMarkdownPolicyPlugin = (
         },
         view: (view) => {
           queueMicrotask(() => {
-            if (!view.isDestroyed && doesChatMarkdownDocumentNeedNormalization(view.state.doc)) {
-              const normalizedDocument = normalizeChatMarkdownDocument(view.state.doc);
+            if (
+              !view.isDestroyed &&
+              doesChatMarkdownDocumentNeedNormalization(
+                view.state.doc,
+                options.getSupportedTools?.(),
+              )
+            ) {
+              const normalizedDocument = normalizeChatMarkdownDocument(
+                view.state.doc,
+                options.getSupportedTools?.(),
+              );
 
               view.dispatch(
                 view.state.tr

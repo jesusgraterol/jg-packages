@@ -1138,20 +1138,11 @@ export const configureMarkdownEditorSerialization = (ctx: Ctx): void => {
 };
 
 /**
- * Normalizes markdown emitted by the editor before it leaves app-ui.
- * @param markdown The markdown string produced by Milkdown.
- * @returns Markdown with readable template-variable underscores.
- */
-export const normalizeMarkdownEditorMarkdown = (markdown: string): string =>
-  normalizeEscapedMarkdownVariableTokens(markdown);
-
-/**
  * Reads markdown from Crepe using the app-ui output contract.
  * @param crepe The current Crepe editor instance.
- * @returns Normalized markdown suitable for controlled editor values.
+ * @returns Serialized markdown with text-node variable formatting and literal code intact.
  */
-export const getMarkdownEditorMarkdown = (crepe: Crepe): string =>
-  normalizeMarkdownEditorMarkdown(crepe.getMarkdown());
+export const getMarkdownEditorMarkdown = (crepe: Crepe): string => crepe.getMarkdown();
 
 /**
  * Converts a heading level into the matching turn-into option kind.

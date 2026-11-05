@@ -3,6 +3,7 @@ export type {
   IChatMarkdownBlockFormat,
   IChatMarkdownEditorControls,
   IChatMarkdownEditorProps,
+  IChatMarkdownEditorTool,
 } from './types.js';
 
 // components

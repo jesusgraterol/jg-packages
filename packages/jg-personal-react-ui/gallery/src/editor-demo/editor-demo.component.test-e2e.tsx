@@ -33,6 +33,133 @@ const contrastRatio = (first: number[], second: number[]): number => {
 };
 
 for (const theme of ['light', 'dark'] as const) {
+  test(`${theme} technical chat commands`, async ({ page }) => {
+    await page.goto(`/editors?theme=${theme}`);
+    await page.getByRole('button', { name: 'Technical formatting', exact: true }).click();
+    const message = page.getByRole('textbox', { name: 'Message', exact: true });
+    await expect(message).toBeEditable();
+    await message.pressSequentially('selected words');
+    await expect(page.getByText('14/2048', { exact: true })).toBeAttached();
+    await message.press('Home');
+    await message.press('ControlOrMeta+Shift+ArrowRight');
+    const inlineCode = page.getByRole('button', { name: 'Inline code', exact: true });
+    await expect(inlineCode).toBeVisible();
+    await inlineCode.click();
+    await expect(message.locator('p code')).toHaveText('selected');
+    await inlineCode.click();
+    await expect(message.locator('p code')).toHaveCount(0);
+    await message.press('ControlOrMeta+a');
+    await message.press('Backspace');
+    await expect(message).toHaveText('');
+    await message.pressSequentially('/table');
+    const tableItem = page.getByRole('listitem').getByText('Table', { exact: true });
+    await expect(tableItem).toBeVisible();
+    await message.press('Escape');
+    await expect(tableItem).toBeHidden();
+    await expect(message).toBeFocused();
+    await message.press('ControlOrMeta+a');
+    await message.press('Backspace');
+    await message.pressSequentially('/code');
+    await expect(page.getByRole('listitem').getByText('Code', { exact: true })).toBeVisible();
+    await message.press('Enter');
+    const code = message.getByRole('textbox', { name: /code editor$/i });
+    await expect(code).toBeEditable();
+    await code.pressSequentially('  {} /literal');
+    await expect(tableItem).toBeHidden();
+    await code.press('Shift+Enter');
+    await expect(page.getByRole('status', { name: 'Submitted message', exact: true })).toHaveText(
+      'No message submitted.',
+    );
+    await code.press('ControlOrMeta+Enter');
+    await expect(
+      page.getByRole('status', { name: 'Submitted message', exact: true }),
+    ).toContainText('  {} /literal');
+    await expect(message).toHaveText('');
+    await message.pressSequentially('/table');
+    await expect(tableItem).toBeVisible();
+    await message.press('Enter');
+    await expect(message.getByRole('columnheader').first()).toBeVisible();
+    await message.getByRole('columnheader').first().click();
+    await page.keyboard.type('Key');
+    await message.press('ControlOrMeta+Enter');
+    await expect(
+      page.getByRole('status', { name: 'Submitted message', exact: true }),
+    ).toContainText('| Key');
+  });
+
+  test(`${theme} technical chat phone and live theme`, async ({
+    browser,
+    browserName,
+  }, testInfo) => {
+    const errors: Array<Error | string> = [];
+    const context = await browser.newContext({
+      viewport: { width: 320, height: 480 },
+      hasTouch: true,
+      colorScheme: theme,
+      reducedMotion: 'reduce',
+    });
+    try {
+      const page = await context.newPage();
+      trackEditorErrors(page, errors);
+      if (browserName === 'chromium') {
+        const devtools = await context.newCDPSession(page);
+        await devtools.send('Emulation.setSafeAreaInsetsOverride', {
+          insets: { top: 32, bottom: 24, left: 12, right: 12 },
+        });
+      }
+      await page.goto('http://127.0.0.1:4178/editors');
+      await page.getByRole('button', { name: 'Technical formatting', exact: true }).click();
+      await page.getByRole('button', { name: 'Load technical message', exact: true }).click();
+      const message = page.getByRole('textbox', { name: 'Message', exact: true });
+      const code = message.getByRole('textbox', { name: 'typescript code editor', exact: true });
+      await expect(code).toContainText('const literal');
+      await expect(message.getByRole('cell', { name: '[]', exact: true })).toBeVisible();
+      await expect(code).toHaveCSS('font-size', '16px');
+      await code.click();
+      await code.press('ControlOrMeta+End');
+      await code.pressSequentially(' latest');
+      const codeElement = await code.elementHandle();
+      const selectionBefore = await code.evaluate(() => {
+        const selection = document.getSelection()!;
+        return { text: selection.anchorNode?.textContent, offset: selection.anchorOffset };
+      });
+      const initialColor = await code.evaluate((element) => getComputedStyle(element).color);
+      await page.emulateMedia({ colorScheme: theme === 'light' ? 'dark' : 'light' });
+      await expect(page.locator('html')).toHaveClass(theme === 'light' ? /dark/ : /^(?!.*dark)/);
+      await expect(code).toBeFocused();
+      expect(await code.evaluate((element, original) => element === original, codeElement)).toBe(
+        true,
+      );
+      expect(
+        await code.evaluate(() => {
+          const selection = document.getSelection()!;
+          return { text: selection.anchorNode?.textContent, offset: selection.anchorOffset };
+        }),
+      ).toStrictEqual(selectionBefore);
+      await expect(code).toContainText('{} latest');
+      await expect
+        .poll(() => code.evaluate((element) => getComputedStyle(element).color))
+        .not.toBe(initialColor);
+      await code.press('ControlOrMeta+z');
+      await expect(code).not.toContainText('latest');
+      await code.press('ControlOrMeta+y');
+      await expect(code).toContainText('latest');
+      await expectNoHorizontalOverflow(page);
+      expect((await new AxeBuilder({ page }).analyze()).violations).toStrictEqual([]);
+      if (testInfo.project.name === 'chromium' && testInfo.repeatEachIndex === 0)
+        await page.screenshot({ path: testInfo.outputPath(`chat-${theme}.png`), fullPage: true });
+      await code.press('ControlOrMeta+Enter');
+      const submitted = page.getByRole('status', { name: 'Submitted message', exact: true });
+      await expect(submitted).toContainText('  const literal = "&#x20; {{VAR\\_NAME}}";');
+      await expect(submitted).toContainText('\t{} latest');
+      await expect(submitted).toContainText('`[]`');
+      await expect(message).toHaveText('');
+    } finally {
+      await context.close();
+      expect(errors).toStrictEqual([]);
+    }
+  });
+
   test(
     `${theme} rich document keeps long tokens, tables, code and video authoring inside a phone`,
     { tag: '@full' },
@@ -456,6 +583,18 @@ for (const theme of ['light', 'dark'] as const) {
               await expect(message).toContainText('BEGIN café');
               await expect(message).toContainText('END');
               expect((await message.innerText()).length).toBeGreaterThan(45000);
+              const scroll = await message.evaluate((element) => {
+                element.scrollTop = element.scrollHeight;
+                return {
+                  canScroll: element.scrollTop > 0,
+                  height: element.clientHeight,
+                  viewportHeight: window.innerHeight,
+                };
+              });
+              expect(scroll.height).toBeLessThanOrEqual(
+                Math.min(256, scroll.viewportHeight / 2) + 1,
+              );
+              expect(scroll.canScroll).toBe(true);
               await expect(
                 page.getByRole('button', { name: 'Submit message', exact: true }),
               ).toBeDisabled();

@@ -524,3 +524,24 @@ const MessageDraft = () => {
 ```
 
 Read `controlsRef.current?.getMarkdown()` when submitting so a debounced change cannot omit the latest keystroke. Pass reviewed dictation to `appendLiteralText` and handle false by retaining it for another attempt. The private gallery demonstrates the actual upload and audio components with abortable local fixture adapters.
+
+For agent-facing chat, keep the same composer and opt into technical formatting with a stable policy:
+
+```tsx
+import type { IChatMarkdownEditorTool } from 'jg-personal-react-ui/components/markdown-editor';
+
+const agentChatTools: ReadonlyArray<IChatMarkdownEditorTool> = [
+  'text',
+  'heading',
+  'bold',
+  'italic',
+  'link',
+  'bullet-list',
+  'ordered-list',
+  'inline-code',
+  'code-block',
+  'table',
+];
+```
+
+Pass `supportedTools={agentChatTools}` to `ChatMarkdownEditor`. Selecting text exposes inline code, and `/` offers Code and Table. Ctrl/Cmd+Enter requests submission from both prose and code; leave `isShiftEnterSubmit` unset to keep Shift+Enter as an edit. Keep the draft key independent of theme so focus, composition, selection and undo history survive theme changes.
