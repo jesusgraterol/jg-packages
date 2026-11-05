@@ -12,6 +12,58 @@ import {
 } from './policy.js';
 
 describe('chat Markdown policy', () => {
+  test('an opted-in chat preserves literal inline code, fenced code and table structure', () => {
+    const schema = new Schema({
+      nodes: {
+        doc: { content: 'block*' },
+        text: { group: 'inline' },
+        paragraph: { content: 'inline*', group: 'block' },
+        code_block: {
+          attrs: { language: { default: '' } },
+          content: 'text*',
+          group: 'block',
+          code: true,
+        },
+        table: { content: 'table_header_row table_row+', group: 'block' },
+        table_header_row: { content: 'table_header+' },
+        table_row: { content: 'table_cell+' },
+        table_header: { content: 'inline*', attrs: { alignment: { default: null } } },
+        table_cell: { content: 'inline*', attrs: { alignment: { default: null } } },
+      },
+      marks: { inlineCode: { code: true } },
+    });
+    const source = schema.node('doc', null, [
+      schema.node('paragraph', null, schema.text('{}', [schema.mark('inlineCode')])),
+      schema.node('code_block', { language: 'typescript' }, schema.text('  {}\n\t&#x20; <tag> `')),
+      schema.node('table', null, [
+        schema.node(
+          'table_header_row',
+          null,
+          schema.node('table_header', { alignment: 'center' }, schema.text('Code')),
+        ),
+        schema.node(
+          'table_row',
+          null,
+          schema.node(
+            'table_cell',
+            { alignment: 'center' },
+            schema.text('{}', [schema.mark('inlineCode')]),
+          ),
+        ),
+      ]),
+    ]);
+    const normalized = normalizeChatMarkdownDocument(source, [
+      'text',
+      'inline-code',
+      'code-block',
+      'table',
+    ]);
+
+    expect(normalized.toJSON()).toStrictEqual(source.toJSON());
+    normalized.check();
+    expect(normalizeChatMarkdownDocument(source).toJSON()).not.toStrictEqual(source.toJSON());
+  });
+
   test('literal appends preserve paragraphs and Unicode while ordinary insertion stays bounded', () => {
     expect(buildChatMarkdownLiteralAppend('Existing\n', '# café\n日本語\n\nEND', 8)).toBeNull();
     expect(buildChatMarkdownLiteralAppend('Existing\n', '# café\n日本語\n\nEND', 8, true)).toBe(

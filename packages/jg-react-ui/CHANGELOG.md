@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.0
+
+### Added
+
+- Add opt-in chat inline code, fenced code blocks and tables through `supportedTools` and `IChatMarkdownEditorTool`, retaining the seven-tool default.
+
+### Fixed
+
+- Route Ctrl/Cmd+Enter through the existing chat submission callback from embedded code editors, with composition and read-only guards.
+- Keep floating chat formatting controls outside the scrolling document so Firefox and WebKit can activate them.
+- Ignore changes from detached editors during asynchronous destruction so an old draft cannot return after submission.
+- Preserve backslashes in code that resembles a template variable; variable formatting stays in the existing text-node serializer.
+- Map chat code carets and selections to live theme tokens without remounting the editor or losing editing state.
+
 ## 0.5.1
 
 ### Fixed

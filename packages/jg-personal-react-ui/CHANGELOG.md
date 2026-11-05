@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0
+
+### Added
+
+- Re-export `jg-react-ui` 0.6.0's opt-in technical chat tools and public tool type. The existing simple default remains unchanged.
+- Add a technical formatting switch to the private editor gallery, with code/table authoring and live-theme qualification.
+
 ## 0.5.1
 
 ### Fixed

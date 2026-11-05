@@ -46,3 +46,15 @@ test('server rendering retains the accessible count and value without creating a
   expect(markup).toContain('8<!-- -->/<!-- -->4');
   expect(markup).not.toContain('contenteditable');
 });
+
+test('an inline-only policy omits the block formatting control', () => {
+  const markup = renderToString(
+    <ChatMarkdownEditor
+      maxLength={2048}
+      onChange={() => {}}
+      value="Draft"
+      supportedTools={['inline-code']}
+    />,
+  );
+  expect(markup).not.toContain('Format message');
+});

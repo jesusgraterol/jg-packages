@@ -32,7 +32,7 @@ const assertChatMarkdownEditorConfiguration = (
 };
 
 /**
- * Renders the fixed-policy rich Markdown editor used by chat composer surfaces.
+ * Renders a bounded rich chat editor with a simple default and opt-in technical formatting.
  * @param props The controlled value, serialized length limit, controls, and accessibility props.
  * @returns A compact, growing rich-text editor with block and selection formatting controls.
  * @throws
@@ -58,6 +58,7 @@ export const ChatMarkdownEditor = ({
   onChange,
   onSubmitRequest,
   placeholder = 'e.g. Describe what you need help with',
+  supportedTools = CHAT_MARKDOWN_EDITOR_TOOLS,
   value,
 }: IChatMarkdownEditorProps): React.ReactElement => {
   assertChatMarkdownEditorConfiguration(maxLength, maxEditorHeight);
@@ -80,6 +81,7 @@ export const ChatMarkdownEditor = ({
     <ChatMarkdownFormatting
       controlsRef={internalControlsRef}
       disabled={disabled}
+      supportedTools={supportedTools}
     />
   );
   const resolvedFormattingControl =
@@ -147,6 +149,7 @@ export const ChatMarkdownEditor = ({
           chatOptions={{
             controlsRef: internalControlsRef,
             getMaxLength: () => maxLength,
+            getSupportedTools: () => supportedTools,
             isShiftEnterSubmit,
             onNormalization: handleNormalization,
             onPasteRejected: handlePasteRejected,
@@ -157,7 +160,7 @@ export const ChatMarkdownEditor = ({
           isDarkMode={false}
           onChange={handleChange}
           placeholder={placeholder}
-          supportedTools={CHAT_MARKDOWN_EDITOR_TOOLS}
+          supportedTools={supportedTools}
           value={value}
         />
         <div

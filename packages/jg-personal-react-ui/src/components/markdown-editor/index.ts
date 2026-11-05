@@ -30,4 +30,5 @@ export {
   type IChatMarkdownBlockFormat,
   type IChatMarkdownEditorControls,
   type IChatMarkdownEditorProps,
+  type IChatMarkdownEditorTool,
 } from 'jg-react-ui/components/markdown-editor';

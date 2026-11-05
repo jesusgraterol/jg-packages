@@ -1,7 +1,9 @@
 import { act, createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { Editor, EditorStatus, editorViewCtx } from '@milkdown/kit/core';
+import { Editor, EditorStatus, commandsCtx, editorViewCtx } from '@milkdown/kit/core';
 import { DOMParser as ProseMirrorDomParser } from '@milkdown/kit/prose/model';
+import { TextSelection } from '@milkdown/kit/prose/state';
+import { undoCommand, redoCommand } from '@milkdown/kit/plugin/history';
 import { getByRole } from '@testing-library/dom';
 import { afterEach, beforeEach, describe, expect, test, vi, type MockInstance } from 'vitest';
 
@@ -12,6 +14,19 @@ import type { IChatMarkdownEditorControls } from './types.js';
 const reactActEnvironment = globalThis as typeof globalThis & {
   IS_REACT_ACT_ENVIRONMENT?: boolean;
 };
+
+const TECHNICAL_TOOLS = [
+  'text',
+  'heading',
+  'bold',
+  'italic',
+  'link',
+  'bullet-list',
+  'ordered-list',
+  'inline-code',
+  'code-block',
+  'table',
+] as const;
 
 describe('ChatMarkdownEditor', () => {
   let container: HTMLDivElement;
@@ -64,6 +79,216 @@ describe('ChatMarkdownEditor', () => {
       if (originalActEnvironment)
         Object.defineProperty(globalThis, 'IS_REACT_ACT_ENVIRONMENT', originalActEnvironment);
       else Reflect.deleteProperty(globalThis, 'IS_REACT_ACT_ENVIRONMENT');
+    }
+  });
+
+  test.each([
+    ['prose', 'Base'],
+    ['inline', '`Base`'],
+    ['code', '```typescript\nBase\n```'],
+    ['table', '| Name |\n| --- |\n| Base |'],
+  ])('theme state %s', async (_kind, markdown) => {
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+    const onChange = vi.fn();
+    const onSubmitRequest = vi.fn();
+    const wasDark = document.documentElement.classList.contains('dark');
+    try {
+      await act(async () => {
+        await Promise.resolve();
+        root.render(
+          <ChatMarkdownEditor
+            controlsRef={controlsRef}
+            maxLength={2048}
+            value={markdown}
+            onChange={onChange}
+            onSubmitRequest={onSubmitRequest}
+            supportedTools={TECHNICAL_TOOLS}
+          />,
+        );
+      });
+      await flushEditor();
+      const initialSnapshot = controlsRef.current!.getMarkdown();
+      const message = getByRole(container, 'textbox', { name: 'Message' });
+      const editor = editors.at(-1)!;
+      onChange.mockClear();
+
+      act(() => {
+        editor.action((ctx) => {
+          const view = ctx.get(editorViewCtx);
+          let end = 0;
+          view.state.doc.descendants((node, position) => {
+            if (node.isText && node.text === 'Base') end = position + 4;
+          });
+          expect(end).toBeGreaterThan(0);
+          view.focus();
+          const transaction = view.state.tr.insert(
+            end,
+            view.state.schema.text(' latest', view.state.doc.resolve(end - 1).marks()),
+          );
+          view.dispatch(
+            transaction.setSelection(TextSelection.create(transaction.doc, end - 2, end + 2)),
+          );
+        });
+        expect(onChange).not.toHaveBeenCalled();
+        const active = document.activeElement;
+        const selection = document.getSelection();
+        const anchor = selection?.anchorNode;
+        const anchorOffset = selection?.anchorOffset;
+        const focus = selection?.focusNode;
+        const focusOffset = selection?.focusOffset;
+
+        for (const isDark of [!wasDark, wasDark]) {
+          document.documentElement.classList.toggle('dark', isDark);
+          expect(getByRole(container, 'textbox', { name: 'Message' })).toBe(message);
+          expect(document.activeElement).toBe(active);
+          expect(document.getSelection()?.anchorNode).toBe(anchor);
+          expect(document.getSelection()?.anchorOffset).toBe(anchorOffset);
+          expect(document.getSelection()?.focusNode).toBe(focus);
+          expect(document.getSelection()?.focusOffset).toBe(focusOffset);
+          expect(controlsRef.current!.getMarkdown()).toContain('Base latest');
+        }
+
+        const updatedSnapshot = controlsRef.current!.getMarkdown();
+        editor.action((ctx) => ctx.get(commandsCtx).call(undoCommand.key));
+        expect(controlsRef.current!.getMarkdown()).toBe(initialSnapshot);
+        editor.action((ctx) => ctx.get(commandsCtx).call(redoCommand.key));
+        expect(controlsRef.current!.getMarkdown()).toBe(updatedSnapshot);
+        expect(onSubmitRequest).not.toHaveBeenCalled();
+        message.dispatchEvent(
+          new KeyboardEvent('keydown', { bubbles: true, ctrlKey: true, key: 'Enter' }),
+        );
+        expect(onSubmitRequest).toHaveBeenCalledExactlyOnceWith(updatedSnapshot);
+        message.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+        document.documentElement.classList.toggle('dark');
+        expect(editor.action((ctx) => ctx.get(editorViewCtx).composing)).toBe(true);
+        expect(controlsRef.current!.getMarkdown()).toBe(updatedSnapshot);
+        message.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            bubbles: true,
+            ctrlKey: true,
+            key: 'Enter',
+            isComposing: true,
+          }),
+        );
+        expect(onSubmitRequest).toHaveBeenCalledTimes(1);
+        message.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '' }));
+      });
+      expect(editors).toHaveLength(1);
+    } finally {
+      document.documentElement.classList.toggle('dark', wasDark);
+    }
+  });
+
+  test.each([false, true])('nested code submission, disabled %s', async (disabled) => {
+    const onSubmitRequest = vi.fn();
+    await act(async () => {
+      await Promise.resolve();
+      root.render(
+        <ChatMarkdownEditor
+          maxLength={256}
+          disabled={disabled}
+          value={'```typescript\n{}\n```'}
+          onChange={vi.fn()}
+          onSubmitRequest={onSubmitRequest}
+          supportedTools={TECHNICAL_TOOLS}
+        />,
+      );
+    });
+    await flushEditor();
+    let code: HTMLElement;
+    await vi.waitFor(() => {
+      code = getByRole(container, 'textbox', { name: 'typescript code editor' });
+    });
+    act(() => {
+      code.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          bubbles: true,
+          ctrlKey: true,
+          key: 'Enter',
+          isComposing: true,
+        }),
+      );
+      code.dispatchEvent(
+        new KeyboardEvent('keydown', { bubbles: true, shiftKey: true, key: 'Enter' }),
+      );
+    });
+    expect(onSubmitRequest).not.toHaveBeenCalled();
+    act(() => {
+      code.dispatchEvent(
+        new KeyboardEvent('keydown', { bubbles: true, ctrlKey: true, key: 'Enter' }),
+      );
+    });
+    if (disabled) expect(onSubmitRequest).not.toHaveBeenCalled();
+    else expect(onSubmitRequest).toHaveBeenCalledExactlyOnceWith('```typescript\n{}\n```\n');
+  });
+
+  test('technical controlled replacement', async () => {
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+    const onChange = vi.fn();
+    const render = (value: string): void =>
+      root.render(
+        <ChatMarkdownEditor
+          controlsRef={controlsRef}
+          maxLength={2048}
+          value={value}
+          onChange={onChange}
+          supportedTools={TECHNICAL_TOOLS}
+        />,
+      );
+    act(() => render('Initial'));
+    await flushEditor();
+    onChange.mockClear();
+    const source =
+      '{{PROSE_NAME}} and `{{VAR\\_NAME}}`\n\n```ts\n  literal &#x20;\n\t<tag> {{VAR\\_NAME}}\n```\n\n| A |\n| - |\n| `[]` |';
+    act(() => render(source));
+    await flushEditor();
+    const snapshot = controlsRef.current!.getMarkdown();
+    expect(snapshot).toContain('{{PROSE_NAME}} and');
+    expect(snapshot).toContain('`{{VAR\\_NAME}}`');
+    expect(snapshot).toContain('```ts\n  literal &#x20;\n\t<tag> {{VAR\\_NAME}}\n```');
+    expect(snapshot).toContain('`[]`');
+    expect(getByRole(container, 'cell', { name: '[]' }).textContent).toBe('[]');
+    expect(onChange).not.toHaveBeenCalled();
+    expect(editors).toHaveLength(1);
+  });
+
+  test('pending destroy changes', async () => {
+    const onChange = vi.fn();
+    await act(async () => {
+      root.render(
+        <ChatMarkdownEditor
+          maxLength={256}
+          value="Old draft"
+          onChange={onChange}
+        />,
+      );
+      await Promise.resolve();
+    });
+    await flushEditor();
+    const editor = editors.at(-1)!;
+    const destroy = editor.destroy.bind(editor);
+    let releaseDestroy!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      releaseDestroy = resolve;
+    });
+    vi.spyOn(editor, 'destroy').mockImplementation(async (...args) => {
+      await gate;
+      return destroy(...args);
+    });
+    try {
+      act(() => root.render(null));
+      onChange.mockClear();
+      act(() =>
+        editor.action((ctx) => {
+          const view = ctx.get(editorViewCtx);
+          view.dispatch(view.state.tr.insertText(' late', 10));
+          view.dom.dispatchEvent(new FocusEvent('blur'));
+        }),
+      );
+      expect(onChange).not.toHaveBeenCalled();
+    } finally {
+      releaseDestroy();
+      await vi.waitFor(() => expect(editor.status).toBe(EditorStatus.Destroyed));
     }
   });
 

@@ -504,6 +504,27 @@ const MessageDraft = () => {
 
 Read `controlsRef.current?.getMarkdown()` when submitting so a debounced change cannot omit the latest keystroke. Use `onTranscriptionApply` to append Transcribe results with `appendLiteralText(text, { allowOverLimit: true })` and return focus to the main input. Handle false by retaining the result for another attempt. Let `onTranscriptionResult` append once and await the same ordinary submission handler used by the button and keyboard. Read the current editor snapshot in that handler, block both entry points while over limit, preserve failed drafts, and change the editor key with draft identity after success to clear its document and undo history. The private gallery demonstrates the actual upload and audio components with abortable local fixture adapters.
 
+For agent-facing chat, keep the same composer and opt into technical formatting with a stable policy:
+
+```tsx
+import type { IChatMarkdownEditorTool } from 'jg-react-ui/components/markdown-editor';
+
+const agentChatTools: ReadonlyArray<IChatMarkdownEditorTool> = [
+  'text',
+  'heading',
+  'bold',
+  'italic',
+  'link',
+  'bullet-list',
+  'ordered-list',
+  'inline-code',
+  'code-block',
+  'table',
+];
+```
+
+Pass `supportedTools={agentChatTools}` to `ChatMarkdownEditor`. Selecting text exposes inline code, and `/` offers Code and Table. Ctrl/Cmd+Enter requests submission from both prose and code; leave `isShiftEnterSubmit` unset to keep Shift+Enter as an edit. Keep the draft key independent of theme so focus, composition, selection and undo history survive theme changes.
+
 ## Compile retained HQ public imports and source shapes
 
 This fixture retains all thirty component boundaries plus `cn` imported by HQ at the recorded source commit. The import list and representative file-change, message, and attachment props compile against the installed tarball. Application transport, query ownership, and full HQ integration remain application work.

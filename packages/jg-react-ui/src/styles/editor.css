@@ -790,11 +790,21 @@
   }
 
   /* ChatMarkdownEditor: retain Crepe selection editing while replacing document chrome. */
+  [data-slot='markdown-editor'][data-editor-mode='chat'] .cm-cursor,
+  [data-slot='markdown-editor'][data-editor-mode='chat'] .cm-dropCursor {
+    border-left-color: var(--syntax-foreground, var(--code-foreground)) !important;
+  }
+
+  [data-slot='markdown-editor'][data-editor-mode='chat'] .cm-selectionBackground {
+    background: color-mix(in oklab, var(--code-foreground) 20%, transparent) !important;
+  }
+
+  /* keep floating selection controls outside the document's scrolling surface */
   [data-slot='markdown-editor'][data-editor-mode='chat'] .milkdown {
     background: transparent !important;
     min-height: 2.5rem;
-    max-height: min(var(--chat-markdown-editor-max-height, 256px), 50dvh);
-    overflow-y: auto;
+    max-height: none;
+    overflow: visible;
   }
 
   [data-slot='markdown-editor'][data-editor-mode='chat']
@@ -806,8 +816,8 @@
   [data-slot='markdown-editor'][data-editor-mode='chat'] .milkdown .ProseMirror {
     height: auto !important;
     min-height: 2.5rem;
-    max-height: none;
-    overflow-y: visible;
+    max-height: min(var(--chat-markdown-editor-max-height, 256px), 50dvh);
+    overflow-y: auto;
     padding: 0.4375rem 0.5rem !important;
   }
 

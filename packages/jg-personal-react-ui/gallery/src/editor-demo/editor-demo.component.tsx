@@ -19,6 +19,7 @@ import {
   type IAudioInputTranscribeHandler,
   type IAudioInputTranscriptionResultHandler,
   type IChatMarkdownEditorControls,
+  type IChatMarkdownEditorTool,
   type IFileUploadDialogSubmitHandler,
   type IFileUploadProps,
   type IMarkdownEditorLayout,
@@ -44,6 +45,21 @@ const RICH_DOCUMENT = [
 ].join('\n\n');
 
 const FILE_TYPES = ['text/plain'];
+// the gallery opts into the same technical tools as an agent-facing chat consumer
+const TECHNICAL_CHAT_TOOLS: ReadonlyArray<IChatMarkdownEditorTool> = [
+  'text',
+  'heading',
+  'bold',
+  'italic',
+  'link',
+  'bullet-list',
+  'ordered-list',
+  'inline-code',
+  'code-block',
+  'table',
+];
+const TECHNICAL_MESSAGE =
+  'Review `src/session.ts`.\n\n```typescript\n  const literal = "&#x20; {{VAR\\_NAME}}";\n\t{}\n```\n\n| State | Result |\n| :--- | ---: |\n| Ready | `[]` |';
 const editorErrorPolicy = createErrorFeedback({
   fallbackMessage: 'The input service is unavailable. Try again.',
   messagesByCode: {
@@ -64,6 +80,7 @@ export const EditorDemo = () => {
   const [submissionFeedback, setSubmissionFeedback] = useState<string | null>(null);
   const [submittedMessage, setSubmittedMessage] = useState('No message submitted.');
   const [hasAllTools, setHasAllTools] = useState(true);
+  const [hasTechnicalChatTools, setHasTechnicalChatTools] = useState(false);
   const submissionGuardRef = useRef(false);
   const shouldFocusEditorRef = useRef(false);
   const controlsRef = useRef<IChatMarkdownEditorControls>(null);
@@ -249,6 +266,28 @@ export const EditorDemo = () => {
           className="mt-8 grid min-w-0 grid-cols-1 gap-3"
         >
           <Heading level={2}>Message draft</Heading>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              aria-pressed={hasTechnicalChatTools}
+              size="touch"
+              variant="outline"
+              onClick={() => {
+                setMessage(controlsRef.current?.getMarkdown() ?? message);
+                setHasTechnicalChatTools((current) => !current);
+              }}
+            >
+              Technical formatting
+            </Button>
+            {hasTechnicalChatTools ? (
+              <Button
+                size="touch"
+                variant="outline"
+                onClick={() => setMessage(TECHNICAL_MESSAGE)}
+              >
+                Load technical message
+              </Button>
+            ) : null}
+          </div>
           <ChatMarkdownEditor
             key={draftId}
             disabled={isSubmitting}
@@ -256,6 +295,7 @@ export const EditorDemo = () => {
             maxLength={2048}
             onChange={setMessage}
             onSubmitRequest={(markdown) => void submitMessage(markdown)}
+            {...(hasTechnicalChatTools ? { supportedTools: TECHNICAL_CHAT_TOOLS } : {})}
             value={message}
           />
           <div className="flex flex-wrap items-center gap-2">

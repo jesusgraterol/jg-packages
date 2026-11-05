@@ -11,32 +11,35 @@ import {
   DropdownMenuTrigger,
 } from '../../../dropdown-menu/index.js';
 
-import type { IChatMarkdownBlockFormat } from '../types.js';
+import { CHAT_MARKDOWN_EDITOR_TOOLS } from '../constants.js';
+import type { IChatMarkdownBlockFormat, IChatMarkdownEditorTool } from '../types.js';
 import type { IChatMarkdownFormattingProps } from './types.js';
 
 const CHAT_MARKDOWN_FORMAT_OPTIONS = [
-  { format: 'paragraph', icon: Pilcrow, label: 'Text' },
-  { format: 'heading-1', icon: Heading1, label: 'Heading 1' },
-  { format: 'heading-2', icon: Heading2, label: 'Heading 2' },
-  { format: 'heading-3', icon: Heading3, label: 'Heading 3' },
-  { format: 'bullet-list', icon: List, label: 'Bulleted list' },
-  { format: 'ordered-list', icon: ListOrdered, label: 'Numbered list' },
+  { format: 'paragraph', icon: Pilcrow, label: 'Text', tool: 'text' },
+  { format: 'heading-1', icon: Heading1, label: 'Heading 1', tool: 'heading' },
+  { format: 'heading-2', icon: Heading2, label: 'Heading 2', tool: 'heading' },
+  { format: 'heading-3', icon: Heading3, label: 'Heading 3', tool: 'heading' },
+  { format: 'bullet-list', icon: List, label: 'Bulleted list', tool: 'bullet-list' },
+  { format: 'ordered-list', icon: ListOrdered, label: 'Numbered list', tool: 'ordered-list' },
 ] as const satisfies ReadonlyArray<{
   format: IChatMarkdownBlockFormat;
   icon: React.ComponentType<React.ComponentProps<'svg'>>;
   label: string;
+  tool: IChatMarkdownEditorTool;
 }>;
 
 /**
  * Renders the keyboard-accessible block formatting menu for a chat editor.
- * @param props The live editor controls and disabled state.
- * @returns A compact dropdown trigger and supported block-format actions.
+ * @param props The live controls, enabled chat tools and disabled state.
+ * @returns The block-format menu, or null when no block tools are enabled.
  */
 export const ChatMarkdownFormatting = ({
   controlsRef,
   disabled,
   onFormatApplied,
-}: IChatMarkdownFormattingProps): React.ReactElement => {
+  supportedTools = CHAT_MARKDOWN_EDITOR_TOOLS,
+}: IChatMarkdownFormattingProps): React.ReactElement | null => {
   const hasAppliedFormatRef = useRef(false);
   const handleFormat = useCallback(
     (format: IChatMarkdownBlockFormat): void => {
@@ -58,6 +61,9 @@ export const ChatMarkdownFormatting = ({
     [controlsRef],
   );
 
+  const options = CHAT_MARKDOWN_FORMAT_OPTIONS.filter(({ tool }) => supportedTools.includes(tool));
+  if (options.length === 0) return null;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -76,7 +82,7 @@ export const ChatMarkdownFormatting = ({
         onCloseAutoFocus={handleCloseAutoFocus}
       >
         <DropdownMenuLabel>Block style</DropdownMenuLabel>
-        {CHAT_MARKDOWN_FORMAT_OPTIONS.map(({ format, icon: Icon, label }) => (
+        {options.map(({ format, icon: Icon, label }) => (
           <DropdownMenuItem
             key={format}
             onClick={() => handleFormat(format)}

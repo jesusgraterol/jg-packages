@@ -1,13 +1,21 @@
 import type { Mark, Node as ProseMirrorNode, Schema } from '@milkdown/kit/prose/model';
 
-const CHAT_MARKDOWN_ALLOWED_BLOCKS = new Set([
-  'bullet_list',
-  'heading',
-  'list_item',
-  'ordered_list',
-  'paragraph',
+import { CHAT_MARKDOWN_EDITOR_TOOLS } from './constants.js';
+import type { IChatMarkdownEditorTool } from './types.js';
+
+// one policy is shared by every descendant in a normalization pass
+type IChatToolSet = ReadonlySet<IChatMarkdownEditorTool>;
+const CHAT_MARKDOWN_MARK_TOOLS = {
+  emphasis: 'italic',
+  link: 'link',
+  strong: 'bold',
+} as const;
+const CHAT_MARKDOWN_TABLE_NODES = new Set([
+  'table_header_row',
+  'table_row',
+  'table_header',
+  'table_cell',
 ]);
-const CHAT_MARKDOWN_ALLOWED_MARKS = new Set(['emphasis', 'link', 'strong']);
 
 /**
  * Checks whether a link destination is safe for the shared chat surface.
@@ -93,13 +101,18 @@ export const measureChatMarkdown = (markdown: string): number =>
   markdown.endsWith('\n') ? markdown.length - 1 : markdown.length;
 
 /**
- * Converts a ProseMirror document into the fixed chat Markdown document subset.
+ * Normalizes a document to the selected chat tools without rewriting literal code content.
  * @param documentNode The parsed or edited ProseMirror document.
+ * @param supportedTools The enabled chat authoring tools; omitted retains the simple default.
  * @returns A policy-compliant document using the same editor schema.
  */
-export const normalizeChatMarkdownDocument = (documentNode: ProseMirrorNode): ProseMirrorNode => {
+export const normalizeChatMarkdownDocument = (
+  documentNode: ProseMirrorNode,
+  supportedTools: ReadonlyArray<IChatMarkdownEditorTool> = CHAT_MARKDOWN_EDITOR_TOOLS,
+): ProseMirrorNode => {
   const { schema } = documentNode.type;
-  const normalizedBlocks = normalizeBlockChildren(documentNode, schema);
+  const tools: IChatToolSet = new Set(supportedTools);
+  const normalizedBlocks = normalizeBlockChildren(documentNode, schema, tools);
   const paragraphType = schema.nodes['paragraph'];
 
   if (!paragraphType) {
@@ -115,43 +128,62 @@ export const normalizeChatMarkdownDocument = (documentNode: ProseMirrorNode): Pr
 /**
  * Reports whether normalization changes a ProseMirror document.
  * @param documentNode The document to evaluate.
+ * @param supportedTools The enabled chat authoring tools.
  * @returns True when unsupported content or unsafe attributes are present.
  */
-export const doesChatMarkdownDocumentNeedNormalization = (documentNode: ProseMirrorNode): boolean =>
-  !documentNode.eq(normalizeChatMarkdownDocument(documentNode));
+export const doesChatMarkdownDocumentNeedNormalization = (
+  documentNode: ProseMirrorNode,
+  supportedTools?: ReadonlyArray<IChatMarkdownEditorTool>,
+): boolean => !documentNode.eq(normalizeChatMarkdownDocument(documentNode, supportedTools));
 
-const normalizeBlockChildren = (parentNode: ProseMirrorNode, schema: Schema): ProseMirrorNode[] => {
+const normalizeBlockChildren = (
+  parentNode: ProseMirrorNode,
+  schema: Schema,
+  tools: IChatToolSet,
+): ProseMirrorNode[] => {
   const blocks: ProseMirrorNode[] = [];
 
   parentNode.forEach((childNode) => {
-    for (const block of normalizeBlockNode(childNode, schema)) blocks.push(block);
+    for (const block of normalizeBlockNode(childNode, schema, tools)) blocks.push(block);
   });
 
   return blocks;
 };
 
-const normalizeBlockNode = (node: ProseMirrorNode, schema: Schema): ProseMirrorNode[] => {
+const normalizeBlockNode = (
+  node: ProseMirrorNode,
+  schema: Schema,
+  tools: IChatToolSet,
+): ProseMirrorNode[] => {
   const nodeName = node.type.name;
 
   if (nodeName === 'paragraph') {
-    return [schema.nodes['paragraph']!.create(null, normalizeInlineChildren(node, schema))];
+    return [schema.nodes['paragraph']!.create(null, normalizeInlineChildren(node, schema, tools))];
   }
 
   if (nodeName === 'heading') {
+    if (!tools.has('heading')) {
+      return [
+        schema.nodes['paragraph']!.create(null, normalizeInlineChildren(node, schema, tools)),
+      ];
+    }
     const level =
       typeof node.attrs['level'] === 'number' ? Math.min(Math.max(node.attrs['level'], 1), 3) : 1;
 
     return [
       schema.nodes['heading']!.create(
         { ...node.attrs, level },
-        normalizeInlineChildren(node, schema),
+        normalizeInlineChildren(node, schema, tools),
       ),
     ];
   }
 
   if (nodeName === 'bullet_list' || nodeName === 'ordered_list') {
+    if (!tools.has(nodeName === 'bullet_list' ? 'bullet-list' : 'ordered-list')) {
+      return normalizeBlockChildren(node, schema, tools);
+    }
     const listType = schema.nodes[nodeName];
-    const listItems = normalizeListItems(node, schema);
+    const listItems = normalizeListItems(node, schema, tools);
 
     return listType && listItems.length > 0 ? [listType.create(node.attrs, listItems)] : [];
   }
@@ -160,14 +192,28 @@ const normalizeBlockNode = (node: ProseMirrorNode, schema: Schema): ProseMirrorN
     return [];
   }
 
-  if (CHAT_MARKDOWN_ALLOWED_BLOCKS.has(nodeName)) {
-    return normalizeBlockChildren(node, schema);
+  if (nodeName === 'code_block' && tools.has('code-block')) {
+    return [
+      node.type.create(node.attrs, node.textContent ? schema.text(node.textContent) : undefined),
+    ];
+  }
+
+  if (nodeName === 'table' && tools.has('table')) {
+    return [normalizeTableNode(node, schema, tools)];
+  }
+
+  if (nodeName === 'list_item') {
+    return normalizeBlockChildren(node, schema, tools);
   }
 
   return createReadableParagraphs(node, schema);
 };
 
-const normalizeListItems = (listNode: ProseMirrorNode, schema: Schema): ProseMirrorNode[] => {
+const normalizeListItems = (
+  listNode: ProseMirrorNode,
+  schema: Schema,
+  tools: IChatToolSet,
+): ProseMirrorNode[] => {
   const listItemType = schema.nodes['list_item'];
 
   if (!listItemType) {
@@ -177,7 +223,7 @@ const normalizeListItems = (listNode: ProseMirrorNode, schema: Schema): ProseMir
   const normalizedItems: ProseMirrorNode[] = [];
 
   listNode.forEach((itemNode) => {
-    const blocks = normalizeBlockChildren(itemNode, schema);
+    const blocks = normalizeBlockChildren(itemNode, schema, tools);
     const paragraphType = schema.nodes['paragraph'];
     const taskMarker =
       typeof itemNode.attrs['checked'] === 'boolean'
@@ -213,19 +259,49 @@ const normalizeListItems = (listNode: ProseMirrorNode, schema: Schema): ProseMir
   return normalizedItems;
 };
 
-const normalizeInlineChildren = (node: ProseMirrorNode, schema: Schema): ProseMirrorNode[] => {
+/** Keeps table structure and layout attributes while normalizing each cell's authored content. */
+const normalizeTableNode = (
+  node: ProseMirrorNode,
+  schema: Schema,
+  tools: IChatToolSet,
+): ProseMirrorNode => {
+  if (node.inlineContent) {
+    return node.type.create(node.attrs, normalizeInlineChildren(node, schema, tools));
+  }
+
+  const children: ProseMirrorNode[] = [];
+  node.forEach((child) => {
+    if (CHAT_MARKDOWN_TABLE_NODES.has(child.type.name)) {
+      children.push(normalizeTableNode(child, schema, tools));
+      return;
+    }
+    for (const block of normalizeBlockNode(child, schema, tools)) children.push(block);
+  });
+  return node.type.create(node.attrs, children);
+};
+
+const normalizeInlineChildren = (
+  node: ProseMirrorNode,
+  schema: Schema,
+  tools: IChatToolSet,
+): ProseMirrorNode[] => {
   const inlineNodes: ProseMirrorNode[] = [];
 
   node.forEach((childNode) => {
-    for (const inlineNode of normalizeInlineNode(childNode, schema)) inlineNodes.push(inlineNode);
+    for (const inlineNode of normalizeInlineNode(childNode, schema, tools))
+      inlineNodes.push(inlineNode);
   });
 
   return inlineNodes;
 };
 
-const normalizeInlineNode = (node: ProseMirrorNode, schema: Schema): ProseMirrorNode[] => {
+const normalizeInlineNode = (
+  node: ProseMirrorNode,
+  schema: Schema,
+  tools: IChatToolSet,
+): ProseMirrorNode[] => {
   if (node.isText) {
-    return [schema.text(node.textContent, normalizeMarks(node.marks))];
+    return [schema.text(node.textContent, normalizeMarks(node.marks, tools))];
   }
 
   if (node.type.name === 'hardbreak' && schema.nodes['hardbreak']) {
@@ -243,9 +319,14 @@ const normalizeInlineNode = (node: ProseMirrorNode, schema: Schema): ProseMirror
   return readableText ? [schema.text(readableText)] : [];
 };
 
-const normalizeMarks = (marks: readonly Mark[]): Mark[] =>
+const normalizeMarks = (marks: readonly Mark[], tools: IChatToolSet): Mark[] =>
   marks.flatMap((mark) => {
-    if (!CHAT_MARKDOWN_ALLOWED_MARKS.has(mark.type.name)) {
+    if (mark.type.spec.code === true) {
+      return tools.has('inline-code') ? [mark.type.create(mark.attrs)] : [];
+    }
+
+    const tool = CHAT_MARKDOWN_MARK_TOOLS[mark.type.name as keyof typeof CHAT_MARKDOWN_MARK_TOOLS];
+    if (!tool || !tools.has(tool)) {
       return [];
     }
 

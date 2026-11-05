@@ -35,6 +35,7 @@ import {
   syncMarkdownEditorEmptyState,
 } from './empty-state.utilities.js';
 import { createChatMarkdownPolicyPlugin } from './chat-editor/policy.plugin.js';
+import { CHAT_MARKDOWN_EDITOR_TOOLS } from './chat-editor/constants.js';
 import { buildChatMarkdownLiteralAppend, measureChatMarkdown } from './chat-editor/policy.js';
 import type {
   IChatMarkdownBlockFormat,
@@ -76,7 +77,6 @@ import {
   getMarkdownEditorMarkdown,
   getMarkdownEditorTurnIntoMenuPosition,
   highlightMarkdownEditorVariablesPlugin,
-  normalizeMarkdownEditorMarkdown,
   patchMarkdownEditorInlineMathSchemaPlugin,
   replaceMarkdownEditorMarkdown,
   syncEditorAttributes,
@@ -247,6 +247,8 @@ const MarkdownEditorInstance = ({
    * @param nextValue The next markdown value emitted by Milkdown.
    */
   const emitChange = useCallback((nextValue: string): void => {
+    // destruction is asynchronous; detached editors must not restore a previous draft
+    if (!editorWrapperRef.current?.isConnected) return;
     onChangeRef.current(nextValue);
   }, []);
 
@@ -424,6 +426,47 @@ const MarkdownEditorInstance = ({
     closeBlockActionMenu();
   }, [closeBlockActionMenu]);
 
+  /** Submits one live chat snapshot while preserving composition and readonly boundaries. */
+  const requestKeyboardSubmission = useCallback((event: KeyboardEvent): boolean => {
+    const crepe = crepeRef.current;
+    const options = chatOptionsRef.current;
+    const hasSubmitModifier =
+      event.ctrlKey ||
+      event.metaKey ||
+      (options?.isShiftEnterSubmit === true && event.shiftKey && !event.altKey);
+    if (
+      !crepe ||
+      crepe.editor.status !== EditorStatus.Created ||
+      !options?.onSubmitRequest ||
+      disabledRef.current ||
+      event.key !== 'Enter' ||
+      !hasSubmitModifier ||
+      event.isComposing
+    ) {
+      return false;
+    }
+    if (!crepe.editor.action((ctx) => ctx.get(editorViewCtx).editable)) return false;
+
+    event.preventDefault();
+    options.onSubmitRequest(getMarkdownEditorMarkdown(crepe));
+    return true;
+  }, []);
+
+  // CodeMirror consumes its own keymap before ProseMirror sees the event
+  const handleCodeKeyDownCapture = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>): void => {
+      if (
+        event.target instanceof Element &&
+        event.target.closest('.cm-editor') &&
+        requestKeyboardSubmission(event.nativeEvent)
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },
+    [requestKeyboardSubmission],
+  );
+
   /**
    * Creates or reuses the Crepe editor mounted into the Milkdown root element.
    * @param root The DOM element provided by Milkdown for editor mounting.
@@ -455,6 +498,8 @@ const MarkdownEditorInstance = ({
       crepe.editor.use(
         createChatMarkdownPolicyPlugin({
           getMaxLength: () => chatOptionsRef.current?.getMaxLength() ?? Number.MAX_SAFE_INTEGER,
+          getSupportedTools: () =>
+            chatOptionsRef.current?.getSupportedTools?.() ?? CHAT_MARKDOWN_EDITOR_TOOLS,
           onNormalization: () => chatOptionsRef.current?.onNormalization(),
           onPasteRejected: () => chatOptionsRef.current?.onPasteRejected(),
         }),
@@ -492,23 +537,7 @@ const MarkdownEditorInstance = ({
           )
             return true;
 
-          // Ctrl+Enter and Cmd+Enter submit, and Shift+Enter too where the chat editor asks for it
-          const isSubmitKey =
-            event.ctrlKey ||
-            event.metaKey ||
-            (chatOptionsRef.current?.isShiftEnterSubmit === true &&
-              event.shiftKey &&
-              !event.altKey);
-          if (
-            chatOptionsRef.current?.onSubmitRequest &&
-            event.key === 'Enter' &&
-            isSubmitKey &&
-            !event.isComposing
-          ) {
-            event.preventDefault();
-            chatOptionsRef.current.onSubmitRequest(getMarkdownEditorMarkdown(crepe));
-            return true;
-          }
+          if (requestKeyboardSubmission(event)) return true;
 
           return previousOptions.handleKeyDown?.(view, event) ?? false;
         },
@@ -533,15 +562,15 @@ const MarkdownEditorInstance = ({
           return;
         }
 
-        const normalizedMarkdown = normalizeMarkdownEditorMarkdown(ctx.get(serializerCtx)(doc));
+        const markdown = ctx.get(serializerCtx)(doc);
         // a document the editor already recorded, such as a controlled value it took, isn't an edit
-        const isEdited = normalizedMarkdown !== currentMarkdownRef.current;
+        const isEdited = markdown !== currentMarkdownRef.current;
 
-        currentMarkdownRef.current = normalizedMarkdown;
+        currentMarkdownRef.current = markdown;
         scheduleAccessibility();
 
-        if (isEdited && normalizedMarkdown !== latestValueRef.current) {
-          emitChange(normalizedMarkdown);
+        if (isEdited && markdown !== latestValueRef.current) {
+          emitChange(markdown);
         }
       });
 
@@ -551,15 +580,13 @@ const MarkdownEditorInstance = ({
           return;
         }
 
-        const normalizedMarkdown = normalizeMarkdownEditorMarkdown(
-          ctx.get(serializerCtx)(ctx.get(editorViewCtx).state.doc),
-        );
-        const isEdited = normalizedMarkdown !== currentMarkdownRef.current;
+        const markdown = ctx.get(serializerCtx)(ctx.get(editorViewCtx).state.doc);
+        const isEdited = markdown !== currentMarkdownRef.current;
 
-        currentMarkdownRef.current = normalizedMarkdown;
+        currentMarkdownRef.current = markdown;
 
-        if (isEdited && normalizedMarkdown !== latestValueRef.current) {
-          emitChange(normalizedMarkdown);
+        if (isEdited && markdown !== latestValueRef.current) {
+          emitChange(markdown);
         }
       });
     });
@@ -895,6 +922,7 @@ const MarkdownEditorInstance = ({
         data-editor-mode={editorMode}
         data-slot="markdown-editor"
         className={cn('w-full max-w-full min-w-0', className)}
+        onKeyDownCapture={handleCodeKeyDownCapture}
       >
         <Milkdown />
       </div>

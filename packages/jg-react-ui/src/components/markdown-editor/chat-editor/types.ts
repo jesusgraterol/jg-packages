@@ -1,6 +1,21 @@
 import type * as React from 'react';
 
-/** Block formats supported by the fixed chat authoring policy.
+/** Chat authoring tools supported without document-only media or template features.
+ * @see ChatMarkdownEditor
+ */
+export type IChatMarkdownEditorTool =
+  | 'text'
+  | 'heading'
+  | 'bold'
+  | 'italic'
+  | 'link'
+  | 'bullet-list'
+  | 'ordered-list'
+  | 'inline-code'
+  | 'code-block'
+  | 'table';
+
+/** Block styles available in the chat formatting menu.
  * @see ChatMarkdownEditor
  */
 export type IChatMarkdownBlockFormat =
@@ -41,12 +56,15 @@ export type IChatMarkdownEditorProps = Pick<
   onChange: (value: string) => void;
   onSubmitRequest?: (markdown: string) => void;
   placeholder?: string;
+  // omitted keeps the simple seven-tool chat policy
+  supportedTools?: ReadonlyArray<IChatMarkdownEditorTool>;
   value: string;
 };
 
 // policy callbacks let the mounted editor report safe, non-repeating user feedback.
 export type IChatMarkdownPolicyOptions = {
   getMaxLength: () => number;
+  getSupportedTools?: () => ReadonlyArray<IChatMarkdownEditorTool>;
   onNormalization: () => void;
   onPasteRejected: () => void;
 };
