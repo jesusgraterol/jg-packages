@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.2
+
+### Fixed
+
+- Keep long bottom-sheet content scrollable beneath its fixed header by constraining the inner layout to the sheet's maximum height. Short sheets continue to size to their content.
+
 ## 0.6.1
 
 ### Fixed

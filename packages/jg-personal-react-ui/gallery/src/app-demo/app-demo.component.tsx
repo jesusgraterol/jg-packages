@@ -193,7 +193,23 @@ export const AppDemo = () => {
         title="Session details"
         onOpenChange={setIsDetailsOpen}
       >
-        <p>Started an hour ago in jg-agent-hq.</p>
+        {searchParams.get('details') === 'long' ? (
+          <ul aria-label="Session destinations">
+            {Array.from({ length: 64 }, (_, index) => (
+              <li key={index}>
+                <Button
+                  size="touch"
+                  type="button"
+                  variant="ghost"
+                >
+                  Session {index + 1}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>Started an hour ago in jg-agent-hq.</p>
+        )}
       </ResponsiveDialog>
     </PageShell>
   );
