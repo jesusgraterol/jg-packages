@@ -33,6 +33,85 @@ const contrastRatio = (first: number[], second: number[]): number => {
 };
 
 for (const theme of ['light', 'dark'] as const) {
+  for (const width of [320, 1440]) {
+    test(`${theme} ${width}px scrolled chat keeps the caret and pointer selection visible`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`/editors?theme=${theme}`);
+      const message = page.getByRole('textbox', { name: 'Message', exact: true });
+      await expect(message).toBeEditable();
+      await message.focus();
+      await message.evaluate((element) => {
+        const clipboardData = new DataTransfer();
+        clipboardData.setData(
+          'text/plain',
+          Array.from(
+            { length: 32 },
+            (_, index) => `${index + 1}. Point ${index + 1}: editable.`,
+          ).join('\n'),
+        );
+        const paste = new ClipboardEvent('paste', { bubbles: true, cancelable: true });
+        // Firefox replaces clipboard data supplied through an untrusted event's constructor
+        Object.defineProperty(paste, 'clipboardData', { value: clipboardData });
+        element.dispatchEvent(paste);
+      });
+
+      const point = message.getByText('Point 24: editable.', { exact: true });
+      await point.scrollIntoViewIfNeeded();
+      const position = await point.evaluate((element) => {
+        const range = document.createRange();
+        range.setStart(element.firstChild!, 10);
+        range.setEnd(element.firstChild!, 11);
+        const box = range.getBoundingClientRect();
+        return { x: box.x, y: box.y + box.height / 2 };
+      });
+      await page.mouse.click(position.x, position.y);
+      await page.keyboard.type('EDITED ');
+      const editedPoint = message.getByText('Point 24: EDITED editable.', { exact: true });
+      await expect(editedPoint).toBeVisible();
+      await expect(message).toBeFocused();
+      expect(await message.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+
+      // native and custom carets must both align with the actual editing position after scrolling
+      await expect
+        .poll(() =>
+          message.evaluate((element) => {
+            const native = document.getSelection()!.getRangeAt(0).getBoundingClientRect();
+            const virtual = element.querySelector('.prosemirror-virtual-cursor');
+            const visible = virtual?.getBoundingClientRect() ?? native;
+            const editor = element.getBoundingClientRect();
+            return {
+              isAligned: Math.abs(visible.y - native.y) <= 2,
+              isVisible:
+                visible.top >= editor.top &&
+                visible.bottom <= editor.bottom &&
+                (virtual !== null || getComputedStyle(element).caretColor !== 'rgba(0, 0, 0, 0)'),
+            };
+          }),
+        )
+        .toStrictEqual({ isAligned: true, isVisible: true });
+
+      // keep the drag away from the scroll edges, where native selection auto-scrolls the text
+      await editedPoint.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+      const selection = await editedPoint.evaluate((element) => {
+        const range = document.createRange();
+        range.setStart(element.firstChild!, 10);
+        range.setEnd(element.firstChild!, 17);
+        const box = range.getBoundingClientRect();
+        return { left: box.left, right: box.right, y: box.y + box.height / 2 };
+      });
+      await page.mouse.move(selection.left, selection.y);
+      await page.mouse.down();
+      await page.mouse.move(selection.right, selection.y, { steps: 8 });
+      await page.mouse.up();
+      await expect
+        .poll(() => page.evaluate(() => document.getSelection()?.toString()))
+        .toBe('EDITED ');
+      await expectNoHorizontalOverflow(page);
+    });
+  }
+
   test(`${theme} technical chat commands`, async ({ page }) => {
     await page.goto(`/editors?theme=${theme}`);
     await page.getByRole('button', { name: 'Technical formatting', exact: true }).click();

@@ -1,6 +1,6 @@
 {
   "name": "jg-react-ui",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Consumer-themed React components with Moldea-derived APIs, explicit styling contracts, and reusable application behavior.",
   "author": "Jesus Graterol",
   "license": "MIT",

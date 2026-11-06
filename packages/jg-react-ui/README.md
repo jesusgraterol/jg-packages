@@ -38,7 +38,7 @@ The preference provider supports explicit `local`, `read-only`, and `remote` mod
 
 Optional `storageId` defaults to `jg-ui-preferences`. It must be non-empty and contain only ASCII letters, digits, underscores, and hyphens. `getUiPreferencesStorageKey` returns its raw `jg-storage:` key. IDs are captured for the provider lifetime; use a keyed remount to change namespaces. Invalid IDs fail before storage access or initialization-script creation.
 
-Render `ThemeInitializationScript` in the document head before application JavaScript, using the same `storageId` as the provider and your CSP `nonce` when required. Server snapshots use initial props or defaults, then storage synchronizes after hydration. See the recipes for composition and the shared [owned error contracts](https://unpkg.com/jg-react-ui@0.6.0/errors/README.md).
+Render `ThemeInitializationScript` in the document head before application JavaScript, using the same `storageId` as the provider and your CSP `nonce` when required. Server snapshots use initial props or defaults, then storage synchronizes after hydration. See the recipes for composition and the shared [owned error contracts](https://unpkg.com/jg-react-ui@0.6.1/errors/README.md).
 
 ## Controls, forms, and plain text
 
@@ -118,7 +118,7 @@ Large-diff results are cached only for the current viewer input, matching the sy
 
 Supply a positive safe-integer `maxLength`, which counts the message without the line break its Markdown ends with. `maxEditorHeight` defaults to 256px, must be positive and finite, and is constrained to 50dvh by the stylesheet. `controlsRef` exposes `getMarkdown()`, `focus()`, and `appendLiteralText(text)`. Literal insertion escapes Markdown and normally returns false before readiness or when the draft is too long. Pass `{ allowOverLimit: true }` to retain complete dictation, including during initialization, for editing in the main input. Read-only editors reject insertion. The consumer must block button and keyboard submission while over limit. Key the editor by draft identity to clear content and undo history after a successful submission. Initial snapshots retain the controlled draft, and focus waits for the initialized editor. Use these controls to compose caller-owned upload and dictation flows.
 
-Ctrl+Enter and Cmd+Enter request submission from prose and embedded code editors, except during composition or while read-only. Enter and Shift+Enter edit by default; `isShiftEnterSubmit` retains the optional Shift+Enter submission behavior. Live theme changes use CSS tokens without remounting chat editors or replacing their document, selection or undo history.
+Ctrl+Enter and Cmd+Enter request submission from prose and embedded code editors, except during composition or while read-only. Enter and Shift+Enter edit by default; `isShiftEnterSubmit` retains the optional Shift+Enter submission behavior. Live theme changes use CSS tokens without remounting chat editors or replacing their document, selection or undo history. Chat uses the native browser caret so its editing position stays visible as the document scrolls; floating formatting controls stay outside the scrolling surface.
 
 `formattingContainer` uses inline placement when omitted, reserves external placement with null, and portals the formatting menu into a supplied HTMLElement. The existing `styles.css` entry includes Milkdown's common/frame styles before editor overrides. The personal package re-exports the generic implementations directly and supplies the shared JG tokens.
 
@@ -129,7 +129,7 @@ Invalid configuration retains these native Error messages:
 
 ## Documentation
 
-The API reference ships as [API.md](https://unpkg.com/jg-react-ui@0.6.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-react-ui@0.6.0/RECIPES.md). These personal-use packages are unlisted on the public package website.
+The API reference ships as [API.md](https://unpkg.com/jg-react-ui@0.6.1/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-react-ui@0.6.1/RECIPES.md). These personal-use packages are unlisted on the public package website.
 
 ## License
 
