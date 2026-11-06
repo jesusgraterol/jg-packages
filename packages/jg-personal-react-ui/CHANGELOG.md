@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+### Fixed
+
+- Require `jg-react-ui` 0.6.1, which keeps the caret visible when a chat message scrolls. Qualify click placement and drag selection at phone and desktop widths in both themes.
+
 ## 0.6.0
 
 ### Added

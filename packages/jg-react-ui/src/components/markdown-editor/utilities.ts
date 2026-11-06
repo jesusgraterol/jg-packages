@@ -1026,15 +1026,17 @@ const configureMarkdownEditorTopBarActiveLabel = (builder: IMarkdownEditorTopBar
 
 /**
  * Builds the Crepe feature settings for the current markdown editor tool policy.
- * @param options The active theme, placeholder, and tool policy.
+ * @param options The chat mode, active theme, placeholder, and tool policy.
  * @returns Crepe feature flags and feature-specific configuration.
  */
 export const getMarkdownEditorCrepeConfig = ({
+  isChat = false,
   isDarkMode,
   onYouTubeVideoInsertRequest = ignoreMarkdownEditorYouTubeVideoInsertionRequest,
   placeholder,
   supportedTools,
 }: {
+  isChat?: boolean;
   isDarkMode: boolean;
   onYouTubeVideoInsertRequest?: (request: IMarkdownEditorYouTubeVideoInsertionRequest) => void;
   placeholder: string;
@@ -1059,6 +1061,8 @@ export const getMarkdownEditorCrepeConfig = ({
 
   return {
     featureConfigs: {
+      // Crepe's virtual caret omits the editable element's scroll offset; native carets track it
+      [CrepeFeature.Cursor]: { virtual: !isChat },
       ...(hasBlockEdit
         ? {
             [CrepeFeature.BlockEdit]: getMarkdownEditorBlockEditFeatureConfig(

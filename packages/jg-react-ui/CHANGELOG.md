@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+### Fixed
+
+- Keep the chat editor's caret visible at the active editing position after scrolling by using Milkdown's supported native-caret configuration. Floating formatting controls and document-editor cursor behavior remain intact.
+
 ## 0.6.0
 
 ### Added

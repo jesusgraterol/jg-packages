@@ -484,6 +484,7 @@ const MarkdownEditorInstance = ({
     const crepe = new Crepe({
       defaultValue: latestValueRef.current,
       ...getMarkdownEditorCrepeConfig({
+        isChat: editorMode === 'chat',
         isDarkMode,
         onYouTubeVideoInsertRequest: openYouTubeVideoAddDialog,
         placeholder,
