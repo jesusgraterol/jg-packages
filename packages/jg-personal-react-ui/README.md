@@ -109,7 +109,7 @@ Invalid configuration retains these native Error messages:
 
 ## Documentation
 
-The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.6.1/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.6.1/RECIPES.md). These personal-use packages are unlisted on the public package website.
+The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.6.2/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.6.2/RECIPES.md). These personal-use packages are unlisted on the public package website.
 
 ## License
 

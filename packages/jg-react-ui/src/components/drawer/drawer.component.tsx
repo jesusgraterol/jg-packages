@@ -288,7 +288,7 @@ export const DrawerContent = ({
           data-slot="drawer-content"
           className={cn(drawerPopupVariants({ side, size }))}
         >
-          <BaseDrawer.Content className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
+          <BaseDrawer.Content className="grid h-full max-h-[inherit] min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
             <DrawerDensityContext value={density}>{children}</DrawerDensityContext>
             <DrawerClose
               aria-label={closeButtonAriaLabel}

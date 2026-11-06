@@ -39,7 +39,7 @@ The private gallery composes real validation/errors, choice label rows, select o
 
 ## Dialog and navigation ownership
 
-The pinned modal and layout implementations retain their public compound APIs, controlled callbacks, native slots/refs, fixed headers/actions, one scrolling body, generated mobile Back controls, and focus return. Generic and personal navigation entries directly re-export jg-react-router; no second registry or provider context is created. Drawers retain explicit application-owned route dismissal. The source does not add dialog history entries; host applications own history and route destinations.
+The pinned modal and layout implementations retain their public compound APIs, controlled callbacks, native slots/refs, fixed headers/actions, one scrolling body, generated mobile Back controls, and focus return. Generic and personal navigation entries directly re-export jg-react-router; no second registry or provider context is created. Drawers retain explicit application-owned route dismissal. The inner drawer layout inherits the popup's maximum height, so long bottom-sheet content scrolls inside its body while the header stays fixed; short sheets still grow only to their content. The source does not add dialog history entries; host applications own history and route destinations.
 
 ConfirmationDialog retains the source's one-document imperative Zustand store. It resets before calling completion, supports reentrant replacement sessions, and leaves application callback errors with the caller. Do not mutate that store during server rendering. Other dialogs retain their latest controlled content until close completion; mobile snapshots ignore late captures after reopen/unmount and fall back to normal dismissal when unavailable.
 

@@ -109,6 +109,50 @@ test('closes the bottom sheet with a swipe down', async ({ browser, browserName 
   }
 });
 
+for (const theme of ['light', 'dark'] as const) {
+  test(`scrolls long bottom-sheet content while its header and page stay fixed in ${theme}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.goto(`/app?theme=${theme}&details=long`);
+    const opener = page.getByRole('button', { name: 'Details', exact: true });
+    await opener.click();
+    const sheet = page.getByRole('dialog', { name: 'Session details', exact: true });
+    await expect(sheet).toBeVisible();
+    const last = sheet.getByRole('button', { name: 'Session 64', exact: true });
+    await expect(last).not.toBeInViewport();
+    const heading = sheet.getByRole('heading', { name: 'Session details', exact: true });
+    const before = await heading.evaluate((element) => ({
+      top: element.getBoundingClientRect().top,
+      pageTop: scrollY,
+    }));
+    const box = (await sheet.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    // Firefox bounds each wheel gesture to a page even when its delta exceeds the list.
+    await expect(async () => {
+      await page.mouse.wheel(0, 10000);
+      await expect(last).toBeInViewport({ timeout: 500 });
+    }).toPass({ timeout: 5000, intervals: [100] });
+    expect(
+      await heading.evaluate((element) => ({
+        top: element.getBoundingClientRect().top,
+        pageTop: scrollY,
+      })),
+    ).toStrictEqual(before);
+    await sheet.getByRole('button', { name: 'Close drawer' }).focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(last).toBeFocused();
+    await expect(last).toBeInViewport();
+    await expectNoHorizontalOverflow(page);
+    expect(
+      (await new AxeBuilder({ page }).include('[data-slot="drawer-content"]').analyze()).violations,
+    ).toStrictEqual([]);
+    await page.keyboard.press('Escape');
+    await expect(sheet).toBeHidden();
+    await expect(opener).toBeFocused();
+  });
+}
+
 test('opens details as a dialog from the md breakpoint, which Escape closes', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/app?theme=light');
