@@ -27,7 +27,7 @@ Pushes to `main` deploy the site to GitHub Pages, behind Cloudflare; [`deploymen
 | A package's recipes | `packages/<name>/RECIPES.md`, loaded by the `packageRecipes` collection without its title, which the recipes page shows in its header. A listed package without one fails the build.         |
 | The API reference   | `website/src/generated/api/<name>.json`, which `generate` writes from each package's TSDoc. It's ignored by Git.                                                                             |
 
-The build fails when the catalog and `packages/` disagree: every published package needs an entry except those in `UNLISTED_PACKAGES` (`jg-personal-astro-ui`), orders and icons must be unique, and descriptions must be 70 to 160 characters. `generate` fails when an export has no TSDoc.
+The build fails when the catalog and `packages/` disagree: every published package needs an entry except those in `UNLISTED_PACKAGES` (`jg-personal-astro-ui`, `jg-personal-ui`, `jg-react-ui`, and `jg-personal-react-ui`), orders and icons must be unique, and descriptions must be 70 to 160 characters. `generate` fails when an export has no TSDoc.
 
 ## Pages
 
