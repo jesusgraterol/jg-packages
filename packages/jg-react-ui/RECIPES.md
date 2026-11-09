@@ -525,6 +525,8 @@ const agentChatTools: ReadonlyArray<IChatMarkdownEditorTool> = [
 
 Pass `supportedTools={agentChatTools}` to `ChatMarkdownEditor`. Selecting text exposes inline code, and `/` offers Code and Table. Ctrl/Cmd+Enter requests submission from both prose and code; leave `isShiftEnterSubmit` unset to keep Shift+Enter as an edit. Keep the draft key independent of theme so focus, composition, selection and undo history survive theme changes.
 
+Use the editor's built-in paste policy without an app-level text interceptor. It retains supported rich formatting and safe YouTube links, repairs literal markup, and recovers bounded plain text when rich conversion loses readable content. It keeps copied navigation labels as source content. Short text inserts at the caret; meaningful multiline structure stays intact. An oversized rich source is checked before parsing, and rejected input preserves the draft and selection. Read `controlsRef.current.getMarkdown()` at the ordinary submit boundary when React's controlled value may still be catching up with the paste event.
+
 ## Compile retained HQ public imports and source shapes
 
 This fixture retains all thirty component boundaries plus `cn` imported by HQ at the recorded source commit. The import list and representative file-change, message, and attachment props compile against the installed tarball. Application transport, query ownership, and full HQ integration remain application work.

@@ -352,11 +352,8 @@ Plain **bold**, *italic*, and ***combined*** text with [web](https://example.com
   });
 
   test('accepts a paste that fills the message to exactly the limit', async () => {
-    /*
-     * The pasted text joins as its own paragraph, abc then 123456, which is eleven characters;
-     * the serializer's closing line break isn't part of the message, so they fit a limit of eleven.
-     */
-    const session = await createPolicySession('123456', 11);
+    // inline insertion has nine characters; the serializer's closing newline is not counted.
+    const session = await createPolicySession('123456', 9);
     const pasteEvent = new Event('paste', { bubbles: true, cancelable: true });
 
     sessions.push(session);
@@ -380,7 +377,7 @@ Plain **bold**, *italic*, and ***combined*** text with [web](https://example.com
 
     expect(handled).toBe(true);
     expect(session.onPasteRejected).not.toHaveBeenCalled();
-    expect(session.crepe.getMarkdown()).toBe('abc\n\n123456\n');
+    expect(session.crepe.getMarkdown()).toBe('abc123456\n');
   });
 
   test('rejects oversized HTML paste before the default rich-paste parser runs', async () => {

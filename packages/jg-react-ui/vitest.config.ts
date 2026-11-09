@@ -95,6 +95,7 @@ export default mergeConfig(shared, {
       '@milkdown/kit/preset/commonmark',
       '@milkdown/kit/preset/gfm',
       '@milkdown/kit/prose/model',
+      '@milkdown/kit/prose/history',
       '@milkdown/kit/prose/state',
       '@milkdown/kit/prose/view',
       '@milkdown/kit/utils',

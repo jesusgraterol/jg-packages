@@ -1,4 +1,12 @@
 import type * as React from 'react';
+import type { Node as ProseMirrorNode } from '@milkdown/kit/prose/model';
+
+// incoming paste normalization records loss before the surviving document hides it.
+export type IPreparedChatMarkdownPaste = {
+  document: ProseMirrorNode;
+  wasSimplified: boolean;
+  hasLostContent: boolean;
+};
 
 /** Chat authoring tools supported without document-only media or template features.
  * @see ChatMarkdownEditor

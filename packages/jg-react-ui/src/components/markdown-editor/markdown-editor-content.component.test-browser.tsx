@@ -181,6 +181,25 @@ describe('MarkdownEditorContent with real Milkdown initialization and block cont
     input.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
+  test.each(['chat', 'document'] as const)(
+    'keeps YouTube atom parsing scoped to document mode: %s',
+    async (editorMode) => {
+      const url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=32';
+      await renderEditor({
+        editorMode,
+        value: `[Readable title](${url})`,
+        supportedTools: [MARKDOWN_EDITOR_TOOLS.Text, MARKDOWN_EDITOR_TOOLS.Link],
+      });
+      await waitForEditor();
+      const document = editors.at(-1)!.action((ctx) => ctx.get(editorViewCtx).state.doc);
+      expect(document.firstChild?.isAtom).toBe(editorMode === 'document');
+      if (editorMode === 'chat') {
+        expect(document.textContent).toBe('Readable title');
+        expect(document.firstChild?.firstChild?.marks[0]?.attrs['href']).toBe(url);
+      }
+    },
+  );
+
   test('repeated factory requests reuse one editor and late SDK listeners ignore a destroyed view', async () => {
     const onChange = vi.fn();
     await renderEditor({ value: 'Original draft', onChange });

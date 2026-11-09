@@ -82,6 +82,386 @@ describe('ChatMarkdownEditor', () => {
     }
   });
 
+  test.each(['disabled', 'composing', 'empty', 'whitespace', 'file-only', 'mixed-files'])(
+    'paste regression preserves the %s input boundary',
+    async (kind) => {
+      const controlsRef = createRef<IChatMarkdownEditorControls>();
+      const onSubmitRequest = vi.fn();
+      act(() =>
+        root.render(
+          <ChatMarkdownEditor
+            controlsRef={controlsRef}
+            maxLength={256}
+            value="Draft"
+            disabled={kind === 'disabled'}
+            onChange={vi.fn()}
+            onSubmitRequest={onSubmitRequest}
+          />,
+        ),
+      );
+      await flushEditor();
+      const original = controlsRef.current!.getMarkdown();
+      const textbox = getByRole(container, 'textbox', { name: 'Message' });
+      const clipboard = new DataTransfer();
+      if (kind === 'file-only' || kind === 'mixed-files')
+        clipboard.items.add(new File(['note'], 'note.txt', { type: 'text/plain' }));
+      if (kind === 'whitespace') clipboard.setData('text/plain', ' \n\n ');
+      else if (!['empty', 'file-only'].includes(kind)) clipboard.setData('text/plain', 'Incoming');
+      const event = createChatPasteEvent(clipboard);
+      if (kind === 'composing')
+        textbox.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+      act(() => {
+        textbox.dispatchEvent(event);
+      });
+      if (kind === 'empty') {
+        // native empty-paste capture restores focus asynchronously; keep its editor alive.
+        await act(async () => {
+          await vi.waitFor(() => expect(document.activeElement).toBe(textbox));
+        });
+      }
+      if (kind === 'composing')
+        textbox.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '' }));
+      if (kind === 'mixed-files') {
+        expect(controlsRef.current!.getMarkdown()).toContain('Incoming');
+        expect(event.clipboardData?.files[0]?.name).toBe('note.txt');
+      } else expect(controlsRef.current!.getMarkdown()).toBe(original);
+      if (kind === 'file-only') expect(event.clipboardData?.files[0]?.name).toBe('note.txt');
+      expect(onSubmitRequest).not.toHaveBeenCalled();
+    },
+  );
+
+  test.each([
+    [
+      'watch URL',
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=32',
+      '',
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=32',
+    ],
+    [
+      'short URL',
+      'https://youtu.be/dQw4w9WgXcQ?si=example',
+      '',
+      'https://youtu.be/dQw4w9WgXcQ?si=example',
+    ],
+    ['mixed literal markup', 'Before\n\n<div>Keep this text</div>\n\nAfter', '', 'Keep this text'],
+    [
+      'empty rich content',
+      'Skip navigation\nCreate\nAvatar image\nmoldea | Keeping project context and code aligned',
+      '<span></span>',
+      'Keeping project context and code aligned',
+    ],
+  ])('paste regression preserves %s', async (_name, plain, html, expected) => {
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+    act(() =>
+      root.render(
+        <ChatMarkdownEditor
+          controlsRef={controlsRef}
+          maxLength={2048}
+          value=""
+          onChange={vi.fn()}
+        />,
+      ),
+    );
+    await flushEditor();
+    const clipboard = new DataTransfer();
+    clipboard.setData('text/plain', plain);
+    if (html) clipboard.setData('text/html', html);
+    await act(() =>
+      getByRole(container, 'textbox', { name: 'Message' }).dispatchEvent(
+        createChatPasteEvent(clipboard),
+      ),
+    );
+    expect(controlsRef.current!.getMarkdown()).toContain(expected);
+  });
+
+  test('paste regression inserts at the caret without splitting the paragraph and keeps undo', async () => {
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+    act(() =>
+      root.render(
+        <ChatMarkdownEditor
+          controlsRef={controlsRef}
+          maxLength={2048}
+          value="Hello world"
+          onChange={vi.fn()}
+        />,
+      ),
+    );
+    await flushEditor();
+    const editor = editors.at(-1)!;
+    const original = controlsRef.current!.getMarkdown();
+    act(() =>
+      editor.action((ctx) => {
+        const view = ctx.get(editorViewCtx);
+        view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 7)));
+        view.focus();
+      }),
+    );
+    const clipboard = new DataTransfer();
+    clipboard.setData('text/plain', 'pasted ');
+    await act(() =>
+      getByRole(container, 'textbox', { name: 'Message' }).dispatchEvent(
+        createChatPasteEvent(clipboard),
+      ),
+    );
+    expect(getByRole(container, 'textbox', { name: 'Message' }).textContent).toBe(
+      'Hello pasted world',
+    );
+    expect(editor.action((ctx) => ctx.get(editorViewCtx).state.doc.childCount)).toBe(1);
+    await act(() => editor.action((ctx) => ctx.get(commandsCtx).call(undoCommand.key)));
+    expect(controlsRef.current!.getMarkdown()).toBe(original);
+    await act(() => editor.action((ctx) => ctx.get(commandsCtx).call(redoCommand.key)));
+    expect(getByRole(container, 'textbox', { name: 'Message' }).textContent).toBe(
+      'Hello pasted world',
+    );
+  });
+
+  test('paste regression recovers bounded plain text before oversized HTML reaches the parser', async () => {
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+    act(() =>
+      root.render(
+        <ChatMarkdownEditor
+          controlsRef={controlsRef}
+          maxLength={64}
+          value=""
+          onChange={vi.fn()}
+        />,
+      ),
+    );
+    await flushEditor();
+    const parse = vi.spyOn(ProseMirrorDomParser.prototype, 'parseSlice');
+    const view = editors.at(-1)!.action((ctx) => ctx.get(editorViewCtx));
+    const dispatch = vi.spyOn(view, 'dispatch');
+    const clipboard = new DataTransfer();
+    clipboard.setData('text/plain', 'Retained title');
+    clipboard.setData('text/html', '<div>' + 'x'.repeat(128) + '</div>');
+    await act(() =>
+      getByRole(container, 'textbox', { name: 'Message' }).dispatchEvent(
+        createChatPasteEvent(clipboard),
+      ),
+    );
+    expect(parse).not.toHaveBeenCalled();
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch.mock.calls[0]![0].getMeta('uiEvent')).toBe('paste');
+    expect(controlsRef.current!.getMarkdown().trim()).toBe('Retained title');
+    const inBound = new DataTransfer();
+    inBound.setData('text/html', '<strong> rich</strong>');
+    await act(() =>
+      getByRole(container, 'textbox', { name: 'Message' }).dispatchEvent(
+        createChatPasteEvent(inBound),
+      ),
+    );
+    expect(parse).toHaveBeenCalled();
+    expect(controlsRef.current!.getMarkdown()).toContain('rich');
+  });
+
+  test.each([
+    ['shorts', 'https://www.youtube.com/shorts/dQw4w9WgXcQ'],
+    ['mobile', 'https://m.youtube.com/watch?v=dQw4w9WgXcQ&t=40'],
+    ['embed', 'https://www.youtube.com/embed/dQw4w9WgXcQ?start=40'],
+    ['labelled', '[Readable title](https://youtu.be/dQw4w9WgXcQ?t=40 "Clipboard title")'],
+  ])('paste regression retains %s links through immediate submission', async (_family, plain) => {
+    const onChange = vi.fn();
+    const onSubmitRequest = vi.fn();
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+    act(() =>
+      root.render(
+        <ChatMarkdownEditor
+          controlsRef={controlsRef}
+          maxLength={2048}
+          value=""
+          onChange={onChange}
+          onSubmitRequest={onSubmitRequest}
+        />,
+      ),
+    );
+    await flushEditor();
+    const clipboard = new DataTransfer();
+    clipboard.setData('text/plain', plain);
+    const message = getByRole(container, 'textbox', { name: 'Message' });
+    act(() => {
+      message.dispatchEvent(createChatPasteEvent(clipboard));
+      message.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true }),
+      );
+    });
+    expect(controlsRef.current!.getMarkdown()).toContain(
+      plain.includes('](') ? 'Readable title' : plain,
+    );
+    expect(onSubmitRequest).toHaveBeenCalledExactlyOnceWith(controlsRef.current!.getMarkdown());
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(controlsRef.current!.getMarkdown());
+    expect(onChange.mock.invocationCallOrder[0]).toBeLessThan(
+      onSubmitRequest.mock.invocationCallOrder[0]!,
+    );
+    if (_family === 'labelled') expect(controlsRef.current!.getMarkdown().trim()).toBe(plain);
+  });
+
+  test('paste regression rejects both oversized sources before parsing without deleting selected text', async () => {
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+    act(() =>
+      root.render(
+        <ChatMarkdownEditor
+          controlsRef={controlsRef}
+          maxLength={16}
+          value="Retained draft"
+          onChange={vi.fn()}
+        />,
+      ),
+    );
+    await flushEditor();
+    const editor = editors.at(-1)!;
+    act(() =>
+      editor.action((ctx) => {
+        const view = ctx.get(editorViewCtx);
+        view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 1, 9)));
+        view.focus();
+      }),
+    );
+    const original = controlsRef.current!.getMarkdown();
+    const parse = vi.spyOn(ProseMirrorDomParser.prototype, 'parseSlice');
+    const clipboard = new DataTransfer();
+    clipboard.setData('text/plain', 'x'.repeat(32));
+    clipboard.setData('text/html', '<div>' + 'x'.repeat(32) + '</div>');
+    act(() => {
+      getByRole(container, 'textbox', { name: 'Message' }).dispatchEvent(
+        createChatPasteEvent(clipboard),
+      );
+    });
+    expect(parse).not.toHaveBeenCalled();
+    expect(controlsRef.current!.getMarkdown()).toBe(original);
+    expect(
+      editor.action((ctx) => [
+        ctx.get(editorViewCtx).state.selection.from,
+        ctx.get(editorViewCtx).state.selection.to,
+      ]),
+    ).toStrictEqual([1, 9]);
+    expect(container.textContent).toContain('The pasted content is longer than the message limit.');
+  });
+
+  test.each([
+    ['inline code', '`Base`', 3, '<b>literal</b> &amp;', 'Ba<b>literal</b> &amp;se'],
+    [
+      'code block',
+      '```typescript\nBase\n```',
+      3,
+      '<b>literal</b> &amp;',
+      'Ba<b>literal</b> &amp;se',
+    ],
+    ['code block', '```typescript\nBase\n```', 3, 'one\r\n\r\ntwo', 'Baone\n\ntwose'],
+  ])(
+    'paste regression keeps %s source literal in context',
+    async (_kind, initial, position, plain, expected) => {
+      const controlsRef = createRef<IChatMarkdownEditorControls>();
+      act(() =>
+        root.render(
+          <ChatMarkdownEditor
+            controlsRef={controlsRef}
+            maxLength={2048}
+            value={initial}
+            onChange={vi.fn()}
+            supportedTools={TECHNICAL_TOOLS}
+          />,
+        ),
+      );
+      await flushEditor();
+      const editor = editors.at(-1)!;
+      editor.action((ctx) => {
+        const view = ctx.get(editorViewCtx);
+        view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, position)));
+        view.focus();
+      });
+      const clipboard = new DataTransfer();
+      clipboard.setData('text/plain', plain);
+      act(() => {
+        getByRole(container, 'textbox', { name: 'Message' }).dispatchEvent(
+          createChatPasteEvent(clipboard),
+        );
+      });
+      expect(controlsRef.current!.getMarkdown()).toContain(expected);
+      expect(controlsRef.current!.getMarkdown()).toContain(
+        _kind === 'inline code' ? '`Ba' : '```typescript',
+      );
+    },
+  );
+
+  test('paste regression bounds deeply nested source without losing its readable content', async () => {
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+    act(() =>
+      root.render(
+        <ChatMarkdownEditor
+          controlsRef={controlsRef}
+          maxLength={16384}
+          value=""
+          onChange={vi.fn()}
+        />,
+      ),
+    );
+    await flushEditor();
+    const clipboard = new DataTransfer();
+    clipboard.setData('text/plain', '> '.repeat(1024) + 'Deep readable text');
+    act(() => {
+      getByRole(container, 'textbox', { name: 'Message' }).dispatchEvent(
+        createChatPasteEvent(clipboard),
+      );
+    });
+    expect(controlsRef.current!.getMarkdown()).toContain('Deep readable text');
+    expect(container.querySelector('blockquote')).toBeNull();
+  });
+
+  test.each([
+    [false, true],
+    [true, true],
+    [true, false],
+  ])(
+    'paste regression retains mixed rich text with parser loss %s and plain fallback %s',
+    async (hasParserLoss, hasPlain) => {
+      const controlsRef = createRef<IChatMarkdownEditorControls>();
+      act(() =>
+        root.render(
+          <ChatMarkdownEditor
+            controlsRef={controlsRef}
+            maxLength={2048}
+            value=""
+            onChange={vi.fn()}
+          />,
+        ),
+      );
+      await flushEditor();
+      if (hasParserLoss) {
+        editors.at(-1)!.action((ctx) =>
+          ctx.get(editorViewCtx).setProps({
+            transformPastedHTML: (html) => html.replace('Hidden fallback', ''),
+          }),
+        );
+      }
+      const clipboard = new DataTransfer();
+      if (hasPlain) clipboard.setData('text/plain', 'Before Hidden fallback After');
+      clipboard.setData(
+        'text/html',
+        '<p><strong>Before</strong></p><iframe>Hidden fallback</iframe><p>After</p><script>window.clipboardAttack = true</script>',
+      );
+      act(() => {
+        getByRole(container, 'textbox', { name: 'Message' }).dispatchEvent(
+          createChatPasteEvent(clipboard),
+        );
+      });
+      const retained = controlsRef.current!.getMarkdown();
+      expect(retained).toMatch(/Before[\s\S]*Hidden fallback[\s\S]*After/u);
+      if (hasParserLoss && hasPlain) expect(retained.trim()).toBe('Before Hidden fallback After');
+      else if (hasParserLoss) expect(retained.trim()).toBe('Before\n\nHidden fallback\n\nAfter');
+      else expect(retained).toContain('**Before**');
+      expect(container.querySelector('iframe, script')).toBeNull();
+      expect(Reflect.get(window, 'clipboardAttack')).toBeUndefined();
+      const rich = new DataTransfer();
+      rich.setData('text/html', '<custom-wrap><strong>Readable bold</strong></custom-wrap>');
+      act(() => {
+        getByRole(container, 'textbox', { name: 'Message' }).dispatchEvent(
+          createChatPasteEvent(rich),
+        );
+      });
+      expect(controlsRef.current!.getMarkdown()).toContain('**Readable bold**');
+    },
+  );
+
   test.each([
     ['prose', 'Base'],
     ['inline', '`Base`'],

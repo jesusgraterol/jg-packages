@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.3
+
+### Fixed
+
+- Preserve pasted YouTube destinations and query parameters in chat instead of converting them to document-only video nodes.
+- Retain readable fragments before chat normalization, recover bounded plain text when rich conversion loses content, and admit oversized rich clipboard sources before parsing.
+- Insert pasted paragraphs at the caret without extra blank paragraphs, preserving selection replacement, supported formatting and one-paste undo/redo.
+- Flush pending chat edits before keyboard submission so a delayed change cannot restore the submitted draft.
+
 ## 0.6.2
 
 ### Fixed
