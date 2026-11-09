@@ -208,6 +208,8 @@ for (const theme of ['light', 'dark'] as const) {
       page.getByRole('status', { name: 'Submitted message', exact: true }),
     ).toContainText('  {} /literal');
     await expect(message).toHaveText('');
+    // submission remounts the editor; empty text can precede its editable state.
+    await expect(message).toBeEditable();
     await message.pressSequentially('/table');
     await expect(tableItem).toBeVisible();
     await message.press('Enter');
