@@ -66,6 +66,8 @@ Preview the shared Astro components locally with `pnpm --filter jg-personal-astr
 
 ## Project blueprint
 
+[Delivery](docs/delivery.md) defines the ordered stops, operators, verification and cleanup for a task.
+
 ```text
 .
 ├── .github/
