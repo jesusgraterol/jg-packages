@@ -34,6 +34,60 @@ const contrastRatio = (first: number[], second: number[]): number => {
 
 for (const theme of ['light', 'dark'] as const) {
   for (const width of [320, 1440]) {
+    const pasteQualificationTags = theme === 'light' && width === 320 ? [] : ['@full'];
+    test(
+      `${theme} ${width}px pasted links and rich-source recovery survive public chat submission`,
+      { tag: pasteQualificationTags },
+      async ({ page }) => {
+        const errors: Array<Error | string> = [];
+        trackEditorErrors(page, errors);
+        await page.setViewportSize({ width, height: 720 });
+        await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+        await page.goto(`/editors?theme=${theme}`);
+        const message = page.getByRole('textbox', { name: 'Message', exact: true });
+        await expect(message).toBeEditable();
+        await message.focus();
+        const url = 'https://youtu.be/dQw4w9WgXcQ?t=40';
+        await message.evaluate((element, plain) => {
+          const clipboard = new DataTransfer();
+          clipboard.setData('text/plain', plain);
+          const event = new ClipboardEvent('paste', { bubbles: true, cancelable: true });
+          Object.defineProperty(event, 'clipboardData', { value: clipboard });
+          element.dispatchEvent(event);
+        }, url);
+        await expect(message).toHaveText(url);
+        await message.press('Control+Enter');
+        await expect(page.getByLabel('Submitted message', { exact: true })).toContainText(url);
+        await expect(message).toBeEmpty();
+        const plain =
+          'Skip navigation\nCreate\nAvatar image\nmoldea | Keeping project context and code aligned';
+        await message.evaluate((element, text) => {
+          const clipboard = new DataTransfer();
+          clipboard.setData('text/plain', text);
+          clipboard.setData('text/html', '<div>' + 'x'.repeat(4096) + '</div>');
+          const event = new ClipboardEvent('paste', { bubbles: true, cancelable: true });
+          Object.defineProperty(event, 'clipboardData', { value: clipboard });
+          element.dispatchEvent(event);
+        }, plain);
+        await expect(message).toContainText('Avatar image');
+        await expect(message).toContainText('Keeping project context and code aligned');
+        await message.press('Control+Enter');
+        await expect(page.getByLabel('Submitted message', { exact: true })).toContainText(
+          'Skip navigation',
+        );
+        await expect(page.getByLabel('Submitted message', { exact: true })).toContainText(
+          'Keeping project context and code aligned',
+        );
+        await expectNoHorizontalOverflow(page);
+        const accessibility = await new AxeBuilder({ page })
+          .include('[aria-label="Chat authoring"]')
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+          .analyze();
+        expect(accessibility.violations).toStrictEqual([]);
+        expect(errors).toStrictEqual([]);
+      },
+    );
+
     test(`${theme} ${width}px scrolled chat keeps the caret and pointer selection visible`, async ({
       page,
     }) => {

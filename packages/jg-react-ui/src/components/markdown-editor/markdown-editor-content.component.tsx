@@ -427,30 +427,39 @@ const MarkdownEditorInstance = ({
   }, [closeBlockActionMenu]);
 
   /** Submits one live chat snapshot while preserving composition and readonly boundaries. */
-  const requestKeyboardSubmission = useCallback((event: KeyboardEvent): boolean => {
-    const crepe = crepeRef.current;
-    const options = chatOptionsRef.current;
-    const hasSubmitModifier =
-      event.ctrlKey ||
-      event.metaKey ||
-      (options?.isShiftEnterSubmit === true && event.shiftKey && !event.altKey);
-    if (
-      !crepe ||
-      crepe.editor.status !== EditorStatus.Created ||
-      !options?.onSubmitRequest ||
-      disabledRef.current ||
-      event.key !== 'Enter' ||
-      !hasSubmitModifier ||
-      event.isComposing
-    ) {
-      return false;
-    }
-    if (!crepe.editor.action((ctx) => ctx.get(editorViewCtx).editable)) return false;
+  const requestKeyboardSubmission = useCallback(
+    (event: KeyboardEvent): boolean => {
+      const crepe = crepeRef.current;
+      const options = chatOptionsRef.current;
+      const hasSubmitModifier =
+        event.ctrlKey ||
+        event.metaKey ||
+        (options?.isShiftEnterSubmit === true && event.shiftKey && !event.altKey);
+      if (
+        !crepe ||
+        crepe.editor.status !== EditorStatus.Created ||
+        !options?.onSubmitRequest ||
+        disabledRef.current ||
+        event.key !== 'Enter' ||
+        !hasSubmitModifier ||
+        event.isComposing
+      ) {
+        return false;
+      }
+      if (!crepe.editor.action((ctx) => ctx.get(editorViewCtx).editable)) return false;
 
-    event.preventDefault();
-    options.onSubmitRequest(getMarkdownEditorMarkdown(crepe));
-    return true;
-  }, []);
+      event.preventDefault();
+      const markdown = getMarkdownEditorMarkdown(crepe);
+      // flush the debounced edit before a consumer can clear or replace the submitted draft.
+      if (markdown !== currentMarkdownRef.current) {
+        currentMarkdownRef.current = markdown;
+        if (markdown !== latestValueRef.current) emitChange(markdown);
+      }
+      options.onSubmitRequest(markdown);
+      return true;
+    },
+    [emitChange],
+  );
 
   // CodeMirror consumes its own keymap before ProseMirror sees the event
   const handleCodeKeyDownCapture = useCallback(
@@ -508,11 +517,12 @@ const MarkdownEditorInstance = ({
     }
     crepe.editor.use(highlightMarkdownEditorVariablesPlugin);
     crepe.editor.use(patchMarkdownEditorInlineMathSchemaPlugin);
-    crepe.editor.use(markdownEditorYouTubeVideoPlugin);
+    if (editorMode !== 'chat') crepe.editor.use(markdownEditorYouTubeVideoPlugin);
     crepe.editor.config((ctx) => {
       disableMarkdownEditorFileUploads(ctx);
       configureMarkdownEditorSerialization(ctx);
-      configureMarkdownEditorYouTubeVideoAuthoring(ctx, youTubeVideoAuthoringController);
+      if (editorMode !== 'chat')
+        configureMarkdownEditorYouTubeVideoAuthoring(ctx, youTubeVideoAuthoringController);
       ctx.update(editorViewOptionsCtx, (previousOptions) => ({
         ...previousOptions,
         attributes: {
