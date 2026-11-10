@@ -42,7 +42,7 @@ General-purpose packages get a row here when added to `packages/`.
 Developing needs Node.js 24 or later and pnpm, which switches itself to the version pinned in `package.json`. The published packages support Node.js 22.17.0 and later, except `jg-personal-astro-ui`, which needs 24.
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 pnpm --filter jg-sw exec playwright install chromium firefox webkit
 pnpm check
 ```

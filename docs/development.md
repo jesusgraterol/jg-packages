@@ -15,7 +15,7 @@ How to set up the repository, run its checks, and change its dependencies.
    ```bash
    git clone git@github.com:jesusgraterol/jg-packages.git
    cd jg-packages
-   pnpm install
+   pnpm install --frozen-lockfile
    ```
 
    The install should finish without warnings about ignored build scripts. `allowBuilds` in `pnpm-workspace.yaml` lists every install script a dependency asks for, each declined unless the package needs it to work.
