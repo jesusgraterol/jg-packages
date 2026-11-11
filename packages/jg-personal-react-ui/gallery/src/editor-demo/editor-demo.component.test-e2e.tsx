@@ -59,6 +59,9 @@ for (const theme of ['light', 'dark'] as const) {
         await message.press('Control+Enter');
         await expect(page.getByLabel('Submitted message', { exact: true })).toContainText(url);
         await expect(message).toBeEmpty();
+        // submission remounts the editor; synthetic paste does not wait for editability
+        await expect(message).toBeEditable();
+        await message.focus();
         const plain =
           'Skip navigation\nCreate\nAvatar image\nmoldea | Keeping project context and code aligned';
         await message.evaluate((element, text) => {
