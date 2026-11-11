@@ -71,7 +71,6 @@ Preview the shared Astro components locally with `pnpm --filter jg-personal-astr
 ```text
 .
 ├── .github/
-│   ├── scripts/install-browsers.sh # CI's Playwright install, bounded, with an apt mirror fallback
 │   └── workflows/
 │       ├── ci.yml            # package checks, exact-archive publication, and tags
 │       └── pages.yml         # independent website verification and deployment

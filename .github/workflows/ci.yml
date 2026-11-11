@@ -75,6 +75,12 @@ jobs:
     name: Browser tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --init --ipc=host --user 1001
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Check out the repository
         uses: actions/checkout@v7
@@ -93,9 +99,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter='!@jg-packages/website'
 
-      - name: Install the browsers
-        run: .github/scripts/install-browsers.sh packages/jg-sw chromium
-
       - name: Run the browser tests
         run: node internal/vitest-config/src/run-test-suite.ts essential run test:browser --filter='!jg-utilities' --filter='!@jg-packages/website'
 
@@ -104,6 +107,12 @@ jobs:
     name: End-to-end tests (${{ matrix.shard }} of 3)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --init --ipc=host --user 1001
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -134,10 +143,6 @@ jobs:
         if: matrix.shard == 1
         run: pnpm install --frozen-lockfile --filter='!@jg-packages/website'
 
-      - name: Install the browsers
-        if: matrix.shard == 1
-        run: .github/scripts/install-browsers.sh packages/jg-sw chromium
-
       # one browser pool at a time; each workspace keeps its own complete essential selection.
       - name: Run the essential end-to-end tests
         if: matrix.shard == 1
@@ -147,6 +152,12 @@ jobs:
     name: Release checks
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --init --ipc=host --user 1001
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Check out the repository
         uses: actions/checkout@v7
@@ -167,9 +178,6 @@ jobs:
 
       - name: Build the packages
         run: pnpm turbo run build --filter='./packages/*'
-
-      - name: Install the rendered Astro fixture's browsers
-        run: .github/scripts/install-browsers.sh packages/jg-personal-astro-ui chromium firefox webkit
 
       - name: Check the release
         if: github.event_name != 'push' || github.ref != 'refs/heads/main'

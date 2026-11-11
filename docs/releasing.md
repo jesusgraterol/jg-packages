@@ -87,6 +87,8 @@ Every push to `main`, which is every merged pull request, runs the same parallel
 
 `publish` installs no dependencies and holds `id-token: write` only so npm can verify the workflow. `tag` holds `contents: write` only to push its tags.
 
+The browser, E2E and release jobs run in the official Playwright image pinned to the workspace catalog version. Browser binaries and system dependencies are preinstalled, so these jobs do not use apt or download browsers during qualification. Their existing test commands and the complete rendered package-consumer checks remain unchanged.
+
 The same main push independently starts `pages.yml`, which checks, builds and deploys the website. Publication has no dependency on website checks or the Pages result. Shipped UI/service-worker browser tests and the rendered package-consumer fixtures remain release gates. [`deployment.md`](deployment.md) covers website delivery.
 
 ## The first publish of a new package

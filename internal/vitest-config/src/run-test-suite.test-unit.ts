@@ -29,3 +29,16 @@ test('pnpm check:full preserves complementary coverage groups', () => {
   expect(check.chromium.length).toBeGreaterThan(0);
   expect(check.shared).toStrictEqual(check.chromium.map((name) => `!${name}`).sort());
 });
+
+test('CI browser images match the workspace Playwright version', () => {
+  const workspace = readFileSync(join(ROOT, 'pnpm-workspace.yaml'), 'utf8');
+  const version = /^ {2}'@playwright\/test': (\d+\.\d+\.\d+)$/mu.exec(workspace)?.[1];
+  expect(version).toBeDefined();
+  expect(workspace).toContain(`  playwright: ${version}\n`);
+
+  const workflow = readFileSync(join(ROOT, '.github', 'workflows', 'ci.yml'), 'utf8');
+  const images = [
+    ...workflow.matchAll(/image: (mcr\.microsoft\.com\/playwright:v[^\s]+-noble)/gu),
+  ].map(([, image]) => image);
+  expect(images).toStrictEqual(Array(3).fill(`mcr.microsoft.com/playwright:v${version}-noble`));
+});
