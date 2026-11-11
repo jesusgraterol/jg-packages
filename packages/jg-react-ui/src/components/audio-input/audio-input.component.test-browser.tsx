@@ -487,9 +487,6 @@ describe('AudioInput', () => {
     expect(getUserMediaMock).toHaveBeenCalledWith({ audio: true });
     const dialogContent = document.body.querySelector<HTMLElement>('[data-slot="dialog-content"]');
     const dialogHeader = document.body.querySelector<HTMLElement>('[data-slot="dialog-header"]');
-    const dialogHeaderActions = document.body.querySelector<HTMLElement>(
-      '[data-slot="dialog-header-actions"]',
-    );
     const dialogBody = document.body.querySelector<HTMLElement>('[data-slot="dialog-body"]');
     const recorder = document.body.querySelector<HTMLElement>('[data-slot="audio-input-recorder"]');
     const restartButton = document.body.querySelector<HTMLButtonElement>(
@@ -503,9 +500,14 @@ describe('AudioInput', () => {
     expect(dialogContent?.className).toContain('bg-background');
     expect(dialogHeader?.className).toContain('text-left');
     expect(dialogHeader?.className).toContain('items-center');
-    expect(dialogHeaderActions?.className).toContain('justify-end');
-    expect(dialogHeaderActions?.contains(restartButton ?? null)).toBe(true);
-    expect(dialogHeaderActions?.contains(closeButton ?? null)).toBe(true);
+    expect(document.body.querySelector('[data-slot="dialog-header-actions"]')).toBeNull();
+    expect(dialogHeader?.querySelectorAll('button')).toHaveLength(1);
+    expect(dialogHeader?.contains(closeButton)).toBe(true);
+    expect(dialogHeader?.contains(restartButton)).toBe(false);
+    expect(
+      document.body.querySelector('[data-slot="audio-input-transcription-actions"]')
+        ?.firstElementChild,
+    ).toBe(restartButton);
     expect(dialogBody?.className).toContain('px-4');
     expect(dialogBody?.className).toContain('pt-2');
     expect(dialogBody?.className).toContain('pb-4');
@@ -524,9 +526,9 @@ describe('AudioInput', () => {
     expect(recorder?.className).not.toContain('pr-20');
     expect(restartButton?.className).toContain('size-11');
     expect(restartButton?.className).toContain('sm:pointer-fine:size-8');
-    expect(closeButton?.className).toContain('size-11');
-    expect(closeButton?.className).toContain('sm:pointer-fine:size-8');
-    expect(closeButton?.className).not.toContain('absolute');
+    expect(closeButton?.className).toContain('absolute');
+    expect(closeButton?.className).toContain('pointer-coarse:min-h-11');
+    expect(closeButton?.className).toContain('pointer-coarse:min-w-11');
     expect(document.body.querySelector('[data-slot="dialog-title"]')?.textContent).toBe('Audio');
     expect(document.body.textContent).toContain('Listening');
   });
@@ -813,7 +815,9 @@ describe('AudioInput', () => {
     expect(document.body.textContent).toContain('Starting...');
 
     await act(async () => {
-      getAudioInputButtonByText(document.body, 'Cancel').click();
+      document.body
+        .querySelector<HTMLButtonElement>('button[aria-label="Close audio recorder"]')
+        ?.click();
       await Promise.resolve();
     });
 
@@ -1228,7 +1232,7 @@ describe('AudioInput', () => {
 
     expect(handleTranscribe).toHaveBeenCalledTimes(1);
     expect(loadingStatus?.textContent).toBe('Submitting...');
-    expect(dialogButtons).toHaveLength(5);
+    expect(dialogButtons).toHaveLength(4);
     const active = getAudioInputButtonByText(document.body, 'Transcribe');
     expect(active.disabled).toBe(false);
     expect(active.getAttribute('aria-disabled')).toBe('true');
@@ -1414,8 +1418,8 @@ describe('AudioInput', () => {
     );
   });
 
-  test('cancels an active recording from the dialog action row', async () => {
-    const handleCancel = vi.fn();
+  test('cancels an active recording from the dialog close button', async () => {
+    const handleDialogOpenChange = vi.fn();
     const handleRecordingCancel = vi.fn();
     const handleRecordingComplete = vi.fn();
     const handleTranscribe = vi.fn((): Promise<string> =>
@@ -1428,7 +1432,7 @@ describe('AudioInput', () => {
           autoStart
           defaultIsDialogOpen
           transcribe={handleTranscribe}
-          onCancel={handleCancel}
+          onDialogOpenChange={handleDialogOpenChange}
           onRecordingCancel={handleRecordingCancel}
           onRecordingComplete={handleRecordingComplete}
         />,
@@ -1439,24 +1443,29 @@ describe('AudioInput', () => {
 
     await flushAudioInputRecordingStart();
     const recorder = getMockRecorder();
-    const cancelButton = getAudioInputButtonByText(document.body, 'Cancel');
+    const restartButton = document.body.querySelector<HTMLButtonElement>(
+      'button[aria-label="Restart recording"]',
+    );
     const transcribeButton = getAudioInputButtonByText(document.body, 'Transcribe');
     const sendButton = getAudioInputButtonByText(document.body, 'Send');
+    const closeButton = document.body.querySelector<HTMLButtonElement>(
+      'button[aria-label="Close audio recorder"]',
+    );
 
-    expect(cancelButton.dataset['variant']).toBe('destructive');
-    expect(cancelButton.getAttribute('aria-label')).toBe('Cancel');
-    expect(cancelButton.querySelector('svg')).not.toBeNull();
+    expect(document.body.querySelector('button[aria-label="Cancel"]')).toBeNull();
+    expect(restartButton?.dataset['variant']).toBe('ghost');
+    expect(restartButton?.querySelector('svg')).not.toBeNull();
     expect(transcribeButton.querySelector('svg')).toBeNull();
     expect(sendButton.querySelector('svg')).not.toBeNull();
 
     await act(async () => {
-      cancelButton.click();
+      closeButton?.click();
       await Promise.resolve();
     });
 
     expect(recorder.stop).toHaveBeenCalledTimes(1);
     expect(stopTrackMock).toHaveBeenCalledTimes(1);
-    expect(handleCancel).toHaveBeenCalledTimes(1);
+    expect(handleDialogOpenChange).toHaveBeenCalledWith(false);
     expect(handleRecordingCancel).toHaveBeenCalledTimes(1);
     expect(handleRecordingComplete).not.toHaveBeenCalled();
     expect(handleTranscribe).not.toHaveBeenCalled();
@@ -1466,7 +1475,7 @@ describe('AudioInput', () => {
     expect(document.body.querySelector('button[aria-label="Open audio recorder"]')).not.toBeNull();
   });
 
-  test('restarts the active recording from the dialog utility action', async () => {
+  test('restarts the active recording from the bottom-left action', async () => {
     vi.useFakeTimers();
 
     const handleRecordingCancel = vi.fn();
@@ -1527,7 +1536,7 @@ describe('AudioInput', () => {
     async () => {
       vi.useFakeTimers();
 
-      const handleCancel = vi.fn();
+      const handleDialogOpenChange = vi.fn();
       const handleTranscribe = vi.fn((): Promise<string> =>
         Promise.resolve('Canceled transcription'),
       );
@@ -1536,10 +1545,10 @@ describe('AudioInput', () => {
         root.render(
           <AudioInput
             autoStart
-            cancelResetDelayMs={220}
+            cancelResetDelayMs={400}
             isDialogOpen
             transcribe={handleTranscribe}
-            onCancel={handleCancel}
+            onDialogOpenChange={handleDialogOpenChange}
           />,
         );
 
@@ -1550,18 +1559,26 @@ describe('AudioInput', () => {
       const recorder = getMockRecorder();
 
       await act(async () => {
-        getAudioInputButtonByText(document.body, 'Cancel').click();
+        document.body
+          .querySelector<HTMLButtonElement>('button[aria-label="Close audio recorder"]')
+          ?.click();
         await Promise.resolve();
       });
 
       expect(recorder.stop).toHaveBeenCalledTimes(1);
       expect(stopTrackMock).toHaveBeenCalledTimes(1);
-      expect(handleCancel).toHaveBeenCalledTimes(1);
+      expect(handleDialogOpenChange).toHaveBeenCalledWith(false);
       expect(handleTranscribe).not.toHaveBeenCalled();
       expect(document.body.textContent).toContain('Listening');
 
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(220);
+        await vi.advanceTimersByTimeAsync(399);
+      });
+
+      expect(document.body.textContent).toContain('Listening');
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
       });
 
       expect(document.body.textContent).toContain('Dictate');

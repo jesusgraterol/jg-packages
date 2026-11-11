@@ -207,7 +207,7 @@ for (const theme of ['light', 'dark'] as const) {
           ).toBeDisabled();
           await expectNoHorizontalOverflow(page);
           expect((await new AxeBuilder({ page }).analyze()).violations).toStrictEqual([]);
-          await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+          await dialog.getByRole('button', { name: 'Close audio recorder', exact: true }).click();
           await expect(dialog).toHaveCount(0);
           return;
         }
@@ -252,7 +252,7 @@ for (const theme of ['light', 'dark'] as const) {
         expect(transcriptions).toBe(1);
         await page.getByRole('button', { name: 'Open audio recorder', exact: true }).click();
         await waitForRecordedAudio(page);
-        await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+        await dialog.getByRole('button', { name: 'Close audio recorder', exact: true }).click();
         await expect(dialog).toHaveCount(0);
         expect(
           await page.evaluate(() => {

@@ -187,6 +187,26 @@ describe('chat Markdown policy', () => {
     normalized.check();
   });
 
+  test('keeps a divider between paragraphs', () => {
+    const schema = new Schema({
+      nodes: {
+        doc: { content: 'block*' },
+        text: { group: 'inline' },
+        paragraph: { content: 'inline*', group: 'block' },
+        hr: { group: 'block' },
+      },
+    });
+    const source = schema.node('doc', null, [
+      schema.node('paragraph', null, schema.text('Before')),
+      schema.node('hr'),
+      schema.node('paragraph', null, schema.text('After')),
+    ]);
+    const normalized = normalizeChatMarkdownDocument(source);
+
+    expect(normalized.toJSON()).toStrictEqual(source.toJSON());
+    normalized.check();
+  });
+
   test('stray list items flatten to paragraphs and hard breaks remain inline boundaries', () => {
     const schema = new Schema({
       nodes: {

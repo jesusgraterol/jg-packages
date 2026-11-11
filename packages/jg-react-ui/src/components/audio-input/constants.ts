@@ -17,9 +17,6 @@ export const AUDIO_INPUT_DEFAULT_MAX_BYTES = 20 * AUDIO_INPUT_BYTES_PER_MEGABYTE
  */
 export const AUDIO_INPUT_RECORDING_CHUNK_TIMESLICE_MS = toMS('1 second');
 
-// default cancel action label for audio dialogs.
-export const AUDIO_INPUT_DEFAULT_CANCEL_LABEL = 'Cancel';
-
 // default close button label for the built-in audio dialog.
 export const AUDIO_INPUT_DEFAULT_CLOSE_BUTTON_ARIA_LABEL = 'Close audio recorder';
 
