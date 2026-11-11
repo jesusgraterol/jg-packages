@@ -43,14 +43,14 @@ Run these from the repository root.
 
 | Command                | What it does                                                                                                                                    |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm check`           | Lint, typecheck, build, essential unit/integration/browser/end-to-end tests, and formatting.                                                    |
+| `pnpm check`           | Package lint, typecheck, build, essential unit/integration/browser/end-to-end tests, and formatting, excluding the private website.             |
 | `pnpm check:essential` | Alias for `pnpm check`.                                                                                                                         |
 | `pnpm check:full`      | Complete checks, including coverage thresholds, all browser/E2E cases, formatting and release verification. Run only when explicitly requested. |
 | `pnpm build`           | Builds every package in dependency order.                                                                                                       |
 | `pnpm dev`             | Serves the website at `http://localhost:4321/`; see [website development](website.md).                                                          |
 | `pnpm lint`            | Runs ESLint in every package.                                                                                                                   |
 | `pnpm typecheck`       | Typechecks every package against its supported runtimes.                                                                                        |
-| `pnpm test`            | Essential unit, integration, browser and end-to-end tests.                                                                                      |
+| `pnpm test`            | Essential package unit, integration, browser and end-to-end tests, excluding the private website.                                               |
 | `pnpm test:full`       | Complete unit, integration, browser and end-to-end tests.                                                                                       |
 | `pnpm format`          | Formats the whole repository.                                                                                                                   |
 | `pnpm format:check`    | Fails when a file is not formatted.                                                                                                             |
@@ -80,6 +80,10 @@ Each package's `vitest.config.ts` calls `createVitestConfig()` from `@jg-package
 
 - **Coverage.** Unit/integration workspaces retain `test:coverage`, using Vitest V8 and their existing thresholds. `pnpm check:full` runs those tasks instead of separate unit/integration tasks, then runs browser tests after coverage to avoid competing Vite dependency bundles. Four Chromium coverage consumers (jg-react, jg-react-router, jg-tanstack-query and jg-react-ui) run one at a time; the others run with concurrency four. A new Chromium coverage consumer joins the complementary filters in `check:full`; the shared runner's unit test checks those groups. Browser-only packages include their Chromium instance in coverage. Thresholds stay at measured whole percentages and must never be lowered to make a change pass. Essential checks and CI do not collect coverage or enforce percentage thresholds; enforcement happens only through explicitly requested complete coverage/check commands. The release workspace-script guard still requires coverage scripts, so no workspace silently drops out of `check:full`.
 - **Suites.** `JG_TEST_SUITE` accepts `essential` or `full`, defaults to full when unset, and rejects invalid values. Essential protects consequential guarantees; test duration alone never determines membership. Mark useful secondary cases or mixed-file scenario families with `{ tags: ['full'] }`. Declare wholly secondary files in `createVitestConfig({ fullOnlyFiles: [...] })` as well, so essential excludes them before imports. An integration project with no selected files does not start global setup; an unexpectedly empty required invocation still fails. Granular/focused commands remain complete by default, including full-only cases. The existing root launcher sets the mode only for its child, so it cannot leak into later commands. Local full runs are explicit requests; `check` and every CI regression job select essential. The release job remains complete.
+
+### CI and website boundaries
+
+Package publication runs through `ci.yml`; its dependency installs, static checks, essential test tasks and formatting exclude the private website. Website E2E remains full-only. `pages.yml` independently runs essential website tests, lints, typechecks, formats, builds and deploys the website on main pushes, so a site failure cannot fail npm publication. Browser checks for shipped UI and service-worker packages, exact-tarball consumers, runtime floors and native OS checks remain package guarantees.
 
 ### Foundational family classification
 

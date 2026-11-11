@@ -4,12 +4,12 @@ How the site reaches [jg-packages.jesusgraterol.dev](https://jg-packages.jesusgr
 
 ## How a deploy happens
 
-Every push to `main` runs `.github/workflows/ci.yml`:
+Every push to `main` starts `.github/workflows/pages.yml` independently of package publication:
 
-1. **`e2e`** runs in three shards, on separate runners. Each builds the site, which runs `verify-build`, and runs its third of the end-to-end suites against that build. The first then uploads `website/dist` as the Pages artifact.
-2. **`deploy`** needs every check job, `static`, `tests`, `browser`, every `e2e` shard, `release`, `floor`, and both `platforms` runs, and publishes the artifact with `actions/deploy-pages`, in the `github-pages` environment. It has only `pages: write` and `id-token: write`, gives up after 10 minutes, and runs in the `pages-production` concurrency group without cancelling, so a newer deploy waits for the one in progress.
+1. **`website`** checks out the exact main commit, runs essential website unit/integration tests, lints, typechecks and builds the private website, checks its formatting, and uploads `website/dist` as the Pages artifact. Website browser tests remain available through explicit full or focused verification.
+2. **`deploy`** waits only for that website job, then publishes the artifact with `actions/deploy-pages` in the `github-pages` environment. Its Pages/OIDC permissions are job-local. The workflow queues deployments in the `github-pages` concurrency group without cancelling one in progress.
 
-Pull requests run the same check jobs without uploading anything, so only what reaches `main` is deployed. `deploy` doesn't wait for `publish`, so the site can name a version a minute before npm serves it.
+Pull requests run package checks through `ci.yml` and do not run the website workflow. Website failure cannot fail npm publication. Website deployment remains independent of the publisher, so the site can name a version before npm serves it.
 
 ## GitHub Pages and the domain
 
