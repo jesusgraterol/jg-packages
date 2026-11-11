@@ -83,7 +83,7 @@ Each package's `vitest.config.ts` calls `createVitestConfig()` from `@jg-package
 
 ### CI and website boundaries
 
-Package publication runs through `ci.yml`; its dependency installs, static checks, essential test tasks and formatting exclude the private website. Website E2E remains full-only. `pages.yml` independently runs essential website tests, lints, typechecks, formats, builds and deploys the website on main pushes, so a site failure cannot fail npm publication. Browser checks for shipped UI and service-worker packages, exact-tarball consumers, runtime floors and native OS checks remain package guarantees.
+Package publication runs through `ci.yml`; its dependency installs, static checks, essential test tasks and formatting exclude the private website. Astro library formatting uses the library gallery's Tailwind entry, without website dependencies. Website E2E remains full-only. `pages.yml` independently runs essential website tests, lints, typechecks, formats, builds and deploys the website on main pushes, so a site failure cannot fail npm publication. Browser checks for shipped UI and service-worker packages, exact-tarball consumers, runtime floors and native OS checks remain package guarantees.
 
 ### Foundational family classification
 
