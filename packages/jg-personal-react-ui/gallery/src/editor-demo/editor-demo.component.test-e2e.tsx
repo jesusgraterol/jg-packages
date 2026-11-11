@@ -670,7 +670,7 @@ for (const theme of ['light', 'dark'] as const) {
             await expect(dialog.getByRole('alert')).toHaveText(
               'Audio recording is not supported in this browser.',
             );
-            await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+            await dialog.getByRole('button', { name: 'Close audio recorder', exact: true }).click();
             return;
           }
           await waitForRecordedAudio(page);
@@ -693,7 +693,10 @@ for (const theme of ['light', 'dark'] as const) {
               'none',
             );
             await expect(
-              dialog.getByRole('button', { name: 'Cancel', exact: true }),
+              dialog.getByRole('button', { name: 'Restart recording', exact: true }),
+            ).toBeDisabled();
+            await expect(
+              dialog.getByRole('button', { name: 'Close audio recorder', exact: true }),
             ).toBeDisabled();
             await page.keyboard.press('Escape');
             await expect(dialog).toBeVisible();
@@ -805,7 +808,7 @@ for (const theme of ['light', 'dark'] as const) {
           await expect(dialog.getByRole('alert')).toHaveText(
             'Audio recording is not supported in this browser.',
           );
-          await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+          await dialog.getByRole('button', { name: 'Close audio recorder', exact: true }).click();
           await expect(dialog).toHaveCount(0);
           return;
         }
