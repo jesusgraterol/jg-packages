@@ -53,10 +53,6 @@ export type IAudioInputControls = {
   stopRecording: () => void;
 };
 
-/** Receives the explicit recorder cancel action.
- * @see AudioInput
- */
-export type IAudioInputCancelHandler = () => void;
 /** Receives requested changes to the built-in dialog open state.
  * @see AudioInput
  */
@@ -169,7 +165,6 @@ type IAudioInputTriggerButtonProps = Omit<
  */
 export type IAudioInputProps = IAudioInputRootProps & {
   autoStart?: boolean;
-  cancelLabel?: string;
   cancelResetDelayMs?: number;
   closeButtonAriaLabel?: string;
   controlsRef?: Ref<IAudioInputControls>;
@@ -189,7 +184,6 @@ export type IAudioInputProps = IAudioInputRootProps & {
   maxBytes?: number;
   onDialogOpenChange?: IAudioInputDialogOpenChangeHandler;
   onElapsedMsChange?: IAudioInputElapsedMsChangeHandler;
-  onCancel?: IAudioInputCancelHandler;
   onLimitProgressChange?: IAudioInputLimitProgressChangeHandler;
   onRecordedBytesChange?: IAudioInputRecordedBytesChangeHandler;
   onRecordingActiveChange?: IAudioInputRecordingActiveChangeHandler;

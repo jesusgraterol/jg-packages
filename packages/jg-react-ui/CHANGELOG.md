@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.7.0
+
+### Changed
+
+- Move the audio recorder's Restart action from the dialog header to the bottom-left of its action row, so the header keeps only the dialog's close button. Restart is available with or without `transcribe`.
+- Apply `cancelResetDelayMs` to the visual reset after the audio dialog closes.
+
+### Removed
+
+- Remove the audio recorder's footer Cancel button, with `AudioInput`'s `cancelLabel` and `onCancel` props and the `IAudioInputCancelHandler` type. The dialog's close button cancels the recording; observe it through `onDialogOpenChange` or `onRecordingCancel`.
+
+### Fixed
+
+- Keep horizontal rules in chat Markdown instead of dropping them during normalization.
+
 ## 0.6.3
 
 ### Fixed

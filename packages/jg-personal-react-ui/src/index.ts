@@ -579,7 +579,6 @@ export { FileUpload, FileUploadDialog, ImageUploadField } from './components/fil
 
 // audio-input
 export type {
-  IAudioInputCancelHandler,
   IAudioInputControls,
   IAudioInputDialogOpenChangeHandler,
   IAudioInputElapsedMsChangeHandler,

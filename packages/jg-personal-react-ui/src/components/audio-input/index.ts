@@ -1,6 +1,5 @@
 // types
 export type {
-  IAudioInputCancelHandler,
   IAudioInputControls,
   IAudioInputDialogOpenChangeHandler,
   IAudioInputElapsedMsChangeHandler,

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0
+
+### Changed
+
+- Require `jg-react-ui` 0.7.0. Its audio recorder keeps only the dialog's close button in the header and moves Restart to the bottom-left of the action row, and chat Markdown keeps horizontal rules.
+
+### Removed
+
+- Remove the re-exported `IAudioInputCancelHandler` type, with `AudioInput`'s `cancelLabel` and `onCancel` props.
+
 ## 0.6.2
 
 ### Fixed

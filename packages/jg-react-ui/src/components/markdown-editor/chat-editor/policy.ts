@@ -157,6 +157,11 @@ const normalizeBlockNode = (
 ): ProseMirrorNode[] => {
   const nodeName = node.type.name;
 
+  // a divider has no text, so the readable-paragraph fallback would drop it
+  if (nodeName === 'hr') {
+    return [node];
+  }
+
   if (nodeName === 'paragraph') {
     return [schema.nodes['paragraph']!.create(null, normalizeInlineChildren(node, schema, tools))];
   }

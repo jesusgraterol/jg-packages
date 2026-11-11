@@ -38,7 +38,7 @@ The preference provider supports explicit `local`, `read-only`, and `remote` mod
 
 Optional `storageId` defaults to `jg-ui-preferences`. It must be non-empty and contain only ASCII letters, digits, underscores, and hyphens. `getUiPreferencesStorageKey` returns its raw `jg-storage:` key. IDs are captured for the provider lifetime; use a keyed remount to change namespaces. Invalid IDs fail before storage access or initialization-script creation.
 
-Render `ThemeInitializationScript` in the document head before application JavaScript, using the same `storageId` as the provider and your CSP `nonce` when required. Server snapshots use initial props or defaults, then storage synchronizes after hydration. See the recipes for composition and the shared [owned error contracts](https://unpkg.com/jg-react-ui@0.6.3/errors/README.md).
+Render `ThemeInitializationScript` in the document head before application JavaScript, using the same `storageId` as the provider and your CSP `nonce` when required. Server snapshots use initial props or defaults, then storage synchronizes after hydration. See the recipes for composition and the shared [owned error contracts](https://unpkg.com/jg-react-ui@0.7.0/errors/README.md).
 
 ## Controls, forms, and plain text
 
@@ -129,7 +129,7 @@ Invalid configuration retains these native Error messages:
 
 ## Documentation
 
-The API reference ships as [API.md](https://unpkg.com/jg-react-ui@0.6.3/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-react-ui@0.6.3/RECIPES.md). These personal-use packages are unlisted on the public package website.
+The API reference ships as [API.md](https://unpkg.com/jg-react-ui@0.7.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-react-ui@0.7.0/RECIPES.md). These personal-use packages are unlisted on the public package website.
 
 ## License
 
