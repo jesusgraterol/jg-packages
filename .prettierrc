@@ -17,6 +17,12 @@
         "plugins": ["prettier-plugin-astro", "prettier-plugin-tailwindcss"],
         "tailwindStylesheet": "./website/src/styles/global.css"
       }
+    },
+    {
+      "files": "packages/jg-personal-astro-ui/**/*.astro",
+      "options": {
+        "tailwindStylesheet": "./packages/jg-personal-astro-ui/gallery/src/styles/global.css"
+      }
     }
   ]
 }

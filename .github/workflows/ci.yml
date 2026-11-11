@@ -36,13 +36,13 @@ jobs:
           package-manager-cache: false
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --filter='!@jg-packages/website'
 
       - name: Lint, typecheck, and build
-        run: node internal/vitest-config/src/run-test-suite.ts essential run lint typecheck build
+        run: node internal/vitest-config/src/run-test-suite.ts essential run lint typecheck build --filter='!@jg-packages/website'
 
       - name: Check the formatting
-        run: pnpm format:check
+        run: pnpm format:check "!website/**"
 
   tests:
     name: Unit and integration tests, with coverage
@@ -64,17 +64,23 @@ jobs:
           package-manager-cache: false
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --filter='!@jg-packages/website'
 
       # the required check keeps its existing name; coverage is available through check:full.
       # integration fixtures use the runner's Docker, without coverage-only browser startup.
       - name: Run the essential unit and integration tests
-        run: node internal/vitest-config/src/run-test-suite.ts essential run test:unit test:integration --concurrency=4
+        run: node internal/vitest-config/src/run-test-suite.ts essential run test:unit test:integration --filter='!@jg-packages/website' --concurrency=4
 
   browser:
     name: Browser tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --init --ipc=host --user 1001
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Check out the repository
         uses: actions/checkout@v7
@@ -91,19 +97,22 @@ jobs:
           package-manager-cache: false
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install the browsers
-        run: .github/scripts/install-browsers.sh packages/jg-sw chromium
+        run: pnpm install --frozen-lockfile --filter='!@jg-packages/website'
 
       - name: Run the browser tests
-        run: node internal/vitest-config/src/run-test-suite.ts essential run test:browser --filter='!jg-utilities'
+        run: node internal/vitest-config/src/run-test-suite.ts essential run test:browser --filter='!jg-utilities' --filter='!@jg-packages/website'
 
   # keep required shard statuses; the nonempty essential selection runs once on shard 1.
   e2e:
     name: End-to-end tests (${{ matrix.shard }} of 3)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --init --ipc=host --user 1001
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -132,34 +141,23 @@ jobs:
 
       - name: Install dependencies
         if: matrix.shard == 1
-        run: pnpm install --frozen-lockfile
-
-      - name: Install the browsers
-        if: matrix.shard == 1
-        run: .github/scripts/install-browsers.sh packages/jg-sw chromium
+        run: pnpm install --frozen-lockfile --filter='!@jg-packages/website'
 
       # one browser pool at a time; each workspace keeps its own complete essential selection.
       - name: Run the essential end-to-end tests
         if: matrix.shard == 1
         run: node internal/vitest-config/src/run-test-suite.ts essential run test:e2e --filter='!@jg-packages/website' --concurrency=1
 
-      # website E2E is full-only, so prepare the existing deployment artifact explicitly.
-      - name: Build the site for deployment
-        if: matrix.shard == 1 && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: pnpm turbo run build --filter=@jg-packages/website
-
-      # on main, the first shard hands the site it built to the deploy job, which waits for every
-      # shard
-      - name: Upload the site
-        if: matrix.shard == 1 && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: website/dist
-
   release:
     name: Release checks
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --init --ipc=host --user 1001
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Check out the repository
         uses: actions/checkout@v7
@@ -176,13 +174,10 @@ jobs:
           package-manager-cache: false
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --filter='!@jg-packages/website'
 
       - name: Build the packages
         run: pnpm turbo run build --filter='./packages/*'
-
-      - name: Install the rendered Astro fixture's browsers
-        run: .github/scripts/install-browsers.sh packages/jg-personal-astro-ui chromium firefox webkit
 
       - name: Check the release
         if: github.event_name != 'push' || github.ref != 'refs/heads/main'
@@ -226,7 +221,7 @@ jobs:
           package-manager-cache: false
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --filter='!@jg-packages/website'
 
       - name: Build the packages
         run: pnpm turbo run build --filter='./packages/*'
@@ -312,28 +307,6 @@ jobs:
         run: |
           node --version
           node internal/vitest-config/src/run-test-suite.ts essential run test:unit test:integration --filter=jg-fs --filter=jg-process --filter=jg-git-commands --filter=jg-env --only --concurrency=4 --continue
-
-  deploy:
-    name: Deploy the site
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [static, tests, browser, e2e, release, floor, platforms]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    # one deploy at a time; a newer one waits for the one in progress instead of cancelling it
-    concurrency:
-      group: pages-production
-      cancel-in-progress: false
-    # id-token lets GitHub Pages verify that the deployment comes from this workflow
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
 
   publish:
     name: Publish to npm

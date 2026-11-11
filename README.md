@@ -42,7 +42,7 @@ General-purpose packages get a row here when added to `packages/`.
 Developing needs Node.js 24 or later and pnpm, which switches itself to the version pinned in `package.json`. The published packages support Node.js 22.17.0 and later, except `jg-personal-astro-ui`, which needs 24.
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 pnpm --filter jg-sw exec playwright install chromium firefox webkit
 pnpm check
 ```
@@ -66,11 +66,14 @@ Preview the shared Astro components locally with `pnpm --filter jg-personal-astr
 
 ## Project blueprint
 
+[Delivery](docs/delivery.md) defines the ordered stops, operators, verification and cleanup for a task.
+
 ```text
 .
 ├── .github/
-│   ├── scripts/install-browsers.sh # CI's Playwright install, bounded, with an apt mirror fallback
-│   └── workflows/ci.yml      # the parallel check jobs, then the deploy, publish, and tag jobs
+│   └── workflows/
+│       ├── ci.yml            # package checks, exact-archive publication, and tags
+│       └── pages.yml         # independent website verification and deployment
 ├── docs/
 │   ├── asset-attribution.md  # where the website's mark, fonts, and icons come from
 │   ├── creating-a-package.md # every step from a package's name to its first release
