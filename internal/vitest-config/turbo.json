@@ -1,12 +1,14 @@
 {
-  "$schema": "https://turborepo.com/schema.json",
   "extends": ["//"],
   "tasks": {
     "test:unit": {
-      "inputs": ["$TURBO_EXTENDS$", "$TURBO_ROOT$/package.json"]
-    },
-    "test:coverage": {
-      "inputs": ["$TURBO_EXTENDS$", "$TURBO_ROOT$/package.json"]
+      "inputs": [
+        "$TURBO_EXTENDS$",
+        "$TURBO_ROOT$/package.json",
+        "$TURBO_ROOT$/pnpm-workspace.yaml",
+        "$TURBO_ROOT$/turbo.json",
+        "$TURBO_ROOT$/.github/workflows/ci.yml"
+      ]
     }
   }
 }

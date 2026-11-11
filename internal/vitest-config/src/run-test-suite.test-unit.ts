@@ -42,3 +42,12 @@ test('CI browser images match the workspace Playwright version', () => {
   ].map(([, image]) => image);
   expect(images).toStrictEqual(Array(3).fill(`mcr.microsoft.com/playwright:v${version}-noble`));
 });
+
+test('browser tasks retain the container binary path in strict mode', () => {
+  const { tasks } = JSON.parse(readFileSync(join(ROOT, 'turbo.json'), 'utf8')) as {
+    tasks: Record<string, { env?: string[] }>;
+  };
+  for (const task of ['test:browser', 'test:e2e', 'test:coverage']) {
+    expect(tasks[task]?.env).toContain('PLAYWRIGHT_BROWSERS_PATH');
+  }
+});

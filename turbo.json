@@ -36,18 +36,18 @@
     "test:coverage": {
       "dependsOn": ["^build", "build"],
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/internal/vitest-config/src/**"],
-      "env": ["JG_TEST_SUITE"],
+      "env": ["JG_TEST_SUITE", "PLAYWRIGHT_BROWSERS_PATH"],
       "outputs": []
     },
     "test:browser": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/internal/vitest-config/src/**"],
-      "env": ["JG_TEST_SUITE"],
+      "env": ["JG_TEST_SUITE", "PLAYWRIGHT_BROWSERS_PATH"],
       "outputs": []
     },
     "test:e2e": {
       "dependsOn": ["build"],
-      "env": ["JG_TEST_SUITE"],
+      "env": ["JG_TEST_SUITE", "PLAYWRIGHT_BROWSERS_PATH"],
       "outputs": [],
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/internal/vitest-config/src/**"]
     },
