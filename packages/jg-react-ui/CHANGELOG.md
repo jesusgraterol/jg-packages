@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1
+
+### Fixed
+
+- Ignore delayed Markdown editor updates for a replaced document, so clearing a draft before dictation cannot restore discarded text.
+
 ## 0.7.0
 
 ### Changed

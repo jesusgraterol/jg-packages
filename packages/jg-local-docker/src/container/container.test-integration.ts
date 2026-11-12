@@ -3,7 +3,8 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { delimiter, join } from 'node:path';
 
 import { expectToRejectCode } from 'jg-exception/testing';
-import { afterEach, beforeAll, describe, expect, test } from 'vitest';
+import type { IProcessResult } from 'jg-process';
+import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { resolveLocalDockerHost } from '../endpoint/index.js';
 import {
@@ -15,6 +16,27 @@ import {
 } from '../shared/docker.test-utils.js';
 import { ERRORS } from '../shared/index.js';
 import { removeContainer, startContainer } from './container.js';
+
+/*
+ * the library's errors hold a failed docker command's exit code but never its stderr, so each
+ * failure during a test is kept here, and printed when the test fails, to show Docker's reason
+ */
+const failedCommands = vi.hoisted((): string[] => []);
+
+vi.mock(import('../shared/index.js'), async (importOriginal) => {
+  const shared = await importOriginal();
+  return {
+    ...shared,
+    readSuccessfulOutput: (result: IProcessResult, subcommand: string): string => {
+      if (result.exitCode !== 0) {
+        failedCommands.push(
+          `docker ${subcommand} exited with ${result.exitCode}: ${result.stderr.trim()}`,
+        );
+      }
+      return shared.readSuccessfulOutput(result, subcommand);
+    },
+  };
+});
 
 // the label every container these tests start carries, so their cleanup finds each one
 const RUN_LABEL = 'jg-local-docker-test.run';
@@ -53,6 +75,15 @@ beforeAll(async () => {
   host = await resolveLocalDockerHost();
   await docker(host, ['pull', TEST_IMAGE]);
 }, DOCKER_SETUP_TIMEOUT_SECONDS * 1000);
+
+beforeEach(({ onTestFailed }) => {
+  failedCommands.length = 0;
+  onTestFailed(() => {
+    if (failedCommands.length > 0) {
+      console.error(`Docker's stderr for the commands that failed:\n${failedCommands.join('\n')}`);
+    }
+  });
+});
 
 afterEach(async () => {
   const leftovers = await docker(host, [
