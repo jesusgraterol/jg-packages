@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1
+
+### Fixed
+
+- Require `jg-react-ui` 0.7.1, which prevents delayed editor updates from restoring discarded text before dictation.
+
 ## 0.7.0
 
 ### Changed

@@ -632,6 +632,44 @@ describe('ChatMarkdownEditor', () => {
     expect(editors).toHaveLength(1);
   });
 
+  test('a delayed edit cannot restore a replaced draft before dictation appends', async () => {
+    const controlsRef = createRef<IChatMarkdownEditorControls>();
+    const onChange = vi.fn();
+    const render = (value: string): void =>
+      root.render(
+        <ChatMarkdownEditor
+          controlsRef={controlsRef}
+          maxLength={256}
+          value={value}
+          onChange={onChange}
+        />,
+      );
+    act(() => render('Draft'));
+    await flushEditor();
+    vi.useFakeTimers();
+    try {
+      act(() =>
+        editors.at(-1)!.action((ctx) => {
+          const view = ctx.get(editorViewCtx);
+          view.dispatch(view.state.tr.insertText(' to discard', 6));
+        }),
+      );
+      // a controlled reset bypasses undo history while the older edit is still debounced
+      act(() => render(''));
+      expect(controlsRef.current?.getMarkdown()).toBe('');
+      onChange.mockClear();
+      await act(async () => vi.advanceTimersByTimeAsync(200));
+      expect(onChange).not.toHaveBeenCalled();
+      act(() => {
+        expect(controlsRef.current?.appendLiteralText('Dictated message')).toBe(true);
+      });
+      expect(controlsRef.current?.getMarkdown()).toBe('Dictated message\n');
+      expect(onChange).toHaveBeenCalledExactlyOnceWith('Dictated message');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   test('pending destroy changes', async () => {
     const onChange = vi.fn();
     await act(async () => {

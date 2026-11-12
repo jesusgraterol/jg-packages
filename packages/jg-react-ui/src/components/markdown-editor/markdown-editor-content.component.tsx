@@ -573,6 +573,9 @@ const MarkdownEditorInstance = ({
           return;
         }
 
+        // controlled replacements bypass Milkdown's pending edit, whose delayed report is stale
+        if (!doc.eq(ctx.get(editorViewCtx).state.doc)) return;
+
         const markdown = ctx.get(serializerCtx)(doc);
         // a document the editor already recorded, such as a controlled value it took, isn't an edit
         const isEdited = markdown !== currentMarkdownRef.current;
