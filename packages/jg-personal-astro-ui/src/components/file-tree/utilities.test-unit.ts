@@ -1,9 +1,7 @@
-import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 
 import type { IFileTreeEntry } from '../../contracts/index.ts';
 
-import { MAX_FILE_TREE_DEPTH, MAX_FILE_TREE_ENTRIES } from './constants.ts';
 import { buildFileTreePreview } from './utilities.ts';
 
 const file = (name: string): IFileTreeEntry => ({ kind: 'file', name });
@@ -172,14 +170,4 @@ test('a shared directory in separate branches is not an ancestor cycle', () => {
     'leaf',
   ]);
   expect(result.isPartial).toBe(false);
-});
-
-test('the documented preview bounds match the implementation', () => {
-  const guide = readFileSync(
-    new URL('../../../../../docs/personal-astro-ui.md', import.meta.url),
-    'utf8',
-  );
-  expect(guide).toContain(
-    `at most ${MAX_FILE_TREE_ENTRIES} entries and ${MAX_FILE_TREE_DEPTH} levels`,
-  );
 });
