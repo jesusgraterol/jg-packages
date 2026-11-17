@@ -1,6 +1,23 @@
 # jg-packages
 
-Jesus Graterol's personal npm packages, published under `jg-*` names and built, tested, and released from one pnpm and Turborepo monorepo. Every package is ESM only, performs no application initialization when imported, exports its error codes, and is tested from the exact tarball that gets published. React notifications retain Sonner's browser style injection; package theme styles use explicit CSS imports.
+Jesus Graterol's personal npm packages, published under `jg-*` names and built, tested, and released from one pnpm and Turborepo monorepo.
+
+## Project blueprint
+
+| I want to…                                        | Read                                                       |
+| ------------------------------------------------- | ---------------------------------------------------------- |
+| set up the repo, run checks, and add dependencies | [`docs/development.md`](docs/development.md)               |
+| follow the conventions every package shares       | [`docs/package-guidelines.md`](docs/package-guidelines.md) |
+| create a package                                  | [`docs/creating-a-package.md`](docs/creating-a-package.md) |
+| release a version, or publish a new package       | [`docs/releasing.md`](docs/releasing.md)                   |
+| work on the website                               | [`docs/website.md`](docs/website.md)                       |
+| deploy the website, or change its domain or rules | [`docs/deployment.md`](docs/deployment.md)                 |
+| use or change the shared Astro components         | [`docs/personal-astro-ui.md`](docs/personal-astro-ui.md)   |
+| check where a font, icon, or mark comes from      | [`docs/asset-attribution.md`](docs/asset-attribution.md)   |
+
+[Delivery](docs/delivery.md) defines ordered source/publication stops, verification and task cleanup. Package APIs stay with each package's README and generated `API.md`.
+
+`packages/` owns published libraries, `internal/` owns private build/test/release tooling, and `website/` owns the public package site. `docs/` contains durable workspace guidance, with a detailed [source map](docs/development.md#source-map).
 
 ## Packages
 
@@ -36,76 +53,6 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 `jg-personal-ui` owns the tokens, fonts, and mark artwork shared by `jg-personal-astro-ui` and `jg-personal-react-ui`. `jg-react-ui` supplies the shared React implementations. They are published for personal use and excluded from the website catalog. See [`docs/personal-ui.md`](docs/personal-ui.md) for package ownership and the private React gallery.
 
 General-purpose packages get a row here when added to `packages/`.
-
-## Quick start
-
-Developing needs Node.js 24 or later and pnpm, which switches itself to the version pinned in `package.json`. The published packages support Node.js 22.17.0 and later, except `jg-personal-astro-ui`, which needs 24.
-
-```bash
-pnpm install --frozen-lockfile
-pnpm --filter jg-sw exec playwright install chromium firefox webkit
-pnpm check
-```
-
-`pnpm check` runs lint, typecheck, builds, essential unit/integration/browser/end-to-end tests, and formatting. `pnpm test:full` runs all correctness tests; `pnpm check:full` also runs coverage and release verification. Full runs locally only on explicit request. CI uses essential regression tests and keeps its complete release qualification separate. [`docs/development.md`](docs/development.md) covers the rest of the daily workflow.
-
-Preview the shared Astro components locally with `pnpm --filter jg-personal-astro-ui gallery:dev`. Its private gallery and browser checks are described in [`docs/personal-astro-ui.md`](docs/personal-astro-ui.md#private-gallery).
-
-## Documentation
-
-| I want to…                                        | Read                                                       |
-| ------------------------------------------------- | ---------------------------------------------------------- |
-| set up the repo, run checks, and add dependencies | [`docs/development.md`](docs/development.md)               |
-| follow the conventions every package shares       | [`docs/package-guidelines.md`](docs/package-guidelines.md) |
-| create a package                                  | [`docs/creating-a-package.md`](docs/creating-a-package.md) |
-| release a version, or publish a new package       | [`docs/releasing.md`](docs/releasing.md)                   |
-| work on the website                               | [`docs/website.md`](docs/website.md)                       |
-| deploy the website, or change its domain or rules | [`docs/deployment.md`](docs/deployment.md)                 |
-| use or change the shared Astro components         | [`docs/personal-astro-ui.md`](docs/personal-astro-ui.md)   |
-| check where a font, icon, or mark comes from      | [`docs/asset-attribution.md`](docs/asset-attribution.md)   |
-
-## Project blueprint
-
-[Delivery](docs/delivery.md) defines the ordered stops, operators, verification and cleanup for a task.
-
-```text
-.
-├── .github/
-│   └── workflows/
-│       ├── ci.yml            # package checks, exact-archive publication, and tags
-│       └── pages.yml         # independent website verification and deployment
-├── docs/
-│   ├── asset-attribution.md  # where the website's mark, fonts, and icons come from
-│   ├── creating-a-package.md # every step from a package's name to its first release
-│   ├── deployment.md         # GitHub Pages, the domain, and the Cloudflare rules for Markdown
-│   ├── development.md        # setup, commands, dependencies, branches, troubleshooting
-│   ├── package-guidelines.md # conventions every package follows
-│   ├── personal-ui.md        # JG foundation, shared React components, and the private gallery
-│   ├── personal-astro-ui.md  # the shared Astro components and their token contract
-│   ├── releasing.md          # versions, the release checks, publishing, and tags
-│   └── website.md            # the website: its content, pages, search, checks, and tests
-├── internal/                 # private workspace packages, never published
-│   ├── api-reference/        # extracts each package's API with TypeDoc, and renders API.md
-│   ├── build-tools/          # clean-dist and copy-assets scripts used by package builds
-│   ├── eslint-config/        # createEslintConfig(), the shared ESLint flat configuration
-│   ├── release-checks/       # the verify, pack, publish, and tag release commands
-│   ├── tsconfig/             # base, library, browser and node TypeScript configurations
-│   └── vitest-config/        # createVitestConfig(), one Vitest project per test category, and the suites
-├── packages/                 # the published jg-* packages, and jg-personal-astro-ui
-│   ├── jg-personal-react-ui/gallery/ # private React consumer using published exports
-│   └── jg-personal-astro-ui/gallery/ # private rendered examples and preview lifecycle tests
-├── website/                  # the Astro site at jg-packages.jesusgraterol.dev, private
-├── LICENSE
-├── package.json              # workspace scripts, pinned pnpm, Node.js engines
-├── pnpm-workspace.yaml       # workspace globs and the version catalog
-└── turbo.json                # the task graph and cache inputs
-```
-
-- Internal packages run from their TypeScript sources with Node.js type stripping, so they have no build step. Their relative imports keep the `.ts` extension.
-- `docs/` holds concise documentation of essential, durable project concepts and processes. Package API references stay in each package's `API.md`, outside `docs/`.
-- Every task `turbo run` targets, in scripts, CI, and the docs, is declared in `turbo.json`.
-- Every package's build ends by writing `API.md`, its API reference rendered from its TSDoc, which ships in its tarball and is git-ignored.
-- Local coding instructions (`AGENTS.md`, `CLAUDE.md`, `CANDIDATE.md`) and `coding-agent-planning/` are git-ignored and never published.
 
 ## License
 

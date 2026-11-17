@@ -244,3 +244,44 @@ Never approve every build.
 - **The install refuses a version.** It was published less than a day ago. Pick the previous version, or wait.
 - **`test:e2e` or `test:browser` fails with "Executable doesn't exist".** A browser is missing, or doesn't match the Playwright version after an update. Run the browser install from [Setup](#setup) again.
 - **`test:browser` fails in WebKit with "Host system is missing dependencies".** Install the system libraries it names, with the `install-deps` command from [Setup](#setup).
+
+## Source map
+
+```text
+.
+├── .github/
+│   └── workflows/
+│       ├── ci.yml            # package checks, exact-archive publication, and tags
+│       └── pages.yml         # independent website verification and deployment
+├── docs/
+│   ├── asset-attribution.md  # where the website's mark, fonts, and icons come from
+│   ├── creating-a-package.md # every step from a package's name to its first release
+│   ├── deployment.md         # GitHub Pages, the domain, and the Cloudflare rules for Markdown
+│   ├── development.md        # setup, commands, dependencies, branches, troubleshooting
+│   ├── package-guidelines.md # conventions every package follows
+│   ├── personal-ui.md        # JG foundation, shared React components, and the private gallery
+│   ├── personal-astro-ui.md  # the shared Astro components and their token contract
+│   ├── releasing.md          # versions, the release checks, publishing, and tags
+│   └── website.md            # the website: its content, pages, search, checks, and tests
+├── internal/                 # private workspace packages, never published
+│   ├── api-reference/        # extracts each package's API with TypeDoc, and renders API.md
+│   ├── build-tools/          # clean-dist and copy-assets scripts used by package builds
+│   ├── eslint-config/        # createEslintConfig(), the shared ESLint flat configuration
+│   ├── release-checks/       # the verify, pack, publish, and tag release commands
+│   ├── tsconfig/             # base, library, browser and node TypeScript configurations
+│   └── vitest-config/        # createVitestConfig(), one Vitest project per test category, and the suites
+├── packages/                 # the published jg-* packages, and jg-personal-astro-ui
+│   ├── jg-personal-react-ui/gallery/ # private React consumer using published exports
+│   └── jg-personal-astro-ui/gallery/ # private rendered examples and preview lifecycle tests
+├── website/                  # the Astro site at jg-packages.jesusgraterol.dev, private
+├── LICENSE
+├── package.json              # workspace scripts, pinned pnpm, Node.js engines
+├── pnpm-workspace.yaml       # workspace globs and the version catalog
+└── turbo.json                # the task graph and cache inputs
+```
+
+- Internal packages run from their TypeScript sources with Node.js type stripping, so they have no build step. Their relative imports keep the `.ts` extension.
+- `docs/` holds concise documentation of essential, durable project concepts and processes. Package API references stay in each package's `API.md`, outside `docs/`.
+- Every task `turbo run` targets, in scripts, CI, and the docs, is declared in `turbo.json`.
+- Every package's build ends by writing `API.md`, its API reference rendered from its TSDoc, which ships in its tarball and is git-ignored.
+- Local coding instructions (`AGENTS.md`, `CLAUDE.md`, `CANDIDATE.md`) and `coding-agent-planning/` are git-ignored and never published.

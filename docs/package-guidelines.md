@@ -19,7 +19,7 @@ Every package is ESM only (`"type": "module"`). `exports` declares every entry p
 ```
 
 - No wildcard subpaths, such as `"./*": "./dist/*"`, so internals never become public.
-- Nothing runs when a module loads: no `window` or `navigator` access, no listeners, no global configuration, and no I/O at import time. State is created by the first call that needs it.
+- Nothing runs when a module loads: no `window` or `navigator` access, no listeners, no global configuration, and no I/O at import time. State is created by the first call that needs it. React notifications retain Sonner's browser style injection; package theme styles use explicit CSS imports.
 - No default exports and no `export *`. Exports sit on their declarations, and `index.ts` files only re-export, naming each symbol and grouping them by owning file:
 
   ```ts
