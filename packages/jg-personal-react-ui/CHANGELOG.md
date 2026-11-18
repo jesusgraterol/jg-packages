@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0
+
+### Added
+
+- Make the shared toolbar button size and inline AudioInput layout available in the personal theme.
+
 ## 0.8.0
 
 ### Added

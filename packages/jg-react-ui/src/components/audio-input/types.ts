@@ -235,6 +235,8 @@ export type IInlineAudioInputProps = Omit<
   'defaultIsDialogOpen' | 'isDialogOpen' | 'onDialogOpenChange'
 > & {
   presentation: 'inline';
+  /** Uses a single composer toolbar with icon actions, shared sizing, and compact recording status. */
+  inlineLayout?: 'toolbar';
   defaultIsOpen?: boolean;
   isOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;

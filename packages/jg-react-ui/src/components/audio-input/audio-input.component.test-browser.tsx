@@ -281,10 +281,47 @@ describe('AudioInput', () => {
     type IProps = Parameters<typeof AudioInput>[0];
     expectTypeOf<ILegacyWrapperProps>().toExtend<IProps>();
     expectTypeOf<{ presentation: 'inline'; isOpen: boolean }>().toExtend<IProps>();
+    expectTypeOf<{ presentation: 'inline'; inlineLayout: 'toolbar' }>().toExtend<IProps>();
+    expectTypeOf<{ presentation: 'dialog'; inlineLayout: 'toolbar' }>().not.toExtend<IProps>();
     const inline = { presentation: 'inline', isOpen: true } as const;
     const dialog = { isDialogOpen: false };
     expectTypeOf<{ onOpenChange: () => void }>().not.toExtend<IProps>();
     expectTypeOf({ ...inline, ...dialog }).not.toExtend<IProps>();
+  });
+
+  test('toolbar mode keeps labelled square actions while transcription is pending', async () => {
+    const pending = createDeferred<string>();
+    const apply = vi.fn();
+    act(() =>
+      root.render(
+        <AudioInput
+          presentation="inline"
+          inlineLayout="toolbar"
+          transcribe={() => pending.promise}
+          onTranscriptionApply={apply}
+        />,
+      ),
+    );
+    const mic = page.getByRole('button', { name: 'Open audio recorder' });
+    await expect.element(mic).toHaveAttribute('data-size', 'toolbar');
+    await mic.click();
+    const recorder = page.getByRole('group', { name: 'Audio recording' });
+    const action = recorder.getByRole('button', { name: 'Transcribe', exact: true });
+    await expect.element(action).toHaveAttribute('data-size', 'toolbar');
+    expect(recorder.getByRole('button', { name: 'Recording information' }).query()).toBeNull();
+    await flushAudioInputRecordingStart();
+    act(() => getMockRecorder().emitChunk(new Blob(['voice'])));
+    await action.click();
+    await expect.element(action).toHaveAttribute('aria-disabled', 'true');
+    await expect.element(action).toHaveAttribute('data-size', 'toolbar');
+    expect(
+      action.element().querySelector('[data-slot="audio-input-action-progress"]'),
+    ).not.toBeNull();
+    await act(async () => {
+      pending.resolve('Spoken draft');
+      await pending.promise;
+    });
+    expect(apply).toHaveBeenCalledExactlyOnceWith('Spoken draft', expect.any(Object));
   });
 
   test.each(['startRecording', 'restartRecording'] as const)(

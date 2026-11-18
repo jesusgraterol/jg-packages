@@ -80,6 +80,10 @@ The upload dialog finalizes successful results through `onSubmit`, retries final
 
 Set `presentation="inline"` to replace the mic trigger with an in-flow recorder. Use `IInlineAudioInputProps` with `isOpen`, `defaultIsOpen` or `onOpenChange` to manage inline opening. Dialog mode uses the original `IAudioInputProps` and dialog-named open-state props. Inline capture waits for the open state to commit. With `autoStart={false}` a controlled closed recorder only requests opening. Call its start control after the accepted open. A mic-triggered inline open focuses Cancel recording when focus still belongs to the triggering interaction. Standalone review, information and actionable errors are available in secondary dialogs.
 
+Use `inlineLayout="toolbar"` with the inline presentation to match a message composer. The recorder fits on one line, uses named icon actions, and keeps its action size during transcription and submission. The elapsed time remains visible on narrow screens. Wider toolbars also display the limit and recording status. Error recovery and optional transcript review open their usual dialogs.
+
+For the rest of the composer, use `Button` with `size="toolbar"` for icon actions and apply `jg-ui-toolbar-actions` to each flex action group. The shared stylesheet gives narrow or touch-capable layouts 44 px targets and a 32 px face for filled and outlined actions. At 640 px and wider, fine-pointer layouts without touch use 32 px targets. Icons are 16 px and the action groups have a 4 px gap at that breakpoint. Use ghost buttons for secondary actions and `ArrowUp` for the filled submit action.
+
 ## Markdown and code
 
 `Markdown` retains GFM tables/task lists, heading and prose rendering, uppercase template-variable highlights, image width hints (`title="width=560"`), renderer/plugin overrides, and standalone YouTube links. Raw HTML is skipped by default. HTTP(S) and relative document links open in secure new tabs by default, with an accessible announcement; fragments and non-web links remain in the current tab. Set `shouldOpenLinksInNewTab={false}` or supply an anchor renderer for application routing. `headingLevelOffset` lowers every heading, to h6 at most, so a document shown under a page's own h1 starts at h2. Applications own the trust policy of custom plugins, URL transforms, and renderers.
@@ -111,7 +115,7 @@ Invalid configuration retains these native Error messages:
 
 ## Documentation
 
-The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.8.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.8.0/RECIPES.md). These personal-use packages are unlisted on the public package website.
+The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.9.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.9.0/RECIPES.md). These personal-use packages are unlisted on the public package website.
 
 ## License
 

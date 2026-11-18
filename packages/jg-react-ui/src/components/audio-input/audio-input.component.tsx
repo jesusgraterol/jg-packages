@@ -18,7 +18,18 @@ import {
   Exception,
   type IErrorFeedback,
 } from 'jg-exception';
-import { CircleAlert, Info, LoaderCircle, Mic, RefreshCcw, SendHorizontal, X } from 'lucide-react';
+import {
+  ArrowUp,
+  Captions,
+  CircleAlert,
+  FileText,
+  Info,
+  LoaderCircle,
+  Mic,
+  RefreshCcw,
+  SendHorizontal,
+  X,
+} from 'lucide-react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { cn } from 'cnfast';
 
@@ -272,6 +283,7 @@ type IAudioInputRecorderProps = {
     | {
         cancelRef: RefObject<HTMLButtonElement | null>;
         description: string | undefined;
+        layout: IInlineAudioInputProps['inlineLayout'];
         onClose: () => void;
         ownerId: string;
       }
@@ -1866,11 +1878,61 @@ const AudioInputRecorder = ({
         ) : null}
       </div>
     ) : null;
+  const isToolbar = inline?.layout === 'toolbar';
+  const usesToolbarActions = isToolbar && !isInlineReviewOpen;
+  const iconActionSize = usesToolbarActions ? 'toolbar' : 'icon-touch';
+  const SubmitIcon = usesToolbarActions ? ArrowUp : SendHorizontal;
+  const reviewLabel = 'Review transcription';
+  const reviewAction = (
+    <Button
+      ref={reviewTriggerRef}
+      aria-label={usesToolbarActions ? reviewLabel : undefined}
+      type="button"
+      size={usesToolbarActions ? 'toolbar' : 'touch'}
+      variant="ghost"
+      onClick={() => setAudioInputTranscriptionEditorVisible(true)}
+    >
+      {usesToolbarActions ? <FileText aria-hidden="true" /> : reviewLabel}
+    </Button>
+  );
+  const transcribeAction = (
+    <Button
+      aria-describedby={isTranscribePending ? transcriptionStatusId : undefined}
+      aria-disabled={isTranscribePending || undefined}
+      aria-label={usesToolbarActions ? transcribeLabel : undefined}
+      className="shrink-0"
+      disabled={
+        disabled ||
+        !canTranscribe ||
+        (isTranscriptionBusy && !isTranscribePending) ||
+        isRetryAvailable
+      }
+      size={usesToolbarActions ? 'toolbar' : 'touch'}
+      type="button"
+      variant={isResultActionVisible ? 'ghost' : 'default'}
+      onClick={handleTranscribeClick}
+    >
+      {isTranscribePending ? (
+        <LoaderCircle
+          aria-hidden="true"
+          className="animate-spin motion-reduce:animate-none"
+          data-slot="audio-input-action-progress"
+        />
+      ) : usesToolbarActions ? (
+        <Captions aria-hidden="true" />
+      ) : null}
+      {usesToolbarActions ? null : transcribeLabel}
+    </Button>
+  );
   const actions = (
     <div
       data-slot="audio-input-transcription-actions"
       data-state={transcriptionStatus}
-      className={cn('flex min-w-0 flex-wrap items-center gap-2', transcriptionActionsClassName)}
+      className={cn(
+        'flex min-w-0 items-center',
+        usesToolbarActions ? 'jg-ui-toolbar-actions flex-none' : 'flex-wrap gap-2',
+        transcriptionActionsClassName,
+      )}
     >
       <Tooltip>
         <TooltipTrigger asChild>
@@ -1878,7 +1940,7 @@ const AudioInputRecorder = ({
             aria-label={restartButtonAriaLabel}
             className={cn('me-auto shrink-0', restartButtonClassName)}
             disabled={disabled || isTranscriptionBusy}
-            size="icon-touch"
+            size={iconActionSize}
             type="button"
             variant="ghost"
             onClick={restartRecording}
@@ -1889,43 +1951,25 @@ const AudioInputRecorder = ({
         <TooltipContent>{restartButtonAriaLabel}</TooltipContent>
       </Tooltip>
       {inline && !isTranscriptionEditorVisible && transcriptionStatus === 'ready' ? (
-        <Button
-          ref={reviewTriggerRef}
-          type="button"
-          size="touch"
-          variant="ghost"
-          onClick={() => setAudioInputTranscriptionEditorVisible(true)}
-        >
-          Review transcription
-        </Button>
+        usesToolbarActions ? (
+          <Tooltip>
+            <TooltipTrigger asChild>{reviewAction}</TooltipTrigger>
+            <TooltipContent>{reviewLabel}</TooltipContent>
+          </Tooltip>
+        ) : (
+          reviewAction
+        )
       ) : isTranscriptionActionVisible ? (
         <>
-          {!isTranscriptionEditorVisible ? (
-            <Button
-              aria-describedby={isTranscribePending ? transcriptionStatusId : undefined}
-              aria-disabled={isTranscribePending || undefined}
-              className="shrink-0"
-              disabled={
-                disabled ||
-                !canTranscribe ||
-                (isTranscriptionBusy && !isTranscribePending) ||
-                isRetryAvailable
-              }
-              size="touch"
-              type="button"
-              variant={isResultActionVisible ? 'ghost' : 'default'}
-              onClick={handleTranscribeClick}
-            >
-              {isTranscribePending ? (
-                <LoaderCircle
-                  aria-hidden="true"
-                  className="animate-spin motion-reduce:animate-none"
-                  data-slot="audio-input-action-progress"
-                />
-              ) : null}
-              {transcribeLabel}
-            </Button>
-          ) : null}
+          {!isTranscriptionEditorVisible &&
+            (usesToolbarActions ? (
+              <Tooltip>
+                <TooltipTrigger asChild>{transcribeAction}</TooltipTrigger>
+                <TooltipContent>{transcribeLabel}</TooltipContent>
+              </Tooltip>
+            ) : (
+              transcribeAction
+            ))}
           {isResultActionVisible ? (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -1942,7 +1986,7 @@ const AudioInputRecorder = ({
                     isRetryAvailable ||
                     (isTranscriptionEditorVisible ? !canSendTranscription : !canTranscribeAndSend)
                   }
-                  size="icon-touch"
+                  size={iconActionSize}
                   type={inline && !isInlineReviewOpen ? 'button' : 'submit'}
                   onClick={(event) => {
                     if (isTranscriptionBusy) {
@@ -1960,7 +2004,7 @@ const AudioInputRecorder = ({
                       data-slot="audio-input-action-progress"
                     />
                   ) : (
-                    <SendHorizontal aria-hidden="true" />
+                    <SubmitIcon aria-hidden="true" />
                   )}
                   <span className="sr-only">
                     {isTranscriptionEditorVisible ? sendTranscriptionLabel : transcribeAndSendLabel}
@@ -1997,6 +2041,7 @@ const AudioInputRecorder = ({
   return (
     <div
       data-slot="audio-input-recorder-root"
+      data-jg-audio-toolbar={isToolbar || undefined}
       data-state={status}
       className={cn('grid min-w-0 gap-4', className)}
       {...rootProps}
@@ -2007,14 +2052,17 @@ const AudioInputRecorder = ({
           <div
             aria-label="Audio recording"
             aria-busy={isTranscriptionBusy}
-            className="flex min-w-0 flex-wrap items-center gap-2"
+            className={cn(
+              'flex min-w-0 items-center',
+              isToolbar ? 'jg-ui-toolbar-actions' : 'flex-wrap gap-2',
+            )}
             role="group"
           >
             <Button
               ref={inline.cancelRef}
               aria-label="Cancel recording"
               disabled={disabled || isTranscriptionBusy}
-              size="icon-touch"
+              size={isToolbar ? 'toolbar' : 'icon-touch'}
               type="button"
               variant="ghost"
               onClick={inline.onClose}
@@ -2023,33 +2071,35 @@ const AudioInputRecorder = ({
             </Button>
             {meter}
             {!isInlineReviewOpen ? actions : null}
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  aria-label="Recording information"
-                  size="icon-touch"
-                  type="button"
-                  variant="ghost"
+            {!isToolbar ? (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    aria-label="Recording information"
+                    size="icon-touch"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Info aria-hidden="true" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent
+                  initialFocus="dismiss-control"
+                  size="small"
                 >
-                  <Info aria-hidden="true" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent
-                initialFocus="dismiss-control"
-                size="small"
-              >
-                <DialogHeader>
-                  <DialogTitle>Recording information</DialogTitle>
-                  <DialogDescription>
-                    {inline.description ??
-                      'Use Transcribe to turn the current recording into text.'}
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogBody>
-                  <p>Audio limit: {resolvedMaxBytes.toLocaleString()} bytes.</p>
-                </DialogBody>
-              </DialogContent>
-            </Dialog>
+                  <DialogHeader>
+                    <DialogTitle>Recording information</DialogTitle>
+                    <DialogDescription>
+                      {inline.description ??
+                        'Use Transcribe to turn the current recording into text.'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogBody>
+                    <p>Audio limit: {resolvedMaxBytes.toLocaleString()} bytes.</p>
+                  </DialogBody>
+                </DialogContent>
+              </Dialog>
+            ) : null}
             {errorDetails && isErrorVisible ? (
               <Dialog
                 open={isInlineErrorOpen}
@@ -2059,7 +2109,7 @@ const AudioInputRecorder = ({
                 <DialogTrigger asChild>
                   <Button
                     aria-label="Recording error details"
-                    size="icon-touch"
+                    size={isToolbar ? 'toolbar' : 'icon-touch'}
                     type="button"
                     variant="outline"
                   >
@@ -2116,6 +2166,7 @@ const AudioInputRecorder = ({
 type IAudioInputPresentationProps =
   | (IAudioInputProps & {
       presentation?: 'dialog';
+      inlineLayout?: never;
       defaultIsOpen?: never;
       isOpen?: never;
       onOpenChange?: never;
@@ -2148,6 +2199,7 @@ export const AudioInput = ({
   dialogTitle = AUDIO_INPUT_DEFAULT_DIALOG_TITLE,
   disabled = false,
   isDialogOpen: controlledIsDialogOpen,
+  inlineLayout,
   isOpen: controlledIsInlineOpen,
   isErrorVisible,
   isRecording,
@@ -2195,12 +2247,13 @@ export const AudioInput = ({
   triggerAriaLabel = AUDIO_INPUT_DEFAULT_TRIGGER_ARIA_LABEL,
   triggerButtonProps,
   triggerClassName,
-  triggerSize = 'icon',
+  triggerSize,
   triggerTitle,
   triggerVariant = 'ghost',
   ...rootProps
 }: IAudioInputPresentationProps): ReactElement => {
   const isInline = presentation === 'inline';
+  const isToolbar = isInline && inlineLayout === 'toolbar';
   const controlledIsOpen = isInline ? controlledIsInlineOpen : controlledIsDialogOpen;
   const isOpenControlled = controlledIsOpen !== undefined;
   const notifyOpenChange = isInline ? onOpenChange : onDialogOpenChange;
@@ -2458,7 +2511,7 @@ export const AudioInput = ({
         triggerClassName,
       )}
       disabled={disabled}
-      size={triggerSize}
+      size={triggerSize ?? (isToolbar ? 'toolbar' : 'icon')}
       title={resolvedTriggerTitle}
       type="button"
       onClick={
@@ -2496,6 +2549,7 @@ export const AudioInput = ({
           ? {
               cancelRef,
               description: dialogDescription,
+              layout: inlineLayout,
               onClose: () => handleDialogOpenChange(false),
               ownerId: focusOwnerId,
             }
