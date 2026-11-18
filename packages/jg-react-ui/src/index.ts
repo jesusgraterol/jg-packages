@@ -588,6 +588,7 @@ export type {
   IAudioInputLimitProgress,
   IAudioInputLimitProgressChangeHandler,
   IAudioInputProps,
+  IInlineAudioInputProps,
   IAudioInputRecordedBytesChangeHandler,
   IAudioInputRecording,
   IAudioInputRecordingActiveChangeHandler,

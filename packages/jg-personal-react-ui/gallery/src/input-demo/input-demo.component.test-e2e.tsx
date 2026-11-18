@@ -268,3 +268,100 @@ for (const theme of ['light', 'dark'] as const) {
     },
   );
 }
+
+for (const colorScheme of ['light', 'dark'] as const) {
+  test(`inline dictation keeps the surrounding form interactive in ${colorScheme}`, async ({
+    browser,
+    browserName,
+  }, testInfo) => {
+    const context = await browser.newContext({
+      viewport: { width: 320, height: 620 },
+      hasTouch: true,
+      colorScheme,
+      reducedMotion: 'reduce',
+    });
+    try {
+      const page = await context.newPage();
+      await installFakeMicrophone(page);
+      let transcriptions = 0;
+      await page.route('**/route-ready.txt?input=transcribe', async (route) => {
+        transcriptions += 1;
+        await route.fulfill({ status: transcriptions === 1 ? 503 : 200, body: 'ready' });
+      });
+      await page.goto(`http://127.0.0.1:4178/inputs?theme=${colorScheme}`);
+      await useFirefoxCaptureDevice(page, browserName);
+      const section = page.getByRole('region', { name: 'Inline voice note' });
+      const trigger = section.getByRole('button', { name: 'Open inline recorder' });
+      const cancel = section.getByRole('button', { name: 'Cancel recording' });
+      await trigger.click();
+      await expect(trigger).toBeVisible();
+      await expect(cancel).toHaveCount(0);
+
+      await section.getByRole('button', { name: 'Allow inline recording' }).click();
+      if (await page.evaluate(() => typeof MediaRecorder === 'undefined')) {
+        await trigger.click();
+        const error = page.getByRole('dialog', { name: 'Recording error' });
+        await expect(error.getByRole('alert')).toHaveText(
+          'Audio recording is not supported in this browser.',
+        );
+        await error.getByRole('button', { name: 'Close dialog', exact: true }).click();
+        await cancel.click();
+        await expect(trigger).toBeVisible();
+        return;
+      }
+
+      await trigger.click();
+      await expect(cancel).toBeFocused();
+      const hitArea = await cancel.evaluate((button) => {
+        const { height, width } = getComputedStyle(button);
+        return { height: parseFloat(height), width: parseFloat(width) };
+      });
+      expect(hitArea.height).toBeGreaterThanOrEqual(44);
+      expect(hitArea.width).toBeGreaterThanOrEqual(44);
+      await expectNoHorizontalOverflow(page);
+      expect((await new AxeBuilder({ page }).analyze()).violations).toStrictEqual([]);
+      if (browserName === 'chromium' && testInfo.repeatEachIndex === 0)
+        await section.screenshot({ path: testInfo.outputPath('inline-audio.png') });
+
+      const info = section.getByRole('button', { name: 'Recording information' });
+      await info.click();
+      const information = page.getByRole('dialog', { name: 'Recording information' });
+      const closeInformation = information.getByRole('button', { name: 'Close dialog' });
+      await expect(closeInformation).toBeFocused();
+      await expect(information.getByText(/Audio limit/u)).toBeVisible();
+      await closeInformation.click();
+      await expect(info).toBeFocused();
+
+      await cancel.click();
+      await expect(trigger).toBeFocused();
+      await trigger.press('Enter');
+      await expect(cancel).toBeFocused();
+      await cancel.click();
+      await trigger.press('Space');
+      await expect(cancel).toBeFocused();
+      const draft = section.getByRole('textbox', { name: 'Draft note' });
+      await draft.fill('Keep these notes.');
+      await expect(draft).toBeFocused();
+      await expect(section.getByText('Listening', { exact: true })).toBeVisible();
+      await waitForRecordedAudio(page);
+      await section.getByRole('button', { name: 'Transcribe', exact: true }).click();
+      const error = page.getByRole('dialog', { name: 'Recording error' });
+      const alert = error.getByRole('alert');
+      await expect(
+        alert.getByText('The input service is unavailable. Try again.', { exact: true }),
+      ).toBeVisible();
+      await expect(alert).not.toContainText('Private gallery input diagnostics');
+      await error.getByRole('button', { name: 'Retry', exact: true }).click();
+      await expect(draft).toHaveValue(
+        'Keep these notes.\n\nReview the deployment notes before sending.',
+      );
+      await expect(section.getByRole('status', { name: 'Saved note', exact: true })).toHaveText(
+        'No note saved yet',
+      );
+      expect(transcriptions).toBe(2);
+      await expect(trigger).toBeVisible();
+    } finally {
+      await context.close();
+    }
+  });
+}

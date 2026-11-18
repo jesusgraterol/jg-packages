@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0
+
+### Added
+
+- Add an opt-in inline AudioInput with controlled admission, keyboard focus handoff, and dialogs for review and recovery.
+
 ## 0.7.1
 
 ### Fixed

@@ -226,3 +226,19 @@ export type IAudioInputProps = IAudioInputRootProps & {
   triggerTitle?: string;
   triggerVariant?: IButtonProps['variant'];
 };
+
+/** Props for the inline presentation and its independent controlled open state.
+ * @see AudioInput
+ */
+export type IInlineAudioInputProps = Omit<
+  IAudioInputProps,
+  'defaultIsDialogOpen' | 'isDialogOpen' | 'onDialogOpenChange'
+> & {
+  presentation: 'inline';
+  defaultIsOpen?: boolean;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
+  defaultIsDialogOpen?: never;
+  isDialogOpen?: never;
+  onDialogOpenChange?: never;
+};

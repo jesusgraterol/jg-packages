@@ -78,6 +78,8 @@ The upload dialog finalizes successful results through `onSubmit`, retries final
 
 `transcribe` receives the captured recording and returns text. Users can send directly or edit the transcription first; a failed send retries the authored text without transcribing again. Provider operations remain caller-owned and should have their own deadline/cancellation policy. Recording/transcription error callbacks receive diagnostic exceptions, while visible feedback uses the nearest scoped resolver. The seven owned audio codes and stable messages are listed in [jg-react-ui's error contracts](https://unpkg.com/jg-react-ui/errors/README.md); coded provider exceptions preserve their diagnostic identity. Canceled permission/transcription work stays silent and can be restarted; diagnostic callbacks still run. Optional result callbacks remain optional. Standalone review remains the default. Supply `onTranscriptionApply` for main-input Transcribe and `onTranscriptionResult` for the consumer's ordinary Send action. `isResultActionVisible={false}` keeps a single direct-apply action. The active button alone shows pending progress, and pending work blocks restart and dismissal.
 
+Set `presentation="inline"` to replace the mic trigger with an in-flow recorder. Use `IInlineAudioInputProps` with `isOpen`, `defaultIsOpen` or `onOpenChange` to manage inline opening. Dialog mode uses the original `IAudioInputProps` and dialog-named open-state props. Inline capture waits for the open state to commit. With `autoStart={false}` a controlled closed recorder only requests opening. Call its start control after the accepted open. A mic-triggered inline open focuses Cancel recording when focus still belongs to the triggering interaction. Standalone review, information and actionable errors are available in secondary dialogs.
+
 ## Markdown and code
 
 `Markdown` retains GFM tables/task lists, heading and prose rendering, uppercase template-variable highlights, image width hints (`title="width=560"`), renderer/plugin overrides, and standalone YouTube links. Raw HTML is skipped by default. HTTP(S) and relative document links open in secure new tabs by default, with an accessible announcement; fragments and non-web links remain in the current tab. Set `shouldOpenLinksInNewTab={false}` or supply an anchor renderer for application routing. `headingLevelOffset` lowers every heading, to h6 at most, so a document shown under a page's own h1 starts at h2. Applications own the trust policy of custom plugins, URL transforms, and renderers.
@@ -109,7 +111,7 @@ Invalid configuration retains these native Error messages:
 
 ## Documentation
 
-The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.7.1/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.7.1/RECIPES.md). These personal-use packages are unlisted on the public package website.
+The API reference ships as [API.md](https://unpkg.com/jg-personal-react-ui@0.8.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-personal-react-ui@0.8.0/RECIPES.md). These personal-use packages are unlisted on the public package website.
 
 ## License
 

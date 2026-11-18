@@ -1,5 +1,6 @@
 import {
   type ReactElement,
+  type RefObject,
   useId,
   useState,
   useRef,
@@ -17,7 +18,7 @@ import {
   Exception,
   type IErrorFeedback,
 } from 'jg-exception';
-import { LoaderCircle, Mic, RefreshCcw, SendHorizontal } from 'lucide-react';
+import { CircleAlert, Info, LoaderCircle, Mic, RefreshCcw, SendHorizontal, X } from 'lucide-react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { cn } from 'cnfast';
 
@@ -59,6 +60,7 @@ import type {
   IAudioInputControls,
   IAudioInputLimitProgress,
   IAudioInputProps,
+  IInlineAudioInputProps,
   IAudioInputTranscriptionResultHandler,
   IAudioInputRecording,
   IAudioInputStatus,
@@ -264,7 +266,17 @@ const AudioInputWaveform = ({
 // internal forwarding keeps explicit undefined props out of the public contract.
 type IAudioInputRecorderProps = {
   [TKey in keyof IAudioInputProps]: IAudioInputProps[TKey] | undefined;
-} & { onTranscriptionResult: IAudioInputTranscriptionResultHandler };
+} & {
+  onTranscriptionResult: IAudioInputTranscriptionResultHandler;
+  inline:
+    | {
+        cancelRef: RefObject<HTMLButtonElement | null>;
+        description: string | undefined;
+        onClose: () => void;
+        ownerId: string;
+      }
+    | undefined;
+};
 
 /**
  * Renders the dialog body recorder with byte-limit enforcement.
@@ -281,6 +293,7 @@ const AudioInputRecorder = ({
   defaultTranscription = '',
   disabled = false,
   isErrorVisible = true,
+  inline,
   isRecording: controlledIsRecording,
   isResultActionVisible = true,
   isTranscriptionEditorVisible: controlledIsTranscriptionEditorVisible,
@@ -405,6 +418,12 @@ const AudioInputRecorder = ({
   const isTranscriptionActionVisible = typeof transcribe === 'function';
   const isTranscribing = transcriptionStatus === 'transcribing';
   const isSendingTranscription = transcriptionStatus === 'sending';
+  const isInlineRecorder = inline !== undefined;
+  const [dismissedError, setDismissedError] = useState<typeof errorDetails>(null);
+  const reviewTriggerRef = useRef<HTMLButtonElement>(null);
+  const isInlineErrorOpen =
+    isInlineRecorder && isErrorVisible && errorDetails !== null && dismissedError !== errorDetails;
+  const isInlineReviewOpen = isInlineRecorder && isTranscriptionEditorVisible && !isInlineErrorOpen;
   const isAsyncTranscriptionBusy = isTranscribing || isSendingTranscription;
   const isTranscriptionActionPending = pendingTranscriptionAction !== null;
   const isTranscriptionBusy =
@@ -435,6 +454,8 @@ const AudioInputRecorder = ({
   const sizeMeterLabel = isOverLimit ? 'Limit reached' : `Limit ${sizeProgressPercentage}%`;
   const hasTranscribableAudio = isRecording || completedRecording !== null;
   const canSendTranscription = completedRecording !== null && transcription.trim().length > 0;
+  const shouldSendOnTranscribe =
+    !isResultActionVisible && (!isInlineRecorder || !onTranscriptionApply);
   const canTranscribe =
     typeof transcribe === 'function' &&
     hasTranscribableAudio &&
@@ -1216,6 +1237,12 @@ const AudioInputRecorder = ({
   const restartRecording = useCallback((): void => {
     clearRestartTimer();
 
+    // an inline owner can decline a fresh take while retaining the current result for retry.
+    if (isInlineRecorder && isRecordingControlled && !isRecording && !isRequestingPermission) {
+      requestRecordingStart();
+      return;
+    }
+
     if (isRequestingPermission || isRecording) {
       cancelRecordingWithDelay(0);
     } else {
@@ -1229,7 +1256,9 @@ const AudioInputRecorder = ({
   }, [
     cancelRecordingWithDelay,
     clearRestartTimer,
+    isInlineRecorder,
     isRecording,
+    isRecordingControlled,
     isRequestingPermission,
     requestRecordingStart,
     resetRecording,
@@ -1256,8 +1285,10 @@ const AudioInputRecorder = ({
 
       const recordingSession = recordingSessionRef.current;
       isTranscriptionResultInFlightRef.current = true;
-      setErrorDetails(null);
-      setRetryTranscriptionAction(null);
+      if (!isInlineRecorder || retryTranscriptionAction !== action) {
+        setErrorDetails(null);
+        setRetryTranscriptionAction(null);
+      }
       setAudioInputActiveTranscriptionAction(action);
       setAudioInputTranscriptionStatus('sending');
 
@@ -1291,9 +1322,11 @@ const AudioInputRecorder = ({
     [
       cancelResetDelayMs,
       clearSendResetTimer,
+      isInlineRecorder,
       onTranscriptionApply,
       onTranscriptionResult,
       reportTranscriptionError,
+      retryTranscriptionAction,
       setAudioInputActiveTranscriptionAction,
       setAudioInputTranscriptionEditorVisible,
       setAudioInputTranscriptionStatus,
@@ -1453,8 +1486,8 @@ const AudioInputRecorder = ({
    * Transcribes for review or directly applies the result when its separate action is hidden.
    */
   const handleTranscribeClick = useCallback((): void => {
-    requestTranscriptionAction(isResultActionVisible ? 'transcribe' : 'transcribe-and-send');
-  }, [isResultActionVisible, requestTranscriptionAction]);
+    requestTranscriptionAction(shouldSendOnTranscribe ? 'transcribe-and-send' : 'transcribe');
+  }, [requestTranscriptionAction, shouldSendOnTranscribe]);
 
   /**
    * Transcribes audio captured before the byte limit stopped the recording.
@@ -1466,14 +1499,14 @@ const AudioInputRecorder = ({
       canTranscribeLimitedRecording &&
       completedRecording !== null
     ) {
-      void transcribeRecording(!isResultActionVisible, completedRecording);
+      void transcribeRecording(shouldSendOnTranscribe, completedRecording);
     }
   }, [
     canTranscribeLimitedRecording,
     completedRecording,
     disabled,
     isTranscriptionBusy,
-    isResultActionVisible,
+    shouldSendOnTranscribe,
     transcribeRecording,
   ]);
 
@@ -1670,6 +1703,297 @@ const AudioInputRecorder = ({
     stopWaveform,
   ]);
 
+  const meter = (
+    <div
+      data-slot="audio-input-recorder"
+      className={cn(
+        inline && 'flex-1 basis-28',
+        'group/audio-input bg-background dark:bg-secondary/30 relative flex min-h-14 w-full min-w-0 items-center gap-3 overflow-hidden transition-colors',
+        inline ? 'px-1 py-1' : 'px-2.5 py-2',
+        recorderClassName,
+      )}
+    >
+      <span
+        hidden={inline !== undefined}
+        aria-hidden="true"
+        data-slot="audio-input-recorder-icon"
+        className={cn(
+          'grid size-11 shrink-0 place-items-center rounded-full transition-colors',
+          isRecording
+            ? 'bg-destructive text-primary-foreground'
+            : isRequestingPermission
+              ? 'bg-foreground text-background'
+              : 'bg-foreground/10 text-foreground',
+          errorDetails ? 'bg-destructive/10 text-destructive dark:bg-destructive/20' : null,
+        )}
+      >
+        {isRequestingPermission ? (
+          <LoaderCircle
+            aria-hidden="true"
+            className="size-5 animate-spin motion-reduce:animate-none"
+          />
+        ) : (
+          <Mic
+            aria-hidden="true"
+            className="size-5"
+          />
+        )}
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <AudioInputWaveform
+            isActive={isRecording}
+            levels={waveformLevels}
+          />
+          {isRecording ? (
+            <span
+              aria-hidden="true"
+              data-slot="audio-input-live-indicator"
+              className="relative flex size-2.5 shrink-0 items-center justify-center"
+            >
+              <span className="bg-destructive absolute inline-flex size-full animate-ping rounded-full opacity-60 motion-reduce:hidden" />
+              <span className="bg-destructive relative inline-flex size-2 rounded-full" />
+            </span>
+          ) : null}
+          <p
+            aria-live="polite"
+            className="min-w-0 truncate text-sm leading-none font-medium"
+            role="status"
+          >
+            {statusLabel}
+          </p>
+        </div>
+        <div className="text-secondary-foreground mt-1 flex min-w-0 items-center gap-2 text-xs">
+          <span className="font-mono tabular-nums">{formattedElapsed}</span>
+          <span aria-hidden="true">/</span>
+          <span className={cn('truncate', isOverLimit ? 'text-destructive' : null)}>
+            {sizeMeterLabel}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+  const pendingStatus = (
+    <span
+      id={transcriptionStatusId}
+      className="sr-only"
+      role="status"
+    >
+      {isTranscriptionBusy ? 'Submitting...' : null}
+    </span>
+  );
+  const editor = isTranscriptionEditorVisible ? (
+    <Controller
+      control={form.control}
+      name="transcription"
+      render={({ field, fieldState }) => (
+        <>
+          <Textarea
+            {...field}
+            data-slot="audio-input-transcription-editor"
+            data-state={transcriptionStatus}
+            aria-describedby={fieldState.invalid ? transcriptionErrorId : undefined}
+            aria-invalid={fieldState.invalid}
+            aria-label={transcriptionTextareaLabel}
+            className={cn('min-h-28 resize-y', transcriptionTextareaClassName)}
+            disabled={disabled || isSendingTranscription}
+            placeholder={transcriptionPlaceholder}
+            value={transcription}
+            onChange={(event) => {
+              setAudioInputTranscription(event.currentTarget.value);
+            }}
+          />
+          {transcriptionValidationMessage ? (
+            <FieldError
+              id={transcriptionErrorId}
+              role="alert"
+            >
+              {transcriptionValidationMessage}
+            </FieldError>
+          ) : null}
+        </>
+      )}
+    />
+  ) : null;
+  const error =
+    isErrorVisible && errorDetails ? (
+      <div className="grid min-w-0 justify-items-center gap-3 text-center">
+        <div
+          className="grid min-w-0 justify-items-center gap-1 text-center"
+          role="alert"
+        >
+          <p className="text-destructive text-sm">{errorDetails.feedback.message}</p>
+          {errorDetails.feedback.code ? (
+            <p className="text-secondary-foreground text-xs">
+              Code: <span className="font-mono">{errorDetails.feedback.code}</span>
+            </p>
+          ) : null}
+        </div>
+        {isRetryAvailable ? (
+          <Button
+            aria-describedby={
+              isInlineErrorOpen && isTranscriptionBusy ? transcriptionStatusId : undefined
+            }
+            aria-disabled={isInlineErrorOpen && isTranscriptionBusy ? true : undefined}
+            className="whitespace-normal wrap-anywhere pointer-coarse:min-h-11 pointer-coarse:min-w-11"
+            data-slot="audio-input-retry-action"
+            disabled={disabled || (!isInlineErrorOpen && isTranscriptionBusy)}
+            type="button"
+            variant="outline"
+            onClick={handleRetryClick}
+          >
+            {isInlineErrorOpen && isTranscriptionBusy ? (
+              <LoaderCircle
+                aria-hidden="true"
+                className="animate-spin motion-reduce:animate-none"
+                data-slot="audio-input-action-progress"
+              />
+            ) : null}
+            {retryLabel}
+          </Button>
+        ) : canTranscribeLimitedRecording ? (
+          <Button
+            className="whitespace-normal wrap-anywhere pointer-coarse:min-h-11 pointer-coarse:min-w-11"
+            data-slot="audio-input-limit-transcribe-action"
+            disabled={disabled || isTranscriptionBusy}
+            type="button"
+            variant="outline"
+            onClick={handleTranscribeLimitedRecordingClick}
+          >
+            {transcribeLimitRecordingLabel}
+          </Button>
+        ) : null}
+      </div>
+    ) : null;
+  const actions = (
+    <div
+      data-slot="audio-input-transcription-actions"
+      data-state={transcriptionStatus}
+      className={cn('flex min-w-0 flex-wrap items-center gap-2', transcriptionActionsClassName)}
+    >
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            aria-label={restartButtonAriaLabel}
+            className={cn('me-auto shrink-0', restartButtonClassName)}
+            disabled={disabled || isTranscriptionBusy}
+            size="icon-touch"
+            type="button"
+            variant="ghost"
+            onClick={restartRecording}
+          >
+            <RefreshCcw aria-hidden="true" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{restartButtonAriaLabel}</TooltipContent>
+      </Tooltip>
+      {inline && !isTranscriptionEditorVisible && transcriptionStatus === 'ready' ? (
+        <Button
+          ref={reviewTriggerRef}
+          type="button"
+          size="touch"
+          variant="ghost"
+          onClick={() => setAudioInputTranscriptionEditorVisible(true)}
+        >
+          Review transcription
+        </Button>
+      ) : isTranscriptionActionVisible ? (
+        <>
+          {!isTranscriptionEditorVisible ? (
+            <Button
+              aria-describedby={isTranscribePending ? transcriptionStatusId : undefined}
+              aria-disabled={isTranscribePending || undefined}
+              className="shrink-0"
+              disabled={
+                disabled ||
+                !canTranscribe ||
+                (isTranscriptionBusy && !isTranscribePending) ||
+                isRetryAvailable
+              }
+              size="touch"
+              type="button"
+              variant={isResultActionVisible ? 'ghost' : 'default'}
+              onClick={handleTranscribeClick}
+            >
+              {isTranscribePending ? (
+                <LoaderCircle
+                  aria-hidden="true"
+                  className="animate-spin motion-reduce:animate-none"
+                  data-slot="audio-input-action-progress"
+                />
+              ) : null}
+              {transcribeLabel}
+            </Button>
+          ) : null}
+          {isResultActionVisible ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-describedby={isResultPending ? transcriptionStatusId : undefined}
+                  aria-disabled={isResultPending || undefined}
+                  aria-label={
+                    isTranscriptionEditorVisible ? sendTranscriptionLabel : transcribeAndSendLabel
+                  }
+                  className="shrink-0"
+                  disabled={
+                    disabled ||
+                    (isTranscriptionBusy && !isResultPending) ||
+                    isRetryAvailable ||
+                    (isTranscriptionEditorVisible ? !canSendTranscription : !canTranscribeAndSend)
+                  }
+                  size="icon-touch"
+                  type={inline && !isInlineReviewOpen ? 'button' : 'submit'}
+                  onClick={(event) => {
+                    if (isTranscriptionBusy) {
+                      event.preventDefault();
+                      return;
+                    }
+                    if (inline && !isInlineReviewOpen)
+                      void form.handleSubmit(handleTranscriptionSubmit)();
+                  }}
+                >
+                  {isResultPending ? (
+                    <LoaderCircle
+                      aria-hidden="true"
+                      className="animate-spin motion-reduce:animate-none"
+                      data-slot="audio-input-action-progress"
+                    />
+                  ) : (
+                    <SendHorizontal aria-hidden="true" />
+                  )}
+                  <span className="sr-only">
+                    {isTranscriptionEditorVisible ? sendTranscriptionLabel : transcribeAndSendLabel}
+                  </span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isTranscriptionEditorVisible ? sendTranscriptionLabel : transcribeAndSendLabel}
+              </TooltipContent>
+            </Tooltip>
+          ) : null}
+        </>
+      ) : null}
+    </div>
+  );
+  const transcriptionForm = (
+    <form
+      aria-busy={isTranscriptionBusy}
+      className="grid min-w-0 gap-4"
+      data-busy={isTranscriptionBusy ? 'true' : 'false'}
+      noValidate
+      onSubmit={(event) => {
+        // portal submissions must not reach a surrounding application form.
+        event.stopPropagation();
+        void form.handleSubmit(handleTranscriptionSubmit)(event);
+      }}
+    >
+      {editor}
+      {inline ? pendingStatus : error}
+      {actions}
+    </form>
+  );
+
   return (
     <div
       data-slot="audio-input-recorder-root"
@@ -1677,272 +2001,129 @@ const AudioInputRecorder = ({
       className={cn('grid min-w-0 gap-4', className)}
       {...rootProps}
     >
-      <div
-        data-slot="audio-input-recorder"
-        className={cn(
-          'group/audio-input bg-background dark:bg-secondary/30 relative flex min-h-14 w-full min-w-0 items-center gap-3 overflow-hidden px-2.5 py-2 transition-colors',
-          recorderClassName,
-        )}
-      >
-        <span
-          aria-hidden="true"
-          data-slot="audio-input-recorder-icon"
-          className={cn(
-            'grid size-11 shrink-0 place-items-center rounded-full transition-colors',
-            isRecording
-              ? 'bg-destructive text-primary-foreground'
-              : isRequestingPermission
-                ? 'bg-foreground text-background'
-                : 'bg-foreground/10 text-foreground',
-            errorDetails ? 'bg-destructive/10 text-destructive dark:bg-destructive/20' : null,
-          )}
-        >
-          {isRequestingPermission ? (
-            <LoaderCircle
-              aria-hidden="true"
-              className="size-5 animate-spin motion-reduce:animate-none"
-            />
-          ) : (
-            <Mic
-              aria-hidden="true"
-              className="size-5"
-            />
-          )}
-        </span>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center gap-2">
-            <AudioInputWaveform
-              isActive={isRecording}
-              levels={waveformLevels}
-            />
-            {isRecording ? (
-              <span
-                aria-hidden="true"
-                data-slot="audio-input-live-indicator"
-                className="relative flex size-2.5 shrink-0 items-center justify-center"
-              >
-                <span className="bg-destructive absolute inline-flex size-full animate-ping rounded-full opacity-60 motion-reduce:hidden" />
-                <span className="bg-destructive relative inline-flex size-2 rounded-full" />
-              </span>
-            ) : null}
-            <p
-              aria-live="polite"
-              className="min-w-0 truncate text-sm leading-none font-medium"
-              role="status"
+      {isInlineErrorOpen || isInlineReviewOpen ? null : pendingStatus}
+      {inline ? (
+        <>
+          <div
+            aria-label="Audio recording"
+            aria-busy={isTranscriptionBusy}
+            className="flex min-w-0 flex-wrap items-center gap-2"
+            role="group"
+          >
+            <Button
+              ref={inline.cancelRef}
+              aria-label="Cancel recording"
+              disabled={disabled || isTranscriptionBusy}
+              size="icon-touch"
+              type="button"
+              variant="ghost"
+              onClick={inline.onClose}
             >
-              {statusLabel}
-            </p>
-          </div>
-          <div className="text-secondary-foreground mt-1 flex min-w-0 items-center gap-2 text-xs">
-            <span className="font-mono tabular-nums">{formattedElapsed}</span>
-            <span aria-hidden="true">/</span>
-            <span className={cn('truncate', isOverLimit ? 'text-destructive' : null)}>
-              {sizeMeterLabel}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <span
-        id={transcriptionStatusId}
-        className="sr-only"
-        role="status"
-      >
-        {isTranscriptionBusy ? 'Submitting...' : null}
-      </span>
-      <form
-        aria-busy={isTranscriptionBusy}
-        className="grid min-w-0 gap-4"
-        data-busy={isTranscriptionBusy ? 'true' : 'false'}
-        noValidate
-        onSubmit={(event) => {
-          // portal submissions must not reach a surrounding application form.
-          event.stopPropagation();
-          void form.handleSubmit(handleTranscriptionSubmit)(event);
-        }}
-      >
-        {isTranscriptionEditorVisible ? (
-          <Controller
-            control={form.control}
-            name="transcription"
-            render={({ field, fieldState }) => (
-              <>
-                <Textarea
-                  {...field}
-                  data-slot="audio-input-transcription-editor"
-                  data-state={transcriptionStatus}
-                  aria-describedby={fieldState.invalid ? transcriptionErrorId : undefined}
-                  aria-invalid={fieldState.invalid}
-                  aria-label={transcriptionTextareaLabel}
-                  className={cn('min-h-28 resize-y', transcriptionTextareaClassName)}
-                  disabled={disabled || isSendingTranscription}
-                  placeholder={transcriptionPlaceholder}
-                  value={transcription}
-                  onChange={(event) => {
-                    setAudioInputTranscription(event.currentTarget.value);
-                  }}
-                />
-                {transcriptionValidationMessage ? (
-                  <FieldError
-                    id={transcriptionErrorId}
-                    role="alert"
-                  >
-                    {transcriptionValidationMessage}
-                  </FieldError>
-                ) : null}
-              </>
-            )}
-          />
-        ) : null}
-
-        {isErrorVisible && errorDetails ? (
-          <div className="grid min-w-0 justify-items-center gap-3 text-center">
-            <div
-              className="grid min-w-0 justify-items-center gap-1 text-center"
-              role="alert"
-            >
-              <p className="text-destructive text-sm">{errorDetails.feedback.message}</p>
-              {errorDetails.feedback.code ? (
-                <p className="text-secondary-foreground text-xs">
-                  Code: <span className="font-mono">{errorDetails.feedback.code}</span>
-                </p>
-              ) : null}
-            </div>
-            {isRetryAvailable ? (
-              <Button
-                className="whitespace-normal wrap-anywhere pointer-coarse:min-h-11 pointer-coarse:min-w-11"
-                data-slot="audio-input-retry-action"
-                disabled={disabled || isTranscriptionBusy}
-                type="button"
-                variant="outline"
-                onClick={handleRetryClick}
-              >
-                {retryLabel}
-              </Button>
-            ) : canTranscribeLimitedRecording ? (
-              <Button
-                className="whitespace-normal wrap-anywhere pointer-coarse:min-h-11 pointer-coarse:min-w-11"
-                data-slot="audio-input-limit-transcribe-action"
-                disabled={disabled || isTranscriptionBusy}
-                type="button"
-                variant="outline"
-                onClick={handleTranscribeLimitedRecordingClick}
-              >
-                {transcribeLimitRecordingLabel}
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
-
-        <div
-          data-slot="audio-input-transcription-actions"
-          data-state={transcriptionStatus}
-          className={cn('flex min-w-0 items-center gap-2', transcriptionActionsClassName)}
-        >
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                aria-label={restartButtonAriaLabel}
-                className={cn('me-auto shrink-0', restartButtonClassName)}
-                disabled={disabled || isTranscriptionBusy}
-                size="icon-touch"
-                type="button"
-                variant="ghost"
-                onClick={restartRecording}
-              >
-                <RefreshCcw aria-hidden="true" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{restartButtonAriaLabel}</TooltipContent>
-          </Tooltip>
-          {isTranscriptionActionVisible ? (
-            <>
-              {!isTranscriptionEditorVisible ? (
+              <X aria-hidden="true" />
+            </Button>
+            {meter}
+            {!isInlineReviewOpen ? actions : null}
+            <Dialog>
+              <DialogTrigger asChild>
                 <Button
-                  aria-describedby={isTranscribePending ? transcriptionStatusId : undefined}
-                  aria-disabled={isTranscribePending || undefined}
-                  className="shrink-0"
-                  disabled={
-                    disabled ||
-                    !canTranscribe ||
-                    (isTranscriptionBusy && !isTranscribePending) ||
-                    isRetryAvailable
-                  }
-                  size="touch"
+                  aria-label="Recording information"
+                  size="icon-touch"
                   type="button"
-                  variant={isResultActionVisible ? 'ghost' : 'default'}
-                  onClick={handleTranscribeClick}
+                  variant="ghost"
                 >
-                  {isTranscribePending ? (
-                    <LoaderCircle
-                      aria-hidden="true"
-                      className="animate-spin motion-reduce:animate-none"
-                      data-slot="audio-input-action-progress"
-                    />
-                  ) : null}
-                  {transcribeLabel}
+                  <Info aria-hidden="true" />
                 </Button>
-              ) : null}
-              {isResultActionVisible ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      aria-describedby={isResultPending ? transcriptionStatusId : undefined}
-                      aria-disabled={isResultPending || undefined}
-                      aria-label={
-                        isTranscriptionEditorVisible
-                          ? sendTranscriptionLabel
-                          : transcribeAndSendLabel
-                      }
-                      className="shrink-0"
-                      disabled={
-                        disabled ||
-                        (isTranscriptionBusy && !isResultPending) ||
-                        isRetryAvailable ||
-                        (isTranscriptionEditorVisible
-                          ? !canSendTranscription
-                          : !canTranscribeAndSend)
-                      }
-                      size="icon-touch"
-                      type="submit"
-                      onClick={(event) => {
-                        if (isTranscriptionBusy) {
-                          event.preventDefault();
-                        }
-                      }}
-                    >
-                      {isResultPending ? (
-                        <LoaderCircle
-                          aria-hidden="true"
-                          className="animate-spin motion-reduce:animate-none"
-                          data-slot="audio-input-action-progress"
-                        />
-                      ) : (
-                        <SendHorizontal aria-hidden="true" />
-                      )}
-                      <span className="sr-only">
-                        {isTranscriptionEditorVisible
-                          ? sendTranscriptionLabel
-                          : transcribeAndSendLabel}
-                      </span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {isTranscriptionEditorVisible ? sendTranscriptionLabel : transcribeAndSendLabel}
-                  </TooltipContent>
-                </Tooltip>
-              ) : null}
-            </>
-          ) : null}
-        </div>
-      </form>
+              </DialogTrigger>
+              <DialogContent
+                initialFocus="dismiss-control"
+                size="small"
+              >
+                <DialogHeader>
+                  <DialogTitle>Recording information</DialogTitle>
+                  <DialogDescription>
+                    {inline.description ??
+                      'Use Transcribe to turn the current recording into text.'}
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogBody>
+                  <p>Audio limit: {resolvedMaxBytes.toLocaleString()} bytes.</p>
+                </DialogBody>
+              </DialogContent>
+            </Dialog>
+            {errorDetails && isErrorVisible ? (
+              <Dialog
+                open={isInlineErrorOpen}
+                isDismissalDisabled={isTranscriptionBusy}
+                onOpenChange={(isOpen) => setDismissedError(isOpen ? null : errorDetails)}
+              >
+                <DialogTrigger asChild>
+                  <Button
+                    aria-label="Recording error details"
+                    size="icon-touch"
+                    type="button"
+                    variant="outline"
+                  >
+                    <CircleAlert aria-hidden="true" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent
+                  data-audio-input-owner={inline.ownerId}
+                  finalFocus={isTranscriptionEditorVisible ? false : true}
+                  initialFocus="dismiss-control"
+                  size="small"
+                >
+                  <DialogHeader>
+                    <DialogTitle>Recording error</DialogTitle>
+                  </DialogHeader>
+                  <DialogBody>
+                    {error}
+                    {isInlineErrorOpen ? pendingStatus : null}
+                  </DialogBody>
+                </DialogContent>
+              </Dialog>
+            ) : null}
+          </div>
+          <Dialog
+            open={isInlineReviewOpen}
+            isDismissalDisabled={isTranscriptionBusy}
+            onOpenChange={setAudioInputTranscriptionEditorVisible}
+          >
+            <DialogContent
+              data-audio-input-owner={inline.ownerId}
+              finalFocus={() =>
+                isInlineErrorOpen ? false : (reviewTriggerRef.current ?? inline.cancelRef.current)
+              }
+              size="small"
+            >
+              <DialogHeader>
+                <DialogTitle>Review transcription</DialogTitle>
+              </DialogHeader>
+              <DialogBody>{transcriptionForm}</DialogBody>
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : (
+        <>
+          {meter}
+          {transcriptionForm}
+        </>
+      )}
     </div>
   );
 };
 
+// the dialog branch keeps the original prop type extendable and rejects inline open-state props.
+type IAudioInputPresentationProps =
+  | (IAudioInputProps & {
+      presentation?: 'dialog';
+      defaultIsOpen?: never;
+      isOpen?: never;
+      onOpenChange?: never;
+    })
+  | IInlineAudioInputProps;
+
 /**
- * Renders a microphone trigger with a built-in audio dialog.
+ * Renders a microphone trigger with a dialog or inline recorder.
  * @param props The audio input configuration, lifecycle callbacks, and wrapper props.
  * @returns A React element that renders the audio recording control.
  * @example
@@ -1958,7 +2139,8 @@ export const AudioInput = ({
   className,
   closeButtonAriaLabel = AUDIO_INPUT_DEFAULT_CLOSE_BUTTON_ARIA_LABEL,
   controlsRef,
-  defaultIsDialogOpen = false,
+  defaultIsDialogOpen,
+  defaultIsOpen,
   defaultIsRecording,
   defaultIsTranscriptionEditorVisible,
   defaultTranscription,
@@ -1966,12 +2148,14 @@ export const AudioInput = ({
   dialogTitle = AUDIO_INPUT_DEFAULT_DIALOG_TITLE,
   disabled = false,
   isDialogOpen: controlledIsDialogOpen,
+  isOpen: controlledIsInlineOpen,
   isErrorVisible,
   isRecording,
   isResultActionVisible = true,
   isTranscriptionEditorVisible,
   maxBytes,
   onDialogOpenChange,
+  onOpenChange,
   onElapsedMsChange,
   onLimitProgressChange,
   onRecordedBytesChange,
@@ -1991,6 +2175,7 @@ export const AudioInput = ({
   onTranscriptionStatusChange,
   onTranscriptionTextChange,
   preferredMimeType,
+  presentation,
   recorderClassName,
   recorderRootClassName,
   restartButtonAriaLabel,
@@ -2014,17 +2199,25 @@ export const AudioInput = ({
   triggerTitle,
   triggerVariant = 'ghost',
   ...rootProps
-}: IAudioInputProps): ReactElement => {
-  const isDialogOpenControlled = controlledIsDialogOpen !== undefined;
+}: IAudioInputPresentationProps): ReactElement => {
+  const isInline = presentation === 'inline';
+  const controlledIsOpen = isInline ? controlledIsInlineOpen : controlledIsDialogOpen;
+  const isOpenControlled = controlledIsOpen !== undefined;
+  const notifyOpenChange = isInline ? onOpenChange : onDialogOpenChange;
   const [uncontrolledIsDialogOpen, setUncontrolledIsDialogOpen] = useState(
-    () => defaultIsDialogOpen,
+    () => (isInline ? defaultIsOpen : defaultIsDialogOpen) ?? false,
   );
   const [dialogTranscriptionStatus, setDialogTranscriptionStatus] =
     useState<IAudioInputTranscriptionStatus>('idle');
   const recorderControlsRef = useRef<IAudioInputControls | null>(null);
   const shouldSkipDialogCloseCancelRef = useRef(false);
-  const isDialogOpen = controlledIsDialogOpen ?? uncontrolledIsDialogOpen;
+  const isDialogOpen = controlledIsOpen ?? uncontrolledIsDialogOpen;
   const dialogSessionRef = useRef(0);
+  const focusOwnerId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const openFocusRef = useRef<Element | null>(null);
+  const shouldRestoreTriggerFocusRef = useRef(false);
   const delayedCommandRef = useRef<number | null>(null);
   const pendingCommandRef = useRef<'startRecording' | 'restartRecording' | null>(null);
 
@@ -2040,6 +2233,22 @@ export const AudioInput = ({
     dialogSessionRef.current += 1;
     if (!isDialogOpen) clearDelayedCommand();
   }, [clearDelayedCommand, isDialogOpen]);
+
+  useLayoutEffect(() => {
+    if (!isInline) return;
+    if (isDialogOpen) {
+      const origin = openFocusRef.current;
+      openFocusRef.current = null;
+      if (origin === null) return;
+      const active = document.activeElement;
+      if (active === origin || (!origin.isConnected && active === document.body))
+        cancelRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    if (shouldRestoreTriggerFocusRef.current && document.activeElement === document.body)
+      rootRef.current?.querySelector('button')?.focus({ preventScroll: true });
+    shouldRestoreTriggerFocusRef.current = false;
+  }, [isDialogOpen, isInline]);
 
   useLayoutEffect(
     () => () => {
@@ -2085,13 +2294,21 @@ export const AudioInput = ({
     (nextIsDialogOpen: boolean): void => {
       dialogSessionRef.current += 1;
       clearDelayedCommand();
-      if (!isDialogOpenControlled) {
+      if (!isOpenControlled) {
         setUncontrolledIsDialogOpen(nextIsDialogOpen);
       }
 
-      onDialogOpenChange?.(nextIsDialogOpen);
+      if (isInline && !nextIsDialogOpen) {
+        openFocusRef.current = null;
+        const active = document.activeElement;
+        shouldRestoreTriggerFocusRef.current =
+          (rootRef.current?.contains(active) ?? false) ||
+          active?.closest('[data-audio-input-owner]')?.getAttribute('data-audio-input-owner') ===
+            focusOwnerId;
+      }
+      notifyOpenChange?.(nextIsDialogOpen);
     },
-    [clearDelayedCommand, isDialogOpenControlled, onDialogOpenChange],
+    [clearDelayedCommand, focusOwnerId, isInline, isOpenControlled, notifyOpenChange],
   );
 
   /**
@@ -2175,6 +2392,10 @@ export const AudioInput = ({
         recorderControlsRef.current?.resetRecording();
       },
       restartRecording: () => {
+        if (isInline && !isDialogOpen)
+          openFocusRef.current = rootRef.current?.contains(document.activeElement)
+            ? document.activeElement
+            : null;
         setAudioInputDialogOpen(true);
 
         if (isDialogOpen) {
@@ -2182,11 +2403,15 @@ export const AudioInput = ({
           return;
         }
 
-        if (!autoStart) {
+        if (!autoStart && (!isInline || !isOpenControlled)) {
           scheduleRecorderCommand('restartRecording');
         }
       },
       startRecording: () => {
+        if (isInline && !isDialogOpen)
+          openFocusRef.current = rootRef.current?.contains(document.activeElement)
+            ? document.activeElement
+            : null;
         setAudioInputDialogOpen(true);
 
         if (isDialogOpen) {
@@ -2194,7 +2419,7 @@ export const AudioInput = ({
           return;
         }
 
-        if (!autoStart) {
+        if (!autoStart && (!isInline || !isOpenControlled)) {
           scheduleRecorderCommand('startRecording');
         }
       },
@@ -2206,6 +2431,8 @@ export const AudioInput = ({
       autoStart,
       clearDelayedCommand,
       isDialogOpen,
+      isInline,
+      isOpenControlled,
       scheduleRecorderCommand,
       setAudioInputDialogOpen,
     ],
@@ -2222,101 +2449,133 @@ export const AudioInput = ({
     }
   }, [cancelRecorderForDialogClose, isDialogOpen]);
 
+  const trigger = (
+    <Button
+      {...triggerButtonProps}
+      aria-label={triggerAriaLabel}
+      className={cn(
+        'whitespace-normal wrap-anywhere pointer-coarse:min-h-11 pointer-coarse:min-w-11',
+        triggerClassName,
+      )}
+      disabled={disabled}
+      size={triggerSize}
+      title={resolvedTriggerTitle}
+      type="button"
+      onClick={
+        isInline
+          ? (event) => {
+              openFocusRef.current = document.activeElement ?? event.currentTarget;
+              handleDialogOpenChange(true);
+            }
+          : undefined
+      }
+      variant={triggerVariant}
+    >
+      <Mic aria-hidden="true" />
+    </Button>
+  );
+  const recorder = (
+    <AudioInputRecorder
+      autoStart={autoStart}
+      cancelResetDelayMs={cancelResetDelayMs}
+      className={recorderRootClassName}
+      controlsRef={attachRecorderControls}
+      defaultIsRecording={defaultIsRecording}
+      defaultIsTranscriptionEditorVisible={defaultIsTranscriptionEditorVisible}
+      defaultTranscription={defaultTranscription}
+      disabled={disabled}
+      isErrorVisible={isErrorVisible}
+      isRecording={isRecording}
+      isResultActionVisible={isResultActionVisible}
+      isTranscriptionEditorVisible={isTranscriptionEditorVisible}
+      maxBytes={maxBytes}
+      preferredMimeType={preferredMimeType}
+      recorderClassName={cn(!isInline && 'bg-transparent dark:bg-transparent', recorderClassName)}
+      inline={
+        isInline
+          ? {
+              cancelRef,
+              description: dialogDescription,
+              onClose: () => handleDialogOpenChange(false),
+              ownerId: focusOwnerId,
+            }
+          : undefined
+      }
+      restartButtonAriaLabel={restartButtonAriaLabel}
+      restartButtonClassName={restartButtonClassName}
+      retryLabel={retryLabel}
+      sendTranscriptionLabel={sendTranscriptionLabel}
+      statusLabels={statusLabels}
+      transcribe={transcribe}
+      transcribeAndSendLabel={transcribeAndSendLabel}
+      transcribeLabel={transcribeLabel}
+      transcribeLimitRecordingLabel={transcribeLimitRecordingLabel}
+      transcription={transcription}
+      transcriptionActionsClassName={transcriptionActionsClassName}
+      transcriptionPlaceholder={transcriptionPlaceholder}
+      transcriptionTextareaClassName={transcriptionTextareaClassName}
+      transcriptionTextareaLabel={transcriptionTextareaLabel}
+      onElapsedMsChange={onElapsedMsChange}
+      onLimitProgressChange={onLimitProgressChange}
+      onRecordedBytesChange={onRecordedBytesChange}
+      onRecordingActiveChange={onRecordingActiveChange}
+      onRecordingCancel={onRecordingCancel}
+      onRecordingComplete={onRecordingComplete}
+      onRecordingDataAvailable={onRecordingDataAvailable}
+      onRecordingError={onRecordingError}
+      onRecordingStart={onRecordingStart}
+      onRecordingStop={onRecordingStop}
+      onStatusChange={onStatusChange}
+      onTranscriptionComplete={onTranscriptionComplete}
+      onTranscriptionEditorVisibleChange={onTranscriptionEditorVisibleChange}
+      onTranscriptionError={onTranscriptionError}
+      onTranscriptionApply={onTranscriptionApply ? handleTranscriptionApply : undefined}
+      onTranscriptionResult={handleTranscriptionResult}
+      onTranscriptionStatusChange={handleTranscriptionStatusChange}
+      onTranscriptionTextChange={onTranscriptionTextChange}
+    />
+  );
   return (
     <div
+      ref={rootRef}
       data-slot="audio-input"
       data-state={isDialogOpen ? 'open' : 'closed'}
-      className={cn('inline-grid min-w-0', className)}
+      className={cn(isInline && isDialogOpen ? 'grid w-full' : 'inline-grid', 'min-w-0', className)}
       {...rootProps}
     >
-      <Dialog
-        isDismissalDisabled={disabled || isDialogTranscriptionBusy}
-        open={isDialogOpen}
-        onOpenChange={handleDialogOpenChange}
-      >
-        <DialogTrigger asChild>
-          <Button
-            {...triggerButtonProps}
-            aria-label={triggerAriaLabel}
-            className={cn(
-              'whitespace-normal wrap-anywhere pointer-coarse:min-h-11 pointer-coarse:min-w-11',
-              triggerClassName,
-            )}
-            disabled={disabled}
-            size={triggerSize}
-            title={resolvedTriggerTitle}
-            type="button"
-            variant={triggerVariant}
-          >
-            <Mic aria-hidden="true" />
-          </Button>
-        </DialogTrigger>
-
-        <DialogContent
-          closeButtonAriaLabel={closeButtonAriaLabel}
-          initialFocus="dismiss-control"
-          size="small"
+      {isInline ? (
+        isDialogOpen ? (
+          recorder
+        ) : (
+          trigger
+        )
+      ) : (
+        <Dialog
+          isDismissalDisabled={disabled || isDialogTranscriptionBusy}
+          open={isDialogOpen}
+          onOpenChange={handleDialogOpenChange}
         >
-          <DialogHeader layout="split">
-            <DialogTitle>{dialogTitle}</DialogTitle>
-            {dialogDescription ? <DialogDescription>{dialogDescription}</DialogDescription> : null}
-          </DialogHeader>
-          <DialogBody
-            padding="none"
-            className="grid gap-4 px-4 pt-2 pb-4 sm:px-5 sm:pt-3 sm:pb-5"
+          <DialogTrigger asChild>{trigger}</DialogTrigger>
+          <DialogContent
+            closeButtonAriaLabel={closeButtonAriaLabel}
+            initialFocus="dismiss-control"
+            size="small"
           >
-            <AudioInputRecorder
-              autoStart={autoStart}
-              cancelResetDelayMs={cancelResetDelayMs}
-              className={recorderRootClassName}
-              controlsRef={attachRecorderControls}
-              defaultIsRecording={defaultIsRecording}
-              defaultIsTranscriptionEditorVisible={defaultIsTranscriptionEditorVisible}
-              defaultTranscription={defaultTranscription}
-              disabled={disabled}
-              isErrorVisible={isErrorVisible}
-              isRecording={isRecording}
-              isResultActionVisible={isResultActionVisible}
-              isTranscriptionEditorVisible={isTranscriptionEditorVisible}
-              maxBytes={maxBytes}
-              preferredMimeType={preferredMimeType}
-              recorderClassName={cn('bg-transparent dark:bg-transparent', recorderClassName)}
-              restartButtonAriaLabel={restartButtonAriaLabel}
-              restartButtonClassName={restartButtonClassName}
-              retryLabel={retryLabel}
-              sendTranscriptionLabel={sendTranscriptionLabel}
-              statusLabels={statusLabels}
-              transcribe={transcribe}
-              transcribeAndSendLabel={transcribeAndSendLabel}
-              transcribeLabel={transcribeLabel}
-              transcribeLimitRecordingLabel={transcribeLimitRecordingLabel}
-              transcription={transcription}
-              transcriptionActionsClassName={transcriptionActionsClassName}
-              transcriptionPlaceholder={transcriptionPlaceholder}
-              transcriptionTextareaClassName={transcriptionTextareaClassName}
-              transcriptionTextareaLabel={transcriptionTextareaLabel}
-              onElapsedMsChange={onElapsedMsChange}
-              onLimitProgressChange={onLimitProgressChange}
-              onRecordedBytesChange={onRecordedBytesChange}
-              onRecordingActiveChange={onRecordingActiveChange}
-              onRecordingCancel={onRecordingCancel}
-              onRecordingComplete={onRecordingComplete}
-              onRecordingDataAvailable={onRecordingDataAvailable}
-              onRecordingError={onRecordingError}
-              onRecordingStart={onRecordingStart}
-              onRecordingStop={onRecordingStop}
-              onStatusChange={onStatusChange}
-              onTranscriptionComplete={onTranscriptionComplete}
-              onTranscriptionEditorVisibleChange={onTranscriptionEditorVisibleChange}
-              onTranscriptionError={onTranscriptionError}
-              onTranscriptionApply={onTranscriptionApply ? handleTranscriptionApply : undefined}
-              onTranscriptionResult={handleTranscriptionResult}
-              onTranscriptionStatusChange={handleTranscriptionStatusChange}
-              onTranscriptionTextChange={onTranscriptionTextChange}
-            />
-          </DialogBody>
-        </DialogContent>
-      </Dialog>
+            <DialogHeader layout="split">
+              <DialogTitle>{dialogTitle}</DialogTitle>
+              {dialogDescription ? (
+                <DialogDescription>{dialogDescription}</DialogDescription>
+              ) : null}
+            </DialogHeader>
+            <DialogBody
+              padding="none"
+              className="grid gap-4 px-4 pt-2 pb-4 sm:px-5 sm:pt-3 sm:pb-5"
+            >
+              {recorder}
+            </DialogBody>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

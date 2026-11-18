@@ -1,8 +1,8 @@
-import { page } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 import { expectToThrowCode } from 'jg-exception/testing';
-import { StrictMode, act, createRef } from 'react';
+import { StrictMode, act, createRef, useCallback, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { createErrorFeedback, Exception } from 'jg-exception';
 
 import { ErrorFeedbackProvider } from '../error-feedback-provider/index.js';
@@ -12,6 +12,7 @@ import {
   AudioInput,
   type IAudioInputControls,
   type IAudioInputRecording,
+  type IAudioInputProps,
 } from './index.js';
 
 // React act environment flag suppresses false-positive act warnings in Vitest.
@@ -160,7 +161,7 @@ const getAudioInputAlert = (container: HTMLElement): HTMLElement => {
  * @returns The matching button element, or null when absent.
  */
 const queryAudioInputButtonByText = (
-  container: HTMLElement,
+  container: ParentNode,
   text: string,
 ): HTMLButtonElement | null =>
   Array.from(container.querySelectorAll<HTMLButtonElement>('button')).find(
@@ -173,7 +174,7 @@ const queryAudioInputButtonByText = (
  * @param text The visible button text to match.
  * @returns The matching button element.
  */
-const getAudioInputButtonByText = (container: HTMLElement, text: string): HTMLButtonElement => {
+const getAudioInputButtonByText = (container: ParentNode, text: string): HTMLButtonElement => {
   const button = queryAudioInputButtonByText(container, text);
 
   if (button === null) {
@@ -271,6 +272,256 @@ describe('AudioInput', () => {
     vi.restoreAllMocks();
     vi.useRealTimers();
     vi.clearAllMocks();
+  });
+
+  test('keeps legacy dialog types extendable and rejects mixed open-state props', () => {
+    interface ILegacyWrapperProps extends IAudioInputProps {
+      name: string;
+    }
+    type IProps = Parameters<typeof AudioInput>[0];
+    expectTypeOf<ILegacyWrapperProps>().toExtend<IProps>();
+    expectTypeOf<{ presentation: 'inline'; isOpen: boolean }>().toExtend<IProps>();
+    const inline = { presentation: 'inline', isOpen: true } as const;
+    const dialog = { isDialogOpen: false };
+    expectTypeOf<{ onOpenChange: () => void }>().not.toExtend<IProps>();
+    expectTypeOf({ ...inline, ...dialog }).not.toExtend<IProps>();
+  });
+
+  test.each(['startRecording', 'restartRecording'] as const)(
+    'inline %s only requests admission while a controlled recorder is closed',
+    async (command) => {
+      const controlsRef = createRef<IAudioInputControls>();
+      const onOpenChange = vi.fn();
+      const render = (isOpen: boolean) =>
+        root.render(
+          <AudioInput
+            presentation="inline"
+            autoStart={false}
+            controlsRef={controlsRef}
+            isOpen={isOpen}
+            onOpenChange={onOpenChange}
+          />,
+        );
+      act(() => render(false));
+      act(() => controlsRef.current?.[command]());
+      expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(true);
+      expect(getUserMediaMock).not.toHaveBeenCalled();
+
+      act(() => render(true));
+      await expect.element(page.getByRole('button', { name: 'Cancel recording' })).toBeVisible();
+      expect(getUserMediaMock).not.toHaveBeenCalled();
+
+      act(() => controlsRef.current?.startRecording());
+      await vi.waitFor(() => expect(getUserMediaMock).toHaveBeenCalledOnce());
+      act(() => render(false));
+      expect(stopTrackMock).toHaveBeenCalledOnce();
+    },
+  );
+
+  test('inline focus preserves a shift away from the trigger before delayed admission', async () => {
+    let allowOpen: (() => void) | undefined;
+    const Demo = () => {
+      const [isOpen, setIsOpen] = useState(false);
+      allowOpen = () => setIsOpen(true);
+      return (
+        <>
+          <button type="button">Read details</button>
+          <AudioInput
+            presentation="inline"
+            isOpen={isOpen}
+          />
+        </>
+      );
+    };
+    act(() => root.render(<Demo />));
+    const trigger = page.getByRole('button', { name: 'Open audio recorder' });
+    await trigger.click();
+    const details = page.getByRole('button', { name: 'Read details' });
+    await details.click();
+    expect(getUserMediaMock).not.toHaveBeenCalled();
+    act(() => allowOpen?.());
+    await expect.element(page.getByRole('button', { name: 'Cancel recording' })).toBeVisible();
+    await expect.element(details).toHaveFocus();
+    await vi.waitFor(() => expect(getUserMediaMock).toHaveBeenCalledOnce());
+  });
+
+  test('inline cancellation releases late permission after an imperative reopen', async () => {
+    const firstPermission = createDeferred<MediaStream>();
+    const lateTrackStop = vi.fn();
+    const staleStream = { getTracks: () => [{ stop: lateTrackStop }] } as unknown as MediaStream;
+    getUserMediaMock.mockReturnValueOnce(firstPermission.promise);
+    const controls = createRef<IAudioInputControls>();
+    const onRecordingStart = vi.fn();
+    act(() =>
+      root.render(
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              controls.current?.startRecording();
+              controls.current?.startRecording();
+            }}
+          >
+            Start from outside
+          </button>
+          <AudioInput
+            presentation="inline"
+            autoStart={false}
+            controlsRef={controls}
+            onRecordingStart={onRecordingStart}
+          />
+        </>,
+      ),
+    );
+
+    const start = page.getByRole('button', { name: 'Start from outside' });
+    await start.click();
+    await vi.waitFor(() => expect(getUserMediaMock).toHaveBeenCalledOnce());
+    await expect.element(start).toHaveFocus();
+    await page.getByRole('button', { name: 'Cancel recording' }).click();
+    await expect.element(page.getByRole('button', { name: 'Open audio recorder' })).toHaveFocus();
+    await start.click();
+    await vi.waitFor(() => expect(MockMediaRecorder.instances).toHaveLength(1));
+    expect(onRecordingStart).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      firstPermission.resolve(staleStream);
+      await firstPermission.promise;
+    });
+    expect(getUserMediaMock).toHaveBeenCalledTimes(2);
+    expect(lateTrackStop).toHaveBeenCalledOnce();
+    expect(MockMediaRecorder.instances).toHaveLength(1);
+    await page.getByRole('button', { name: 'Cancel recording' }).click();
+    expect(stopTrackMock).toHaveBeenCalledOnce();
+  });
+
+  test('inline transcription recovery stays in the surrounding form and retains the recording', async () => {
+    const parentSubmit = vi.fn();
+    const send = vi.fn();
+    const requestFreshRecording = vi.fn().mockReturnValueOnce(true).mockReturnValue(false);
+    const apply = vi
+      .fn<(text: string, recording: IAudioInputRecording) => Promise<void>>()
+      .mockRejectedValueOnce(new Error('private-insertion'))
+      .mockResolvedValue(undefined);
+    const transcribe = vi
+      .fn<(recording: IAudioInputRecording) => Promise<string>>()
+      .mockResolvedValue('A voice note');
+    const completed = vi.fn<(recording: IAudioInputRecording) => void>();
+    const Demo = () => {
+      const [isRecording, setIsRecording] = useState(false);
+      const handleRecordingRequest = useCallback((nextIsRecording: boolean) => {
+        if (!nextIsRecording || requestFreshRecording()) setIsRecording(nextIsRecording);
+      }, []);
+      return (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            parentSubmit();
+          }}
+        >
+          <input aria-label="Draft title" />
+          <AudioInput
+            presentation="inline"
+            isRecording={isRecording}
+            isResultActionVisible={false}
+            onRecordingActiveChange={handleRecordingRequest}
+            transcribe={transcribe}
+            onTranscriptionApply={apply}
+            onTranscriptionResult={send}
+            onRecordingComplete={completed}
+          />
+        </form>
+      );
+    };
+    act(() => root.render(<Demo />));
+
+    await page.getByRole('button', { name: 'Open audio recorder' }).click();
+    await expect.element(page.getByRole('button', { name: 'Cancel recording' })).toHaveFocus();
+    await page.getByRole('textbox', { name: 'Draft title' }).fill('Project notes');
+    await flushAudioInputRecordingStart();
+    const recorder = getMockRecorder();
+    act(() => recorder.emitChunk(new Blob(['audio'])));
+    await page.getByRole('button', { name: 'Transcribe', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Recording error' });
+    await expect.element(dialog).toBeVisible();
+    const recording = completed.mock.calls[0]![0];
+    expect(transcribe.mock.calls[0]![0]).toBe(recording);
+    expect(recording.fileName).toMatch(/\.webm$/u);
+    await act(async () => userEvent.keyboard('{Escape}'));
+    await vi.waitFor(() => expect(dialog.query()).toBeNull());
+    await page.getByRole('button', { name: 'Restart recording' }).click();
+    expect(requestFreshRecording).toHaveBeenCalledTimes(2);
+    expect(getUserMediaMock).toHaveBeenCalledOnce();
+    await page.getByRole('button', { name: 'Recording error details' }).click();
+    act(() => getAudioInputButtonByText(dialog.element(), 'Retry').click());
+    await expect.element(page.getByRole('button', { name: 'Open audio recorder' })).toBeVisible();
+    expect(apply).toHaveBeenCalledTimes(2);
+    expect(apply.mock.calls[1]![1]).toBe(recording);
+    expect(transcribe).toHaveBeenCalledOnce();
+    expect(send).not.toHaveBeenCalled();
+    expect(parentSubmit).not.toHaveBeenCalled();
+    await expect
+      .element(page.getByRole('textbox', { name: 'Draft title' }))
+      .toHaveValue('Project notes');
+  });
+
+  test('inline standalone review reopens the transcript and submits only its own form', async () => {
+    const outerSubmit = vi.fn();
+    const send = vi
+      .fn<(text: string, recording: IAudioInputRecording) => Promise<void>>()
+      .mockRejectedValueOnce(new Error('private-delivery'))
+      .mockResolvedValue(undefined);
+    const transcribe = vi.fn().mockResolvedValue('Private review draft');
+    act(() =>
+      root.render(
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            outerSubmit();
+          }}
+        >
+          <AudioInput
+            presentation="inline"
+            transcribe={transcribe}
+            onTranscriptionResult={send}
+          />
+        </form>,
+      ),
+    );
+
+    await page.getByRole('button', { name: 'Open audio recorder' }).click();
+    await flushAudioInputRecordingStart();
+    act(() => getMockRecorder().emitChunk(new Blob(['audio'])));
+    await page.getByRole('button', { name: 'Transcribe', exact: true }).click();
+    const review = page.getByRole('dialog', { name: 'Review transcription' });
+    const textarea = review.getByRole('textbox', { name: 'Transcription' });
+    await expect.element(textarea).toHaveValue('Private review draft');
+    await textarea.fill('Reviewed draft');
+    await act(async () => userEvent.keyboard('{Escape}'));
+    await vi.waitFor(() => expect(review.query()).toBeNull());
+    expect(send).not.toHaveBeenCalled();
+    const reopen = page.getByRole('button', { name: 'Review transcription', exact: true });
+    await expect.element(reopen).toHaveFocus();
+    await reopen.click();
+    await expect.element(textarea).toHaveValue('Reviewed draft');
+    act(() => getAudioInputButtonByText(review.element(), 'Send').click());
+    const error = page.getByRole('dialog', { name: 'Recording error' });
+    await expect.element(error.getByRole('button', { name: 'Close dialog' })).toHaveFocus();
+    await vi.waitFor(() => expect(review.query()).toBeNull());
+    expect(send).toHaveBeenCalledOnce();
+    const [reviewedText, recording] = send.mock.calls[0]!;
+    expect(reviewedText).toBe('Reviewed draft');
+    expect(recording.blob).toBeInstanceOf(Blob);
+    act(() => {
+      const retryButton = getAudioInputButtonByText(error.element(), 'Retry');
+      retryButton.focus();
+      retryButton.click();
+    });
+    await expect.element(page.getByRole('button', { name: 'Open audio recorder' })).toHaveFocus();
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(send.mock.calls[1]![0]).toBe('Reviewed draft');
+    expect(send.mock.calls[1]![1]).toBe(recording);
+    expect(outerSubmit).not.toHaveBeenCalled();
+    expect(transcribe).toHaveBeenCalledOnce();
   });
 
   test.each(['apply', 'send', 'hidden'] as const)(
