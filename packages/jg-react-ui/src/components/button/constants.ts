@@ -62,6 +62,7 @@ export const buttonVariants = cva(
         lg: 'h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
         icon: 'size-8',
         'icon-touch': 'size-11 sm:pointer-fine:size-8',
+        toolbar: 'jg-ui-toolbar-button',
         inline: 'h-auto gap-1 p-0',
         'icon-xs':
           "size-6 rounded-md in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0
+
+### Added
+
+- Add a shared toolbar size for buttons and an opt-in inline AudioInput layout with matching action spacing, icon controls, and responsive touch targets.
+
 ## 0.8.0
 
 ### Added
