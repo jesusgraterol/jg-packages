@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0
+
+### Added
+
+- Re-export the shared inline AudioInput API and its props type.
+
 ## 0.7.1
 
 ### Fixed

@@ -9,10 +9,12 @@ import {
   FileUpload,
   FileUploadDialog,
   ImageUploadField,
+  Label,
   PageDescription,
   PageHeader,
   PageShell,
   PageTitle,
+  Textarea,
   type IAudioInputTranscribeHandler,
   type IAudioInputTranscriptionResultHandler,
   type IFileUploadDialogSubmitHandler,
@@ -39,6 +41,10 @@ export const InputDemo = () => {
   const [discardedCount, setDiscardedCount] = useState(0);
   const [image, setImage] = useState<IImageUploadFieldCurrentImage | null>(null);
   const [sentText, setSentText] = useState('No transcription sent yet');
+  const [isInlineOpen, setIsInlineOpen] = useState(false);
+  const [isMicrophoneAllowed, setIsMicrophoneAllowed] = useState(false);
+  const [inlineDraft, setInlineDraft] = useState('');
+  const [submittedDraft, setSubmittedDraft] = useState('No note saved yet');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -231,6 +237,68 @@ export const InputDemo = () => {
               className="text-sm wrap-anywhere"
             >
               {sentText}
+            </p>
+          </section>
+          <section
+            aria-labelledby="inline-audio-title"
+            className="grid min-w-0 gap-3"
+          >
+            <h2
+              id="inline-audio-title"
+              className="text-xl font-semibold"
+            >
+              Inline voice note
+            </h2>
+            <form
+              className="grid min-w-0 gap-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                setSubmittedDraft(inlineDraft);
+              }}
+            >
+              <Label htmlFor="inline-voice-draft">Draft note</Label>
+              <Textarea
+                id="inline-voice-draft"
+                value={inlineDraft}
+                onChange={(event) => setInlineDraft(event.currentTarget.value)}
+              />
+              <Button
+                className="justify-self-start"
+                type="button"
+                variant="outline"
+                size="touch"
+                aria-pressed={isMicrophoneAllowed}
+                onClick={() => setIsMicrophoneAllowed((isAllowed) => !isAllowed)}
+              >
+                Allow inline recording
+              </Button>
+              <AudioInput
+                presentation="inline"
+                triggerAriaLabel="Open inline recorder"
+                isOpen={isInlineOpen}
+                onOpenChange={(isOpen) => {
+                  if (!isOpen || isMicrophoneAllowed) setIsInlineOpen(isOpen);
+                }}
+                transcribe={transcribe}
+                isResultActionVisible={false}
+                onTranscriptionApply={(text) => {
+                  setInlineDraft((draft) => (draft ? `${draft}\n\n${text}` : text));
+                }}
+              />
+              <Button
+                className="justify-self-start"
+                type="submit"
+                size="touch"
+              >
+                Save note
+              </Button>
+            </form>
+            <p
+              role="status"
+              aria-label="Saved note"
+              className="text-sm wrap-anywhere"
+            >
+              {submittedDraft}
             </p>
           </section>
         </div>

@@ -453,6 +453,40 @@ const voiceNote = createElement(AudioInput, { transcribe, onTranscriptionResult:
 
 Scope an ErrorFeedbackProvider around these components for reviewed provider messages. Diagnostic error callbacks retain the original cause; visible UI uses that scoped policy. A failed send retries the current text without calling the transcription provider again. Keep provider requests bounded and cancel them when their application owner leaves. The recorder releases its own microphone, waveform, timer, and callback resources. For ImageUploadField, the caller owns currentImage and any object URL lifetime.
 
+## Dictate into an existing form
+
+Use the inline recorder in the form's action row. Keep the open state with the draft owner so admission can be checked before microphone capture. Apply inserts text through the caller's draft handler. Keep the normal form submission explicit.
+
+```ts
+import { createElement, useState } from 'react';
+import {
+  AudioInput,
+  type IInlineAudioInputProps,
+} from 'jg-personal-react-ui/components/audio-input';
+
+type VoiceDraftProps = Pick<IInlineAudioInputProps, 'transcribe' | 'onTranscriptionApply'> & {
+  canRecord: boolean;
+};
+
+function VoiceDraft({ canRecord, transcribe, onTranscriptionApply }: VoiceDraftProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  return createElement(AudioInput, {
+    presentation: 'inline',
+    isOpen,
+    onOpenChange(nextIsOpen) {
+      if (!nextIsOpen || canRecord) setIsOpen(nextIsOpen);
+    },
+    ...(transcribe ? { transcribe } : {}),
+    ...(onTranscriptionApply ? { onTranscriptionApply } : {}),
+    isResultActionVisible: false,
+  });
+}
+```
+
+When admission is asynchronous, commit the approved open only while the request and draft still belong to the same mounted owner. With `autoStart: false`, request opening first and start capture after the controlled open commits.
+
+To check admission for each new take, also control `isRecording` through `onRecordingActiveChange`. A refused restart keeps the completed recording available for retry.
+
 ## Render agent messages and source
 
 Give every message column `min-w-0` and use `minmax(0,1fr)` for flexible grid tracks. Keep preview/collapse state in the application; the renderer has no truncation policy. Code and tables scroll within their own containers.
