@@ -163,7 +163,7 @@ export const resolveAudioInputWaveformLevels = (
 
     return Math.min(
       1,
-      Math.max(AUDIO_INPUT_MIN_WAVEFORM_LEVEL, segmentPeak * AUDIO_INPUT_WAVEFORM_GAIN),
+      Math.max(AUDIO_INPUT_MIN_WAVEFORM_LEVEL, Math.sqrt(segmentPeak) * AUDIO_INPUT_WAVEFORM_GAIN),
     );
   });
 };

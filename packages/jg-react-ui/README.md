@@ -38,7 +38,7 @@ The preference provider supports explicit `local`, `read-only`, and `remote` mod
 
 Optional `storageId` defaults to `jg-ui-preferences`. It must be non-empty and contain only ASCII letters, digits, underscores, and hyphens. `getUiPreferencesStorageKey` returns its raw `jg-storage:` key. IDs are captured for the provider lifetime; use a keyed remount to change namespaces. Invalid IDs fail before storage access or initialization-script creation.
 
-Render `ThemeInitializationScript` in the document head before application JavaScript, using the same `storageId` as the provider and your CSP `nonce` when required. Server snapshots use initial props or defaults, then storage synchronizes after hydration. See the recipes for composition and the shared [owned error contracts](https://unpkg.com/jg-react-ui@0.9.0/errors/README.md).
+Render `ThemeInitializationScript` in the document head before application JavaScript, using the same `storageId` as the provider and your CSP `nonce` when required. Server snapshots use initial props or defaults, then storage synchronizes after hydration. See the recipes for composition and the shared [owned error contracts](https://unpkg.com/jg-react-ui@0.10.0/errors/README.md).
 
 ## Controls, forms, and plain text
 
@@ -90,7 +90,7 @@ The upload dialog finalizes successful results through `onSubmit`, retries final
 
 Set `presentation="inline"` to replace the mic trigger with an in-flow recorder. Use `IInlineAudioInputProps` with `isOpen`, `defaultIsOpen` or `onOpenChange` to manage inline opening. Dialog mode uses the original `IAudioInputProps` and dialog-named open-state props. Inline capture waits for the open state to commit. With `autoStart={false}` a controlled closed recorder only requests opening. Call its start control after the accepted open. A mic-triggered inline open focuses Cancel recording when focus still belongs to the triggering interaction. Standalone review, information and actionable errors are available in secondary dialogs.
 
-Use `inlineLayout="toolbar"` with the inline presentation to match a message composer. The recorder fits on one line, uses named icon actions, and keeps its action size during transcription and submission. The elapsed time remains visible on narrow screens. Wider toolbars also display the limit and recording status. Error recovery and optional transcript review open their usual dialogs.
+Use `inlineLayout="toolbar"` with the inline presentation to match a message composer. The recorder fits on one line, groups its live indicator, waveform and elapsed time, and keeps its action size during transcription and submission. Restart remains beside Transcribe and Send. The waveform scales with the composer width and shrinks when space is tight. Taller bars use a compressed display amplitude so quieter speech stays visible without changing the recording. Starting feedback stays visible on phones; wider toolbars also show the recording status. Capacity stays quiet below 90%. At 90%, the phone timer becomes an amber warning badge with an exclamation marker; desktop uses the status slot. Tapping the warning opens capacity details while the waveform stays visible and no row is added. Error recovery and optional transcript review open their usual dialogs.
 
 For the rest of the composer, use `Button` with `size="toolbar"` for icon actions and apply `jg-ui-toolbar-actions` to each flex action group. The shared stylesheet gives narrow or touch-capable layouts 44 px targets and a 32 px face for filled and outlined actions. At 640 px and wider, fine-pointer layouts without touch use 32 px targets. Icons are 16 px and the action groups have a 4 px gap at that breakpoint. Use ghost buttons for secondary actions and `ArrowUp` for the filled submit action.
 
@@ -135,7 +135,7 @@ Invalid configuration retains these native Error messages:
 
 ## Documentation
 
-The API reference ships as [API.md](https://unpkg.com/jg-react-ui@0.9.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-react-ui@0.9.0/RECIPES.md). These personal-use packages are unlisted on the public package website.
+The API reference ships as [API.md](https://unpkg.com/jg-react-ui@0.10.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-react-ui@0.10.0/RECIPES.md). These personal-use packages are unlisted on the public package website.
 
 ## License
 

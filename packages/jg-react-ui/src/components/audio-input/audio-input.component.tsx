@@ -88,6 +88,7 @@ import {
   resolveAudioInputWaveformLevels,
 } from './utilities.js';
 import { AudioInputTranscriptionFormSchema } from './validations.js';
+import { AudioInputToolbarMeter } from './audio-input-toolbar-meter.component.js';
 
 // browser-specific AudioContext constructor fallback used by Safari.
 type IAudioContextConstructor = new () => AudioContext;
@@ -464,6 +465,7 @@ const AudioInputRecorder = ({
   const sizeProgress = Math.min(1, recordedBytes / resolvedMaxBytes);
   const sizeProgressPercentage = Math.round(sizeProgress * 100);
   const sizeMeterLabel = isOverLimit ? 'Limit reached' : `Limit ${sizeProgressPercentage}%`;
+  const isToolbar = inline?.layout === 'toolbar';
   const hasTranscribableAudio = isRecording || completedRecording !== null;
   const canSendTranscription = completedRecording !== null && transcription.trim().length > 0;
   const shouldSendOnTranscribe =
@@ -1752,38 +1754,61 @@ const AudioInputRecorder = ({
         )}
       </span>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-center gap-2">
-          <AudioInputWaveform
-            isActive={isRecording}
-            levels={waveformLevels}
-          />
-          {isRecording ? (
-            <span
-              aria-hidden="true"
-              data-slot="audio-input-live-indicator"
-              className="relative flex size-2.5 shrink-0 items-center justify-center"
+      {isToolbar ? (
+        <AudioInputToolbarMeter
+          elapsed={formattedElapsed}
+          maxBytes={resolvedMaxBytes}
+          ownerId={inline.ownerId}
+          progress={sizeProgress}
+          status={status}
+          statusLabel={
+            status === 'recording'
+              ? (statusLabels?.recording ?? 'Recording')
+              : status === 'requesting-permission'
+                ? (statusLabels?.['requesting-permission'] ?? 'Starting')
+                : statusLabel
+          }
+          waveform={
+            <AudioInputWaveform
+              isActive={isRecording}
+              levels={waveformLevels}
+            />
+          }
+        />
+      ) : (
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <AudioInputWaveform
+              isActive={isRecording}
+              levels={waveformLevels}
+            />
+            {isRecording ? (
+              <span
+                aria-hidden="true"
+                data-slot="audio-input-live-indicator"
+                className="relative flex size-2.5 shrink-0 items-center justify-center"
+              >
+                <span className="bg-destructive absolute inline-flex size-full animate-ping rounded-full opacity-60 motion-reduce:hidden" />
+                <span className="bg-destructive relative inline-flex size-2 rounded-full" />
+              </span>
+            ) : null}
+            <p
+              aria-live="polite"
+              className="min-w-0 truncate text-sm leading-none font-medium"
+              role="status"
             >
-              <span className="bg-destructive absolute inline-flex size-full animate-ping rounded-full opacity-60 motion-reduce:hidden" />
-              <span className="bg-destructive relative inline-flex size-2 rounded-full" />
+              {statusLabel}
+            </p>
+          </div>
+          <div className="text-secondary-foreground mt-1 flex min-w-0 items-center gap-2 text-xs">
+            <span className="font-mono tabular-nums">{formattedElapsed}</span>
+            <span aria-hidden="true">/</span>
+            <span className={cn('truncate', isOverLimit ? 'text-destructive' : null)}>
+              {sizeMeterLabel}
             </span>
-          ) : null}
-          <p
-            aria-live="polite"
-            className="min-w-0 truncate text-sm leading-none font-medium"
-            role="status"
-          >
-            {statusLabel}
-          </p>
+          </div>
         </div>
-        <div className="text-secondary-foreground mt-1 flex min-w-0 items-center gap-2 text-xs">
-          <span className="font-mono tabular-nums">{formattedElapsed}</span>
-          <span aria-hidden="true">/</span>
-          <span className={cn('truncate', isOverLimit ? 'text-destructive' : null)}>
-            {sizeMeterLabel}
-          </span>
-        </div>
-      </div>
+      )}
     </div>
   );
   const pendingStatus = (
@@ -1878,7 +1903,6 @@ const AudioInputRecorder = ({
         ) : null}
       </div>
     ) : null;
-  const isToolbar = inline?.layout === 'toolbar';
   const usesToolbarActions = isToolbar && !isInlineReviewOpen;
   const iconActionSize = usesToolbarActions ? 'toolbar' : 'icon-touch';
   const SubmitIcon = usesToolbarActions ? ArrowUp : SendHorizontal;
@@ -1924,32 +1948,35 @@ const AudioInputRecorder = ({
       {usesToolbarActions ? null : transcribeLabel}
     </Button>
   );
+  const restartAction = (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          aria-label={restartButtonAriaLabel}
+          className={cn('shrink-0', !usesToolbarActions && 'me-auto', restartButtonClassName)}
+          disabled={disabled || isTranscriptionBusy}
+          size={iconActionSize}
+          type="button"
+          variant="ghost"
+          onClick={restartRecording}
+        >
+          <RefreshCcw aria-hidden="true" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{restartButtonAriaLabel}</TooltipContent>
+    </Tooltip>
+  );
   const actions = (
     <div
       data-slot="audio-input-transcription-actions"
       data-state={transcriptionStatus}
       className={cn(
         'flex min-w-0 items-center',
-        usesToolbarActions ? 'jg-ui-toolbar-actions flex-none' : 'flex-wrap gap-2',
+        usesToolbarActions ? 'jg-ui-toolbar-actions ms-auto flex-none' : 'flex-wrap gap-2',
         transcriptionActionsClassName,
       )}
     >
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            aria-label={restartButtonAriaLabel}
-            className={cn('me-auto shrink-0', restartButtonClassName)}
-            disabled={disabled || isTranscriptionBusy}
-            size={iconActionSize}
-            type="button"
-            variant="ghost"
-            onClick={restartRecording}
-          >
-            <RefreshCcw aria-hidden="true" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{restartButtonAriaLabel}</TooltipContent>
-      </Tooltip>
+      {restartAction}
       {inline && !isTranscriptionEditorVisible && transcriptionStatus === 'ready' ? (
         usesToolbarActions ? (
           <Tooltip>

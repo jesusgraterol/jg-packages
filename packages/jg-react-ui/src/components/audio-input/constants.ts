@@ -89,8 +89,8 @@ export const AUDIO_INPUT_IDLE_WAVEFORM_LEVELS = [0.2, 0.28, 0.2, 0.36, 0.24, 0.3
 // waveform levels never collapse to zero so the recording affordance remains visible.
 export const AUDIO_INPUT_MIN_WAVEFORM_LEVEL = 0.14;
 
-// waveform amplitude is boosted because browser microphone input is usually quiet.
-export const AUDIO_INPUT_WAVEFORM_GAIN = 3.5;
+// compressed display amplitudes reveal quieter speech while retaining headroom for loud input.
+export const AUDIO_INPUT_WAVEFORM_GAIN = 1.4;
 
 // waveform bars keep the recording state visible inside the compact dictate surface.
 export const AUDIO_INPUT_WAVEFORM_BARS = [

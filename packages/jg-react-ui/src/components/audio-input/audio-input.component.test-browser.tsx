@@ -324,6 +324,40 @@ describe('AudioInput', () => {
     expect(apply).toHaveBeenCalledExactlyOnceWith('Spoken draft', expect.any(Object));
   });
 
+  test('toolbar recording keeps limit details quiet until nearly full and restarts cleanly', async () => {
+    act(() =>
+      root.render(
+        <AudioInput
+          presentation="inline"
+          inlineLayout="toolbar"
+          maxBytes={100}
+          transcribe={() => Promise.resolve('Spoken draft')}
+        />,
+      ),
+    );
+    await page.getByRole('button', { name: 'Open audio recorder' }).click();
+    await flushAudioInputRecordingStart();
+    const recorder = page.getByRole('group', { name: 'Audio recording' });
+    expect(recorder.element().textContent).toContain('Recording');
+    expect(recorder.element().textContent).not.toContain('Limit 0%');
+    act(() => getMockRecorder().emitChunk(new Blob(['a'.repeat(89)])));
+    expect(recorder.getByRole('button', { name: 'Recording nearly full' }).query()).toBeNull();
+    act(() => getMockRecorder().emitChunk(new Blob(['a'])));
+    const warning = recorder.getByRole('button', { name: 'Recording nearly full' });
+    await expect.element(warning).toBeVisible();
+    await warning.click();
+    const details = page.getByRole('dialog', { name: 'Recording nearly full' });
+    await expect.element(details).toBeVisible();
+    expect(details.element().textContent).toContain('90%');
+    expect(details.element().textContent).toContain('Transcribe or send');
+    await userEvent.keyboard('{Escape}');
+    await expect.element(warning).toHaveFocus();
+    await recorder.getByRole('button', { name: 'Restart recording' }).click();
+    await flushAudioInputRecordingStart();
+    expect(recorder.getByRole('button', { name: 'Recording nearly full' }).query()).toBeNull();
+    expect(recorder.element().textContent).toContain('Recording');
+  });
+
   test.each(['startRecording', 'restartRecording'] as const)(
     'inline %s only requests admission while a controlled recorder is closed',
     async (command) => {

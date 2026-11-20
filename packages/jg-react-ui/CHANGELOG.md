@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.10.0
+
+### Changed
+
+- Group recording feedback in the inline toolbar, keep microphone startup visible on phones, and show capacity details only near the recording limit.
+- Scale the waveform with composer width and make quieter input more visible without changing captured audio.
+
+### Fixed
+
+- Reserve space for the full recording pulse beside Cancel and keep toolbar geometry steady through warnings and Restart.
+
 ## 0.9.0
 
 ### Added
