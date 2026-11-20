@@ -103,4 +103,14 @@ describe('audio-input utilities', () => {
       0.14, 0.14,
     ]);
   });
+
+  test(
+    'shows quiet input distinctly while retaining headroom for louder speech',
+    { tags: ['full'] },
+    () => {
+      expect(resolveAudioInputWaveformLevels(new Uint8Array([136, 120, 160, 96]), 2)).toStrictEqual(
+        [0.35, 0.7],
+      );
+    },
+  );
 });

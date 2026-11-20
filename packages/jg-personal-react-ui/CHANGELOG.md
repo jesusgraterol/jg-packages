@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.0
+
+### Changed
+
+- Require jg-react-ui 0.10.0 for the responsive recorder waveform, compact capacity warning and clearer recording feedback in the personal theme.
+
 ## 0.9.0
 
 ### Added

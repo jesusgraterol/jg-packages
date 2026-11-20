@@ -23,6 +23,7 @@ import {
 } from 'jg-personal-react-ui';
 
 import { waitForInputProvider } from './utilities.js';
+import { AudioToolbarDemo } from './audio-toolbar-demo/index.js';
 
 const FILE_TYPES = ['text/plain', 'image/png', 'image/jpeg'];
 const IMAGE_TYPES = ['image/png', 'image/jpeg'];
@@ -239,6 +240,7 @@ export const InputDemo = () => {
               {sentText}
             </p>
           </section>
+          <AudioToolbarDemo />
           <section
             aria-labelledby="inline-audio-title"
             className="grid min-w-0 gap-3"
