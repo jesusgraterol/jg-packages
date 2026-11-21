@@ -12,6 +12,7 @@ export type IStageEvidence = {
 
 export type IFirstPublishOptions = IReleaseIdentity & {
   packages: string[];
+  releaseCheckout?: string;
   retryUncertain?: string;
   stage?: IStageEvidence;
 };

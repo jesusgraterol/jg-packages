@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { expect, test } from 'vitest';
 
 import { parseFirstPublishOptions } from './options.ts';
@@ -26,6 +28,17 @@ test('requires an exact release identity and distinct package selections', () =>
   expect(() => parseFirstPublishOptions([...IDENTITY, '--package', '../jg-one'])).toThrow(
     'distinct',
   );
+});
+
+test('selects an existing release checkout by absolute path', () => {
+  const selection = [...IDENTITY, '--package', 'jg-one'];
+  const checkout = resolve('approved-checkout');
+  expect(
+    parseFirstPublishOptions([...selection, '--release-checkout', checkout]).releaseCheckout,
+  ).toBe(checkout);
+  expect(() =>
+    parseFirstPublishOptions([...selection, '--release-checkout', 'relative-checkout']),
+  ).toThrow('absolute path');
 });
 
 test('requires paired stage evidence and confines recovery to a selected package', () => {
