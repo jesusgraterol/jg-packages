@@ -18,6 +18,7 @@ describe('public API', () => {
       'readStream',
       'reservePort',
       'resolvePackageManagerCommand',
+      'runForegroundProcess',
       'runProcess',
       'startProcess',
       'startProcessAndWait',

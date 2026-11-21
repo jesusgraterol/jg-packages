@@ -26,6 +26,16 @@ const { exitCode, stdout, stderr, durationMs } = await runProcess({
 
 A non-zero exit code resolves, so callers decide what counts as failure. A timeout, too much output, or a failure to start rejects with `PROCESS_TIMED_OUT`, `PROCESS_OUTPUT_TOO_LARGE`, or `PROCESS_START_FAILED`. A timeout that isn't a positive number of at most 2,147,483 seconds, or an output limit that isn't a positive safe integer, such as a computed budget that ran out, rejects with `INVALID_PROCESS_OPTIONS` before anything starts. With `encoding: 'buffer'`, `stdout` and `stderr` are the bytes the process wrote, for output that may not be valid UTF-8, such as file names.
 
+Run an interactive command in the current terminal:
+
+```ts
+import { runForegroundProcess } from 'jg-process';
+
+const { exitCode, signalCode } = await runForegroundProcess('npm', ['--version']);
+```
+
+The child inherits stdin, stdout and stderr. The result includes a nonzero exit code or the signal that stopped the child. A launch failure rejects with `PROCESS_START_FAILED`. Terminal interrupts follow the current process group's signal policy.
+
 Start a long-running process that you own, and stop it together with everything it started:
 
 ```ts

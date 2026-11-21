@@ -7,6 +7,7 @@ export {
 
 // errors
 export { ERRORS } from './errors.js';
+export { processStartFailed } from './process-errors.js';
 
 // types
 export type {

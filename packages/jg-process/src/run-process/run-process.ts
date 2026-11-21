@@ -11,22 +11,11 @@ import {
   type IProcessResult,
   type IRunProcessOptions,
   MAX_TIMEOUT_SECONDS,
+  processStartFailed,
 } from '../shared/index.js';
 
 import type { IRunOutcome } from './types.js';
 import { IGNORED_STDIN_ERROR_CODES } from './constants.js';
-
-/**
- * Builds the error thrown when a command can't start or its input can't be written.
- * @param command The command that failed.
- * @param cause The underlying error.
- * @returns The error.
- */
-const startFailed = (command: string, cause: unknown): Exception =>
-  new Exception(`Unable to start '${command}'.`, {
-    code: ERRORS.PROCESS_START_FAILED,
-    cause,
-  });
 
 /**
  * Builds the error thrown when a process writes more output than allowed.
@@ -160,7 +149,7 @@ const stopTree = async (child: ChildProcess): Promise<void> => {
  * }
  * @throws
  * - INVALID_PROCESS_OPTIONS: The timeout must be a positive number of at most 2,147,483 seconds, and the output limit a positive safe integer.
- * - PROCESS_START_FAILED: Unable to start the command
+ * - PROCESS_START_FAILED: Unable to start '<command>'.
  * - PROCESS_TIMED_OUT: The process didn't finish within the timeout
  * - PROCESS_OUTPUT_TOO_LARGE: The process wrote more output than allowed
  * - PROCESS_TREE_SURVIVED: The process tree is still running after it was force-stopped
@@ -224,11 +213,13 @@ export const runProcess = async <TEncoding extends IProcessOutputEncoding = 'utf
     // past its path limit; the child's own error or exit decides the run, so theirs is ignored
     child.stdout.on('error', () => undefined);
     child.stderr.on('error', () => undefined);
-    child.on('error', (error) => settle({ kind: 'failed', error: startFailed(command, error) }));
+    child.on('error', (error) =>
+      settle({ kind: 'failed', error: processStartFailed(command, error) }),
+    );
     child.once('exit', (exitCode, signalCode) => settle({ kind: 'exited', exitCode, signalCode }));
     child.stdin.on('error', (error: NodeJS.ErrnoException) => {
       if (!IGNORED_STDIN_ERROR_CODES.includes(error.code ?? '')) {
-        settle({ kind: 'failed', error: startFailed(command, error) });
+        settle({ kind: 'failed', error: processStartFailed(command, error) });
       }
     });
     if (timeoutSeconds !== undefined) {
