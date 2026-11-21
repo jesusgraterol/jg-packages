@@ -40,7 +40,7 @@ test('CI browser images match the workspace Playwright version', () => {
   const images = [
     ...workflow.matchAll(/image: (mcr\.microsoft\.com\/playwright:v[^\s]+-noble)/gu),
   ].map(([, image]) => image);
-  expect(images).toStrictEqual(Array(3).fill(`mcr.microsoft.com/playwright:v${version}-noble`));
+  expect(images).toStrictEqual(Array(2).fill(`mcr.microsoft.com/playwright:v${version}-noble`));
 });
 
 test('browser tasks retain the container binary path in strict mode', () => {

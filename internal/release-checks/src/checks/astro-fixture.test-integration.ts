@@ -296,6 +296,28 @@ describe('the installed personal UI gallery', () => {
     await expect(access(commands[0]?.options.cwd ?? '')).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
+  test('builds and indexes the installed gallery when browser runs are disabled', async () => {
+    const packages = await personalGalleryPackages();
+    const commands: string[][] = [];
+    let consumer = '';
+    const runner: IRunAstroFixtureCommand = async (_command, args, options) => {
+      commands.push(args);
+      consumer = options.cwd;
+      if (commands.length === 1) await writeInstalledClis(consumer);
+      return COMMAND_SUCCESS;
+    };
+    const problems = await checkAstroFixture(packages, createRunner([]).runCommand, runner, false);
+
+    expect(problems.get('jg-personal-astro-ui')).toStrictEqual([]);
+    expect(commands).toHaveLength(3);
+    expect(commands[0]).toContain(packages[0]?.tarballPath);
+    expect(commands.slice(1).map((args) => args.slice(1))).toStrictEqual([
+      ['build'],
+      ['--site', 'dist'],
+    ]);
+    await expect(access(consumer)).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
   test.each([
     [{ exitCode: 7, signalCode: null, stdout: '', stderr: 'failed build' }, '7: failed build'],
     [{ exitCode: null, signalCode: 'SIGTERM' as const, stdout: '', stderr: '' }, 'SIGTERM:'],

@@ -333,6 +333,7 @@ const galleryCli = async (root: string, name: string, command: string): Promise<
  * @param packed The UI tarball and its source gallery owner.
  * @param packages Every tarball in this release.
  * @param executor The bounded command boundary.
+ * @param runsBrowserTests Whether to run the full installed gallery browser suites.
  * @returns A promise that resolves to stage-specific problems.
  * @throws
  * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
@@ -341,6 +342,7 @@ const buildGalleryFixture = async (
   packed: IPackedPackage,
   packages: IPackedPackage[],
   executor: IRunAstroFixtureCommand,
+  runsBrowserTests: boolean,
 ): Promise<string[]> => {
   const scope = createAstroFixtureScope(executor);
   const projectDirectory = join(tmpdir(), `jg-ui-fixture-${randomUUID()}`);
@@ -513,12 +515,14 @@ const buildGalleryFixture = async (
         'dist',
       ]);
     }
-    stage = 'browser';
-    await runStage('browser', process.execPath, [
-      await galleryCli(projectDirectory, '@playwright/test', 'playwright'),
-      'test',
-      '--retries=0',
-    ]);
+    if (runsBrowserTests) {
+      stage = 'browser';
+      await runStage('browser', process.execPath, [
+        await galleryCli(projectDirectory, '@playwright/test', 'playwright'),
+        'test',
+        '--retries=0',
+      ]);
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     canRemove = !(
@@ -553,11 +557,12 @@ const buildGalleryFixture = async (
 /**
  * Check 4: for each package that ships Astro components, a temporary Astro site installed from the
  * tarball imports every component, stylesheet, and module, and `astro build` must pass. The
- * personal Astro and React UI packages instead render their maintained galleries and run the
- * installed browser suites.
+ * personal Astro and React UI packages render their maintained galleries and, by default, run
+ * the installed browser suites.
  * @param packages The packed packages.
  * @param runCommand Runs a command.
  * @param runGalleryCommand Runs the installed UI fixture with bounded process ownership.
+ * @param runsBrowserTests Whether to run the full installed gallery browser suites.
  * @returns A promise that resolves to each Astro package's problems, by name.
  * @throws
  * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
@@ -566,6 +571,7 @@ export const checkAstroFixture = async (
   packages: IPackedPackage[],
   runCommand: IRunCommand,
   runGalleryCommand: IRunAstroFixtureCommand = runAstroFixtureCommand,
+  runsBrowserTests = true,
 ): Promise<Map<string, string[]>> => {
   const problems = new Map<string, string[]>();
   for (const packed of packages) {
@@ -583,7 +589,7 @@ export const checkAstroFixture = async (
         missingPeers.length > 0
           ? [`ships Astro components without the peer dependencies ${missingPeers.join(' and ')}`]
           : await (name === 'jg-personal-astro-ui' || name === 'jg-personal-react-ui'
-              ? buildGalleryFixture(packed, packages, runGalleryCommand)
+              ? buildGalleryFixture(packed, packages, runGalleryCommand, runsBrowserTests)
               : buildFixture(packed, packages, runCommand)),
       );
     }

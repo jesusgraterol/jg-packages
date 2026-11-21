@@ -19,6 +19,10 @@ describe('the release command-line tool', () => {
     [['release'], 'Unknown command: release'],
     [[], 'Unknown command: (none)'],
     [['verify', 'extra'], 'Unexpected arguments: extra'],
+    [
+      ['publish', '--from', 'release', '--without-gallery-browser-tests'],
+      '--without-gallery-browser-tests applies to verify and pack.',
+    ],
   ])('cli(%o) -> prints the problem and the usage, and exits 2', async (args, message) => {
     const { exitCode, stderr } = await runCli(args);
 
