@@ -1588,6 +1588,40 @@ importers:
         specifier: 4.6.7
         version: 4.6.7
 
+  packages/jg-render:
+    dependencies:
+      jg-exception:
+        specifier: workspace:^
+        version: link:../jg-exception
+      jg-utilities:
+        specifier: workspace:^
+        version: link:../jg-utilities
+    devDependencies:
+      '@fontsource-variable/ubuntu-sans':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@jg-packages/eslint-config':
+        specifier: workspace:*
+        version: link:../../internal/eslint-config
+      '@jg-packages/tsconfig':
+        specifier: workspace:*
+        version: link:../../internal/tsconfig
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.64.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.20.5
+      eslint:
+        specifier: 'catalog:'
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
+      playwright:
+        specifier: 'catalog:'
+        version: 1.64.1
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
   packages/jg-site:
     devDependencies:
       '@jg-packages/eslint-config':
