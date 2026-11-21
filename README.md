@@ -21,32 +21,36 @@ Jesus Graterol's personal npm packages, published under `jg-*` names and built, 
 
 ## Packages
 
-| Package                                           | What it does                                                                                                                          |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| [`jg-exception`](packages/jg-exception)           | Coded errors for every jg package: an `Exception` with a stable code and JSON data, message extraction, and code checks.              |
-| [`jg-api-response`](packages/jg-api-response)     | Builds and recognises the `{ success, data, error }` envelope services exchange over HTTP.                                            |
-| [`jg-utilities`](packages/jg-utilities)           | Validations, transformers, generators, and collection, async, and environment utilities.                                              |
-| [`jg-bignumber`](packages/jg-bignumber)           | Exact decimal math with bignumber.js: rounding, formatting, and financial calculations.                                               |
-| [`jg-fs`](packages/jg-fs)                         | Filesystem helpers for Node.js, async and sync: paths, directories, text, JSON, atomic and bounded files.                             |
-| [`jg-process`](packages/jg-process)               | Runs and stops child processes without a shell: timeouts, output limits, abort signals, process trees.                                |
-| [`jg-storage`](packages/jg-storage)               | Typed key-value stores over localStorage, sessionStorage, IndexedDB, and memory, for browsers and workers.                            |
-| [`jg-sw`](packages/jg-sw)                         | Service workers for web apps: a generated caching worker with a Vite plugin and CLI, plus registration, updates, and installation.    |
-| [`jg-fetch`](packages/jg-fetch)                   | A fetch wrapper for browsers and Node.js that never throws: timeouts, retries with Retry-After, response caps, and API envelopes.     |
-| [`jg-clipboard`](packages/jg-clipboard)           | Copies and reads text, HTML, and images on the browser clipboard, with support detection and errors that say why the browser refused. |
-| [`jg-env`](packages/jg-env)                       | Reads environment variables strictly from any source, and secrets from files, with errors that name the key and never the value.      |
-| [`jg-postgres`](packages/jg-postgres)             | node-postgres helpers: safe transactions, advisory locks, SQLSTATE checks, cursor pages, and ordered lists.                           |
-| [`jg-redis`](packages/jg-redis)                   | A read-through cache that survives Redis failing, and fail-closed one-time claims, on node-redis.                                     |
-| [`jg-react`](packages/jg-react)                   | React hooks for online status, page visibility, Tailwind CSS breakpoints, and scroll thresholds.                                      |
-| [`jg-tanstack-query`](packages/jg-tanstack-query) | TanStack Query with safe defaults, opt-in IndexedDB persistence, and a sign-out clear that waits for restore.                         |
-| [`jg-react-router`](packages/jg-react-router)     | A page outlet that focuses new pages and restores scroll on Back and Forward, and dialogs that close when the route changes.          |
-| [`jg-nestjs`](packages/jg-nestjs)                 | NestJS for HTTP APIs: an ApiException, a filter and an interceptor for one envelope, schema validation, CORS, and app bootstrap.      |
-| [`jg-crypto`](packages/jg-crypto)                 | Hashing, random bytes and digits, HMAC signatures with constant-time verification, and authenticator app codes, for Node.js.          |
-| [`jg-git-commands`](packages/jg-git-commands)     | Git commands for Node.js that never prompt or inherit Git environment variables, with time and output limits and typed reads.         |
-| [`jg-local-docker`](packages/jg-local-docker)     | Checks for Node.js scripts that Docker is local before using it, plus Compose service and container reads with loopback-only ports.   |
-| [`jg-github`](packages/jg-github)                 | GitHub App authentication for Node.js: app tokens, scoped installation tokens, webhook signatures, and rate-limit retry times.        |
-| [`jg-site`](packages/jg-site)                     | Structured data, llms.txt files, and theme preferences for websites, in browsers and Node.js.                                         |
-| [`jg-playwright`](packages/jg-playwright)         | Playwright helpers for overflow, loaded assets, motion, axe scans, secret fields, and a fake microphone.                              |
-| [`jg-locks`](packages/jg-locks)                   | Machine-wide named locks for scripts, agents, and apps: waits, a status of every holder, explicit recovery, and a CLI.                |
+| Package                                                 | What it does                                                                                                                          |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| [`jg-exception`](packages/jg-exception)                 | Coded errors for every jg package: an `Exception` with a stable code and JSON data, message extraction, and code checks.              |
+| [`jg-api-response`](packages/jg-api-response)           | Builds and recognises the `{ success, data, error }` envelope services exchange over HTTP.                                            |
+| [`jg-utilities`](packages/jg-utilities)                 | Validations, transformers, generators, and collection, async, and environment utilities.                                              |
+| [`jg-bignumber`](packages/jg-bignumber)                 | Exact decimal math with bignumber.js: rounding, formatting, and financial calculations.                                               |
+| [`jg-fs`](packages/jg-fs)                               | Filesystem helpers for Node.js: paths, atomic and bounded files, streamed SHA-256, and verified installs.                             |
+| [`jg-process`](packages/jg-process)                     | Runs foreground and captured commands without a shell, with bounded output, cancellation, and process trees.                          |
+| [`jg-storage`](packages/jg-storage)                     | Typed key-value stores over localStorage, sessionStorage, IndexedDB, and memory, for browsers and workers.                            |
+| [`jg-sw`](packages/jg-sw)                               | Service workers for web apps: a generated caching worker with a Vite plugin and CLI, plus registration, updates, and installation.    |
+| [`jg-fetch`](packages/jg-fetch)                         | A fetch wrapper for browsers and Node.js that never throws: timeouts, retries with Retry-After, response caps, and API envelopes.     |
+| [`jg-clipboard`](packages/jg-clipboard)                 | Copies and reads text, HTML, and images on the browser clipboard, with support detection and errors that say why the browser refused. |
+| [`jg-env`](packages/jg-env)                             | Reads environment variables strictly from any source, and secrets from files, with errors that name the key and never the value.      |
+| [`jg-postgres`](packages/jg-postgres)                   | node-postgres helpers: safe transactions, advisory locks, SQLSTATE checks, cursor pages, and ordered lists.                           |
+| [`jg-redis`](packages/jg-redis)                         | A read-through cache that survives Redis failing, and fail-closed one-time claims, on node-redis.                                     |
+| [`jg-react`](packages/jg-react)                         | React hooks for online status, page visibility, Tailwind CSS breakpoints, and scroll thresholds.                                      |
+| [`jg-tanstack-query`](packages/jg-tanstack-query)       | TanStack Query with safe defaults, opt-in IndexedDB persistence, and a sign-out clear that waits for restore.                         |
+| [`jg-react-router`](packages/jg-react-router)           | A page outlet that focuses new pages and restores scroll on Back and Forward, and dialogs that close when the route changes.          |
+| [`jg-nestjs`](packages/jg-nestjs)                       | NestJS for HTTP APIs: an ApiException, a filter and an interceptor for one envelope, schema validation, CORS, and app bootstrap.      |
+| [`jg-crypto`](packages/jg-crypto)                       | Hashing, random bytes and digits, HMAC signatures with constant-time verification, and authenticator app codes, for Node.js.          |
+| [`jg-git-commands`](packages/jg-git-commands)           | Git commands for Node.js that never prompt or inherit Git environment variables, with time and output limits and typed reads.         |
+| [`jg-local-docker`](packages/jg-local-docker)           | Checks for Node.js scripts that Docker is local before using it, plus Compose service and container reads with loopback-only ports.   |
+| [`jg-github`](packages/jg-github)                       | GitHub App authentication for Node.js: app tokens, scoped installation tokens, webhook signatures, and rate-limit retry times.        |
+| [`jg-site`](packages/jg-site)                           | Structured data, llms.txt files, and theme preferences for websites, in browsers and Node.js.                                         |
+| [`jg-playwright`](packages/jg-playwright)               | Playwright helpers for overflow, loaded assets, motion, axe scans, secret fields, and a fake microphone.                              |
+| [`jg-locks`](packages/jg-locks)                         | Machine-wide named locks for scripts, agents, and apps: waits, a status of every holder, explicit recovery, and a CLI.                |
+| [`jg-render`](packages/jg-render)                       | Render prepared HTML to exact PNGs with offline Chromium, local fonts and images, and an optional layout check.                       |
+| [`jg-site-checks`](packages/jg-site-checks)             | Verify built static sites against their page inventory, canonical URLs, links, sitemaps, robots.txt, and llms.txt.                    |
+| [`jg-package-check`](packages/jg-package-check)         | Inspect npm tarballs and check packed exports in disposable npm or pnpm consumers.                                                    |
+| [`jg-publishing-guides`](packages/jg-publishing-guides) | Render offline HTML and plain-text publishing guides with literal copy, ordered files, and localized controls.                        |
 
 [`jg-personal-astro-ui`](packages/jg-personal-astro-ui) is also published from `packages/`: the Astro components and theme Jesus Graterol's own sites share. It isn't meant for general use, so the website doesn't list it.
 

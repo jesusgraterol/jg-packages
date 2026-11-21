@@ -42,7 +42,19 @@ export const readReleaseManifest = async (
   releaseDirectory: string,
 ): Promise<IReleaseManifestEntry[]> => {
   const path = join(releaseDirectory, RELEASE_MANIFEST_FILE);
-  const manifest: unknown = JSON.parse(await readFile(path, 'utf8'));
+  return parseReleaseManifest(await readFile(path, 'utf8'), path);
+};
+
+/**
+ * Parses the bytes of the release manifest checked by the caller.
+ * @param contents The manifest as UTF-8 text.
+ * @param path The manifest's path, for diagnostics.
+ * @returns The tarballs in publish order.
+ * @throws
+ * - The release manifest is not a list of tarball entries: {path}
+ */
+export const parseReleaseManifest = (contents: string, path: string): IReleaseManifestEntry[] => {
+  const manifest: unknown = JSON.parse(contents);
   if (!isListOf(manifest, ['name', 'version', 'file', 'sha256'])) {
     throw new Error(`The release manifest is not a list of tarball entries: ${path}`);
   }

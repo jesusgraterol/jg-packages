@@ -16,6 +16,11 @@ export { ERRORS } from './shared/index.js';
 
 // process runs
 export { runProcess } from './run-process/index.js';
+export {
+  type IForegroundProcessOptions,
+  type IForegroundProcessResult,
+  runForegroundProcess,
+} from './foreground-process/index.js';
 
 // process trees
 export { isProcessRunning, startProcess, stopProcessTree } from './process-tree/index.js';

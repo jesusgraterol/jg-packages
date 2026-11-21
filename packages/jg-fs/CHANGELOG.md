@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.0
+
+### Added
+
+- The async root exports `hashFile` for bounded SHA-256 and byte counting, and `installVerifiedFile` for verified, atomic no-replace installs with matching-destination reuse.
+
 ## 1.7.0
 
 ### Added

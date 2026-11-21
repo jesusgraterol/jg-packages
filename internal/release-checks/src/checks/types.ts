@@ -22,6 +22,14 @@ export type IRegistryPackage = {
 export type IRegistry = {
   // resolves to `undefined` when the package isn't on npm
   getPackage: (name: string) => Promise<IRegistryPackage | undefined>;
-  // resolves to the gzipped tarball of a published version
+  /**
+   * Downloads the gzipped tarball for a published version.
+   * @returns The compressed package bytes.
+   * @throws
+   * - NON_EXISTENT_FILE: The file '<path>' does not exist.
+   * - NOT_A_FILE: The file '<path>' is a symbolic link.
+   * - NOT_A_FILE: The path '<path>' is not a file.
+   * - FILE_TOO_LARGE: The file '<path>' is larger than <maxBytes> bytes.
+   */
   downloadTarball: (name: string, version: string) => Promise<Buffer>;
 };

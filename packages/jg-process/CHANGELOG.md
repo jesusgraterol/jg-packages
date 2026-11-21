@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.0
+
+### Added
+
+- `runForegroundProcess` runs interactive commands with inherited standard streams and returns the child's exit code and signal.
+
 ## 1.7.0
 
 ### Added

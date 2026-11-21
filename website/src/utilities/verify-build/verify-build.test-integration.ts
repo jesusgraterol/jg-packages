@@ -249,12 +249,12 @@ describe('verifyBuild', () => {
     ],
     [
       'a page missing from the sitemap',
-      'Canonical URL is missing from the sitemap: https://jg-packages.jesusgraterol.dev/packages/jg-fetch/recipes/',
+      'The sitemap omits an indexable page: https://jg-packages.jesusgraterol.dev/packages/jg-fetch/recipes/',
       (build) =>
         replaceText(
           build,
           'sitemap-0.xml',
-          '<loc>https://jg-packages.jesusgraterol.dev/packages/jg-fetch/recipes/</loc>',
+          '<url><loc>https://jg-packages.jesusgraterol.dev/packages/jg-fetch/recipes/</loc></url>',
           '',
         ),
     ],
@@ -337,18 +337,18 @@ describe('verifyBuild', () => {
     ],
     [
       'a broken internal link',
-      `Broken internal link in ${RECIPES_PAGE}: /packages/jg-missing/ -> packages/jg-missing/index.html`,
+      'Broken local link in /packages/jg-fetch/recipes/: /packages/jg-missing/',
       (build) =>
         replaceText(build, RECIPES_PAGE, '</main>', '<a href="/packages/jg-missing/">x</a></main>'),
     ],
     [
       'a fragment without its target',
-      'Fragment link has no matching element ID in index.html: /#nowhere -> index.html',
+      'Broken local fragment in /: /#nowhere',
       (build) => replaceText(build, 'index.html', '</main>', '<a href="/#nowhere">x</a></main>'),
     ],
     [
       'an indexable 404 page',
-      'The 404 page must stay out of search indexes',
+      'Indexability differs from the inventory: /404.html',
       (build) =>
         replaceText(
           build,
@@ -359,7 +359,7 @@ describe('verifyBuild', () => {
     ],
     [
       'a canonical URL on the 404 page',
-      'The 404 page must not name a canonical URL',
+      'Canonical URL differs from the inventory: /404.html',
       (build) =>
         replaceText(
           build,
@@ -381,7 +381,7 @@ describe('verifyBuild', () => {
     ],
     [
       'robots.txt without the sitemap',
-      'robots.txt does not name the sitemap index',
+      'robots.txt does not reference the configured sitemap',
       (build) => replaceText(build, 'robots.txt', /^Sitemap: .*$/mu, ''),
     ],
     [
@@ -391,7 +391,7 @@ describe('verifyBuild', () => {
     ],
     [
       'a broken llms.txt link',
-      'Broken internal llms.txt link: https://jg-packages.jesusgraterol.dev/missing/index.md -> missing/index.md',
+      'Broken local link in /llms.txt: /missing/index.md',
       (build) =>
         replaceText(
           build,

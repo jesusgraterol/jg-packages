@@ -1,6 +1,7 @@
 import { access, readFile, readdir } from 'node:fs/promises';
 import { extname, join, relative, resolve } from 'node:path';
 import { SEARCH_TEXT_LIMITS } from 'jg-site';
+import { verifyStaticSite } from 'jg-site-checks';
 
 import { PACKAGE_CATALOG, SITE_CONFIG } from '../../site.config.ts';
 import { toMarkdownPath } from '../markdown-pages/index.ts';
@@ -21,6 +22,7 @@ import {
 
 // the directory `astro build` writes
 const DEFAULT_BUILD_DIRECTORY = resolve(import.meta.dirname, '..', '..', '..', 'dist');
+const PRIVATE_BUILD_DIRECTORIES = new Set(['_archive', '_archives', '_backup', '_backups']);
 
 /**
  * Checks whether a description fits search results.
@@ -70,28 +72,12 @@ const listBuildFiles = async (directory: string, root = directory): Promise<stri
   const files = await Promise.all(
     entries.map(async (entry) => {
       const path = join(directory, entry.name);
-      return entry.isDirectory()
+      return entry.isDirectory() && !PRIVATE_BUILD_DIRECTORIES.has(entry.name)
         ? listBuildFiles(path, root)
         : [relative(root, path).split('\\').join('/')];
     }),
   );
   return files.flat().toSorted();
-};
-
-/**
- * Resolves a site-relative URL to the file the build serves it from.
- * @param href The URL, such as `/packages/jg-fs/` or `/llms.txt`.
- * @returns The file's path in the build, such as `packages/jg-fs/index.html`.
- */
-const resolveInternalArtifact = (href: string): string => {
-  const path = href.split(/[?#]/u, 1)[0] ?? '/';
-  if (path === '/') {
-    return 'index.html';
-  }
-  if (extname(path) !== '') {
-    return path.slice(1);
-  }
-  return `${path.replace(/^\//u, '').replace(/\/$/u, '')}/index.html`;
 };
 
 /**
@@ -160,15 +146,13 @@ const listStructuredDataEntities = (
 };
 
 /**
- * Checks a page's head: the metadata every public page carries, its Markdown version, and a
- * unique title and description that fit search results.
+ * Checks a page's head: the metadata every public page carries and a unique title and description
+ * that fit search results.
  * @param html The page.
  * @param htmlPath The page's file.
- * @param buildFiles Every file in the build.
  * @param seen The titles and descriptions of the pages checked before this one.
  * @throws
  * - Missing required metadata in {htmlPath}: {pattern}
- * - Page has no Markdown version: {htmlPath} -> {markdown file}
  * - Missing or duplicate page description in {htmlPath}
  * - Missing or duplicate page title in {htmlPath}
  * - Page title is longer than 60 characters in {htmlPath}
@@ -177,7 +161,6 @@ const listStructuredDataEntities = (
 const checkPageHead = (
   html: string,
   htmlPath: string,
-  buildFiles: readonly string[],
   seen: { descriptions: Set<string>; titles: Set<string> },
 ): void => {
   const pagePath = toPagePath(htmlPath);
@@ -192,7 +175,6 @@ const checkPageHead = (
     /<meta name="description" content="[^"]+"/u,
     new RegExp(`<meta name="author" content="${literal(SITE_CONFIG.author.name)}"`, 'u'),
     /<meta name="robots" content="index, follow, max-image-preview:large"/u,
-    new RegExp(`<link rel="canonical" href="${literal(canonicalUrl)}"`, 'u'),
     new RegExp(`<link rel="describedby" href="${literal(llmsTextUrl)}"`, 'u'),
     new RegExp(`<link rel="alternate" type="text/markdown" href="${literal(markdownUrl)}"`, 'u'),
     new RegExp(
@@ -220,10 +202,6 @@ const checkPageHead = (
     if (!pattern.test(html)) {
       throw new Error(`${MESSAGES.MissingRequiredMetadata} in ${htmlPath}: ${pattern.source}`);
     }
-  }
-  const markdownFile = toMarkdownPath(pagePath).slice(1);
-  if (!buildFiles.includes(markdownFile)) {
-    throw new Error(`${MESSAGES.MissingMarkdownVersion}: ${htmlPath} -> ${markdownFile}`);
   }
   const description = /<meta name="description" content="([^"]+)"/u.exec(html)?.[1];
   const title = /<title>([^<]+)<\/title>/u.exec(html)?.[1];
@@ -321,54 +299,6 @@ const checkStructuredData = (
 };
 
 /**
- * Checks that every internal link of a page reaches a file of the build, and every fragment an
- * element of the page it points to.
- * @param html The page.
- * @param htmlPath The page's file.
- * @param buildFiles Every file in the build.
- * @param idsByPage The element IDs of every page.
- * @throws
- * - Broken internal link in {htmlPath}: {href} -> {file}
- * - Fragment link has no matching element ID in {htmlPath}: {href} -> {page}
- */
-const checkLinks = (
-  html: string,
-  htmlPath: string,
-  buildFiles: readonly string[],
-  idsByPage: ReadonlyMap<string, readonly string[]>,
-): void => {
-  const internalLinks = [...html.matchAll(/href="(\/(?!\/)[^"]*)"/gu)].map(
-    (match) => match[1] ?? '/',
-  );
-  for (const href of internalLinks) {
-    const artifact = resolveInternalArtifact(href);
-    if (!buildFiles.includes(artifact)) {
-      throw new Error(`${MESSAGES.BrokenInternalLink} in ${htmlPath}: ${href} -> ${artifact}`);
-    }
-  }
-  // links within the page, such as #install, and into another page, such as /#packages
-  const fragmentLinks = [
-    ...[...html.matchAll(/href="#([^"]+)"/gu)].map((match) => ({
-      fragment: match[1] ?? '',
-      href: `#${match[1] ?? ''}`,
-      target: htmlPath,
-    })),
-    ...internalLinks
-      .filter((href) => href.includes('#'))
-      .map((href) => ({
-        fragment: href.slice(href.indexOf('#') + 1),
-        href,
-        target: resolveInternalArtifact(href),
-      })),
-  ];
-  for (const { fragment, href, target } of fragmentLinks) {
-    if (!idsByPage.get(target)?.includes(decodeURIComponent(fragment))) {
-      throw new Error(`${MESSAGES.MissingFragmentTarget} in ${htmlPath}: ${href} -> ${target}`);
-    }
-  }
-};
-
-/**
  * Checks that Pagefind indexed every public page, which it does only for pages whose main content
  * carries data-pagefind-body, so the 404 page stays out.
  * @param buildDirectory The build.
@@ -408,28 +338,19 @@ const checkSearchIndex = async (buildDirectory: string, publicPageCount: number)
 };
 
 /**
- * Checks the files for agents and crawlers: robots.txt names the sitemap, llms.txt follows its
- * structure and its links reach the build, and llms-full.txt holds every package and its recipes.
+ * Checks the catalogue and agent setup structure in the two llms files.
  * @param buildDirectory The build.
- * @param buildFiles Every file in the build.
  * @param packageNames The listed packages.
  * @returns A promise that resolves once they pass.
  * @throws
- * - robots.txt does not name the sitemap index
  * - llms.txt does not follow the required structure
- * - Broken internal llms.txt link: {link} -> {file}
  * - llms-full.txt is missing a package or its recipes: {name}
  */
 const checkAgentFiles = async (
   buildDirectory: string,
-  buildFiles: readonly string[],
   packageNames: readonly string[],
 ): Promise<void> => {
   const read = (path: string): Promise<string> => readFile(resolve(buildDirectory, path), 'utf8');
-  const sitemapIndexUrl = new URL('/sitemap-index.xml', SITE_CONFIG.url).toString();
-  if (!(await read('robots.txt')).split('\n').includes(`Sitemap: ${sitemapIndexUrl}`)) {
-    throw new Error(MESSAGES.RobotsTextMissingSitemap);
-  }
   const llmsText = await read('llms.txt');
   const markdownUrl = (path: string): string =>
     new URL(toMarkdownPath(path), SITE_CONFIG.url).toString();
@@ -448,14 +369,6 @@ const checkAgentFiles = async (
     )
   ) {
     throw new Error(MESSAGES.InvalidLlmsTextStructure);
-  }
-  const siteOrigin = new URL(SITE_CONFIG.url).origin;
-  for (const [, link = ''] of llmsText.matchAll(/\[[^\]]+\]\((https:\/\/[^)]+)\)/gu)) {
-    const url = new URL(link);
-    const artifact = resolveInternalArtifact(url.pathname);
-    if (url.origin === siteOrigin && !buildFiles.includes(artifact)) {
-      throw new Error(`${MESSAGES.BrokenInternalLlmsTextLink}: ${link} -> ${artifact}`);
-    }
   }
   const llmsFullText = await read('llms-full.txt');
   const missing = packageNames.find(
@@ -505,12 +418,13 @@ const checkForbiddenNames = async (
  * - Missing build path: {path}
  * - Production build contains a test file: {path}
  * - Missing package page: {path}
+ * - Page has no Markdown version: {htmlPath} -> {markdown file}
  * - Page holds an event handler or a URL with a disallowed scheme in {page}: {problem}
  * - Page repeats an element ID in {page}: {id}
  * - the head, structured data, and link failures of the checks above
- * - Canonical URL is missing from the sitemap: {url}
- * - The 404 page must stay out of search indexes
  * - The 404 page must not name a canonical URL
+ * - INVALID_SITE_BUILD_OPTIONS: The site build verification options are invalid.
+ * - SITE_BUILD_INVALID: The static site build failed verification.
  * - Page description is not 70 to 160 characters long in 404.html
  * - The search index does not hold every public page: {count} of {total}
  * - the agent-file failures of checkAgentFiles
@@ -547,8 +461,25 @@ export const verifyBuild = async (
   }
 
   const htmlFiles = buildFiles.filter((path) => path.endsWith('.html'));
+  const publicHtmlFiles = htmlFiles.filter((path) => path !== '404.html');
+  for (const htmlPath of publicHtmlFiles) {
+    const markdownFile = toMarkdownPath(toPagePath(htmlPath)).slice(1);
+    if (!buildFiles.includes(markdownFile)) {
+      throw new Error(`${MESSAGES.MissingMarkdownVersion}: ${htmlPath} -> ${markdownFile}`);
+    }
+  }
+  const origin = new URL(SITE_CONFIG.url).origin;
+  await verifyStaticSite({
+    artifactRoot: buildDirectory,
+    origin,
+    pages: htmlFiles.map((file) => {
+      if (file === '404.html') return { path: '/404.html', canonicalUrl: null, indexable: false };
+      const path = toPagePath(file);
+      return { path, canonicalUrl: new URL(path, origin).href, indexable: true };
+    }),
+    discovery: { sitemap: '/sitemap-index.xml', robots: '/robots.txt', llms: '/llms.txt' },
+  });
   const htmlByPage = new Map<string, string>();
-  const idsByPage = new Map<string, string[]>();
   for (const htmlPath of htmlFiles) {
     const html = await readFile(resolve(buildDirectory, htmlPath), 'utf8');
     const unsafe = findUnsafeAttributes(html);
@@ -561,34 +492,17 @@ export const verifyBuild = async (
       throw new Error(`${MESSAGES.DuplicateElementId} in ${htmlPath}: ${duplicate}`);
     }
     htmlByPage.set(htmlPath, html);
-    idsByPage.set(htmlPath, ids);
   }
 
-  const sitemap = (
-    await Promise.all(
-      buildFiles
-        .filter((path) => /^sitemap-\d+\.xml$/u.test(path))
-        .map((path) => readFile(resolve(buildDirectory, path), 'utf8')),
-    )
-  ).join('\n');
   const seen = { descriptions: new Set<string>(), titles: new Set<string>() };
-  for (const htmlPath of htmlFiles.filter((path) => path !== '404.html')) {
+  for (const htmlPath of publicHtmlFiles) {
     const html = htmlByPage.get(htmlPath) ?? '';
-    checkPageHead(html, htmlPath, buildFiles, seen);
-    const canonicalUrl = new URL(toPagePath(htmlPath), SITE_CONFIG.url).toString();
-    if (!sitemap.includes(`<loc>${canonicalUrl}</loc>`)) {
-      throw new Error(`${MESSAGES.CanonicalUrlMissingFromSitemap}: ${canonicalUrl}`);
-    }
+    checkPageHead(html, htmlPath, seen);
     checkStructuredData(html, htmlPath, packageNames);
-    checkLinks(html, htmlPath, buildFiles, idsByPage);
   }
 
   const notFound = htmlByPage.get('404.html') ?? '';
-  if (!notFound.includes('<meta name="robots" content="noindex, follow">')) {
-    throw new Error(MESSAGES.SearchIndexableNotFoundPage);
-  }
-  // a canonical URL on a noindex page sends search engines contradicting signals
-  if (/<link rel="canonical"/u.test(notFound) || /property="og:url"/u.test(notFound)) {
+  if (/property="og:url"/u.test(notFound)) {
     throw new Error(MESSAGES.CanonicalOnNotFoundPage);
   }
   const notFoundDescription = /<meta name="description" content="([^"]+)"/u.exec(notFound)?.[1];
@@ -596,7 +510,7 @@ export const verifyBuild = async (
     throw new Error(`${MESSAGES.PageDescriptionOutOfRange} in 404.html`);
   }
 
-  await checkSearchIndex(buildDirectory, htmlFiles.length - 1);
-  await checkAgentFiles(buildDirectory, buildFiles, packageNames);
+  await checkSearchIndex(buildDirectory, publicHtmlFiles.length);
+  await checkAgentFiles(buildDirectory, packageNames);
   await checkForbiddenNames(buildDirectory, buildFiles);
 };

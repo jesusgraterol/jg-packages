@@ -23,6 +23,7 @@
     "format:check": "prettier --check .",
     "lint": "turbo run lint",
     "release:pack": "node internal/release-checks/src/cli.ts pack --out .release",
+    "release:first-publish": "node internal/release-checks/src/first-publish/first-publish.cli.ts",
     "release:verify": "node internal/release-checks/src/cli.ts verify",
     "test": "node internal/vitest-config/src/run-test-suite.ts essential run test:unit test:integration --filter=!@jg-packages/website && node internal/vitest-config/src/run-test-suite.ts essential run test:browser --filter=!jg-utilities --filter=!@jg-packages/website && node internal/vitest-config/src/run-test-suite.ts essential run test:e2e --concurrency=1 --filter=!@jg-packages/website",
     "test:full": "node internal/vitest-config/src/run-test-suite.ts full run test:unit test:integration test:browser test:e2e",

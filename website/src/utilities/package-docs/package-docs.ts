@@ -53,6 +53,48 @@ export const selectRecipes = (markdown: string): string =>
   `${markdown.replace(/^#\s.*(?:\n|$)/, '').trim()}\n`;
 
 /**
+ * Maps the package's conventional Markdown links to their hosted equivalents. Literal code and
+ * unrelated links keep their original text.
+ * @param markdown The selected README prose.
+ * @param packagePage The hosted package page URL.
+ * @param licenseUrl The hosted license for this package.
+ * @returns The prose used by both the HTML and Markdown package pages.
+ */
+export const rewriteReadmeLinks = (
+  markdown: string,
+  packagePage: string,
+  licenseUrl: string,
+): string => {
+  let fence: string | undefined;
+  const linkOrCode =
+    /(?<!\x60)(\x60+)(?!\x60).*?(?<!\x60)\1(?!\x60)|\]\((?:\.\/)?(API\.md|RECIPES\.md|LICENSE)(#[^\s)]*)?\)/gu;
+  return markdown
+    .split('\n')
+    .map((line) => {
+      const marker = FENCE.exec(line)?.[1];
+      if (marker !== undefined) {
+        if (fence === undefined) fence = marker;
+        else if (marker.startsWith(fence.charAt(0)) && marker.length >= fence.length)
+          fence = undefined;
+        return line;
+      }
+      if (fence !== undefined) return line;
+
+      return line.replace(
+        linkOrCode,
+        (match: string, _code: string | undefined, file: string | undefined, fragment?: string) => {
+          if (file === undefined) return match;
+          if (file === 'API.md') return '](' + packagePage + (fragment ?? '#api-reference') + ')';
+          if (file === 'RECIPES.md')
+            return '](' + packagePage + 'recipes/' + (fragment ?? '') + ')';
+          return '](' + licenseUrl + (fragment ?? '') + ')';
+        },
+      );
+    })
+    .join('\n');
+};
+
+/**
  * Loads one Markdown file of every listed package, keeping what its page shows as prose and
  * rendering it with the site's Markdown settings, code windows included. A listed package without
  * the file fails the build.
@@ -69,7 +111,7 @@ export const packageMarkdownLoader = ({
   packageNames: readonly string[];
   // the file in each package's directory, such as README.md
   fileName: string;
-  select: (markdown: string) => string;
+  select: (markdown: string, name: string) => string;
 }): Loader => ({
   name: `package-markdown-loader:${fileName}`,
   load: async (context) => {
@@ -78,12 +120,12 @@ export const packageMarkdownLoader = ({
     for (const name of packageNames) {
       const path = join(packagesDirectory, name, fileName);
       const markdown = await readFile(path, 'utf8');
-      const body = select(markdown);
+      const body = select(markdown, name);
       store.set({
         id: name,
         data: { name },
         body,
-        digest: context.generateDigest(markdown),
+        digest: context.generateDigest(body),
         rendered: await context.renderMarkdown(body),
       });
       watcher?.add(path);

@@ -109,17 +109,26 @@ export const syncDirectory = async (path: string): Promise<void> => {
 /**
  * Opens a file for reading without following a symbolic link in its last component.
  * @param path The file's path.
+ * @param mustBeRegularFile Whether to reject nonregular paths before opening on Windows.
  * @returns A promise that resolves to the open file.
  * @throws
- * - NON_EXISTENT_FILE: if the path doesn't exist
- * - NOT_A_FILE: if its final component is a symbolic link
+ * - NON_EXISTENT_FILE: The file '<path>' does not exist.
+ * - NOT_A_FILE: The file '<path>' is a symbolic link.
+ * - NOT_A_FILE: The path '<path>' is not a file.
  */
-export const openWithoutFollowing = async (path: string): Promise<FileHandle> => {
+export const openWithoutFollowing = async (
+  path: string,
+  mustBeRegularFile = false,
+): Promise<FileHandle> => {
   try {
     if (process.platform === 'win32') {
       // Windows has no O_NOFOLLOW, so a link swapped in after this check isn't detected
-      if ((await lstat(path)).isSymbolicLink()) {
+      const stats = await lstat(path);
+      if (stats.isSymbolicLink()) {
         throw Object.assign(new Error('The path is a symbolic link.'), { code: 'ELOOP' });
+      }
+      if (mustBeRegularFile && !stats.isFile()) {
+        throw notAFile(path);
       }
       return await open(path, constants.O_RDONLY);
     }

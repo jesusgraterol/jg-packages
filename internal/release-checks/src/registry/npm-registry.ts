@@ -1,7 +1,9 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
+import { readBoundedFile } from 'jg-fs';
 
+import { MAX_TARBALL_BYTES } from '../shared/constants.ts';
 import type { IRegistry, IRegistryPackage } from '../checks/types.ts';
 import type { IRunCommand } from '../shared/types.ts';
 
@@ -34,7 +36,14 @@ export const createNpmRegistry = (runCommand: IRunCommand): IRegistry => ({
     try {
       const result = await runCommand(
         'npm',
-        ['pack', `${name}@${version}`, '--pack-destination', directory, '--json'],
+        [
+          'pack',
+          `${name}@${version}`,
+          '--ignore-scripts',
+          '--pack-destination',
+          directory,
+          '--json',
+        ],
         {
           cwd: directory,
         },
@@ -46,7 +55,9 @@ export const createNpmRegistry = (runCommand: IRunCommand): IRegistry => ({
       if (packed === undefined) {
         throw new Error(`npm pack ${name}@${version} produced no tarball.`);
       }
-      return await readFile(join(directory, packed.filename));
+      if (packed.filename !== basename(packed.filename) || !packed.filename.endsWith('.tgz'))
+        throw new Error(`npm pack ${name}@${version} returned an invalid tarball name.`);
+      return await readBoundedFile(join(directory, packed.filename), MAX_TARBALL_BYTES);
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

@@ -54,7 +54,7 @@ await updateConfig((config) => ({ ...config, port: 3000 }));
 
 `writeFileAtomic` writes any other content the same way, and both try again for a few seconds while Windows refuses the rename because a scanner holds the file. A symbolic link at the path keeps pointing at the config. Any error other than a missing file propagates, such as `FILE_CONTENT_IS_EMPTY_OR_INVALID` for a file that isn't JSON, or the schema's own error, so the app never starts from a config it can't trust. The atomic write keeps each save whole, but doesn't order saves: the queue does that inside one process, and when several processes write the file, give it one owner. A crash during a save can leave a temporary `.<random>.tmp` file next to the config, which is safe to delete.
 
-`jg-fs/sync` has the same functions without promises, for code that can't await, such as an `exit` handler or a short CLI command. An explicit mode keeps a secret private from the first byte written:
+Use the synchronous writing functions from `jg-fs/sync` in code that can't await, such as an `exit` handler or a short CLI command. An explicit mode keeps a secret private from the first byte written:
 
 ```ts
 import { homedir } from 'node:os';

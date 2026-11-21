@@ -24,7 +24,7 @@ export type ICommandResult = {
 export type IRunCommand = (
   executable: string,
   args: string[],
-  options?: { cwd?: string; env?: NodeJS.ProcessEnv },
+  options?: { cwd?: string; env?: NodeJS.ProcessEnv; signal?: AbortSignal },
 ) => Promise<ICommandResult>;
 
 // the package manifest fields the release commands read

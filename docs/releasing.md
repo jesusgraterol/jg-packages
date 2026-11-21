@@ -43,7 +43,7 @@ A version with a prerelease part, such as `1.2.0-beta.0`, is published under the
 
 ## What `release:verify` checks
 
-`pnpm release:verify` packs every package under `packages/` that isn't private, checks the tarballs, and removes them. `pnpm release:pack` runs the same checks and keeps the tarballs in `.release/`, with a `release-manifest.json` that lists each one in publish order with its SHA-256.
+`pnpm release:verify` packs every package under `packages/` that isn't private, checks the tarballs, and removes them. `pnpm release:pack` runs the same checks and keeps the tarballs in `.release/`, with a `release-manifest.json` that lists each one in publish order with its SHA-256. The installed qualification command uses `jg-package-check` to inspect bounded tarballs and verify public imports, private paths, and dependency ranges in a temporary npm consumer. The same consumer runs package examples and error-code checks. The install has a five-minute limit and lifecycle scripts are disabled. An interrupt stops the active consumer command before the temporary project is removed.
 
 For `jg-personal-astro-ui`, the Astro fixture copies the maintained private gallery and Playwright scenarios, including co-located `src/components/**/*.test-e2e.ts` files and adjacent `*.test-utils.ts` support modules, into a temporary consumer, installs the exact UI and required sibling tarballs, and uses tool versions from the checked-in UI manifest and workspace catalog. Relative test imports remain intact. It compares component exports with the gallery inventory, builds real pages and Pagefind, then runs Chromium, Firefox, and WebKit against the installed package. No UI import resolves through the workspace.
 
@@ -85,7 +85,7 @@ Every push to `main`, which is every merged pull request, runs the same parallel
 | `publish` | Once every check job passes, checks each tarball against the manifest's SHA-256, then publishes, in manifest order, every version npm doesn't have, through the package's trusted publisher, and waits up to 15 minutes until npm serves them all, because npm takes a few minutes to release a new version. It skips versions already on npm, waits for a version npm refuses because it already holds it, as it does after an earlier run published one npm hasn't served yet, skips packages that aren't on npm yet with a warning, and stops before publishing a package whose sibling range has no version on npm or in the same run. It uploads the release's versions that are on npm as the `published` artifact. |
 | `tag`     | Creates and pushes an annotated `<name>-v<version>` tag on the merged commit for each version in `published` that has no tag yet, as `github-actions[bot]`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
-`publish` installs no dependencies and holds `id-token: write` only so npm can verify the workflow. `tag` holds `contents: write` only to push its tags.
+`publish` and `tag` use Node.js built-ins, and the publisher retains its own tar reader. `publish` installs no dependencies and holds `id-token: write` only so npm can verify the workflow. `tag` holds `contents: write` only to push its tags.
 
 The browser, E2E and release jobs run in the official Playwright image pinned to the workspace catalog version. Browser binaries and system dependencies are preinstalled, so these jobs do not use apt or download browsers during qualification. Their existing test commands and the complete rendered package-consumer checks remain unchanged.
 
@@ -93,53 +93,32 @@ The same main push independently starts `pages.yml`, which checks, builds and de
 
 ## The first publish of a new package
 
-CI only publishes packages that already exist on npm, because a package's trusted publisher can only be set up once it exists. The first version goes out by hand:
+The developer handles the first publication. The trusted-publish job skips unused package names. It can publish later versions once the developer configures the package’s trusted publisher.
 
-1. Merge the package to `main`, then pack the release from the merged `main`:
-
-   ```bash
-   git switch main && git pull
-   pnpm install --frozen-lockfile
-   pnpm build
-   pnpm release:pack
-   ```
-
-   Expected result: `.release/` holds the package's tarball and `release-manifest.json`.
-
-2. Sign in through a temporary npm config, so the login you use for other work stays as it is, publish the new packages' tarballs in the order `release-manifest.json` lists, then sign out and remove the config:
-
-   ```bash
-   mkdir -p /tmp/jg-npm-release && chmod 700 /tmp/jg-npm-release
-   export NPM_CONFIG_USERCONFIG=/tmp/jg-npm-release/.npmrc
-   npm login --auth-type=web
-   npm whoami
-   npm publish .release/<file> --access public
-   npm logout
-   unset NPM_CONFIG_USERCONFIG
-   rm -rf /tmp/jg-npm-release
-   ```
-
-   `npm whoami` should print the account that owns the packages. Each publish asks you to approve it in the browser, which offers to skip the prompt for the next 5 minutes. `npm logout` also revokes the temporary session's token.
-
-   npm can refuse a new name at this point as "too similar to existing package". Rename the package, following [Choose the name](creating-a-package.md#1-choose-the-name), merge the rename, and pack again.
-
-3. Follow the approval instructions returned by `npm publish`. If npm stages the first publish, approve it on npmjs.com. Verify the actual registry result in either case: `npm view <name> dist-tags` must show the intended version as `latest`.
-
-4. On the package's settings page, `https://www.npmjs.com/package/<name>/access`:
-   - add a trusted publisher: GitHub Actions, user `jesusgraterol`, repository `jg-packages`, workflow `ci.yml`, no environment, and tick **npm publish** under Allowed actions, which new entries leave off
-   - set publishing access to "Require two-factor authentication and disallow tokens"
-
-5. Once every version in `release-manifest.json` is on npm, tag them on the merged `main` and push the tags:
+1. Merge the checked source to `main`. Verify the run’s commit and release job, and confirm its trusted-publish job finished and skipped the new names. Retain the run’s checked `release` artifact before it expires. The release handoff names the merged commit, the independently reviewed SHA-256 of that artifact’s `release-manifest.json`, and the selected versions and tarball digests.
+2. Prepare a clean checkout at that exact commit with refreshed `origin/main`. Run `pnpm install --frozen-lockfile` and `pnpm build` to prepare the local command. Extract the approved CI artifact into a fresh `.release/` directory. Use the literal `pnpm release:first-publish` command from the handoff, with `--source-commit`, `--manifest-sha256` and one `--package` argument per selected name.
+3. Confirm the account and package list in the terminal, then follow npm’s browser prompts. The script verifies the checkout, manifest and privately staged tarballs before login. It uses its own npm configuration and cache, then logs out that isolated session and removes its temporary directory. If revocation cannot be verified, revoke the temporary session in the npm account before closing the release.
+4. If npm stages the submission, select the exact name, version and stage ID on the Staged Packages dashboard, then download its tarball. Resume with one `--package`, the original release identity, and both `--stage-id` and `--staged-tarball` for that download. After the script verifies the digest, approve the verified entry in the dashboard. Resume the original command to verify the public tarball bytes and `latest` tag. Keep `.release/first-publish-state.json` with the original bundle until reconciliation finishes.
+5. Once the exact version is public, open `https://www.npmjs.com/package/<name>/access`:
+   - Add the trusted publisher for GitHub Actions, user `jesusgraterol`, repository `jg-packages`, workflow `ci.yml` and no environment. Tick **npm publish** under Allowed actions.
+   - Set publishing access to **Require two-factor authentication and disallow tokens**.
+6. Once every version in the release manifest is verified on npm, use the existing tag command at the merged commit:
 
    ```bash
    node internal/release-checks/src/cli.ts tag --from .release --published .release/release-manifest.json
    ```
 
-   Expected result: a `Pushed <name>-v<version>` line for each new version. It tags as `github-actions[bot]`, the same as CI, and skips the tags `origin` already has.
+   Expect a `Pushed <name>-v<version>` line for each new tag. Retain the release evidence and remove the task’s release bundle once every selected outcome and tag is verified.
 
-6. Remove `.release/`.
+If npm refuses a name as too similar to an existing one, follow [Choose the name](creating-a-package.md#1-choose-the-name), merge the rename and qualify fresh artifacts.
 
-From then on, CI publishes every new version of the package, with provenance. The first version, published from your machine, has none.
+### Resume an interrupted first publish
+
+Resume using the same source commit, manifest digest and retained bundle. The script checks recorded submissions against public tarball bytes and leaves unresolved attempts pending. A 404 alone can mean that npm has accepted or staged the package and has yet to serve it. Check staged and version history from the maintainer account. Use `--retry-uncertain` with the affected package only after confirming that the previous submission was definitively unaccepted and the name remains unused.
+
+If the attempt record is missing or inconsistent after a known submission, preserve the artifacts and reconcile the recorded approval or registry result before any new submission. If `.release/first-publish.lock` remains after interruption, inspect its `owner.json`, confirm the owner is no longer running and reconcile the retained attempt before removing the task-owned lock. An unknown or live owner keeps it blocked.
+
+Later trusted-published releases have provenance. The developer’s first publication runs from the isolated terminal session.
 
 ## Deprecating a version
 

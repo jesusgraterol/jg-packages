@@ -1,6 +1,6 @@
 # jg-fs
 
-Filesystem helpers for Node.js, async at the root and sync at `jg-fs/sync`: paths, directories, text, JSON, atomic and bounded files.
+Filesystem helpers for Node.js, async at the root and sync at `jg-fs/sync`: paths, directories, text, JSON, hashing, and atomic and bounded files.
 
 ## Install
 
@@ -10,7 +10,7 @@ npm install jg-fs
 
 ## Usage
 
-The root entry is async, and `jg-fs/sync` has the same functions, synchronous:
+The root entry is async. Most functions also have a synchronous counterpart in `jg-fs/sync`.
 
 ```ts
 import { readJsonFile, writeFileAtomic, writeJsonFile, writeTextFile } from 'jg-fs';
@@ -49,6 +49,20 @@ if (isPathWithin(uploadsDirectory, path)) {
   const upload = await readBoundedFile(path, 5 * 1024 * 1024);
 }
 ```
+
+Hash a file before installing a verified copy into a directory the caller controls:
+
+```ts
+import { hashFile, installVerifiedFile } from 'jg-fs';
+
+const source = 'inbox/asset.bin';
+const identity = await hashFile(source, { maxBytes: 16 * 1024 * 1024 });
+await installVerifiedFile(source, 'assets/asset.bin', identity);
+```
+
+Both operations stream with bounded memory. Installation requires an existing parent directory on a filesystem that supports hard links. It checks the staged bytes and leaves an existing destination in place. An exact match is reused.
+
+POSIX opens the final component without following links. On Windows, the path is checked before opening and compared with the descriptor before and after reading, since Windows has no atomic no-follow open here. The caller is responsible for containment and control of the parent directories.
 
 Keep a job from running twice at once, across processes on one machine, with a lock:
 

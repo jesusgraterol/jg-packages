@@ -1,11 +1,16 @@
-import { mkdir, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
+
+import { extractMessage, hasErrorCode } from 'jg-exception';
+import { readBoundedFile } from 'jg-fs';
+import { ERRORS as PACKAGE_CHECK_ERRORS } from 'jg-package-check';
 
 import { extractApiReference } from '@jg-packages/api-reference';
 
 import { checkAstroFixture } from '../checks/astro-fixture.ts';
-import { installConsumerProject } from '../checks/consumer-project.ts';
+import { inspectReleaseArchive } from '../checks/archive.ts';
+import { withReleaseConsumer } from '../checks/consumer-project.ts';
 import { checkDocLinks } from '../checks/doc-links.ts';
 import { checkErrorCodes } from '../checks/error-codes.ts';
 import { checkExamples } from '../checks/examples.ts';
@@ -17,7 +22,7 @@ import { checkReleaseDocs } from '../checks/release-docs.ts';
 import { checkTsdoc } from '../checks/tsdoc.ts';
 import { checkWorkspaceScripts } from '../checks/workspace-scripts.ts';
 import { sha256, writeReleaseManifest } from '../shared/release-files.ts';
-import { readTarballFiles } from '../shared/tarball.ts';
+import { MAX_TARBALL_BYTES } from '../shared/constants.ts';
 import {
   findPublishablePackages,
   findWorkspaces,
@@ -52,6 +57,11 @@ export type IReleaseCheckResult = {
  * @returns A promise that resolves to the packed package.
  * @throws
  * - pnpm pack failed for {name}: {stderr}
+ * - INVALID_NPM_TARBALL: The npm tarball is invalid.
+ * - NON_EXISTENT_FILE: The file '<path>' does not exist.
+ * - NOT_A_FILE: The file '<path>' is a symbolic link.
+ * - NOT_A_FILE: The path '<path>' is not a file.
+ * - FILE_TOO_LARGE: The file '<path>' is larger than <maxBytes> bytes.
  */
 export const packPackage = async (
   workspacePackage: IWorkspacePackage,
@@ -69,14 +79,13 @@ export const packPackage = async (
     throw new Error(`pnpm pack failed for ${workspacePackage.name}: ${result.stderr.trim()}`);
   }
   const { filename } = JSON.parse(result.stdout) as { filename: string };
-  const tarballPath = filename.startsWith(outputDirectory)
-    ? filename
-    : join(outputDirectory, basename(filename));
-  const files = await readTarballFiles(tarballPath);
+  const tarballPath = join(outputDirectory, basename(filename));
+  const compressed = await readBoundedFile(tarballPath, MAX_TARBALL_BYTES);
+  const files = await inspectReleaseArchive(compressed);
   return {
     workspacePackage,
     tarballPath,
-    sha256: sha256(await readFile(tarballPath)),
+    sha256: sha256(compressed),
     files,
     packedManifest: JSON.parse(
       files.get('package.json')?.toString('utf8') ?? '{}',
@@ -107,8 +116,14 @@ const addProblems = (problems: Map<string, string[]>, name: string, additions: s
  * @throws
  * - No publishable packages were found under packages/.
  * - pnpm pack failed for {name}: {stderr}
+ * - INVALID_NPM_TARBALL: The npm tarball is invalid.
+ * - NON_EXISTENT_FILE: The file '<path>' does not exist.
+ * - NOT_A_FILE: The file '<path>' is a symbolic link.
+ * - NOT_A_FILE: The path '<path>' is not a file.
+ * - FILE_TOO_LARGE: The file '<path>' is larger than <maxBytes> bytes.
  * - pnpm-workspace.yaml has a pattern the release checks can't read: {pattern}
  * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
+ * - PACKED_CONSUMER_CLEANUP_FAILED: Unable to remove the packed consumer.
  */
 export const packAndCheck = async (
   rootDirectory: string,
@@ -152,25 +167,40 @@ export const packAndCheck = async (
     ]);
   }
   log('Installing the tarballs into a consumer project');
-  const consumer = await installConsumerProject(packages, runCommand);
   try {
-    for (const [name, packageProblems] of await checkInstallAndImport(
-      packages,
-      runCommand,
-      consumer,
-    )) {
-      addProblems(problems, name, packageProblems);
-    }
-    log('Typechecking and running the examples');
-    for (const [name, packageProblems] of await checkExamples(packages, runCommand, consumer)) {
-      addProblems(problems, name, packageProblems);
-    }
-    log('Finding the error codes no test asserts');
-    for (const [name, packageProblems] of await checkErrorCodes(packages, runCommand, consumer)) {
-      addProblems(problems, name, packageProblems);
-    }
-  } finally {
-    await consumer.remove();
+    await withReleaseConsumer(packages, async (consumer) => {
+      const { signal } = consumer;
+      const runConsumerCommand: IRunCommand = (command, args, options) =>
+        runCommand(command, args, { ...options, ...(signal === undefined ? {} : { signal }) });
+      for (const [name, packageProblems] of await checkInstallAndImport(
+        packages,
+        runConsumerCommand,
+        consumer,
+      )) {
+        addProblems(problems, name, packageProblems);
+      }
+      log('Typechecking and running the examples');
+      for (const [name, packageProblems] of await checkExamples(
+        packages,
+        runConsumerCommand,
+        consumer,
+      )) {
+        addProblems(problems, name, packageProblems);
+      }
+      log('Finding the error codes no test asserts');
+      for (const [name, packageProblems] of await checkErrorCodes(
+        packages,
+        runConsumerCommand,
+        consumer,
+      )) {
+        addProblems(problems, name, packageProblems);
+      }
+    });
+  } catch (error) {
+    if (!hasErrorCode(error, PACKAGE_CHECK_ERRORS.PACKED_CONSUMER_SETUP_FAILED)) throw error;
+    const diagnostic = `couldn't be installed from its tarball: ${extractMessage(error)}`;
+    for (const { packedManifest } of packages)
+      addProblems(problems, packedManifest.name, [diagnostic]);
   }
   log('Building installed UI fixtures and running the personal galleries');
   for (const [name, packageProblems] of await checkAstroFixture(
@@ -240,6 +270,12 @@ const reportResult = (
  * @returns A promise that resolves to the exit code: 0 when everything passes, 1 otherwise.
  * @throws
  * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
+ * - PACKED_CONSUMER_CLEANUP_FAILED: Unable to remove the packed consumer.
+ * - INVALID_NPM_TARBALL: The npm tarball is invalid.
+ * - NON_EXISTENT_FILE: The file '<path>' does not exist.
+ * - NOT_A_FILE: The file '<path>' is a symbolic link.
+ * - NOT_A_FILE: The path '<path>' is not a file.
+ * - FILE_TOO_LARGE: The file '<path>' is larger than <maxBytes> bytes.
  */
 export const runVerify = async (
   rootDirectory: string,
@@ -264,6 +300,12 @@ export const runVerify = async (
  * @throws
  * - The output directory isn't empty; remove it first: {outputDirectory}
  * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
+ * - PACKED_CONSUMER_CLEANUP_FAILED: Unable to remove the packed consumer.
+ * - INVALID_NPM_TARBALL: The npm tarball is invalid.
+ * - NON_EXISTENT_FILE: The file '<path>' does not exist.
+ * - NOT_A_FILE: The file '<path>' is a symbolic link.
+ * - NOT_A_FILE: The path '<path>' is not a file.
+ * - FILE_TOO_LARGE: The file '<path>' is larger than <maxBytes> bytes.
  */
 export const runPack = async (
   rootDirectory: string,

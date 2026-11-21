@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { runCommand } from '../shared/run-command.ts';
 import { packPackage } from '../verify/verify.ts';
 import { findPublishablePackages } from '../workspace/workspace.ts';
-import { installConsumerProject } from './consumer-project.ts';
+import { withReleaseConsumer } from './consumer-project.ts';
 import { checkErrorCodes } from './error-codes.ts';
 
 const FIXTURE_DIRECTORY = join(import.meta.dirname, '..', 'fixtures', 'sample-package');
@@ -60,12 +60,11 @@ const checkFixtureCodes = async (
       packPackage(workspacePackage, output, runCommand),
     ),
   );
-  const consumer = await installConsumerProject(packages, runCommand);
-  try {
-    return (await checkErrorCodes(packages, runCommand, consumer)).get(PACKAGE_NAME) ?? [];
-  } finally {
-    await consumer.remove();
-  }
+  return withReleaseConsumer(
+    packages,
+    async (consumer) =>
+      (await checkErrorCodes(packages, runCommand, consumer)).get(PACKAGE_NAME) ?? [],
+  );
 };
 
 beforeEach(async () => {

@@ -2,9 +2,9 @@ import { glob, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import ts from 'typescript';
+import type { IPackedConsumer } from 'jg-package-check';
 
 import type { IRunCommand } from '../shared/types.ts';
-import type { IConsumerProject } from './consumer-project.ts';
 import { toSpecifier } from './install-import.ts';
 import { getImportableSubpaths } from './subpaths.ts';
 import type { IPackedPackage } from './types.ts';
@@ -190,6 +190,8 @@ const listTestFiles = async (directory: string): Promise<string[]> => {
  * @param runCommand Runs a command.
  * @param consumerDirectory The project the package is installed in.
  * @returns A promise that resolves to each key with its code, empty without ERRORS.
+ * @throws
+ * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
  */
 const readErrorCodes = async (
   packed: IPackedPackage,
@@ -224,17 +226,15 @@ const readErrorCodes = async (
  * @param runCommand Runs a command.
  * @param consumer The project the tarballs are installed in.
  * @returns A promise that resolves to each package's problems, by name.
+ * @throws
+ * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
  */
 export const checkErrorCodes = async (
   packages: IPackedPackage[],
   runCommand: IRunCommand,
-  consumer: IConsumerProject,
+  consumer: IPackedConsumer,
 ): Promise<Map<string, string[]>> => {
   const problems = new Map<string, string[]>();
-  // check 2 reports a failed install
-  if (consumer.installProblem !== undefined) {
-    return problems;
-  }
   for (const packed of packages) {
     const codes = await readErrorCodes(packed, runCommand, consumer.directory);
     if (codes.size === 0) {
