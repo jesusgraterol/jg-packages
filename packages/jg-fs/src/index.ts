@@ -15,6 +15,7 @@ export type {
   ISchema,
   IWritePrivateFileOptions,
 } from './shared/index.js';
+export type { IFileHash, IHashFileOptions } from './async/files/index.js';
 
 // general actions
 export { isPathWithin } from './shared/index.js';
@@ -36,6 +37,8 @@ export {
   copyFile,
   createFileSymLink,
   deleteFile,
+  hashFile,
+  installVerifiedFile,
   isFile,
   readBoundedFile,
   readBufferFile,

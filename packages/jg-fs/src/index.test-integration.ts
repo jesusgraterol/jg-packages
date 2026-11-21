@@ -11,8 +11,8 @@ const CAN_TEST_PERMISSIONS = process.platform !== 'win32' && process.getuid?.() 
 import * as asyncApi from './index.js';
 import * as syncApi from './sync/index.js';
 
-// the async API's shape, which the sync API matches once its functions are wrapped in promises
-type IFsApi = typeof asyncApi;
+// functions shared by the two entry points once the synchronous versions are wrapped in promises
+type IFsApi = Omit<typeof asyncApi, 'hashFile' | 'installVerifiedFile'>;
 
 /*
  * The sync entry with every function wrapped so it returns a promise, so one table of cases runs
