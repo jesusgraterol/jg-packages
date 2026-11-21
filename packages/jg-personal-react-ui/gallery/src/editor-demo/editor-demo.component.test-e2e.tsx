@@ -149,22 +149,31 @@ for (const theme of ['light', 'dark'] as const) {
         )
         .toStrictEqual({ isAligned: true, isVisible: true });
 
-      // keep the drag away from the scroll edges, where native selection auto-scrolls the text
-      await editedPoint.evaluate((element) => element.scrollIntoView({ block: 'center' }));
-      const selection = await editedPoint.evaluate((element) => {
-        const range = document.createRange();
-        range.setStart(element.firstChild!, 10);
-        range.setEnd(element.firstChild!, 17);
-        const box = range.getBoundingClientRect();
-        return { left: box.left, right: box.right, y: box.y + box.height / 2 };
+      const { start, end } = await editedPoint.evaluate(async (element) => {
+        await document.fonts.ready;
+        // center the gesture away from the editor's selection auto-scroll edges
+        element.scrollIntoView({ block: 'center', behavior: 'instant' });
+        const glyph = (offset: number, fraction: number) => {
+          const range = document.createRange();
+          range.setStart(element.firstChild!, offset);
+          range.setEnd(element.firstChild!, offset + 1);
+          const box = range.getBoundingClientRect();
+          // target the correct half of the glyph without relying on pixel rounding at its edge
+          return { x: box.left + box.width * fraction, y: box.top + box.height / 2 };
+        };
+        return { start: glyph(10, 0.25), end: glyph(16, 0.75) };
       });
-      await page.mouse.move(selection.left, selection.y);
+      const readSelection = () => page.evaluate(() => document.getSelection()?.toString());
+      await page.mouse.move(start.x, start.y);
       await page.mouse.down();
-      await page.mouse.move(selection.right, selection.y, { steps: 8 });
-      await page.mouse.up();
-      await expect
-        .poll(() => page.evaluate(() => document.getSelection()?.toString()))
-        .toBe('EDITED ');
+      try {
+        await page.mouse.move(end.x, end.y, { steps: 8 });
+        // allow the browser to process the final drag position before releasing the pointer
+        await expect.poll(readSelection).toBe('EDITED ');
+      } finally {
+        await page.mouse.up();
+      }
+      await expect.poll(readSelection).toBe('EDITED ');
       await expectNoHorizontalOverflow(page);
     });
   }
