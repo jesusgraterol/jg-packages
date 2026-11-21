@@ -98,6 +98,7 @@ export type IAudioInputRecordingStartHandler = () => void;
  */
 export type IAudioInputRecordingStopHandler = () => void;
 /** Receives each committed recorder status transition without render-time callback effects.
+ * `requesting-permission` includes recorder startup; `recording` follows the native start event.
  * @see AudioInput
  */
 export type IAudioInputStatusChangeHandler = (status: IAudioInputStatus) => void;

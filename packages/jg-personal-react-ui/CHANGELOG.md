@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.1
+
+### Fixed
+
+- Require jg-react-ui 0.10.1 so recorder readiness follows the native start event and discarded takes cannot reactivate recording.
+
 ## 0.10.0
 
 ### Changed

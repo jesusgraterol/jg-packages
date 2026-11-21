@@ -773,6 +773,7 @@ const AudioInputRecorder = ({
     const mediaRecorder = mediaRecorderRef.current;
 
     if (mediaRecorder !== null) {
+      mediaRecorder.onstart = null;
       mediaRecorder.ondataavailable = null;
       mediaRecorder.onerror = null;
       mediaRecorder.onstop = null;
@@ -1200,11 +1201,22 @@ const AudioInputRecorder = ({
       mediaRecorder.ondataavailable = handleDataAvailable;
       mediaRecorder.onerror = handleRecordingError;
       mediaRecorder.onstop = handleRecordingStop;
-      recordingStartedAtRef.current = Date.now();
+      mediaRecorder.onstart = () => {
+        if (
+          !isRecorderMountedRef.current ||
+          recordingSessionRef.current !== recordingSession ||
+          mediaRecorderRef.current !== mediaRecorder ||
+          isRecordingAbortedRef.current ||
+          mediaRecorder.state !== 'recording'
+        )
+          return;
+
+        recordingStartedAtRef.current = Date.now();
+        setAudioInputStatus('recording');
+        startElapsedTimer();
+        startWaveform(mediaStream);
+      };
       mediaRecorder.start(AUDIO_INPUT_RECORDING_CHUNK_TIMESLICE_MS);
-      startWaveform(mediaStream);
-      setAudioInputStatus('recording');
-      startElapsedTimer();
     } catch (error) {
       isRecordingAbortedRef.current = true;
       stopElapsedTimer();
