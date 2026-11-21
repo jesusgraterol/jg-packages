@@ -114,7 +114,9 @@ If npm refuses a name as too similar to an existing one, follow [Choose the name
 
 ### Resume an interrupted first publish
 
-Resume using the same source commit, manifest digest and retained bundle. The script checks recorded submissions against public tarball bytes and leaves unresolved attempts pending. A 404 alone can mean that npm has accepted or staged the package and has yet to serve it. Check staged and version history from the maintainer account. Use `--retry-uncertain` with the affected package only after confirming that the previous submission was definitively unaccepted and the name remains unused.
+Resume using the same source commit, manifest digest and retained bundle. The script polls npm for up to 15 minutes per recorded submission, checks the public tarball bytes and `latest` tag, and leaves unresolved attempts pending. npm can show a temporary `0.0.0-stage` placeholder during processing and keep it after the exact version becomes public. If no public tarball is available at the end of the polling window, check Staged Packages and version history from the maintainer account. Verify any staged download before approving its entry. Use `--retry-uncertain` with the affected package only after confirming that the previous submission was definitively unaccepted and the name remains unused.
+
+When continuing an existing release with an updated publishing script, run `release:first-publish` from the reviewed tooling checkout and pass `--release-checkout` with the absolute path to the original prepared checkout. Keep the original `--source-commit`, `--manifest-sha256`, and package selections. The script qualifies the original checkout and uses its retained artifacts and attempt history.
 
 If the attempt record is missing or inconsistent after a known submission, preserve the artifacts and reconcile the recorded approval or registry result before any new submission. If `.release/first-publish.lock` remains after interruption, inspect its `owner.json`, confirm the owner is no longer running and reconcile the retained attempt before removing the task-owned lock. An unknown or live owner keeps it blocked.
 

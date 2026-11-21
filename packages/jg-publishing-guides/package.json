@@ -1,6 +1,6 @@
 {
   "name": "jg-publishing-guides",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Render offline manual publishing guides from portable file and channel records.",
   "author": "Jesus Graterol",
   "license": "MIT",

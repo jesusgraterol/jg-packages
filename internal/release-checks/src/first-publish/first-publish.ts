@@ -94,6 +94,10 @@ export const runFirstPublish = async (
       for (const entry of entries) {
         let attempt = state.attempts.find(({ name }) => name === entry.name);
         const spec = entry.name + '@' + entry.version;
+        const pendingStageMessage =
+          'npm still shows a placeholder for ' +
+          spec +
+          '. Verify its stage bytes before approving any matching entry in Staged Packages. If the queue is empty, resume after npm finishes processing.';
         if (options.stage) {
           if (!attempt) {
             throw new Error('Stage evidence requires a recorded first-publish attempt.');
@@ -111,6 +115,7 @@ export const runFirstPublish = async (
         }
 
         if (attempt) {
+          log('Checking npm for ' + spec + '.');
           const observation = await reconcileRegistry(npm, entry, attempt, waitForPoll);
           if (observation === 'verified') {
             attempt.isPublished = true;
@@ -121,11 +126,7 @@ export const runFirstPublish = async (
           if (observation === 'staged') {
             attempt.requiresStageEvidence = true;
             await save();
-            throw new Error(
-              'npm has a staged version of ' +
-                entry.name +
-                '. Verify its stage bytes before approving it.',
-            );
+            throw new Error(pendingStageMessage);
           }
           if (
             observation !== 'unused' ||
@@ -180,12 +181,14 @@ export const runFirstPublish = async (
               spec +
               '. Checking the registry without resubmitting.',
           );
+        } else {
+          log('Checking npm for ' + spec + ' while it processes the upload.');
         }
         const observation = await reconcileRegistry(npm, entry, attempt, waitForPoll);
         if (observation === 'staged') {
           attempt.requiresStageEvidence = true;
           await save();
-          throw new Error('npm staged ' + spec + '. Verify its stage bytes before approving it.');
+          throw new Error(pendingStageMessage);
         }
         if (observation !== 'verified') {
           throw new Error(

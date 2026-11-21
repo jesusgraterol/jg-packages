@@ -124,6 +124,7 @@ describe.skipIf(process.platform === 'win32')(
     const run = (
       overrides?: Partial<IFirstPublishOptions>,
       prompt: (message: string, signal: AbortSignal) => Promise<boolean> = confirm,
+      waitForPoll: () => Promise<boolean> = () => Promise.resolve(false),
     ): Promise<void> =>
       runFirstPublish(
         repository,
@@ -132,7 +133,7 @@ describe.skipIf(process.platform === 'win32')(
           environment,
           confirm: prompt,
           log,
-          waitForPoll: () => Promise.resolve(false),
+          waitForPoll,
         },
       );
     const git = (args: string[]): string =>
@@ -303,16 +304,64 @@ describe.skipIf(process.platform === 'win32')(
       expect((await readState()).attempts[0]?.isPublished).toBe(true);
     });
 
-    test('staged submission requires matching download evidence before approval and resume', async () => {
+    test('waits through a processing placeholder and verifies the public archive without resubmitting', async () => {
       await setRegistry({ mode: 'staged', catalog: {} });
-      await expect(run()).rejects.toThrow('Verify its stage bytes');
+      const waitForPoll = vi.fn(async () => {
+        await setRegistry({
+          mode: 'public',
+          catalog: { [FIRST]: { versions: ['0.0.0-stage', VERSION], tarball: FIRST_BYTES } },
+        });
+        return true;
+      });
+
+      await run(undefined, confirm, waitForPoll);
+
+      expect(waitForPoll).toHaveBeenCalledTimes(1);
+      expect((await calls()).filter(({ command }) => command === 'publish')).toHaveLength(1);
+      expect((await readState()).attempts[0]).toMatchObject({ isPublished: true });
+    });
+
+    test('reconciles a recorded placeholder once the exact public archive appears', async () => {
+      await setRegistry({ mode: 'staged', catalog: {} });
       await expect(run()).rejects.toThrow('Verify its stage bytes');
       expect((await readState()).attempts[0]?.requiresStageEvidence).toBe(true);
       await setRegistry({
         mode: 'public',
-        catalog: { [FIRST]: { versions: [VERSION], tarball: FIRST_BYTES } },
+        catalog: { [FIRST]: { versions: ['0.0.0-stage', VERSION], tarball: 'different bytes' } },
       });
+      await expect(run()).rejects.toThrow('bytes conflict');
+      await setRegistry({
+        mode: 'public',
+        catalog: { [FIRST]: { versions: ['0.0.0-stage', VERSION], tarball: FIRST_BYTES } },
+      });
+
+      await run();
+
+      expect((await calls()).filter(({ command }) => command === 'publish')).toHaveLength(1);
+      expect((await readState()).attempts[0]).toMatchObject({ isPublished: true });
+    });
+
+    test('keeps a placeholder unresolved if it briefly disappears during polling', async () => {
+      await setRegistry({ mode: 'staged', catalog: {} });
+      const waitForPoll = vi.fn<() => Promise<boolean>>().mockResolvedValue(false);
+      waitForPoll.mockImplementationOnce(async () => {
+        await setRegistry({ mode: 'public', catalog: {} });
+        return true;
+      });
+
+      await expect(run(undefined, confirm, waitForPoll)).rejects.toThrow('Verify its stage bytes');
+      expect((await calls()).filter(({ command }) => command === 'publish')).toHaveLength(1);
+      expect((await readState()).attempts[0]).toMatchObject({
+        isPublished: false,
+        requiresStageEvidence: true,
+      });
+    });
+
+    test('staged submission accepts matching dashboard download evidence before approval', async () => {
+      await setRegistry({ mode: 'staged', catalog: {} });
       await expect(run()).rejects.toThrow('Verify its stage bytes');
+      await expect(run()).rejects.toThrow('Verify its stage bytes');
+      expect((await readState()).attempts[0]?.requiresStageEvidence).toBe(true);
       const staged = join(directory, 'staged.tgz');
       await writeFile(staged, 'wrong staged bytes');
       const evidence = { stage: { id: 'stage-1', tarball: staged } };

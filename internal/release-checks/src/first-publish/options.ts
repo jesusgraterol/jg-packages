@@ -1,3 +1,5 @@
+import { isAbsolute } from 'node:path';
+
 import { parseStrictArgs } from 'jg-process';
 
 import type { IFirstPublishOptions } from './types.ts';
@@ -16,6 +18,7 @@ export const parseFirstPublishOptions = (args: string[]): IFirstPublishOptions =
   const {
     'source-commit': sourceCommit,
     'manifest-sha256': manifestSha256,
+    'release-checkout': releaseCheckout,
     package: packages,
     'retry-uncertain': retryUncertain,
     'stage-id': stageId,
@@ -23,6 +26,7 @@ export const parseFirstPublishOptions = (args: string[]): IFirstPublishOptions =
   } = parseStrictArgs(args, {
     'source-commit': { type: 'string' },
     'manifest-sha256': { type: 'string' },
+    'release-checkout': { type: 'string' },
     package: { type: 'string', multiple: true },
     'retry-uncertain': { type: 'string' },
     'stage-id': { type: 'string' },
@@ -48,6 +52,11 @@ export const parseFirstPublishOptions = (args: string[]): IFirstPublishOptions =
   }
 
   const options: IFirstPublishOptions = { sourceCommit, manifestSha256, packages };
+  if (releaseCheckout !== undefined) {
+    if (!isAbsolute(releaseCheckout))
+      throw new Error('--release-checkout requires an absolute path.');
+    options.releaseCheckout = releaseCheckout;
+  }
   if (retryUncertain !== undefined) {
     options.retryUncertain = retryUncertain;
   }

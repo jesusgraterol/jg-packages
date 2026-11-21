@@ -230,6 +230,42 @@ test('keeps a reviewed TikTok title separate and supports older caption-only gui
   expect(withoutTitle.html).toContain('TikTok caption');
 });
 
+test('preserves a channel ID when another channel has no matching title field', async ({
+  page,
+}) => {
+  const guide = renderPublishingGuide(
+    {
+      ...EDITORIAL_PACK,
+      walkthrough: [
+        {
+          id: 'brand',
+          label: 'Company',
+          channel: 'instagram',
+          caption: 'caption.txt',
+          media: ['cards/intro.png'],
+        },
+        {
+          id: 'brand-title',
+          label: 'Company alternate',
+          channel: 'instagram',
+          caption: 'caption.txt',
+          media: ['cards/intro.png'],
+        },
+      ],
+    },
+    COPY,
+  );
+  await openGuide(page, guide);
+  await expect(page.locator('[id="brand-title"]')).toHaveCount(1);
+  const alternate = page
+    .getByRole('navigation', { name: 'Publishing networks' })
+    .getByRole('link', { name: 'Company alternate' });
+  await expect(alternate).toHaveAttribute('href', '#brand-title-start');
+  await alternate.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#brand-title-start')).toBeFocused();
+});
+
 test('refuses paths and guide references that cannot safely render', () => {
   const bad: IPublishingGuide[] = [
     {
@@ -268,6 +304,24 @@ test('refuses paths and guide references that cannot safely render', () => {
         { id: 'image', channel: 'instagram', caption: 'caption.txt', media: ['cards/intro.png'] },
         {
           id: 'image-alt-1',
+          channel: 'instagram',
+          caption: 'caption.txt',
+          media: ['cards/intro.png'],
+        },
+      ],
+    },
+    {
+      ...EDITORIAL_PACK,
+      walkthrough: [
+        {
+          id: 'brand',
+          channel: 'tiktok',
+          caption: 'caption.txt',
+          postTitle: 'video-title.txt',
+          media: ['cards/intro.png'],
+        },
+        {
+          id: 'brand-title',
           channel: 'instagram',
           caption: 'caption.txt',
           media: ['cards/intro.png'],

@@ -16,7 +16,7 @@ const main = async (): Promise<void> => {
   if (!stdin.isTTY || !stdout.isTTY) {
     throw new Error('First publication requires an interactive terminal.');
   }
-  await runFirstPublish(ROOT, options, {
+  await runFirstPublish(options.releaseCheckout ?? ROOT, options, {
     log: (message) => console.log(message),
     confirm: async (prompt, signal) => {
       const promptReader = createInterface({ input: stdin, output: stdout });

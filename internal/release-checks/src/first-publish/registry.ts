@@ -59,10 +59,8 @@ export const observeRegistry = async (
   ) {
     throw new Error('The npm name is already occupied: ' + entry.name);
   }
-  if (
-    !versions.includes(entry.version) ||
-    ((versions.includes(STAGED_PLACEHOLDER) || attempt.requiresStageEvidence) && !attempt.stageId)
-  ) {
+  // npm can leave the placeholder in the version list after the exact version is public.
+  if (!versions.includes(entry.version)) {
     return 'staged';
   }
 
@@ -102,7 +100,8 @@ export const observeRegistry = async (
 };
 
 /**
- * Checks a recorded submission until it can be verified or the reconciliation window closes.
+ * Checks a recorded submission until its public bytes can be verified or the reconciliation
+ * window closes. A placeholder may appear while npm is processing a direct publication.
  * @param npm The private npm session.
  * @param entry The approved package.
  * @param attempt The recorded attempt.
@@ -121,13 +120,13 @@ export const reconcileRegistry = async (
   const deadline = AbortSignal.timeout(REGISTRY_WAIT_SECONDS * 1000);
   const signal = AbortSignal.any([deadline, npm.signal]);
   let observation: IRegistryResult = 'pending';
+  let sawPlaceholder = false;
   try {
     do {
       signal.throwIfAborted();
       observation = await observeRegistry(npm, entry, attempt, deadline);
-      if (observation === 'verified' || observation === 'staged') {
-        return observation;
-      }
+      if (observation === 'verified') return observation;
+      sawPlaceholder ||= observation === 'staged';
     } while (await waitForPoll(signal));
   } catch (error) {
     npm.signal.throwIfAborted();
@@ -135,5 +134,5 @@ export const reconcileRegistry = async (
       throw error;
     }
   }
-  return observation;
+  return observation === 'unused' && sawPlaceholder ? 'staged' : observation;
 };
