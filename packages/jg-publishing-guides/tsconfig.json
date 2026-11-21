@@ -1,0 +1,8 @@
+{
+  "extends": "@jg-packages/tsconfig/node.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["es2023", "dom", "dom.iterable"]
+  },
+  "include": ["src", "*.config.ts"]
+}
