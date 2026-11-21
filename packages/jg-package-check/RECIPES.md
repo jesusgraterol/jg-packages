@@ -1,4 +1,6 @@
-# Recipes
+# jg-package-check recipes
+
+Inspect an npm bundle, then use a disposable consumer to check how the packed package installs and resolves its exports.
 
 ## Inspect and install a package produced by a build
 

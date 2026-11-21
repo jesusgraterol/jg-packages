@@ -99,6 +99,14 @@ const removeConsumer = async (directory: string): Promise<void> => {
  * @param options Installation, optional fixture preparation, and process settings.
  * @param check The checks to run inside the installed consumer.
  * @returns The callback's result after the consumer has been removed.
+ * @example
+ * import { resolve } from 'node:path';
+ * import { checkPackedExports, withPackedConsumer } from 'jg-package-check';
+ *
+ * const tarball = resolve('jg-example-1.0.0.tgz');
+ * await withPackedConsumer({ packageManager: 'npm', tarballs: [tarball] }, (consumer) =>
+ *   checkPackedExports(consumer, { packageName: 'jg-example', importSubpaths: ['.'] }),
+ * );
  * @throws
  * - PACKED_CONSUMER_SETUP_FAILED: Unable to prepare the packed consumer.
  * - PACKED_CONSUMER_CLEANUP_FAILED: Unable to remove the packed consumer.

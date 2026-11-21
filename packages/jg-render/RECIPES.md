@@ -1,4 +1,6 @@
-# Recipes
+# jg-render recipes
+
+Render self-contained HTML to a transparent PNG with local fonts, exact dimensions, and caller-owned Playwright Chromium.
 
 ## Render a transparent PNG
 

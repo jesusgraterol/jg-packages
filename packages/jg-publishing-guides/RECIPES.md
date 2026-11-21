@@ -1,4 +1,6 @@
-# Recipes
+# jg-publishing-guides recipes
+
+Turn reviewed text, media, and channel steps into an offline Spanish publishing guide and a plain-text fallback.
 
 ## Render a bilingual workflow's Spanish guide
 

@@ -1997,6 +1997,9 @@ importers:
       jg-nestjs:
         specifier: workspace:*
         version: link:../packages/jg-nestjs
+      jg-package-check:
+        specifier: workspace:*
+        version: link:../packages/jg-package-check
       jg-playwright:
         specifier: workspace:*
         version: link:../packages/jg-playwright
@@ -2006,6 +2009,9 @@ importers:
       jg-process:
         specifier: workspace:*
         version: link:../packages/jg-process
+      jg-publishing-guides:
+        specifier: workspace:*
+        version: link:../packages/jg-publishing-guides
       jg-react:
         specifier: workspace:*
         version: link:../packages/jg-react
@@ -2015,9 +2021,15 @@ importers:
       jg-redis:
         specifier: workspace:*
         version: link:../packages/jg-redis
+      jg-render:
+        specifier: workspace:*
+        version: link:../packages/jg-render
       jg-site:
         specifier: workspace:*
         version: link:../packages/jg-site
+      jg-site-checks:
+        specifier: workspace:*
+        version: link:../packages/jg-site-checks
       jg-storage:
         specifier: workspace:*
         version: link:../packages/jg-storage

@@ -2,9 +2,13 @@
 
 Verify a built static website against an explicit page inventory. The checker reads local files with bounded memory and never contacts the network. Runs on Node.js 22.17 or later.
 
+## Install
+
 ```sh
 npm install --save-dev jg-site-checks
 ```
+
+## Usage
 
 Pass `verifyStaticSite` the artifact directory, production origin and expected public page paths. Each page declares its exact canonical URL or `null`, and whether it should be indexed. The checker verifies those expectations, same-origin HTML links and fragments, and the supplied discovery files.
 
@@ -19,4 +23,10 @@ A path with a trailing slash resolves to its `index.html`. Other paths resolve t
 | `INVALID_SITE_BUILD_OPTIONS` | The site build verification options are invalid. |
 | `SITE_BUILD_INVALID`         | The static site build failed verification.       |
 
-See [API.md](API.md) for the contracts and [RECIPES.md](RECIPES.md) for an example. [MIT](LICENSE).
+## Documentation
+
+See [API.md](API.md) for the contracts and [RECIPES.md](RECIPES.md) for an example.
+
+## License
+
+[MIT](LICENSE)

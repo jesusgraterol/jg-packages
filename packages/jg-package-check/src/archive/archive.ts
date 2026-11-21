@@ -56,6 +56,13 @@ const registerPath = (path: string, paths: Map<string, IArchivePath>): string =>
  * @param limits Limits in bytes and entries. Defaults to 16 MiB compressed, 32 MiB expanded,
  * 8 MiB per file and 4096 files. Expanded size is capped at 256 MiB.
  * @returns A map of relative file names to their contents in archive order.
+ * @example
+ * import { inspectNpmTarball } from 'jg-package-check';
+ * import { readBoundedFile } from 'jg-fs';
+ *
+ * const bytes = await readBoundedFile('jg-example-1.0.0.tgz', 16 * 1024 * 1024);
+ * const files = await inspectNpmTarball(bytes);
+ * files.get('package.json'); // the manifest bytes
  * @throws
  * - INVALID_NPM_TARBALL: The npm tarball is invalid.
  */

@@ -1,9 +1,10 @@
 import { defineCollection } from 'astro:content';
 import { z } from 'astro/zod';
 
-import { PACKAGE_CATALOG, PACKAGES_DIRECTORY } from './site.config.ts';
+import { PACKAGE_CATALOG, PACKAGES_DIRECTORY, SITE_CONFIG } from './site.config.ts';
 import {
   packageMarkdownLoader,
+  rewriteReadmeLinks,
   selectReadmeSections,
   selectRecipes,
 } from './utilities/package-docs/index.ts';
@@ -18,7 +19,12 @@ export const collections = {
       packagesDirectory: PACKAGES_DIRECTORY,
       packageNames: PACKAGE_NAMES,
       fileName: 'README.md',
-      select: selectReadmeSections,
+      select: (markdown, name) =>
+        rewriteReadmeLinks(
+          selectReadmeSections(markdown),
+          new URL(`/packages/${name}/`, SITE_CONFIG.url).href,
+          `${SITE_CONFIG.repositoryUrl}/blob/main/packages/${name}/LICENSE`,
+        ),
     }),
     schema: z.object({ name: z.string() }),
   }),

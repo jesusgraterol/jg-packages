@@ -66,7 +66,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
   'jg-fs': {
     title: 'Filesystem',
     description:
-      'Filesystem helpers, async and sync: path checks, directories, text and JSON files, atomic writes, and bounded reads.',
+      'Node.js files and paths: atomic writes, bounded reads, streamed SHA-256 for files, and verified installs that preserve existing files.',
     icon: 'folder-open',
     runtimes: ['node'],
     order: 8,
@@ -74,7 +74,7 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
   'jg-process': {
     title: 'Child processes',
     description:
-      'Run and stop child processes without a shell, with timeouts, output limits, abort signals, and whole process trees, and read streams within a limit.',
+      'Run interactive foreground commands or capture output without a shell, with timeouts, cancellation and process-tree cleanup for captured runs.',
     icon: 'cpu',
     runtimes: ['node'],
     order: 9,
@@ -198,6 +198,38 @@ export const PACKAGE_CATALOG: Readonly<Record<string, IPackageCatalogEntry>> = {
     icon: 'door-closed-locked',
     runtimes: ['node'],
     order: 24,
+  },
+  'jg-render': {
+    title: 'HTML to PNG',
+    description:
+      'Render prepared HTML to exact PNGs in offline Chromium, with verified fonts and images, transparency, and a caller-owned layout check.',
+    icon: 'camera',
+    runtimes: ['node'],
+    order: 25,
+  },
+  'jg-site-checks': {
+    title: 'Static site checks',
+    description:
+      'Verify built static sites from an explicit page inventory, with exact canonical URLs, links, fragments, sitemaps, robots.txt, and llms.txt.',
+    icon: 'scan-search',
+    runtimes: ['node'],
+    order: 26,
+  },
+  'jg-package-check': {
+    title: 'Packed package checks',
+    description:
+      'Inspect npm tarballs without extraction, then check an installed package’s public exports in disposable npm or pnpm consumers.',
+    icon: 'package-check',
+    runtimes: ['node'],
+    order: 27,
+  },
+  'jg-publishing-guides': {
+    title: 'Publishing guides',
+    description:
+      'Create offline HTML and plain-text publishing guides with reviewed copy, ordered files, and English or Spanish controls.',
+    icon: 'list-checks',
+    runtimes: ['node'],
+    order: 28,
   },
 };
 

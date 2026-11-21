@@ -44,6 +44,25 @@ const capture = async (page: Page, input: IHtmlRenderInput): Promise<Buffer> => 
  * @param options Safe context defaults and optional cancellation.
  * @param work The renders or trusted operations to perform before the session is closed.
  * @returns The caller's result after closing the owned context.
+ * @example
+ * import { chromium } from 'playwright';
+ * import { withOfflineRenderer } from 'jg-render';
+ *
+ * const browser = await chromium.launch();
+ * try {
+ *   const png = await withOfflineRenderer(browser, {}, (render) =>
+ *     render.renderPng({
+ *       html: '<!doctype html><svg width="80" height="80"><circle cx="40" cy="40" r="24"/></svg>',
+ *       width: 80,
+ *       height: 80,
+ *       transparent: true,
+ *     }),
+ *   );
+ *   // png contains an 80 by 80 image
+ *   void png;
+ * } finally {
+ *   await browser.close();
+ * }
  * @throws
  * - INVALID_HTML_RENDER_OPTIONS: The HTML render options are invalid.
  * - HTML_RENDER_FAILED: The HTML could not be rendered to PNG.

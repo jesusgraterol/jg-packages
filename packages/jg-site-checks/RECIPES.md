@@ -1,4 +1,6 @@
-# Recipes
+# jg-site-checks recipes
+
+Verify an Astro build against the site’s page inventory, canonical URLs, sitemap, robots.txt, and internal links.
 
 ## Verify an Astro build before shipping it
 

@@ -2,9 +2,13 @@
 
 Render a reviewed file selection into an offline publishing guide and its plain-text fallback. Runs on Node.js 22.17 or later.
 
+## Install
+
 ```sh
 npm install jg-publishing-guides
 ```
+
+## Usage
 
 `renderPublishingGuide` takes a title, a summary, selected files, optional channel steps and literal copy keyed by selected path. It returns `html` for `start-here.html` and `readme` for `readme.txt`. Keep both files alongside the selected outputs. The English or Spanish interface follows the requested locale. Reviewed copy remains in its original language.
 
@@ -18,4 +22,10 @@ The renderer validates portable paths and presentation references. Your caller o
 | -------------------------- | -------------------------------------- |
 | `INVALID_PUBLISHING_GUIDE` | The publishing guide input is invalid. |
 
-See [API.md](API.md) for the contracts and [RECIPES.md](RECIPES.md) for an example. [MIT](LICENSE).
+## Documentation
+
+See [API.md](API.md) for the contracts and [RECIPES.md](RECIPES.md) for an example.
+
+## License
+
+[MIT](LICENSE)

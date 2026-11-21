@@ -18,6 +18,15 @@ import type {
  * links and fragments, and the discovery files the caller supplies.
  * @param options The local artifact, production origin, page inventory and optional read limits.
  * @returns Verified pages and optional sitemap entries in document order.
+ * @example
+ * import { verifyStaticSite } from 'jg-site-checks';
+ *
+ * await verifyStaticSite({
+ *   artifactRoot: 'dist',
+ *   origin: 'https://example.com',
+ *   pages: [{ path: '/', canonicalUrl: 'https://example.com/', indexable: true }],
+ *   discovery: { sitemap: '/sitemap.xml', robots: '/robots.txt' },
+ * });
  * @throws
  * - INVALID_SITE_BUILD_OPTIONS: The site build verification options are invalid.
  * - SITE_BUILD_INVALID: The static site build failed verification.

@@ -9,6 +9,19 @@ import { validateGuide } from './validations.js';
  * @param copy Reviewed literal text keyed by selected local filename.
  * @param options The guide interface locale.
  * @returns The HTML and plain-text documents.
+ * @example
+ * import { renderPublishingGuide } from 'jg-publishing-guides';
+ *
+ * const { html, readme } = renderPublishingGuide(
+ *   {
+ *     title: 'Reviewed caption',
+ *     summary: 'Selected copy for manual publication.',
+ *     files: [{ path: 'caption.txt', label: 'Caption', details: 'Reviewed text.', kind: 'file' }],
+ *   },
+ *   new Map([['caption.txt', 'Copy for the published post.']]),
+ * );
+ * // write html to start-here.html and readme to readme.txt beside caption.txt
+ * void [html, readme];
  * @throws
  * - INVALID_PUBLISHING_GUIDE: The publishing guide input is invalid.
  */

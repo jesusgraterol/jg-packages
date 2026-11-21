@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { selectReadmeSections, selectRecipes } from './package-docs.ts';
+import { rewriteReadmeLinks, selectReadmeSections, selectRecipes } from './package-docs.ts';
 
 describe('selectReadmeSections', () => {
   test('keeps the sections after the title and summary, except the ones shown elsewhere', () => {
@@ -137,4 +137,27 @@ describe('selectRecipes', () => {
   test('keeps a file without a title as it is', () => {
     expect(selectRecipes('## Doing a job\n\nText.\n')).toBe('## Doing a job\n\nText.\n');
   });
+});
+
+test('maps conventional README links for both website formats without modifying code', () => {
+  const page = 'https://packages.example/packages/jg-example/';
+  const license = 'https://source.example/jg-example/LICENSE';
+  const readme = [
+    '[API](API.md), [Recipes](./RECIPES.md#example), and [MIT](LICENSE).',
+    '`[Literal](API.md)`, then [API function](API.md#api-example).',
+    '```md',
+    '[Literal](RECIPES.md)',
+    '```',
+    '[Other](other.md) [Public docs](https://other.example/API.md)',
+  ].join('\n');
+  expect(rewriteReadmeLinks(readme, page, license)).toBe(
+    [
+      '[API](https://packages.example/packages/jg-example/#api-reference), [Recipes](https://packages.example/packages/jg-example/recipes/#example), and [MIT](https://source.example/jg-example/LICENSE).',
+      '`[Literal](API.md)`, then [API function](https://packages.example/packages/jg-example/#api-example).',
+      '```md',
+      '[Literal](RECIPES.md)',
+      '```',
+      '[Other](other.md) [Public docs](https://other.example/API.md)',
+    ].join('\n'),
+  );
 });

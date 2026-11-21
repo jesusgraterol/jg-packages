@@ -59,6 +59,18 @@ const checkManifest = async (directory: string, name: string): Promise<string[]>
  * @param options The name and paths to check. A root export is specified as `.`.
  * The caller's signal reason propagates if it interrupts an import check.
  * @returns Diagnostics, or an empty array when all requested checks pass.
+ * @example
+ * import { resolve } from 'node:path';
+ * import { checkPackedExports, withPackedConsumer } from 'jg-package-check';
+ *
+ * await withPackedConsumer(
+ *   { packageManager: 'npm', tarballs: [resolve('jg-example-1.0.0.tgz')] },
+ *   (consumer) => checkPackedExports(consumer, {
+ *     packageName: 'jg-example',
+ *     importSubpaths: ['.', './format'],
+ *     privateSubpaths: ['./dist/internal.js'],
+ *   }),
+ * );
  */
 export const checkPackedExports = async (
   consumer: IPackedConsumer,

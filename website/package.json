@@ -68,6 +68,10 @@
     "pagefind": "1.5.2",
     "playwright": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "jg-render": "workspace:*",
+    "jg-site-checks": "workspace:*",
+    "jg-package-check": "workspace:*",
+    "jg-publishing-guides": "workspace:*"
   }
 }
