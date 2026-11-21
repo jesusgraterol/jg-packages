@@ -3,9 +3,9 @@ import semver from 'semver';
 
 import { DEPENDENCY_FIELDS } from '../shared/constants.ts';
 import { sha256 } from '../shared/release-files.ts';
-import { readTarballFiles } from '../shared/tarball.ts';
 import { isPrerelease } from '../shared/versions.ts';
 import type { IPackageManifest } from '../shared/types.ts';
+import { inspectReleaseArchive } from './archive.ts';
 import type { IPackedPackage, IRegistry, IRegistryPackage } from './types.ts';
 
 /**
@@ -110,6 +110,12 @@ const getSiblingRanges = (
  * @param packages The packed packages of the release.
  * @param registry Read access to the registry.
  * @returns A promise that resolves to each package's problems, by name.
+ * @throws
+ * - INVALID_NPM_TARBALL: The npm tarball is invalid.
+ * - NON_EXISTENT_FILE: The file '<path>' does not exist.
+ * - NOT_A_FILE: The file '<path>' is a symbolic link.
+ * - NOT_A_FILE: The path '<path>' is not a file.
+ * - FILE_TOO_LARGE: The file '<path>' is larger than <maxBytes> bytes.
  */
 export const checkRegistryVersions = async (
   packages: IPackedPackage[],
@@ -145,7 +151,9 @@ export const checkRegistryVersions = async (
       continue;
     }
     if (registryPackage.versions.includes(version)) {
-      const publishedFiles = await readTarballFiles(await registry.downloadTarball(name, version));
+      const publishedFiles = await inspectReleaseArchive(
+        await registry.downloadTarball(name, version),
+      );
       const changed = findChangedFiles(files, publishedFiles, siblingVersions);
       if (changed.length > 0) {
         packageProblems.push(

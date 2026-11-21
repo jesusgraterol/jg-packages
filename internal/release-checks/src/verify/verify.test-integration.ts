@@ -1,7 +1,7 @@
 import { cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { basename, delimiter, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
@@ -75,6 +75,19 @@ test('an interrupted gallery stops release orchestration before linting and regi
       JSON.stringify({ name, version: '0.1.0', exports: {} }),
     );
   }
+  const bin = join(workDirectory, 'bin');
+  const installLog = join(workDirectory, 'installed.json');
+  await mkdir(bin);
+  await writeFile(
+    join(bin, 'npm'),
+    `#!${process.execPath}
+const {writeFileSync}=require('node:fs');
+writeFileSync(${JSON.stringify(installLog)},JSON.stringify(process.argv.slice(2)));
+process.stderr.write('installation unavailable in this test');
+process.exitCode=1;
+`,
+    { mode: 0o700 },
+  );
   const script = `
     import {packAndCheck} from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, 'verify.ts')).href)};
     import {runCommand} from ${JSON.stringify(pathToFileURL(resolve(import.meta.dirname, '../shared/run-command.ts')).href)};
@@ -107,6 +120,11 @@ test('an interrupted gallery stops release orchestration before linting and regi
   `;
   const result = await runCommand(process.execPath, ['--input-type=module', '-e', script], {
     cwd: rootDirectory,
+    env: {
+      ...process.env,
+      npm_execpath: undefined,
+      PATH: [bin, process.env['PATH'] ?? ''].join(delimiter),
+    },
   });
   expect(result.stderr).toBe('');
   expect(result.exitCode).toBe(2);
@@ -115,9 +133,27 @@ test('an interrupted gallery stops release orchestration before linting and regi
     message: 'The process was interrupted by SIGTERM.',
     registryCalls: 0,
     galleryCalls: 1,
-    commands: ['pack', 'pack', 'pack', 'install'],
+    commands: ['pack', 'pack', 'pack'],
     continued: false,
   });
+  const [subcommand, ...args] = JSON.parse(await readFile(installLog, 'utf8')) as string[];
+  expect(subcommand).toBe('install');
+  expect(args.slice(0, 4)).toStrictEqual([
+    '--ignore-scripts',
+    '--no-audit',
+    '--no-fund',
+    '--no-package-lock',
+  ]);
+  expect(
+    args
+      .slice(4)
+      .map((path) => basename(path))
+      .sort(),
+  ).toStrictEqual([
+    'jg-personal-astro-ui-0.1.0.tgz',
+    'jg-playwright-0.1.0.tgz',
+    'jg-process-0.1.0.tgz',
+  ]);
 });
 
 // builds the fixture package the way a package's build script does, API.md included unless asked

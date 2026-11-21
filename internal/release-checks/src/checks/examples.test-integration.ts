@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { runCommand } from '../shared/run-command.ts';
 import { findPublishablePackages } from '../workspace/workspace.ts';
 import { packPackage } from '../verify/verify.ts';
-import { installConsumerProject } from './consumer-project.ts';
+import { withReleaseConsumer } from './consumer-project.ts';
 import { checkExamples } from './examples.ts';
 
 const FIXTURE_DIRECTORY = join(import.meta.dirname, '..', 'fixtures', 'sample-package');
@@ -43,14 +43,10 @@ const checkFixtureExamples = async (): Promise<string[]> => {
       packPackage(workspacePackage, output, runCommand),
     ),
   );
-  const consumer = await installConsumerProject(packages, runCommand);
-  try {
-    expect(consumer.installProblem).toBeUndefined();
+  return withReleaseConsumer(packages, async (consumer) => {
     const problems = await checkExamples(packages, runCommand, consumer, new Set([PACKAGE_NAME]));
     return problems.get(PACKAGE_NAME) ?? [];
-  } finally {
-    await consumer.remove();
-  }
+  });
 };
 
 beforeEach(async () => {

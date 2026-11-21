@@ -1,20 +1,8 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { hasErrorCode } from 'jg-exception';
+import { ERRORS, withPackedConsumer, type IPackedConsumer } from 'jg-package-check';
+import { createShutdownSignal } from 'jg-process';
 
-import type { IRunCommand } from '../shared/types.ts';
 import type { IPackedPackage } from './types.ts';
-
-// a temporary ESM project with every tarball installed, the way a consumer installs them
-export type IConsumerProject = {
-  directory: string;
-
-  // why the install failed, or undefined when it succeeded
-  installProblem: string | undefined;
-
-  // removes the project
-  remove: () => Promise<void>;
-};
 
 /**
  * Lists the React types a package with a React peer was tested with, so its JSX recipes and its
@@ -35,46 +23,37 @@ export const listPeerTypePackages = (packages: IPackedPackage[]): string[] => [
 ];
 
 /**
- * Installs every tarball together into a temporary ESM project, which checks 2 and 8 share, with
- * the React types a package with a React peer was tested with.
- * @param packages The packed packages.
- * @param runCommand Runs a command.
- * @returns A promise that resolves to the project.
+ * Qualifies this release's installed packages and the React types their examples require.
+ * @param packages The exact tarballs to install together.
+ * @param verify Checks to run while the consumer exists.
+ * @returns The checks' result after the consumer is removed.
+ * @throws
+ * - PACKED_CONSUMER_SETUP_FAILED: Unable to prepare the packed consumer.
+ * - PACKED_CONSUMER_CLEANUP_FAILED: Unable to remove the packed consumer.
+ * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
  */
-export const installConsumerProject = async (
+export const withReleaseConsumer = async <T>(
   packages: IPackedPackage[],
-  runCommand: IRunCommand,
-): Promise<IConsumerProject> => {
-  const directory = await mkdtemp(join(tmpdir(), 'jg-release-consumer-'));
-  const remove = (): Promise<void> => rm(directory, { recursive: true, force: true });
+  verify: (consumer: IPackedConsumer) => Promise<T>,
+): Promise<T> => {
+  const { signal, dispose } = createShutdownSignal();
   try {
-    await writeFile(
-      join(directory, 'package.json'),
-      JSON.stringify({ name: 'release-check-consumer', private: true, type: 'module' }),
+    const result = await withPackedConsumer(
+      {
+        packageManager: 'npm',
+        tarballs: packages.map(({ tarballPath }) => tarballPath),
+        additionalPackages: listPeerTypePackages(packages),
+        installTimeoutSeconds: 300,
+        signal,
+      },
+      verify,
     );
-    const install = await runCommand(
-      'npm',
-      [
-        'install',
-        '--ignore-scripts',
-        '--no-audit',
-        '--no-fund',
-        '--no-package-lock',
-        ...packages.map(({ tarballPath }) => tarballPath),
-        ...listPeerTypePackages(packages),
-      ],
-      { cwd: directory },
-    );
-    return {
-      directory,
-      installProblem:
-        install.exitCode === 0
-          ? undefined
-          : `couldn't be installed from its tarball: ${install.stderr.trim()}`,
-      remove,
-    };
+    signal.throwIfAborted();
+    return result;
   } catch (error) {
-    await remove();
+    if (!hasErrorCode(error, ERRORS.PACKED_CONSUMER_CLEANUP_FAILED)) signal.throwIfAborted();
     throw error;
+  } finally {
+    dispose();
   }
 };

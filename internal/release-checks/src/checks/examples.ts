@@ -8,10 +8,10 @@ import {
   type IApiSignature,
 } from '@jg-packages/api-reference';
 import ts from 'typescript';
+import type { IPackedConsumer } from 'jg-package-check';
 
 import type { IRunCommand } from '../shared/types.ts';
 import { classifyExports } from './astro-fixture.ts';
-import type { IConsumerProject } from './consumer-project.ts';
 import type { IPackedPackage } from './types.ts';
 
 // the packages whose examples also run, because nothing in them does I/O
@@ -276,6 +276,8 @@ export const readThrownError = (stderr: string): string => {
  * @param consumerDirectory The consumer project.
  * @param isRunnable Whether its examples run.
  * @returns A promise that resolves to the problems.
+ * @throws
+ * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
  */
 const checkPackageExamples = async (
   packed: IPackedPackage,
@@ -375,18 +377,16 @@ const checkPackageExamples = async (
  * @param consumer The project the tarballs are installed in, which check 2 also uses.
  * @param runnablePackages The packages whose examples run.
  * @returns A promise that resolves to each package's problems, by name.
+ * @throws
+ * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
  */
 export const checkExamples = async (
   packages: IPackedPackage[],
   runCommand: IRunCommand,
-  consumer: IConsumerProject,
+  consumer: IPackedConsumer,
   runnablePackages: ReadonlySet<string> = RUNNABLE_EXAMPLE_PACKAGES,
 ): Promise<Map<string, string[]>> => {
   const problems = new Map<string, string[]>();
-  // check 2 reports a failed install
-  if (consumer.installProblem !== undefined) {
-    return problems;
-  }
   for (const packed of packages) {
     const { name, exports: exportsMap } = packed.packedManifest;
     if (classifyExports(name, exportsMap).components.length > 0) {

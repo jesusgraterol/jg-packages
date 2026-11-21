@@ -360,12 +360,18 @@ importers:
       '@jg-packages/api-reference':
         specifier: workspace:*
         version: link:../api-reference
+      jg-exception:
+        specifier: workspace:*
+        version: link:../../packages/jg-exception
       jg-fs:
         specifier: workspace:*
         version: link:../../packages/jg-fs
       jg-git-commands:
         specifier: workspace:*
         version: link:../../packages/jg-git-commands
+      jg-package-check:
+        specifier: workspace:*
+        version: link:../../packages/jg-package-check
       jg-process:
         specifier: workspace:*
         version: link:../../packages/jg-process
