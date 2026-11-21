@@ -105,17 +105,10 @@ const registerStep = (step: IPublishingGuideStep, ids: Set<string>): string => {
   const id = step.id ?? step.channel;
   if (typeof id !== 'string' || !/^[a-z][a-z0-9-]*$/u.test(id) || id.length > 64)
     invalidGuide('Channel IDs must be portable lowercase identifiers.');
-  const suffixes = [
-    '',
-    '-start',
-    '-copy',
-    '-media',
-    '-review',
-    '-caption',
-    '-caption-status',
-    '-title',
-    '-title-status',
-  ];
+  const suffixes = ['', '-start', '-copy', '-media', '-review', '-caption', '-caption-status'];
+  if (step.documentTitle !== undefined || step.postTitle !== undefined) {
+    suffixes.push('-title', '-title-status');
+  }
   if (step.documentTitle === undefined) {
     for (let index = 1; index <= step.media.length; index += 1)
       suffixes.push(`-alt-${index}`, `-alt-${index}-status`);
