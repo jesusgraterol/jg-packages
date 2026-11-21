@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.1
+
+### Fixed
+
+- Keep Starting visible until the native recorder confirms capture. Start the live indicator, elapsed timer and waveform from that event, and ignore late start events after cancellation, restart or unmount.
+
 ## 0.10.0
 
 ### Changed

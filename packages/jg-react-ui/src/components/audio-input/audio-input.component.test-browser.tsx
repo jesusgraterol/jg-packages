@@ -38,6 +38,7 @@ type IDeferred<TResult> = {
  */
 class MockMediaRecorder {
   public static readonly instances: MockMediaRecorder[] = [];
+  public static doesAutoStart = true;
   public static readonly isTypeSupported = vi.fn(
     (mimeType: string) => mimeType === 'audio/webm;codecs=opus',
   );
@@ -46,9 +47,11 @@ class MockMediaRecorder {
   public ondataavailable: ((event: BlobEvent) => void) | null = null;
   public onerror: ((event: Event) => void) | null = null;
   public onstop: (() => void) | null = null;
+  public onstart: (() => void) | null = null;
   public readonly start = vi.fn((timeslice?: number): void => {
     this.timeslice = timeslice;
     this.state = 'recording';
+    if (MockMediaRecorder.doesAutoStart) queueMicrotask(() => this.emitStart());
   });
   public readonly stop = vi.fn((): void => {
     if (this.state === 'inactive') {
@@ -69,6 +72,11 @@ class MockMediaRecorder {
   public constructor(_stream: MediaStream, options?: MediaRecorderOptions) {
     this.mimeType = options?.mimeType ?? 'audio/webm';
     MockMediaRecorder.instances.push(this);
+  }
+
+  /** Delivers the browser start event separately from the start request. */
+  public emitStart(): void {
+    this.onstart?.();
   }
 
   /**
@@ -233,6 +241,7 @@ describe('AudioInput', () => {
     reactActEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
     requestAnimationFrameCallbacks = [];
     MockMediaRecorder.instances.length = 0;
+    MockMediaRecorder.doesAutoStart = true;
     MockMediaRecorder.isTypeSupported.mockClear();
     stopTrackMock.mockClear();
     getUserMediaMock.mockResolvedValue({
@@ -287,6 +296,122 @@ describe('AudioInput', () => {
     const dialog = { isDialogOpen: false };
     expectTypeOf<{ onOpenChange: () => void }>().not.toExtend<IProps>();
     expectTypeOf({ ...inline, ...dialog }).not.toExtend<IProps>();
+  });
+
+  test('confirmed recorder start controls readiness, waveform and elapsed time', async () => {
+    MockMediaRecorder.doesAutoStart = false;
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+    const requested = vi.fn();
+    const statusChanged = vi.fn();
+    act(() =>
+      root.render(
+        <AudioInput
+          presentation="inline"
+          inlineLayout="toolbar"
+          defaultIsOpen
+          transcribe={() => Promise.resolve('Draft')}
+          onRecordingStart={requested}
+          onStatusChange={statusChanged}
+        />,
+      ),
+    );
+    await flushAudioInputRecordingStart();
+    const recorder = page.getByRole('group', { name: 'Audio recording' });
+    expect(getMockRecorder().start).toHaveBeenCalledOnce();
+    expect(requested).toHaveBeenCalledOnce();
+    await expect.element(recorder.getByRole('status')).toHaveTextContent('Starting');
+    expect(statusChanged).not.toHaveBeenCalledWith('recording');
+    expect(
+      recorder.element().querySelector('[data-slot="audio-input-live-indicator"]')!.children,
+    ).toHaveLength(0);
+    await expect
+      .element(recorder.getByRole('button', { name: 'Transcribe', exact: true }))
+      .toBeDisabled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(recorder.element().querySelector('[data-slot="audio-input-elapsed"]')!.textContent).toBe(
+      '0:00',
+    );
+    act(() => getMockRecorder().emitStart());
+    await expect.element(recorder.getByRole('status')).toHaveTextContent('Recording');
+    expect(requested).toHaveBeenCalledOnce();
+    expect(statusChanged).toHaveBeenCalledWith('recording');
+    expect(
+      recorder
+        .element()
+        .querySelector('[data-slot="audio-input-waveform"]')!
+        .getAttribute('data-active'),
+    ).toBe('true');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(recorder.element().querySelector('[data-slot="audio-input-elapsed"]')!.textContent).toBe(
+      '0:01',
+    );
+  });
+
+  test.each(['cancel', 'unmount', 'error'] as const)(
+    'a pending recorder start after %s cannot restore recording',
+    async (ending) => {
+      MockMediaRecorder.doesAutoStart = false;
+      const statusChanged = vi.fn();
+      act(() =>
+        root.render(
+          <AudioInput
+            presentation="inline"
+            inlineLayout="toolbar"
+            defaultIsOpen
+            onStatusChange={statusChanged}
+          />,
+        ),
+      );
+      await flushAudioInputRecordingStart();
+      const nativeRecorder = getMockRecorder();
+      const lateStart = nativeRecorder.onstart;
+      expect(lateStart).toBeTypeOf('function');
+      if (ending === 'cancel') await page.getByRole('button', { name: 'Cancel recording' }).click();
+      else if (ending === 'unmount') {
+        act(() => root.unmount());
+        isRootMounted = false;
+      } else act(() => nativeRecorder.onerror?.(new Event('error')));
+      expect(nativeRecorder.onstart).toBeNull();
+      expect(stopTrackMock).toHaveBeenCalledOnce();
+      act(() => lateStart?.());
+      expect(statusChanged).not.toHaveBeenCalledWith('recording');
+      expect(MockMediaRecorder.instances).toHaveLength(1);
+    },
+  );
+
+  test('a discarded recorder start cannot activate the replacement take', async () => {
+    MockMediaRecorder.doesAutoStart = false;
+    const statusChanged = vi.fn();
+    act(() =>
+      root.render(
+        <AudioInput
+          presentation="inline"
+          inlineLayout="toolbar"
+          defaultIsOpen
+          onStatusChange={statusChanged}
+        />,
+      ),
+    );
+    await flushAudioInputRecordingStart();
+    const first = getMockRecorder();
+    const lateStart = first.onstart;
+    act(() => first.emitStart());
+    const recorder = page.getByRole('group', { name: 'Audio recording' });
+    await expect.element(recorder.getByRole('status')).toHaveTextContent('Recording');
+    await recorder.getByRole('button', { name: 'Restart recording' }).click();
+    await vi.waitFor(() => expect(MockMediaRecorder.instances).toHaveLength(2));
+    const replacement = MockMediaRecorder.instances[1]!;
+    expect(first.onstart).toBeNull();
+    act(() => lateStart?.());
+    await expect.element(recorder.getByRole('status')).toHaveTextContent('Starting');
+    expect(statusChanged.mock.calls.filter(([status]) => status === 'recording')).toHaveLength(1);
+    act(() => replacement.emitStart());
+    await expect.element(recorder.getByRole('status')).toHaveTextContent('Recording');
+    expect(statusChanged.mock.calls.filter(([status]) => status === 'recording')).toHaveLength(2);
   });
 
   test('toolbar mode keeps labelled square actions while transcription is pending', async () => {
@@ -3126,6 +3251,7 @@ describe('AudioInput', () => {
    */
   class MockMediaRecorder {
     public static readonly instances: MockMediaRecorder[] = [];
+    public static doesAutoStart = true;
     public static readonly isTypeSupported = vi.fn(
       (mimeType: string) => mimeType === 'audio/webm;codecs=opus',
     );
@@ -3134,8 +3260,10 @@ describe('AudioInput', () => {
     public ondataavailable: ((event: BlobEvent) => void) | null = null;
     public onerror: ((event: Event) => void) | null = null;
     public onstop: (() => void) | null = null;
+    public onstart: (() => void) | null = null;
     public readonly start = vi.fn((): void => {
       this.state = 'recording';
+      if (MockMediaRecorder.doesAutoStart) queueMicrotask(() => this.emitStart());
     });
     public readonly stop = vi.fn((): void => {
       if (this.state === 'inactive') {
@@ -3155,6 +3283,11 @@ describe('AudioInput', () => {
     public constructor(_stream: MediaStream, options?: MediaRecorderOptions) {
       this.mimeType = options?.mimeType ?? 'audio/webm';
       MockMediaRecorder.instances.push(this);
+    }
+
+    /** Delivers the browser start event separately from the start request. */
+    public emitStart(): void {
+      this.onstart?.();
     }
 
     /**
@@ -3249,6 +3382,7 @@ describe('AudioInput', () => {
       await page.viewport(1280, 800);
       reactActEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
       MockMediaRecorder.instances.length = 0;
+      MockMediaRecorder.doesAutoStart = true;
       stopTrackMock.mockClear();
       getUserMediaMock.mockResolvedValue({
         getTracks: () => [{ stop: stopTrackMock } as unknown as MediaStreamTrack],

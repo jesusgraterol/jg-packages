@@ -38,7 +38,7 @@ The preference provider supports explicit `local`, `read-only`, and `remote` mod
 
 Optional `storageId` defaults to `jg-ui-preferences`. It must be non-empty and contain only ASCII letters, digits, underscores, and hyphens. `getUiPreferencesStorageKey` returns its raw `jg-storage:` key. IDs are captured for the provider lifetime; use a keyed remount to change namespaces. Invalid IDs fail before storage access or initialization-script creation.
 
-Render `ThemeInitializationScript` in the document head before application JavaScript, using the same `storageId` as the provider and your CSP `nonce` when required. Server snapshots use initial props or defaults, then storage synchronizes after hydration. See the recipes for composition and the shared [owned error contracts](https://unpkg.com/jg-react-ui@0.10.0/errors/README.md).
+Render `ThemeInitializationScript` in the document head before application JavaScript, using the same `storageId` as the provider and your CSP `nonce` when required. Server snapshots use initial props or defaults, then storage synchronizes after hydration. See the recipes for composition and the shared [owned error contracts](https://unpkg.com/jg-react-ui@0.10.1/errors/README.md).
 
 ## Controls, forms, and plain text
 
@@ -88,6 +88,8 @@ The upload dialog finalizes successful results through `onSubmit`, retries final
 
 `transcribe` receives the captured recording and returns text. Users can send directly or edit the transcription first; a failed send retries the authored text without transcribing again. Provider operations remain caller-owned and should have their own deadline/cancellation policy. Recording/transcription error callbacks receive diagnostic exceptions, while visible feedback uses the nearest scoped resolver. The seven owned audio codes and stable messages are listed in `errors/README.md`; coded provider exceptions preserve their diagnostic identity. Canceled permission/transcription work stays silent and can be restarted; diagnostic callbacks still run. Optional result callbacks remain optional. Standalone review remains the default. Supply `onTranscriptionApply` to place Transcribe results directly in the main input while `onTranscriptionResult` handles Send separately; `isResultActionVisible={false}` uses Transcribe as the sole result action. Progress stays on the active button, with a screen-reader announcement. Pending work blocks dismissal and restart.
 
+Recording readiness follows the browser's `MediaRecorder` start event. Until that event, the recorder stays in `requesting-permission` and shows Starting; the live indicator, elapsed timer and waveform activate only after confirmation. `onRecordingStart` remains the request callback before microphone permission, while `onStatusChange('recording')` is the ready signal. Cancellation, restart and unmount detach the handler and ignore an obsolete start event. Each take acquires a fresh microphone stream and releases it afterward. Browser/device startup latency is not a fixed delay or a guaranteed duration.
+
 Set `presentation="inline"` to replace the mic trigger with an in-flow recorder. Use `IInlineAudioInputProps` with `isOpen`, `defaultIsOpen` or `onOpenChange` to manage inline opening. Dialog mode uses the original `IAudioInputProps` and dialog-named open-state props. Inline capture waits for the open state to commit. With `autoStart={false}` a controlled closed recorder only requests opening. Call its start control after the accepted open. A mic-triggered inline open focuses Cancel recording when focus still belongs to the triggering interaction. Standalone review, information and actionable errors are available in secondary dialogs.
 
 Use `inlineLayout="toolbar"` with the inline presentation to match a message composer. The recorder fits on one line, groups its live indicator, waveform and elapsed time, and keeps its action size during transcription and submission. Restart remains beside Transcribe and Send. The waveform scales with the composer width and shrinks when space is tight. Taller bars use a compressed display amplitude so quieter speech stays visible without changing the recording. Starting feedback stays visible on phones; wider toolbars also show the recording status. Capacity stays quiet below 90%. At 90%, the phone timer becomes an amber warning badge with an exclamation marker; desktop uses the status slot. Tapping the warning opens capacity details while the waveform stays visible and no row is added. Error recovery and optional transcript review open their usual dialogs.
@@ -135,7 +137,7 @@ Invalid configuration retains these native Error messages:
 
 ## Documentation
 
-The API reference ships as [API.md](https://unpkg.com/jg-react-ui@0.10.0/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-react-ui@0.10.0/RECIPES.md). These personal-use packages are unlisted on the public package website.
+The API reference ships as [API.md](https://unpkg.com/jg-react-ui@0.10.1/API.md), and app-side examples ship as [RECIPES.md](https://unpkg.com/jg-react-ui@0.10.1/RECIPES.md). These personal-use packages are unlisted on the public package website.
 
 ## License
 
