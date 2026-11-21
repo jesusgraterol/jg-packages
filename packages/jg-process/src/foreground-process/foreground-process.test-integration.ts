@@ -1,4 +1,5 @@
-import { mkdtemp, realpath, rm } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,6 +22,7 @@ afterEach(async () => {
 
 test('inherits input and output, passes options and returns the child exit code', async () => {
   const childScript = String.raw`
+    const { realpathSync } = require('node:fs');
     process.stdout.write('prompt\n');
     process.stderr.write('diagnostic\n');
     process.stdin.setEncoding('utf8');
@@ -30,7 +32,7 @@ test('inherits input and output, passes options and returns the child exit code'
       process.stdout.write(JSON.stringify({
         received,
         arg: process.argv[1],
-        cwd: process.cwd(),
+        cwd: realpathSync.native(process.cwd()),
         env: process.env.JG_FOREGROUND_TEST,
       }) + '\n');
       process.exitCode = 17;
@@ -59,7 +61,7 @@ test('inherits input and output, passes options and returns the child exit code'
     JSON.stringify({
       received: 'terminal input\n',
       arg: 'literal ; &',
-      cwd: await realpath(directory),
+      cwd: realpathSync.native(directory),
       env: 'selected',
     }),
     '{"exitCode":17,"signalCode":null}',
