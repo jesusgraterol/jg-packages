@@ -18,6 +18,7 @@ const USAGE = [
   '  pack --out <dir>                    pack and check, keeping the tarballs and manifest',
   '  publish --from <dir>                publish a packed release',
   '  tag --from <dir> --published <file> tag the release versions on npm without a tag',
+  '  --without-gallery-browser-tests   build installed galleries and omit their browser tests (verify and pack)',
 ].join('\n');
 
 // the repository root, three levels above this file
@@ -46,6 +47,7 @@ const requireOption = (values: Record<string, unknown>, name: string): string =>
  * @throws
  * - The release commands run on Linux and macOS.
  * - Unknown command: {command}
+ * - --without-gallery-browser-tests applies to verify and pack.
  * - PROCESS_INTERRUPTED: The process was interrupted by {signal}.
  */
 const main = async (args: string[]): Promise<number> => {
@@ -55,12 +57,21 @@ const main = async (args: string[]): Promise<number> => {
   const { positionals, values } = parseArgs({
     args,
     allowPositionals: true,
-    options: { out: { type: 'string' }, from: { type: 'string' }, published: { type: 'string' } },
+    options: {
+      out: { type: 'string' },
+      from: { type: 'string' },
+      published: { type: 'string' },
+      'without-gallery-browser-tests': { type: 'boolean' },
+    },
   });
   const [command, ...extra] = positionals;
   const log = (message: string): void => console.log(message);
   if (extra.length > 0) {
     throw new Error(`Unexpected arguments: ${extra.join(' ')}\n${USAGE}`);
+  }
+  const runsGalleryBrowserTests = values['without-gallery-browser-tests'] !== true;
+  if (!runsGalleryBrowserTests && command !== 'verify' && command !== 'pack') {
+    throw new Error(`--without-gallery-browser-tests applies to verify and pack.\n${USAGE}`);
   }
   switch (command) {
     case 'verify':
@@ -69,7 +80,12 @@ const main = async (args: string[]): Promise<number> => {
         import('./verify/verify.ts'),
         import('./registry/npm-registry.ts'),
       ]);
-      const dependencies = { registry: createNpmRegistry(runCommand), runCommand, log };
+      const dependencies = {
+        registry: createNpmRegistry(runCommand),
+        runCommand,
+        log,
+        runsGalleryBrowserTests,
+      };
       return command === 'verify'
         ? runVerify(ROOT_DIRECTORY, dependencies)
         : runPack(ROOT_DIRECTORY, resolve(requireOption(values, 'out')), dependencies);

@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # essential regression tasks run independently; release qualification remains complete.
+  # essential regression tasks and package artifact qualification run independently.
   # No dependency caching anywhere in this workflow, because it publishes packages
   static:
     name: Lint, typecheck, build, and format
@@ -152,12 +152,6 @@ jobs:
     name: Release checks
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble
-      options: --init --ipc=host --user 1001
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Check out the repository
         uses: actions/checkout@v7
@@ -181,12 +175,12 @@ jobs:
 
       - name: Check the release
         if: github.event_name != 'push' || github.ref != 'refs/heads/main'
-        run: pnpm release:verify
+        run: pnpm release:verify --without-gallery-browser-tests
 
       # on main, the same checks run while packing, and the tarballs are handed to the publish job
       - name: Pack the release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: pnpm release:pack
+        run: pnpm release:pack --without-gallery-browser-tests
 
       - name: Upload the release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

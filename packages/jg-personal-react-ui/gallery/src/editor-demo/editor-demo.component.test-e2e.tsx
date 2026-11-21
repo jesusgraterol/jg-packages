@@ -149,6 +149,8 @@ for (const theme of ['light', 'dark'] as const) {
         )
         .toStrictEqual({ isAligned: true, isVisible: true });
 
+      // move past the inserted text so the drag's pointer-down has a distinct caret position
+      await message.press('ArrowRight');
       const { start, end } = await editedPoint.evaluate(async (element) => {
         await document.fonts.ready;
         // center the gesture away from the editor's selection auto-scroll edges
@@ -161,12 +163,26 @@ for (const theme of ['light', 'dark'] as const) {
           // target the correct half of the glyph without relying on pixel rounding at its edge
           return { x: box.left + box.width * fraction, y: box.top + box.height / 2 };
         };
-        return { start: glyph(10, 0.25), end: glyph(16, 0.75) };
+        // start away from the earlier insertion click, then select back to the start of the word
+        return { start: glyph(16, 0.75), end: glyph(10, 0.25) };
       });
       const readSelection = () => page.evaluate(() => document.getSelection()?.toString());
       await page.mouse.move(start.x, start.y);
       await page.mouse.down();
       try {
+        // observe the native caret before dispatching the drag's move events
+        await expect
+          .poll(() =>
+            editedPoint.evaluate((element) => {
+              const selection = document.getSelection();
+              return {
+                anchor:
+                  selection?.anchorNode === element.firstChild ? selection?.anchorOffset : null,
+                focus: selection?.focusNode === element.firstChild ? selection?.focusOffset : null,
+              };
+            }),
+          )
+          .toStrictEqual({ anchor: 17, focus: 17 });
         await page.mouse.move(end.x, end.y, { steps: 8 });
         // allow the browser to process the final drag position before releasing the pointer
         await expect.poll(readSelection).toBe('EDITED ');

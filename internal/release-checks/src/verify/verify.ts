@@ -38,6 +38,7 @@ export type IVerifyDependencies = {
   runCommand: IRunCommand;
   log: (message: string) => void;
   runGalleryCommand?: IRunAstroFixtureCommand;
+  runsGalleryBrowserTests?: boolean;
 };
 
 // the outcome of checking the workspaces, then packing and checking every publishable package
@@ -128,7 +129,13 @@ const addProblems = (problems: Map<string, string[]>, name: string, additions: s
 export const packAndCheck = async (
   rootDirectory: string,
   outputDirectory: string,
-  { registry, runCommand, log, runGalleryCommand }: IVerifyDependencies,
+  {
+    registry,
+    runCommand,
+    log,
+    runGalleryCommand,
+    runsGalleryBrowserTests = true,
+  }: IVerifyDependencies,
 ): Promise<IReleaseCheckResult> => {
   log('Checking the workspaces');
   const workspaces = await findWorkspaces(rootDirectory);
@@ -202,11 +209,16 @@ export const packAndCheck = async (
     for (const { packedManifest } of packages)
       addProblems(problems, packedManifest.name, [diagnostic]);
   }
-  log('Building installed UI fixtures and running the personal galleries');
+  log(
+    runsGalleryBrowserTests
+      ? 'Building installed UI fixtures and running the personal galleries'
+      : 'Building installed UI fixtures',
+  );
   for (const [name, packageProblems] of await checkAstroFixture(
     packages,
     runCommand,
     runGalleryCommand,
+    runsGalleryBrowserTests,
   )) {
     addProblems(problems, name, packageProblems);
   }
