@@ -1,10 +1,20 @@
 // @vitest-environment node
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { delimiter, join } from 'node:path';
 
 import { expectToRejectCode } from 'jg-exception/testing';
 import type { IProcessResult } from 'jg-process';
-import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest';
 
 import { resolveLocalDockerHost } from '../endpoint/index.js';
 import {
@@ -252,14 +262,19 @@ const inspectionJson = (fields: Record<string, unknown> = {}): string =>
   });
 
 describe.skipIf(IS_WINDOWS)('startContainer and removeContainer with a scripted docker', () => {
+  let directory: string;
   let bin: string;
   let state: string;
 
   beforeAll(async () => {
-    const directory = await createTemporaryDirectory('scripted');
+    directory = await createTemporaryDirectory('scripted');
     bin = join(directory, 'bin');
     await mkdir(bin);
     await writeFile(join(bin, 'docker'), SCRIPTED_DOCKER, { mode: 0o755 });
+  });
+
+  afterAll(async () => {
+    await rm(directory, { recursive: true, force: true });
   });
 
   /**
@@ -268,7 +283,9 @@ describe.skipIf(IS_WINDOWS)('startContainer and removeContainer with a scripted 
    * @returns A promise that resolves to the environment.
    */
   const scriptedEnv = async (variables: Record<string, string>): Promise<NodeJS.ProcessEnv> => {
-    state = await createTemporaryDirectory('state');
+    const created = await createTemporaryDirectory('state');
+    onTestFinished(() => rm(created, { recursive: true, force: true }));
+    state = created;
     return {
       ...process.env,
       PATH: `${bin}${delimiter}${process.env['PATH'] ?? ''}`,
