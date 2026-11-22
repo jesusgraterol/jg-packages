@@ -449,6 +449,43 @@ describe('useSeededInfiniteQuery', () => {
     });
   });
 
+  test.each([
+    [
+      'removes',
+      (client: QueryClient) =>
+        client.removeQueries({ queryKey: ['seeded-projection'], exact: true }),
+    ],
+    [
+      'resets',
+      (client: QueryClient) =>
+        client.resetQueries({ queryKey: ['seeded-projection'], exact: true }),
+    ],
+  ] as const)(
+    'publishes the generation again when the cache %s its entry while mounted',
+    async (_change, change) => {
+      await renderHarness();
+      expect(getResult()).toMatchObject({ isReady: true, data: { pages: [FIRST_PAGE] } });
+
+      // a broad cache cleanup counts a query whose only observer is disabled as inactive
+      await act(async () => {
+        await change(queryClient);
+      });
+
+      await vi.waitFor(() =>
+        expect(getResult()).toMatchObject({
+          data: { pages: [FIRST_PAGE], pageParams: [null] },
+          isReady: true,
+          isSuccess: true,
+        }),
+      );
+      expect(queryClient.getQueryData(['seeded-projection'])).toStrictEqual({
+        pages: [FIRST_PAGE],
+        pageParams: [null],
+      });
+      expect(continuationQueryFn).not.toHaveBeenCalled();
+    },
+  );
+
   test('rejects with FIRST_PAGE_NOT_READY when something forces a fetch before the first page', async () => {
     const queryKey = ['seeded-projection', 'not-ready'] as const;
     await renderHarness({ firstPage: undefined, firstPageUpdatedAt: 0, queryKey });
