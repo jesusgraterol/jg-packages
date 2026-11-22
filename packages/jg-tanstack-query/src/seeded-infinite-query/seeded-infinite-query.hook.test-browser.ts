@@ -449,42 +449,20 @@ describe('useSeededInfiniteQuery', () => {
     });
   });
 
-  test.each([
-    [
-      'removes',
-      (client: QueryClient) =>
-        client.removeQueries({ queryKey: ['seeded-projection'], exact: true }),
-    ],
-    [
-      'resets',
-      (client: QueryClient) =>
-        client.resetQueries({ queryKey: ['seeded-projection'], exact: true }),
-    ],
-  ] as const)(
-    'publishes the generation again when the cache %s its entry while mounted',
-    async (_change, change) => {
-      await renderHarness();
-      expect(getResult()).toMatchObject({ isReady: true, data: { pages: [FIRST_PAGE] } });
+  test('keeps pages a consumer removed out of the cache while it stays mounted', async () => {
+    await renderHarness();
+    expect(queryClient.getQueryData(['seeded-projection'])).toBeDefined();
 
-      // a broad cache cleanup counts a query whose only observer is disabled as inactive
-      await act(async () => {
-        await change(queryClient);
-      });
+    // an app evicts private pages on purpose, such as after its read access is lost
+    await act(async () => {
+      queryClient.removeQueries({ queryKey: ['seeded-projection'], exact: true });
+      await Promise.resolve();
+    });
 
-      await vi.waitFor(() =>
-        expect(getResult()).toMatchObject({
-          data: { pages: [FIRST_PAGE], pageParams: [null] },
-          isReady: true,
-          isSuccess: true,
-        }),
-      );
-      expect(queryClient.getQueryData(['seeded-projection'])).toStrictEqual({
-        pages: [FIRST_PAGE],
-        pageParams: [null],
-      });
-      expect(continuationQueryFn).not.toHaveBeenCalled();
-    },
-  );
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(queryClient.getQueryData(['seeded-projection'])).toBeUndefined();
+    expect(continuationQueryFn).not.toHaveBeenCalled();
+  });
 
   test('rejects with FIRST_PAGE_NOT_READY when something forces a fetch before the first page', async () => {
     const queryKey = ['seeded-projection', 'not-ready'] as const;

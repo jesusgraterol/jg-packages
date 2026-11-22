@@ -27,8 +27,7 @@ import { EMPTY_FETCH_STATE, getPublications } from './utilities.js';
  * flight and starts over from the new first page, and an older publication that finishes late
  * never replaces a newer one. Components that use the same key share one generation and its
  * pages, so one unmounting aborts nothing. Until the current generation is published, the result
- * is loading, with no data; if a cache cleanup removes or resets the key while it's mounted, the
- * current generation is published again. The query never fetches by itself and is never persisted.
+ * is loading, with no data. The query never fetches by itself and is never persisted.
  * @param options The key, the first page and when it was fetched, how to fetch the pages after
  * it, and the cache settings.
  * @returns A query result for boundaries and load-more controls, whose fetchNextPage and refetch
@@ -75,8 +74,6 @@ export const useSeededInfiniteQuery = <TPage, TPageParam>({
   const stableQueryKey = useMemo(() => JSON.parse(queryKeyHash) as QueryKey, [queryKeyHash]);
   const queryHash = queryClient.defaultQueryOptions({ queryKey: stableQueryKey }).queryHash;
   const publicationSequence = useRef(0);
-  // counts each time the cache drops the published pages while this hook is mounted
-  const [droppedPagesCount, setDroppedPagesCount] = useState(0);
   const [publishedGeneration, setPublishedGeneration] = useState<{
     firstPageUpdatedAt: number;
     firstPage: TPage;
@@ -124,26 +121,6 @@ export const useSeededInfiniteQuery = <TPage, TPageParam>({
     publishedGeneration.firstPageUpdatedAt === firstPageUpdatedAt &&
     Object.is(publishedGeneration.firstPage, firstPage);
 
-  /*
-   * A cleanup that removes or resets this key while the hook is mounted drops the published pages,
-   * and the projection never fetches its first page itself. Watching the key lets the effect below
-   * publish the current generation again instead of leaving the list loading.
-   */
-  useEffect(
-    () =>
-      queryClient.getQueryCache().subscribe((event) => {
-        if (
-          event.query.queryHash === queryHash &&
-          (event.type === 'removed' ||
-            (event.type === 'updated' && event.query.state.data === undefined)) &&
-          getPublications(queryClient).get(queryHash)?.isPublished !== false
-        ) {
-          setDroppedPagesCount((count) => count + 1);
-        }
-      }),
-    [queryClient, queryHash],
-  );
-
   useEffect(() => {
     publicationSequence.current += 1;
     const publicationId = publicationSequence.current;
@@ -155,19 +132,10 @@ export const useSeededInfiniteQuery = <TPage, TPageParam>({
     if (
       publication === undefined ||
       publication.firstPageUpdatedAt !== firstPageUpdatedAt ||
-      !Object.is(publication.firstPage, firstPage) ||
-      // a published generation whose pages the cache dropped is published again
-      (publication.isPublished && queryClient.getQueryData(stableQueryKey) === undefined)
+      !Object.is(publication.firstPage, firstPage)
     ) {
       const token = Symbol(queryHash);
-      const next: typeof publication = {
-        firstPageUpdatedAt,
-        firstPage,
-        promise: Promise.resolve(false),
-        token,
-        isPublished: false,
-      };
-      next.promise = (async (): Promise<boolean> => {
+      const promise = (async (): Promise<boolean> => {
         // aborts a continuation of the previous generation, so its page never lands on this one
         await queryClient.cancelQueries({ queryKey: stableQueryKey, exact: true });
         if (publications.get(queryHash)?.token !== token) {
@@ -177,10 +145,9 @@ export const useSeededInfiniteQuery = <TPage, TPageParam>({
           pages: [firstPage],
           pageParams: [initialPageParam],
         });
-        next.isPublished = true;
         return true;
       })();
-      publication = next;
+      publication = { firstPageUpdatedAt, firstPage, promise, token };
       publications.set(queryHash, publication);
     }
     void publication.promise.then((isPublished) => {
@@ -194,7 +161,6 @@ export const useSeededInfiniteQuery = <TPage, TPageParam>({
       }
     };
   }, [
-    droppedPagesCount,
     firstPage,
     firstPageUpdatedAt,
     initialPageParam,

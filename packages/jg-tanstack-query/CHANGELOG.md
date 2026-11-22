@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.2
+
+### Fixed
+
+- Reverts the 0.6.1 change to `useSeededInfiniteQuery`, which behaves as in 0.6.0 again: pages a cleanup removes from the cache stay removed. Publishing them again could not tell an accidental cleanup from a deliberate eviction, so it could put back private pages a consumer removed after losing read access, and it could re-render ahead of TanStack Query's scheduled updates. Use 0.6.2 instead of 0.6.1.
+
 ## 0.6.1
 
 ### Fixed
