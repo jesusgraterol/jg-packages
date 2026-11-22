@@ -321,10 +321,10 @@ describe.skipIf(process.platform === 'win32')(
       expect((await readState()).attempts[0]).toMatchObject({ isPublished: true });
     });
 
-    test('reconciles a recorded placeholder once the exact public archive appears', async () => {
+    test('reconciles an ambiguous placeholder once the exact public archive appears', async () => {
       await setRegistry({ mode: 'staged', catalog: {} });
       await expect(run()).rejects.toThrow('Verify its stage bytes');
-      expect((await readState()).attempts[0]?.requiresStageEvidence).toBe(true);
+      expect((await readState()).attempts[0]?.requiresStageEvidence).toBe(false);
       await setRegistry({
         mode: 'public',
         catalog: { [FIRST]: { versions: ['0.0.0-stage', VERSION], tarball: 'different bytes' } },
@@ -353,7 +353,7 @@ describe.skipIf(process.platform === 'win32')(
       expect((await calls()).filter(({ command }) => command === 'publish')).toHaveLength(1);
       expect((await readState()).attempts[0]).toMatchObject({
         isPublished: false,
-        requiresStageEvidence: true,
+        requiresStageEvidence: false,
       });
     });
 
@@ -361,12 +361,24 @@ describe.skipIf(process.platform === 'win32')(
       await setRegistry({ mode: 'staged', catalog: {} });
       await expect(run()).rejects.toThrow('Verify its stage bytes');
       await expect(run()).rejects.toThrow('Verify its stage bytes');
-      expect((await readState()).attempts[0]?.requiresStageEvidence).toBe(true);
       const staged = join(directory, 'staged.tgz');
       await writeFile(staged, 'wrong staged bytes');
       const evidence = { stage: { id: 'stage-1', tarball: staged } };
       await expect(run(evidence)).rejects.toThrow('does not match the approved tarball');
-      expect((await readState()).attempts[0]?.stageId).toBeUndefined();
+      const pending = (await readState()).attempts[0];
+      expect(pending?.requiresStageEvidence).toBe(true);
+      expect(pending?.stageId).toBeUndefined();
+      await setRegistry({
+        mode: 'public',
+        catalog: { [FIRST]: { versions: ['0.0.0-stage', VERSION], tarball: FIRST_BYTES } },
+      });
+      await expect(run()).rejects.toThrow('Verified stage evidence is required');
+      expect((await readState()).attempts[0]?.isPublished).toBe(false);
+      await setRegistry({
+        mode: 'public',
+        catalog: { [FIRST]: { versions: [VERSION], tarball: FIRST_BYTES } },
+      });
+      await expect(run()).rejects.toThrow('Verified stage evidence is required');
       await writeFile(staged, FIRST_BYTES);
       await expect(run(evidence)).rejects.toThrow('pending developer approval');
       expect((await readState()).attempts[0]?.stageId).toBe('stage-1');

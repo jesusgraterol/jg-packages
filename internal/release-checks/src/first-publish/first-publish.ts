@@ -9,7 +9,7 @@ import { type INpmSession, withIsolatedNpm } from './npm-session.ts';
 import { type IWaitForRegistryPoll, observeRegistry, reconcileRegistry } from './registry.ts';
 import { qualifyRelease } from './release.ts';
 import { readFirstPublishState, writeFirstPublishState } from './state.ts';
-import type { IFirstPublishAttempt, IFirstPublishOptions, IStageEvidence } from './types.ts';
+import type { IFirstPublishOptions } from './types.ts';
 
 const STATE_FILE = 'first-publish-state.json';
 const LOCK_DIRECTORY = 'first-publish.lock';
@@ -46,29 +46,6 @@ const stageSelectedTarballs = async (
 };
 
 /**
- * Verifies the maintainer's downloaded stage before approval.
- * @param evidence The stage ID and dashboard download selected by the developer.
- * @param attempt The recorded submission.
- * @param signal The operation's cancellation signal.
- * @returns A promise that resolves once the downloaded bytes are verified.
- */
-const verifyStage = async (
-  evidence: IStageEvidence,
-  attempt: IFirstPublishAttempt,
-  signal: AbortSignal,
-): Promise<void> => {
-  if (attempt.isPublished || (attempt.stageId && attempt.stageId !== evidence.id)) {
-    throw new Error('Stage evidence does not match the pending first-publish attempt.');
-  }
-  const identity = await hashFile(evidence.tarball, { maxBytes: MAX_TARBALL_BYTES, signal });
-  if (identity.sha256 !== attempt.sha256) {
-    throw new Error('The downloaded stage does not match the approved tarball.');
-  }
-  attempt.requiresStageEvidence = true;
-  attempt.stageId = evidence.id;
-};
-
-/**
  * Publishes an approved batch or reconciles its recorded first-publish attempts.
  * @param root The qualified checkout.
  * @param options The approved release identity and selections.
@@ -102,11 +79,25 @@ export const runFirstPublish = async (
           if (!attempt) {
             throw new Error('Stage evidence requires a recorded first-publish attempt.');
           }
-          await verifyStage(options.stage, attempt, npm.signal);
+          const { id, tarball } = options.stage;
+          if (attempt.isPublished || (attempt.stageId && attempt.stageId !== id)) {
+            throw new Error('Stage evidence does not match the pending first-publish attempt.');
+          }
+          // A dashboard selection confirms a stage even if its download cannot be verified yet.
+          attempt.requiresStageEvidence = true;
+          await save();
+          const identity = await hashFile(tarball, {
+            maxBytes: MAX_TARBALL_BYTES,
+            signal: npm.signal,
+          });
+          if (identity.sha256 !== attempt.sha256) {
+            throw new Error('The downloaded stage does not match the approved tarball.');
+          }
+          attempt.stageId = id;
           await save();
           log(
             'Verified stage ' +
-              options.stage.id +
+              id +
               ' for ' +
               spec +
               '. Approve that entry on npmjs.com, then resume without stage arguments.',
@@ -118,14 +109,19 @@ export const runFirstPublish = async (
           log('Checking npm for ' + spec + '.');
           const observation = await reconcileRegistry(npm, entry, attempt, waitForPoll);
           if (observation === 'verified') {
+            if (attempt.requiresStageEvidence && !attempt.stageId) {
+              throw new Error(
+                'Verified stage evidence is required for ' +
+                  spec +
+                  '. Resume with --stage-id and --staged-tarball.',
+              );
+            }
             attempt.isPublished = true;
             await save();
             log('Verified ' + spec + ' on npm.');
             continue;
           }
           if (observation === 'staged') {
-            attempt.requiresStageEvidence = true;
-            await save();
             throw new Error(pendingStageMessage);
           }
           if (
@@ -186,8 +182,6 @@ export const runFirstPublish = async (
         }
         const observation = await reconcileRegistry(npm, entry, attempt, waitForPoll);
         if (observation === 'staged') {
-          attempt.requiresStageEvidence = true;
-          await save();
           throw new Error(pendingStageMessage);
         }
         if (observation !== 'verified') {
