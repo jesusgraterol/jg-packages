@@ -78,7 +78,7 @@ const activity = useSeededInfiniteQuery<IActivityPage, string | null>({
 // activity.data.pages, activity.fetchNextPage(), activity.hasNextPage
 ```
 
-Each `firstPageUpdatedAt` and first page form a generation. When the screen's query refetches, the list starts over from its new first page, any page in flight is aborted, and a late page of an older generation is dropped. Until the generation is published, the result is loading, with no data. If a cache cleanup removes or resets its key while it's mounted, it publishes the current generation again. Components using the same key share one generation, so one unmounting aborts nothing. `fetchNextPage` and `refetch`, which retries only the page that failed, keep their identity. The query never fetches by itself and is never persisted; `gcTimeSeconds`, 0 by default, keeps its pages after the last component unmounts. Something that forces it to fetch before the first page arrives rejects with `FIRST_PAGE_NOT_READY`.
+Each `firstPageUpdatedAt` and first page form a generation. When the screen's query refetches, the list starts over from its new first page, any page in flight is aborted, and a late page of an older generation is dropped. Until the generation is published, the result is loading, with no data. Components using the same key share one generation, so one unmounting aborts nothing. `fetchNextPage` and `refetch`, which retries only the page that failed, keep their identity. The query never fetches by itself and is never persisted; `gcTimeSeconds`, 0 by default, keeps its pages after the last component unmounts. Something that forces it to fetch before the first page arrives rejects with `FIRST_PAGE_NOT_READY`.
 
 ### Query state
 
