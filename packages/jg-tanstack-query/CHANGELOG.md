@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+### Fixed
+
+- `useSeededInfiniteQuery` publishes the current generation again when a cache cleanup removes or resets its key while the list is mounted. A broad cleanup such as `removeQueries({ type: 'inactive' })` counts a query whose only observer is disabled as inactive, which left the list loading with no way to recover.
+
 ## 0.6.0
 
 ### Added

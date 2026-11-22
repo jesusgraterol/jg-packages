@@ -90,6 +90,8 @@ export type IProjectionPublication = {
   firstPage: unknown;
   promise: Promise<boolean>;
   token: symbol;
+  // whether the first page reached the cache, so a later loss of its pages can be told apart
+  isPublished: boolean;
 };
 
 // what fetchNextPage and refetch read from the latest committed render
