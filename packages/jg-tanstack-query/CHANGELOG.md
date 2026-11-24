@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.0
+
+### Changed
+
+- `useSeededInfiniteQuery` shows the fresh first page during publication when an already loaded key refreshes. It no longer reports an empty loading state for that transition. `isReady` and continuation controls still wait for publication; initial loads, changed keys, withdrawn first pages and deliberate cache eviction retain their loading and isolation behavior.
+
 ## 0.6.2
 
 ### Fixed

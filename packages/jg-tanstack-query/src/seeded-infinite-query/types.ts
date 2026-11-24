@@ -33,12 +33,12 @@ export type IUseSeededInfiniteQueryOptions<TPage, TPageParam> = {
 
 /*
  * What useSeededInfiniteQuery returns: a subset of TanStack's infinite query result, shaped so
- * query boundaries and load-more controls read it like any other query. Until the current
- * generation is published, it's loading, with no data. fetchNextPage and refetch keep their
- * identity across renders.
+ * query boundaries and load-more controls read it like any other query. Initial publication
+ * waits with no data; a same-key refresh shows only the current first page until publication
+ * enables continuations. fetchNextPage and refetch keep their identity across renders.
  */
 export type ISeededInfiniteQueryResult<TPage, TPageParam> = {
-  // the pages, once the current generation is published
+  // the published pages, or the current first page during a same-key refresh
   data: InfiniteData<TPage, TPageParam> | undefined;
 
   // the error of the last continuation that failed, or null
@@ -62,10 +62,10 @@ export type ISeededInfiniteQueryResult<TPage, TPageParam> = {
   // whether a continuation is in flight
   isFetchingNextPage: boolean;
 
-  // whether the current generation isn't published yet
+  // whether initial publication is pending without a current first page to show
   isLoading: boolean;
 
-  // whether the current generation isn't published yet
+  // whether initial publication is pending without a current first page to show
   isPending: boolean;
 
   // whether the current generation is published
@@ -77,7 +77,7 @@ export type ISeededInfiniteQueryResult<TPage, TPageParam> = {
   // always false: the first page is as fresh as the query it came from
   isStale: boolean;
 
-  // whether the current generation is published, with its data
+  // whether current data is available, including the first page of a same-key refresh
   isSuccess: boolean;
 
   // fetches the failed continuation again, after an error

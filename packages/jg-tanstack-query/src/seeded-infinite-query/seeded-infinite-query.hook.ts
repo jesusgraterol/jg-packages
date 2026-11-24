@@ -26,8 +26,10 @@ import { EMPTY_FETCH_STATE, getPublications } from './utilities.js';
  * Each `firstPageUpdatedAt` and first page form a generation. A new generation cancels any page in
  * flight and starts over from the new first page, and an older publication that finishes late
  * never replaces a newer one. Components that use the same key share one generation and its
- * pages, so one unmounting aborts nothing. Until the current generation is published, the result
- * is loading, with no data. The query never fetches by itself and is never persisted.
+ * pages, so one unmounting aborts nothing. Initial publication waits with no data. A refresh of an
+ * already published key shows its new first page while publication finishes, with continuations
+ * disabled. A withdrawn first page, changed key or evicted cache never exposes retained pages.
+ * The query never fetches by itself and is never persisted.
  * @param options The key, the first page and when it was fetched, how to fetch the pages after
  * it, and the cache settings.
  * @returns A query result for boundaries and load-more controls, whose fetchNextPage and refetch
@@ -205,7 +207,26 @@ export const useSeededInfiniteQuery = <TPage, TPageParam>({
 
   const isError = isReady && projectionQuery.isFetchNextPageError;
   const isFetchingNextPage = isReady && projectionQuery.isFetchingNextPage;
-  const data = isReady ? projectionQuery.data : undefined;
+  const data = useMemo(() => {
+    if (isReady) return projectionQuery.data;
+    if (
+      firstPage === undefined ||
+      firstPageUpdatedAt <= 0 ||
+      publishedGeneration?.queryKeyHash !== queryKeyHash ||
+      projectionQuery.data === undefined
+    )
+      return undefined;
+    // render only the current resolver page while cancellation retires the prior generation
+    return { pages: [firstPage], pageParams: [initialPageParam] };
+  }, [
+    isReady,
+    projectionQuery.data,
+    firstPage,
+    firstPageUpdatedAt,
+    publishedGeneration?.queryKeyHash,
+    queryKeyHash,
+    initialPageParam,
+  ]);
   const hasNextPage = isReady && projectionQuery.hasNextPage;
   const error = isError ? projectionQuery.error : null;
 
@@ -219,12 +240,12 @@ export const useSeededInfiniteQuery = <TPage, TPageParam>({
       isFetchedAfterMount: isReady,
       isFetching: isFetchingNextPage,
       isFetchingNextPage,
-      isLoading: !isReady,
-      isPending: !isReady,
+      isLoading: !isReady && data === undefined,
+      isPending: !isReady && data === undefined,
       isReady,
       isRefetching: isFetchingNextPage,
       isStale: false,
-      isSuccess: isReady && data !== undefined,
+      isSuccess: data !== undefined,
       refetch,
     }),
     [data, error, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isReady, refetch],

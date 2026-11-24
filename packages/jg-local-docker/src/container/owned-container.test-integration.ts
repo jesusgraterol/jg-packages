@@ -1,9 +1,10 @@
 // @vitest-environment node
 import { fork } from 'node:child_process';
+import { rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import { expectToRejectCode } from 'jg-exception/testing';
-import { afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeAll, describe, expect, onTestFinished, test } from 'vitest';
 
 import { resolveLocalDockerHost } from '../endpoint/index.js';
 import {
@@ -110,6 +111,7 @@ describe('startOwnedContainer', () => {
 
   test('reports a creation that could not run docker at all', async () => {
     const empty = await createTemporaryDirectory('no-docker');
+    onTestFinished(() => rm(empty, { recursive: true, force: true }));
 
     const error: unknown = await startOwnedContainer({
       ...containerOptions(),

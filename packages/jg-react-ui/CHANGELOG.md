@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.2
+
+### Fixed
+
+- Depend on `jg-tanstack-query@0.7.0` so resolver refreshes can keep their current first page visible while publication completes.
+
 ## 0.10.1
 
 ### Fixed
