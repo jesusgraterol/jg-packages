@@ -264,6 +264,66 @@ describe('useSeededInfiniteQuery', () => {
     expect(getResult()).toMatchObject({ data: { pages: [FIRST_PAGE] }, isReady: true });
   });
 
+  test('renders the fresh first page during publication without allowing stale continuations', async () => {
+    await renderHarness();
+    const cancellation = createDeferred<undefined>();
+    vi.spyOn(queryClient, 'cancelQueries').mockReturnValueOnce(cancellation.promise);
+    const freshPage = { items: ['fresh'], nextCursor: 'fresh-cursor' } satisfies IPage;
+    onResult.mockClear();
+    try {
+      await renderHarness({ firstPage: freshPage, firstPageUpdatedAt: 2 });
+      expect(getResult()).toMatchObject({
+        data: { pages: [freshPage], pageParams: [null] },
+        isLoading: false,
+        isPending: false,
+        isSuccess: true,
+        isReady: false,
+        hasNextPage: false,
+      });
+      await act(async () => void (await getResult().fetchNextPage()));
+      expect(continuationQueryFn).not.toHaveBeenCalled();
+      expect(onResult.mock.calls.every(([result]) => result.data?.pages[0] === freshPage)).toBe(
+        true,
+      );
+    } finally {
+      cancellation.resolve(undefined);
+      await act(async () => void (await cancellation.promise));
+    }
+    expect(getResult()).toMatchObject({
+      data: { pages: [freshPage] },
+      isReady: true,
+      hasNextPage: true,
+    });
+  });
+
+  test('hides the available first page immediately when its query identity changes', async () => {
+    await renderHarness();
+    const cancellation = createDeferred<undefined>();
+    vi.spyOn(queryClient, 'cancelQueries').mockReturnValueOnce(cancellation.promise);
+    try {
+      await renderHarness({
+        queryKey: ['another-account'],
+        firstPage: { items: ['another account'], nextCursor: null },
+        firstPageUpdatedAt: 2,
+      });
+      expect(getResult()).toMatchObject({
+        data: undefined,
+        isLoading: true,
+        isPending: true,
+        isReady: false,
+      });
+    } finally {
+      cancellation.resolve(undefined);
+      await act(async () => void (await cancellation.promise));
+    }
+  });
+
+  test('clears the visible pages when the resolver withdraws its first page', async () => {
+    await renderHarness();
+    await renderHarness({ firstPage: undefined, firstPageUpdatedAt: 0 });
+    expect(getResult()).toMatchObject({ data: undefined, isLoading: true, isSuccess: false });
+  });
+
   test('drops a delayed continuation of the same key once a newer generation arrives', async () => {
     const continuation = createDeferred<IPage>();
     let continuationSignal: AbortSignal | undefined;
